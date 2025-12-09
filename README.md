@@ -1,51 +1,85 @@
 # Living Site
 
-A personal website that regenerates itself daily using AI. It synthesizes activity from GitHub into natural prose — no manual updates required.
+A self-regenerating personal website. An AI agent rewrites the site daily based on real activity data — no manual updates needed.
+
+Built with [Cursor CLI](https://cursor.com/docs/cli) running headless in GitHub Actions.
+
+## The Concept
+
+Instead of a static portfolio that gets stale, this site stays current automatically. An agent reads activity from various sources, synthesizes it into natural prose, and regenerates the HTML.
+
+The agent follows strict design guidelines but has creative freedom in how it presents the content. Each build produces slightly different output while maintaining consistency.
 
 ## How It Works
 
 ```
-Daily Cron (6am UTC)
-        │
-        ▼
-┌───────────────┐     ┌───────────────┐     ┌───────────────┐
-│   Aggregate   │ ──▶ │   Generate    │ ──▶ │    Deploy     │
-│  GitHub data  │     │  Cursor CLI   │     │    Vercel     │
-└───────────────┘     └───────────────┘     └───────────────┘
+┌─────────────┐     ┌─────────────┐     ┌─────────────┐     ┌─────────────┐
+│   Fetch     │ ──▶ │  Aggregate  │ ──▶ │  Generate   │ ──▶ │   Deploy    │
+│  Activity   │     │   Themes    │     │  Cursor CLI │     │   Vercel    │
+└─────────────┘     └─────────────┘     └─────────────┘     └─────────────┘
 ```
 
-1. **Aggregate** — Fetches repos, languages, commit patterns from GitHub API. Extracts themes like "TypeScript focused" or "actively building".
+1. **Fetch** — Pull activity from connected sources (GitHub, more coming)
+2. **Aggregate** — Extract themes and patterns from raw data
+3. **Generate** — Cursor CLI reads the prompt + data, rewrites the site
+4. **Deploy** — Changes committed to main, Vercel auto-deploys
 
-2. **Generate** — Cursor CLI (headless) reads the system prompt and data, then regenerates `generated/index.html` with synthesized prose.
+Runs daily at 6am UTC via GitHub Actions, or triggered manually.
 
-3. **Deploy** — Changes are committed and pushed, triggering Vercel auto-deploy.
-
-## Structure
+## File Structure
 
 ```
-infra/
-├── fetchers/github.ts   # GitHub API client
-├── aggregator.ts        # Theme extraction
-├── prompts/system.md    # Generation rules & voice
-generated/
-└── index.html           # AI-generated site (only file Cursor edits)
-data/
-├── identity.json        # Static info (name, links)
-└── latest.json          # Aggregated data + themes
+├── infra/
+│   ├── prompts/system.md    # Design rules, voice, constraints (locked)
+│   ├── aggregator.ts        # Theme extraction logic (locked)
+│   └── fetchers/            # Data source clients (locked)
+│       └── github.ts
+│
+├── data/
+│   ├── identity.json        # Static info: name, links (locked)
+│   └── latest.json          # Aggregated activity data (generated)
+│
+├── generated/
+│   └── index.html           # The site (agent-written)
+│
+├── builds/
+│   ├── history.json         # Build logs with agent reasoning
+│   └── index.html           # Build history viewer at /builds
+│
+└── index.html               # Production copy (synced from generated/)
 ```
+
+**Locked files** define the rules and identity — the agent can't modify these.  
+**Generated files** are written by the agent each build cycle.
+
+## Data Sources
+
+Activity is pulled from external APIs and aggregated into themes:
+
+| Source | Data | Status |
+|--------|------|--------|
+| GitHub | Repos, languages, commit patterns | Active |
+| Spotify | Recently played, top artists | Planned |
+| Strava | Recent activities, stats | Planned |
+
+The aggregator extracts high-level themes like "TypeScript focused" or "actively building" rather than exposing raw data.
+
+## Build History
+
+Each build captures the full agent conversation — what it read, what it changed, and why. View at `/builds` on the live site.
 
 ## Local Development
 
 ```bash
 npm install
-npm run aggregate          # Fetch + extract themes
-npm run generate:api       # Generate with Anthropic API
-npm run smoke              # Validate structure
+npm run aggregate        # Fetch activity + extract themes
+npm run generate:api     # Generate via Anthropic API (local)
 ```
 
 ## Environment
 
-| Variable | Description |
-|----------|-------------|
-| `CURSOR_API_KEY` | For CI generation (GitHub Actions) |
-| `GITHUB_TOKEN` | For fetching GitHub data |
+| Variable | Used For |
+|----------|----------|
+| `CURSOR_API_KEY` | CI generation via Cursor CLI |
+| `GITHUB_TOKEN` | Fetching GitHub activity |
+| `ANTHROPIC_API_KEY` | Local generation (optional) |
