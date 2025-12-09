@@ -53,31 +53,27 @@ jobs:
           echo "=== Context ==="
           cat data/latest.json | jq '.context'
 
+      - name: Build generation prompt
+        if: inputs.dry_run != 'true'
+        run: |
+          cat > /tmp/generation-prompt.txt << 'PROMPT_END'
+          Read infra/prompts/system.md for the design guidelines and voice.
+          Read data/latest.json for the current aggregated data.
+          
+          Based on the system prompt and data, regenerate generated/index.html.
+          Output a complete HTML file with embedded CSS following the design language.
+          Synthesize the themes and activity into natural, first-person prose.
+          PROMPT_END
+          
+          echo "Prompt built:"
+          cat /tmp/generation-prompt.txt
+
       - name: Generate site with Cursor CLI
         if: inputs.dry_run != 'true'
         env:
           CURSOR_API_KEY: ${{ secrets.CURSOR_API_KEY }}
         run: |
-          # Build the prompt
-          SYSTEM_PROMPT=$(cat infra/prompts/system.md)
-          DATA=$(cat data/latest.json)
-          
-          PROMPT="$SYSTEM_PROMPT
-
----
-
-## Current Data
-
-\`\`\`json
-$DATA
-\`\`\`
-
----
-
-Regenerate generated/index.html based on the data above. Output a complete HTML file with embedded CSS following the design language specified."
-
-          # Run Cursor CLI in headless mode
-          cursor-agent -p --force "$PROMPT"
+          cursor-agent -p --force "$(cat /tmp/generation-prompt.txt)"
 
       - name: Sync index.html from generated
         if: inputs.dry_run != 'true'
