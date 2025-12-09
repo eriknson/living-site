@@ -19,9 +19,31 @@ async function backupCurrentBuild(): Promise<void> {
   }
 }
 
+function formatBuildTimestamp(date: Date): string {
+  const time = date.toLocaleTimeString("en-US", {
+    hour: "numeric",
+    minute: "2-digit",
+    hour12: true,
+  });
+  const day = date.getDate();
+  const ordinal =
+    day === 1 || day === 21 || day === 31
+      ? "st"
+      : day === 2 || day === 22
+        ? "nd"
+        : day === 3 || day === 23
+          ? "rd"
+          : "th";
+  const month = date.toLocaleString("en-US", { month: "long" });
+  const year = date.getFullYear();
+
+  return `${time}, ${month} ${day}${ordinal}, ${year}`;
+}
+
 async function buildPrompt(): Promise<string> {
   const systemPrompt = await readFile(SYSTEM_PROMPT_PATH, "utf-8");
   const data = await readFile(DATA_PATH, "utf-8");
+  const buildTimestamp = formatBuildTimestamp(new Date());
 
   return `${systemPrompt}
 
@@ -34,6 +56,8 @@ ${data}
 \`\`\`
 
 ---
+
+**CRITICAL**: The "Updated" timestamp in the header MUST be exactly: "Updated ${buildTimestamp}"
 
 Now regenerate \`generated/index.html\` based on the data above. Output the complete HTML file.`;
 }

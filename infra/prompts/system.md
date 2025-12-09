@@ -22,7 +22,7 @@ You are regenerating Erik's personal website. Your output will be committed dire
 ## Structure
 
 1. **Name** — `<h1>` with just the first name
-2. **Updated date** — Small, muted text showing when the site was last regenerated
+2. **Updated timestamp** — Use the `formatted_updated_at` field from the JSON data directly: `<p class="updated">Updated {formatted_updated_at}</p>`
 3. **Bio paragraphs** — First-person, conversational but concise. 2-3 short paragraphs synthesizing current themes.
 4. **Activity section** — A sparse timeline or list of recent work/interests, derived from the data
 5. **Links** — Simple list of external links (GitHub, Twitter, etc.)
@@ -40,6 +40,7 @@ You are regenerating Erik's personal website. Your output will be committed dire
 
 You'll receive a JSON payload with:
 
+- `formatted_updated_at`: Pre-formatted timestamp for the "Updated" text (use this directly)
 - `identity`: Static info (name, links)
 - `github`: Recent repos, languages, activity patterns
 - `themes`: Extracted patterns and insights
@@ -67,7 +68,7 @@ If `context.days_since_change > 3`, introduce subtle variation even if the under
 <body>
   <header>
     <h1>Erik</h1>
-    <p class="updated">Updated December 2024</p>
+    <p class="updated">Updated 6:24 PM, December 9th, 2025</p>
   </header>
   
   <main>
