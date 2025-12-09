@@ -1,6 +1,6 @@
 /**
  * Save Build Log
- * Processes cursor-agent JSON output and appends to build history
+ * Processes cursor-agent stream-json output and appends to build history
  */
 
 import { readFile, writeFile } from "fs/promises";
@@ -9,11 +9,26 @@ import { existsSync } from "fs";
 const HISTORY_PATH = "builds/history.json";
 const MAX_BUILDS = 20;
 
+interface StreamEvent {
+  type: "system" | "assistant" | "tool_call" | "result";
+  subtype?: string;
+  model?: string;
+  message?: {
+    content: Array<{ type: string; text?: string }>;
+  };
+  tool_call?: Record<string, unknown>;
+  result?: string;
+  is_error?: boolean;
+  duration_ms?: number;
+}
+
 interface BuildEntry {
   id: string;
   timestamp: string;
   formatted_timestamp: string;
   status: "success" | "failure";
+  duration_ms?: number;
+  model?: string;
   agent_output: string;
 }
 
@@ -46,6 +61,139 @@ function formatTimestamp(date: Date): string {
   return `${time}, ${month} ${day}${ordinal}, ${year}`;
 }
 
+function formatToolCall(toolCall: Record<string, unknown>): string {
+  // Extract the tool type and details
+  for (const [key, value] of Object.entries(toolCall)) {
+    if (key.endsWith("ToolCall") && value && typeof value === "object") {
+      const toolName = key.replace("ToolCall", "");
+      const args = (value as Record<string, unknown>).args as Record<string, unknown> | undefined;
+      const result = (value as Record<string, unknown>).result as Record<string, unknown> | undefined;
+      
+      if (args) {
+        const path = args.path || args.file_path || "";
+        return `[${toolName}] ${path}`;
+      }
+      if (result) {
+        return `[${toolName}] completed`;
+      }
+    }
+  }
+  return JSON.stringify(toolCall);
+}
+
+function parseStreamJson(rawOutput: string): {
+  formatted: string;
+  status: "success" | "failure";
+  duration_ms?: number;
+  model?: string;
+} {
+  const lines = rawOutput.trim().split("\n");
+  const parts: string[] = [];
+  let status: "success" | "failure" = "success";
+  let duration_ms: number | undefined;
+  let model: string | undefined;
+  let currentAssistantText = "";
+
+  for (const line of lines) {
+    if (!line.trim()) continue;
+
+    try {
+      const event: StreamEvent = JSON.parse(line);
+
+      switch (event.type) {
+        case "system":
+          if (event.subtype === "init" && event.model) {
+            model = event.model;
+            parts.push(`=== Build Started ===`);
+            parts.push(`Model: ${event.model}`);
+            parts.push("");
+          }
+          break;
+
+        case "assistant":
+          if (event.message?.content) {
+            for (const block of event.message.content) {
+              if (block.type === "text" && block.text) {
+                currentAssistantText += block.text;
+              }
+            }
+          }
+          break;
+
+        case "tool_call":
+          // Flush any accumulated assistant text before tool call
+          if (currentAssistantText.trim()) {
+            parts.push("--- Agent ---");
+            parts.push(currentAssistantText.trim());
+            parts.push("");
+            currentAssistantText = "";
+          }
+
+          if (event.subtype === "started" && event.tool_call) {
+            parts.push(`> ${formatToolCall(event.tool_call)}`);
+          } else if (event.subtype === "completed" && event.tool_call) {
+            // Check for errors in tool result
+            for (const [, value] of Object.entries(event.tool_call)) {
+              if (value && typeof value === "object") {
+                const result = (value as Record<string, unknown>).result;
+                if (result && typeof result === "object" && (result as Record<string, unknown>).error) {
+                  parts.push(`  ✗ Error: ${JSON.stringify((result as Record<string, unknown>).error)}`);
+                }
+              }
+            }
+          }
+          break;
+
+        case "result":
+          // Flush any remaining assistant text
+          if (currentAssistantText.trim()) {
+            parts.push("--- Agent ---");
+            parts.push(currentAssistantText.trim());
+            parts.push("");
+            currentAssistantText = "";
+          }
+
+          parts.push("");
+          parts.push("=== Build Complete ===");
+          
+          if (event.duration_ms) {
+            duration_ms = event.duration_ms;
+            parts.push(`Duration: ${(event.duration_ms / 1000).toFixed(1)}s`);
+          }
+          
+          if (event.is_error) {
+            status = "failure";
+            parts.push(`Status: FAILED`);
+            if (event.result) {
+              parts.push(`Error: ${event.result}`);
+            }
+          } else {
+            parts.push(`Status: SUCCESS`);
+          }
+          break;
+      }
+    } catch {
+      // If line isn't valid JSON, include it as-is (might be stderr)
+      if (line.trim() && !line.includes("Build output captured")) {
+        parts.push(line);
+      }
+    }
+  }
+
+  // Flush any remaining text
+  if (currentAssistantText.trim()) {
+    parts.push("--- Agent ---");
+    parts.push(currentAssistantText.trim());
+  }
+
+  return {
+    formatted: parts.join("\n"),
+    status,
+    duration_ms,
+    model,
+  };
+}
+
 async function loadHistory(): Promise<BuildHistory> {
   if (!existsSync(HISTORY_PATH)) {
     return { builds: [] };
@@ -59,7 +207,6 @@ async function loadHistory(): Promise<BuildHistory> {
 }
 
 async function saveBuildLog(outputPath: string): Promise<void> {
-  // Read the cursor-agent output
   let rawOutput: string;
   try {
     rawOutput = await readFile(outputPath, "utf-8");
@@ -68,48 +215,30 @@ async function saveBuildLog(outputPath: string): Promise<void> {
     rawOutput = "Failed to capture build output";
   }
 
-  // Try to parse as JSON, fall back to raw text
-  let agentOutput: string;
-  let status: "success" | "failure" = "success";
+  // Parse the stream-json format
+  const { formatted, status, duration_ms, model } = parseStreamJson(rawOutput);
 
-  try {
-    const json = JSON.parse(rawOutput);
-    // Extract the text response from JSON format
-    agentOutput = json.response || json.text || json.output || JSON.stringify(json, null, 2);
-    status = json.error ? "failure" : "success";
-  } catch {
-    // Not JSON, use raw output
-    agentOutput = rawOutput;
-    // Check for common error indicators
-    if (rawOutput.toLowerCase().includes("error") || rawOutput.toLowerCase().includes("failed")) {
-      status = "failure";
-    }
-  }
-
-  // Check if generated/index.html exists and was recently modified as success indicator
-  if (existsSync("generated/index.html")) {
-    status = "success";
-  }
+  // Override status if generated/index.html exists
+  const finalStatus = existsSync("generated/index.html") ? "success" : status;
 
   const now = new Date();
   const entry: BuildEntry = {
     id: generateId(),
     timestamp: now.toISOString(),
     formatted_timestamp: formatTimestamp(now),
-    status,
-    agent_output: agentOutput,
+    status: finalStatus,
+    duration_ms,
+    model,
+    agent_output: formatted || rawOutput,
   };
 
-  // Load existing history and append
   const history = await loadHistory();
-  history.builds.unshift(entry); // Add to beginning (newest first)
+  history.builds.unshift(entry);
 
-  // Trim to max builds
   if (history.builds.length > MAX_BUILDS) {
     history.builds = history.builds.slice(0, MAX_BUILDS);
   }
 
-  // Save
   await writeFile(HISTORY_PATH, JSON.stringify(history, null, 2));
   console.log(`Build log saved: ${entry.id} (${entry.status})`);
 }
