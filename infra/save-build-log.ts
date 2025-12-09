@@ -62,7 +62,6 @@ function formatTimestamp(date: Date): string {
 }
 
 function formatToolCall(toolCall: Record<string, unknown>): string {
-  // Extract the tool type and details
   for (const [key, value] of Object.entries(toolCall)) {
     if (key.endsWith("ToolCall") && value && typeof value === "object") {
       const toolName = key.replace("ToolCall", "");
@@ -121,7 +120,6 @@ function parseStreamJson(rawOutput: string): {
           break;
 
         case "tool_call":
-          // Flush any accumulated assistant text before tool call
           if (currentAssistantText.trim()) {
             parts.push("--- Agent ---");
             parts.push(currentAssistantText.trim());
@@ -132,12 +130,11 @@ function parseStreamJson(rawOutput: string): {
           if (event.subtype === "started" && event.tool_call) {
             parts.push(`> ${formatToolCall(event.tool_call)}`);
           } else if (event.subtype === "completed" && event.tool_call) {
-            // Check for errors in tool result
             for (const [, value] of Object.entries(event.tool_call)) {
               if (value && typeof value === "object") {
                 const result = (value as Record<string, unknown>).result;
                 if (result && typeof result === "object" && (result as Record<string, unknown>).error) {
-                  parts.push(`  ✗ Error: ${JSON.stringify((result as Record<string, unknown>).error)}`);
+                  parts.push(`  Error: ${JSON.stringify((result as Record<string, unknown>).error)}`);
                 }
               }
             }
@@ -145,7 +142,6 @@ function parseStreamJson(rawOutput: string): {
           break;
 
         case "result":
-          // Flush any remaining assistant text
           if (currentAssistantText.trim()) {
             parts.push("--- Agent ---");
             parts.push(currentAssistantText.trim());
@@ -173,14 +169,12 @@ function parseStreamJson(rawOutput: string): {
           break;
       }
     } catch {
-      // If line isn't valid JSON, include it as-is (might be stderr)
       if (line.trim() && !line.includes("Build output captured")) {
         parts.push(line);
       }
     }
   }
 
-  // Flush any remaining text
   if (currentAssistantText.trim()) {
     parts.push("--- Agent ---");
     parts.push(currentAssistantText.trim());
@@ -215,10 +209,7 @@ async function saveBuildLog(outputPath: string): Promise<void> {
     rawOutput = "Failed to capture build output";
   }
 
-  // Parse the stream-json format
   const { formatted, status, duration_ms, model } = parseStreamJson(rawOutput);
-
-  // Override status if generated/index.html exists
   const finalStatus = existsSync("generated/index.html") ? "success" : status;
 
   const now = new Date();
@@ -243,7 +234,6 @@ async function saveBuildLog(outputPath: string): Promise<void> {
   console.log(`Build log saved: ${entry.id} (${entry.status})`);
 }
 
-// CLI runner
 if (import.meta.url === `file://${process.argv[1]}`) {
   const outputPath = process.argv[2];
   if (!outputPath) {
