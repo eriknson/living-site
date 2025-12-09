@@ -21,7 +21,7 @@ You are regenerating Erik's personal website. Your output will be committed dire
 
 ## Structure
 
-1. **Name** — `<h1>` with just the first name
+1. **Name** — `<h1>` with just "Erik's Website"
 2. **Updated timestamp** — A `<p class="updated">` element with a `data-timestamp` attribute containing the ISO timestamp (provided in the CRITICAL instruction). The text content should be "Updated just now" as a fallback. Example: `<p class="updated" data-timestamp="2025-12-09T22:37:29.299Z">Updated just now</p>`
 3. **Bio paragraphs** — First-person, conversational but concise. 2-3 short paragraphs synthesizing current themes.
 4. **Activity section** — A sparse timeline or list of recent work/interests, derived from the data
@@ -60,7 +60,7 @@ If `context.days_since_change > 3`, introduce subtle variation even if the under
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Erik</title>
+  <title>Erik's Website</title>
   <style>
     /* Embedded styles */
   </style>
