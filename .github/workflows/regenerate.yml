@@ -40,21 +40,23 @@ jobs:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: npm run aggregate
 
-      - name: Generate site
-        if: inputs.dry_run != 'true'
+      - name: Show aggregated themes
         run: |
-          echo "TODO: Cursor CLI integration"
-          echo "For now, run 'npm run generate' locally"
+          echo "=== Aggregated Themes ==="
+          cat data/latest.json | jq '.themes'
           echo ""
-          echo "Aggregated data preview:"
-          cat data/latest.json | head -50
+          echo "=== Context ==="
+          cat data/latest.json | jq '.context'
 
-      # Uncomment when Cursor CLI is integrated:
+      # TODO: Cursor CLI integration
+      # For now, generation happens locally. This workflow just aggregates data.
       # - name: Generate site
       #   if: inputs.dry_run != 'true'
-      #   env:
-      #     CURSOR_API_KEY: ${{ secrets.CURSOR_API_KEY }}
       #   run: npm run generate
+
+      - name: Sync index.html from generated
+        if: inputs.dry_run != 'true'
+        run: cp generated/index.html index.html
 
       - name: Commit changes
         if: inputs.dry_run != 'true'
@@ -62,9 +64,10 @@ jobs:
           git config --local user.email "action@github.com"
           git config --local user.name "GitHub Action"
           
-          # Only commit changes in allowed directories
+          # Stage allowed files
           git add data/latest.json
           git add generated/
+          git add index.html
           
           # Check if there are changes to commit
           if git diff --staged --quiet; then
