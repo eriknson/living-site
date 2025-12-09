@@ -73,7 +73,12 @@ jobs:
         env:
           CURSOR_API_KEY: ${{ secrets.CURSOR_API_KEY }}
         run: |
-          cursor-agent -p --force "$(cat /tmp/generation-prompt.txt)"
+          cursor-agent -p --force --output-format json "$(cat /tmp/generation-prompt.txt)" > /tmp/build-output.json 2>&1 || true
+          echo "Build output captured"
+
+      - name: Save build log
+        if: inputs.dry_run != 'true'
+        run: npm run save-build-log -- /tmp/build-output.json
 
       - name: Sync index.html from generated
         if: inputs.dry_run != 'true'

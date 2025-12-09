@@ -85,7 +85,7 @@
 <body>
   <header>
     <h1>Erik</h1>
-    <p class="updated">Updated 10:51 PM, December 9th, 2025</p>
+<p class="updated" data-timestamp="2025-12-09T22:53:00.000Z">Updated just now</p>
   </header>
   
   <main>
@@ -117,5 +117,15 @@
   <footer>
     Building in the winter dark.
   </footer>
+  
+  <script>
+    const el = document.querySelector('[data-timestamp]');
+    const ts = new Date(el.dataset.timestamp);
+    const diff = Date.now() - ts;
+    const mins = Math.floor(diff / 60000);
+    const hrs = Math.floor(mins / 60);
+    const days = Math.floor(hrs / 24);
+    el.textContent = 'Updated ' + (days ? days + 'd ago' : hrs ? hrs + 'h ago' : mins ? mins + 'm ago' : 'just now');
+  </script>
 </body>
 </html>

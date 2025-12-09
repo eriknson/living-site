@@ -25,7 +25,6 @@ interface Theme {
 
 interface AggregatedData {
   generated_at: string;
-  formatted_updated_at: string;
   identity: Identity;
   sources: {
     github?: GitHubData;
@@ -44,27 +43,6 @@ function getSeason(): string {
   if (month >= 5 && month <= 7) return "summer";
   if (month >= 8 && month <= 10) return "autumn";
   return "winter";
-}
-
-function formatBuildTimestamp(date: Date): string {
-  const time = date.toLocaleTimeString("en-US", {
-    hour: "numeric",
-    minute: "2-digit",
-    hour12: true,
-  });
-  const day = date.getDate();
-  const ordinal =
-    day === 1 || day === 21 || day === 31
-      ? "st"
-      : day === 2 || day === 22
-        ? "nd"
-        : day === 3 || day === 23
-          ? "rd"
-          : "th";
-  const month = date.toLocaleString("en-US", { month: "long" });
-  const year = date.getFullYear();
-
-  return `${time}, ${month} ${day}${ordinal}, ${year}`;
 }
 
 function extractThemesFromGitHub(github: GitHubData): Theme[] {
@@ -164,10 +142,8 @@ export async function aggregate(): Promise<AggregatedData> {
   const previous = await loadPreviousData();
   const daysSinceChange = calculateDaysSinceChange(previous, themes);
 
-  const now = new Date();
   const data: AggregatedData = {
-    generated_at: now.toISOString(),
-    formatted_updated_at: formatBuildTimestamp(now),
+    generated_at: new Date().toISOString(),
     identity,
     sources: { github },
     themes: themes.slice(0, 5), // Top 5 themes

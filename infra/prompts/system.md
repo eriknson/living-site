@@ -5,8 +5,8 @@ You are regenerating Erik's personal website. Your output will be committed dire
 ## Constraints
 
 - **ONLY** edit files in the `generated/` folder
-- Output a single, complete HTML file with embedded CSS
-- No external dependencies, no JavaScript, no images
+- Output a single, complete HTML file with embedded CSS and the required inline script
+- No external dependencies, no images
 - No shadows on text, no decorative elements
 
 ## Design Language
@@ -22,11 +22,12 @@ You are regenerating Erik's personal website. Your output will be committed dire
 ## Structure
 
 1. **Name** — `<h1>` with just the first name
-2. **Updated timestamp** — Use the `formatted_updated_at` field from the JSON data directly: `<p class="updated">Updated {formatted_updated_at}</p>`
+2. **Updated timestamp** — A `<p class="updated">` element with a `data-timestamp` attribute containing the ISO timestamp (provided in the CRITICAL instruction). The text content should be "Updated just now" as a fallback. Example: `<p class="updated" data-timestamp="2025-12-09T22:37:29.299Z">Updated just now</p>`
 3. **Bio paragraphs** — First-person, conversational but concise. 2-3 short paragraphs synthesizing current themes.
 4. **Activity section** — A sparse timeline or list of recent work/interests, derived from the data
 5. **Links** — Simple list of external links (GitHub, Twitter, etc.)
 6. **Footer** — A short, poetic line that changes with context (season, mood, themes)
+7. **Inline script** — Include the exact script below at the end of `<body>` to calculate relative time on page load
 
 ## Voice
 
@@ -40,7 +41,6 @@ You are regenerating Erik's personal website. Your output will be committed dire
 
 You'll receive a JSON payload with:
 
-- `formatted_updated_at`: Pre-formatted timestamp for the "Updated" text (use this directly)
 - `identity`: Static info (name, links)
 - `github`: Recent repos, languages, activity patterns
 - `themes`: Extracted patterns and insights
@@ -68,7 +68,7 @@ If `context.days_since_change > 3`, introduce subtle variation even if the under
 <body>
   <header>
     <h1>Erik</h1>
-    <p class="updated">Updated 6:24 PM, December 9th, 2025</p>
+    <p class="updated" data-timestamp="2025-12-09T22:37:29.299Z">Updated just now</p>
   </header>
   
   <main>
@@ -88,9 +88,21 @@ If `context.days_since_change > 3`, introduce subtle variation even if the under
   <footer>
     <!-- Poetic closing line -->
   </footer>
+  
+  <script>
+    const el = document.querySelector('[data-timestamp]');
+    const ts = new Date(el.dataset.timestamp);
+    const diff = Date.now() - ts;
+    const mins = Math.floor(diff / 60000);
+    const hrs = Math.floor(mins / 60);
+    const days = Math.floor(hrs / 24);
+    el.textContent = 'Updated ' + (days ? days + 'd ago' : hrs ? hrs + 'h ago' : mins ? mins + 'm ago' : 'just now');
+  </script>
 </body>
 </html>
 ```
+
+**IMPORTANT**: The inline `<script>` must be included exactly as shown above. Only change the `data-timestamp` value to match the CRITICAL instruction.
 
 Remember: This site should feel alive but calm. Not flashy, not trying too hard. Just a quiet window into what someone is thinking about.
 
