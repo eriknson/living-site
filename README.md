@@ -1,41 +1,51 @@
 # Living Site
 
-A self-regenerating personal website that reflects patterns from GitHub, Spotify, Strava, and more — synthesized daily by AI.
+A personal website that regenerates itself daily using AI. It synthesizes activity from GitHub into natural prose — no manual updates required.
 
-## Quick Links
+## How It Works
 
-- **[Product Spec](docs/product-spec.md)** — Full architecture and scope
-- **[Trigger Regeneration](../../actions/workflows/regenerate.yml)** — Manual workflow dispatch
+```
+Daily Cron (6am UTC)
+        │
+        ▼
+┌───────────────┐     ┌───────────────┐     ┌───────────────┐
+│   Aggregate   │ ──▶ │   Generate    │ ──▶ │    Deploy     │
+│  GitHub data  │     │  Cursor CLI   │     │    Vercel     │
+└───────────────┘     └───────────────┘     └───────────────┘
+```
+
+1. **Aggregate** — Fetches repos, languages, commit patterns from GitHub API. Extracts themes like "TypeScript focused" or "actively building".
+
+2. **Generate** — Cursor CLI (headless) reads the system prompt and data, then regenerates `generated/index.html` with synthesized prose.
+
+3. **Deploy** — Changes are committed and pushed, triggering Vercel auto-deploy.
 
 ## Structure
 
 ```
-generated/     ← Cursor edits this only
-public/        ← Static assets (loading screen)
-infra/         ← Protected fetchers and aggregator
-data/          ← JSON payloads (identity + latest)
+infra/
+├── fetchers/github.ts   # GitHub API client
+├── aggregator.ts        # Theme extraction
+├── prompts/system.md    # Generation rules & voice
+generated/
+└── index.html           # AI-generated site (only file Cursor edits)
+data/
+├── identity.json        # Static info (name, links)
+└── latest.json          # Aggregated data + themes
 ```
 
-## Edit Boundaries
-
-| Folder | Editable by Cursor? |
-|--------|---------------------|
-| `generated/` | Yes |
-| `infra/` | No |
-| `public/` | No |
-| `data/` | No (updated by infra scripts) |
-
-## Running Locally
+## Local Development
 
 ```bash
-# Smoke test
-./scripts/smoke.sh
-
-# Serve generated site (any static server)
-npx serve generated
+npm install
+npm run aggregate          # Fetch + extract themes
+npm run generate:api       # Generate with Anthropic API
+npm run smoke              # Validate structure
 ```
 
-## Deployment
+## Environment
 
-Vercel deploys from `generated/` + `public/`. The loading screen at `/loading/` provides a theatrical transition before showing the pre-built site.
-
+| Variable | Description |
+|----------|-------------|
+| `CURSOR_API_KEY` | For CI generation (GitHub Actions) |
+| `GITHUB_TOKEN` | For fetching GitHub data |
