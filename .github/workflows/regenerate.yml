@@ -34,6 +34,9 @@ jobs:
       - name: Install dependencies
         run: npm ci
 
+      - name: Install Cursor CLI
+        run: curl https://cursor.com/install -fsS | bash
+
       - name: Run smoke test
         run: npm run smoke
 
@@ -50,11 +53,31 @@ jobs:
           echo "=== Context ==="
           cat data/latest.json | jq '.context'
 
-      - name: Generate site
+      - name: Generate site with Cursor CLI
         if: inputs.dry_run != 'true'
         env:
-          ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
-        run: npm run generate:api
+          CURSOR_API_KEY: ${{ secrets.CURSOR_API_KEY }}
+        run: |
+          # Build the prompt
+          SYSTEM_PROMPT=$(cat infra/prompts/system.md)
+          DATA=$(cat data/latest.json)
+          
+          PROMPT="$SYSTEM_PROMPT
+
+---
+
+## Current Data
+
+\`\`\`json
+$DATA
+\`\`\`
+
+---
+
+Regenerate generated/index.html based on the data above. Output a complete HTML file with embedded CSS following the design language specified."
+
+          # Run Cursor CLI in headless mode
+          cursor-agent -p --force "$PROMPT"
 
       - name: Sync index.html from generated
         if: inputs.dry_run != 'true'
