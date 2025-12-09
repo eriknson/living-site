@@ -11,9 +11,8 @@ on:
         options:
           - 'false'
           - 'true'
-  # Uncomment for daily regeneration:
-  # schedule:
-  #   - cron: '0 6 * * *'  # 6am UTC daily
+  schedule:
+    - cron: '0 6 * * *'  # 6am UTC daily
 
 permissions:
   contents: write
@@ -51,11 +50,11 @@ jobs:
           echo "=== Context ==="
           cat data/latest.json | jq '.context'
 
-      # TODO: Cursor CLI integration
-      # For now, generation happens locally. This workflow just aggregates data.
-      # - name: Generate site
-      #   if: inputs.dry_run != 'true'
-      #   run: npm run generate
+      - name: Generate site
+        if: inputs.dry_run != 'true'
+        env:
+          ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
+        run: npm run generate:api
 
       - name: Sync index.html from generated
         if: inputs.dry_run != 'true'
