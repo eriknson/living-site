@@ -11,9 +11,15 @@ import {
   hasSpotifyCredentials,
   type SpotifyData,
 } from "./fetchers/spotify.js";
+import {
+  fetchTypefullyDataFromEnv,
+  hasTypefullyCredentials,
+  type TypefullyData,
+} from "./fetchers/typefully.js";
 import { saveSnapshot, getRecentSnapshots, type Snapshot } from "./history.js";
 import { computeGitHubBaseline } from "./baselines/github.js";
 import { computeSpotifyBaseline } from "./baselines/spotify.js";
+import { computeTypefullyBaseline } from "./baselines/typefully.js";
 import type { SourceAnalysis } from "./baseline.js";
 
 interface Identity {
@@ -57,16 +63,26 @@ function summarizeSpotify(data: SpotifyData): string {
   return `Top artist: ${topArtist}, genre: ${topGenre}`;
 }
 
+function summarizeTypefully(data: TypefullyData): string {
+  const parts = [
+    `${data.stats.total_published} posts`,
+    `${data.stats.posts_this_week} this week`,
+  ];
+  return parts.join(", ");
+}
+
 interface AggregatedData {
   generated_at: string;
   identity: Identity;
   sources: {
     github?: GitHubData;
     spotify?: SpotifyData;
+    typefully?: TypefullyData;
   };
   analysis: {
     github?: SourceAnalysis;
     spotify?: SourceAnalysis;
+    typefully?: SourceAnalysis;
   };
   narrative_signals: string[];
   context: {
@@ -221,6 +237,59 @@ export async function aggregate(): Promise<AggregatedData> {
       name: "Spotify",
       status: "skipped",
       summary: "credentials not configured",
+    });
+  }
+
+  // =========================================================================
+  // Typefully (optional) - X/Twitter posts
+  // =========================================================================
+  if (hasTypefullyCredentials()) {
+    console.log("\nFetching Typefully data...");
+    try {
+      const typefully = await fetchTypefullyDataFromEnv();
+      if (typefully) {
+        sources.typefully = typefully;
+
+        // Save to history
+        await saveSnapshot("typefully", typefully);
+        console.log("  Saved Typefully snapshot to history");
+
+        // Load history and compute baseline
+        const typefullyHistory = await getRecentSnapshots<TypefullyData>(
+          "typefully",
+          12
+        );
+        console.log(`  Loaded ${typefullyHistory.length} weeks of Typefully history`);
+
+        const typefullyAnalysis = computeTypefullyBaseline(
+          typefully,
+          typefullyHistory.slice(1)
+        );
+        analysis.typefully = typefullyAnalysis;
+        allNarrativeSignals.push(...typefullyAnalysis.narrative_signals);
+
+        console.log("  Typefully signals:", typefullyAnalysis.narrative_signals);
+
+        fetchResults.push({
+          name: "Typefully",
+          status: "success",
+          summary: summarizeTypefully(typefully),
+        });
+      }
+    } catch (err) {
+      console.error("  Failed to fetch Typefully data:", (err as Error).message);
+      fetchResults.push({
+        name: "Typefully",
+        status: "failure",
+        error: (err as Error).message,
+      });
+    }
+  } else {
+    console.log("\nTypefully API key not configured, skipping");
+    fetchResults.push({
+      name: "Typefully",
+      status: "skipped",
+      summary: "API key not configured",
     });
   }
 
