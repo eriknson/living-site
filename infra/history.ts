@@ -8,7 +8,7 @@ import { existsSync } from "fs";
 import { join } from "path";
 
 const HISTORY_DIR = "data/history";
-const MAX_WEEKS_TO_KEEP = 12;
+const MAX_WEEKS_TO_KEEP = 24;
 
 export interface Snapshot<T = unknown> {
   week: string; // ISO week format: YYYY-Www

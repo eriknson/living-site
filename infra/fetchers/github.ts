@@ -17,6 +17,9 @@ interface GitHubEvent {
   type: string;
   created_at: string;
   repo: { name: string };
+  payload?: {
+    commits?: { message: string; sha: string }[];
+  };
 }
 
 export interface GitHubData {
@@ -36,6 +39,7 @@ export interface GitHubData {
     commits: number;
     repos_touched: string[];
     most_active_day: string | null;
+    commit_messages: string[];
   };
 }
 
@@ -87,6 +91,20 @@ export async function fetchGitHubData(
   const pushEvents = events.filter((e) => e.type === "PushEvent");
   const reposTouched = [...new Set(pushEvents.map((e) => e.repo.name))];
 
+  // Extract commit messages from push events
+  const commitMessages: string[] = [];
+  for (const event of pushEvents) {
+    if (event.payload?.commits) {
+      for (const commit of event.payload.commits) {
+        // Take first line of commit message
+        const firstLine = commit.message.split("\n")[0].trim();
+        if (firstLine) {
+          commitMessages.push(firstLine);
+        }
+      }
+    }
+  }
+
   // Find most active day in last 30 days
   const dayCounts: Record<string, number> = {};
   for (const event of events) {
@@ -113,6 +131,7 @@ export async function fetchGitHubData(
       commits: pushEvents.length,
       repos_touched: reposTouched.slice(0, 5),
       most_active_day: mostActiveDay,
+      commit_messages: commitMessages.slice(0, 50), // Keep recent 50 messages
     },
   };
 }
