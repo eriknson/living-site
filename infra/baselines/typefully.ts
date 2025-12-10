@@ -1,89 +1,15 @@
 /**
  * Typefully Baseline Computer
  * Computes narrative signals from X posting patterns via Typefully
- * Also incorporates static twitter history from manual imports
+ * Historic tweets are now merged in the fetcher for unified data
  *
  * Analyzes: posting frequency, themes/tags, activity patterns
  */
 
-import { readFileSync, existsSync } from "fs";
 import type { TypefullyData, PublishedPost } from "../fetchers/typefully.js";
 import type { Snapshot } from "../history.js";
 import type { SourceAnalysis } from "../baseline.js";
 import { average, percentChange } from "../baseline.js";
-
-interface HistoricTweet {
-  text: string;
-  date: string;
-  likes: number | null;
-  retweets: number | null;
-  views: number | null;
-  has_media: boolean;
-  pinned?: boolean;
-}
-
-interface TwitterThemes {
-  core_vision: string;
-  beliefs: string[];
-  interests: string[];
-}
-
-interface TwitterHistory {
-  imported_at: string;
-  source: string;
-  username: string;
-  themes?: TwitterThemes;
-  tweets: HistoricTweet[];
-}
-
-/**
- * Load static twitter history if available
- */
-function loadTwitterHistory(): TwitterHistory | null {
-  const historyPath = "data/twitter-history.json";
-  if (!existsSync(historyPath)) {
-    return null;
-  }
-  try {
-    const content = readFileSync(historyPath, "utf-8");
-    return JSON.parse(content) as TwitterHistory;
-  } catch {
-    return null;
-  }
-}
-
-/**
- * Extract topics/themes from tweet text using keyword analysis
- */
-function extractTopicsFromText(tweets: HistoricTweet[]): string[] {
-  const topicKeywords: Record<string, string[]> = {
-    "ai agents": ["agent", "agents", "agentic"],
-    "cursor": ["cursor", "composer"],
-    "building software": ["build", "builds", "building", "ship", "shipping"],
-    "developer tools": ["cli", "code", "codebase", "prototype"],
-    "workflow": ["flow", "workflow", "iteration", "iterate"],
-    "vision & planning": ["vision", "plan", "planning", "roadmap"],
-  };
-
-  const topicCounts = new Map<string, number>();
-  const allText = tweets.map((t) => t.text.toLowerCase()).join(" ");
-
-  for (const [topic, keywords] of Object.entries(topicKeywords)) {
-    let count = 0;
-    for (const keyword of keywords) {
-      const regex = new RegExp(`\\b${keyword}\\b`, "gi");
-      const matches = allText.match(regex);
-      if (matches) count += matches.length;
-    }
-    if (count > 0) {
-      topicCounts.set(topic, count);
-    }
-  }
-
-  return [...topicCounts.entries()]
-    .sort((a, b) => b[1] - a[1])
-    .map(([topic]) => topic);
-}
 
 /**
  * Extract common themes from post content
@@ -146,7 +72,7 @@ function analyzeActivityPattern(
 
 /**
  * Compute baseline analysis for Typefully data
- * Also incorporates static twitter history for richer signals
+ * Themes and historic tweets are now included in the TypefullyData from fetcher
  */
 export function computeTypefullyBaseline(
   current: TypefullyData,
@@ -155,44 +81,13 @@ export function computeTypefullyBaseline(
   const narrativeSignals: string[] = [];
   const posts = current.published_posts;
 
-  // Load static twitter history
-  const twitterHistory = loadTwitterHistory();
-
   // Extract themes from Typefully posts (tags)
-  const themes = extractThemes(posts);
+  const tagThemes = extractThemes(posts);
 
-  // Get explicit themes from history, or fall back to text extraction
-  let coreVision: string | null = null;
-  let beliefs: string[] = [];
-  let interests: string[] = [];
-  let recentTweets: HistoricTweet[] = [];
-  let topTweet: HistoricTweet | null = null;
-
-  if (twitterHistory) {
-    // Use explicit themes if defined
-    if (twitterHistory.themes) {
-      coreVision = twitterHistory.themes.core_vision;
-      beliefs = twitterHistory.themes.beliefs;
-      interests = twitterHistory.themes.interests;
-    }
-
-    if (twitterHistory.tweets.length > 0) {
-      recentTweets = twitterHistory.tweets.slice(0, 5);
-
-      // Find highest engagement tweet
-      const tweetsWithLikes = twitterHistory.tweets.filter((t) => t.likes !== null);
-      if (tweetsWithLikes.length > 0) {
-        topTweet = tweetsWithLikes.reduce((best, current) =>
-          (current.likes || 0) > (best.likes || 0) ? current : best
-        );
-      }
-    }
-  }
-
-  // Fall back to text extraction if no explicit themes
-  const topics = interests.length > 0 
-    ? interests 
-    : (twitterHistory ? extractTopicsFromText(twitterHistory.tweets) : []);
+  // Get explicit themes from data (loaded by fetcher from twitter-history.json)
+  const coreVision = current.themes?.core_vision || null;
+  const beliefs = current.themes?.beliefs || [];
+  const interests = current.themes?.interests || [];
 
   // Calculate current frequency from Typefully
   const currentFrequency = calculatePostingFrequency(posts);
@@ -240,23 +135,15 @@ export function computeTypefullyBaseline(
   }
 
   // Interest signals
-  if (topics.length > 0) {
-    narrativeSignals.push(`interested in ${topics.join(", ")}`);
+  if (interests.length > 0) {
+    narrativeSignals.push(`interested in ${interests.join(", ")}`);
   }
 
-  // Top performing tweet signal
-  if (topTweet && topTweet.likes && topTweet.likes > 1000) {
-    const preview = topTweet.text.length > 40 
-      ? topTweet.text.slice(0, 40) + "..." 
-      : topTweet.text;
-    narrativeSignals.push(`viral tweet: "${preview}" (${(topTweet.likes / 1000).toFixed(0)}K likes)`);
-  }
-
-  // Activity pattern signals from Typefully
+  // Activity pattern signals
   if (activityPattern === "burst") {
     narrativeSignals.push("posting actively on X this week");
-  } else if (activityPattern === "quiet" && twitterHistory) {
-    // Only mention quiet if we have history showing they usually post
+  } else if (activityPattern === "quiet" && posts.length > 0) {
+    // Only mention quiet if we have posts showing they usually post
     narrativeSignals.push("quiet week on X");
   }
 
@@ -271,14 +158,14 @@ export function computeTypefullyBaseline(
   }
 
   // Theme signals from Typefully tags
-  if (themes.length > 0) {
-    const topThemes = themes.slice(0, 3);
+  if (tagThemes.length > 0) {
+    const topThemes = tagThemes.slice(0, 3);
     if (topThemes.length > 1) {
       narrativeSignals.push(`tags: ${topThemes.join(", ")}`);
     }
   }
 
-  // Recent posts signal from Typefully
+  // Recent posts signal
   const recentPosts = posts.slice(0, 3);
   if (recentPosts.length > 0 && recentPosts[0].preview) {
     const daysSinceLastPost = Math.floor(
@@ -294,35 +181,24 @@ export function computeTypefullyBaseline(
     }
   }
 
-  // If no signals from Typefully but we have history, use that
-  if (narrativeSignals.length === 0 && twitterHistory) {
-    narrativeSignals.push(`${twitterHistory.tweets.length} recent tweets on record`);
+  // If no signals but we have posts, add a default
+  if (narrativeSignals.length === 0 && posts.length > 0) {
+    narrativeSignals.push(`${posts.length} posts on X`);
   }
 
-  // Build recent tweets list combining both sources
-  const allRecentTweets = [
-    ...recentTweets.map((t) => ({
-      preview: t.text,
-      published_at: t.date,
-      url: null as string | null,
-      likes: t.likes,
-    })),
-    ...posts.slice(0, 5).map((p) => ({
-      preview: p.preview,
-      published_at: p.published_at,
-      url: p.x_published_url,
-      likes: null as number | null,
-    })),
-  ]
-    .sort((a, b) => new Date(b.published_at).getTime() - new Date(a.published_at).getTime())
-    .slice(0, 5);
+  // Build recent tweets list
+  const allRecentTweets = posts.slice(0, 5).map((p) => ({
+    preview: p.preview,
+    published_at: p.published_at,
+    url: p.x_published_url,
+  }));
 
   return {
     identity: {
       core_vision: coreVision,
       beliefs,
-      interests: topics,
-      themes,
+      interests,
+      tags: tagThemes,
       average_frequency: historicalFrequency || currentFrequency,
       posting_style:
         currentFrequency > 5
@@ -330,9 +206,6 @@ export function computeTypefullyBaseline(
           : currentFrequency > 2
             ? "regular"
             : "occasional",
-      top_tweet: topTweet
-        ? { text: topTweet.text, likes: topTweet.likes, date: topTweet.date }
-        : null,
     },
     current_phase: {
       activity_pattern: activityPattern,

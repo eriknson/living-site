@@ -1,7 +1,10 @@
 /**
  * Typefully Fetcher
  * Fetches published posts from X via the Typefully API
+ * Also merges historic tweets from twitter-history.json for continuity
  */
+
+import { readFileSync, existsSync } from "fs";
 
 const TYPEFULLY_API = "https://api.typefully.com";
 
@@ -45,6 +48,12 @@ export interface PublishedPost {
   tags: string[];
 }
 
+export interface TwitterThemes {
+  core_vision: string;
+  beliefs: string[];
+  interests: string[];
+}
+
 export interface TypefullyData {
   fetched_at: string;
   social_set: {
@@ -53,11 +62,62 @@ export interface TypefullyData {
     name: string;
   };
   published_posts: PublishedPost[];
+  themes: TwitterThemes | null;
   stats: {
     total_published: number;
     posts_this_week: number;
     posts_this_month: number;
   };
+}
+
+interface HistoricTweet {
+  text: string;
+  date: string;
+  likes: number | null;
+  retweets: number | null;
+  views: number | null;
+  has_media: boolean;
+  pinned?: boolean;
+}
+
+interface TwitterHistory {
+  imported_at: string;
+  source: string;
+  username: string;
+  themes?: TwitterThemes;
+  tweets: HistoricTweet[];
+}
+
+/**
+ * Load historic tweets from twitter-history.json and convert to PublishedPost format
+ */
+function loadHistoricTweets(): { posts: PublishedPost[]; themes: TwitterThemes | null } {
+  const historyPath = "data/twitter-history.json";
+  if (!existsSync(historyPath)) {
+    return { posts: [], themes: null };
+  }
+
+  try {
+    const content = readFileSync(historyPath, "utf-8");
+    const history: TwitterHistory = JSON.parse(content);
+
+    // Convert historic tweets to PublishedPost format
+    // Use negative IDs to distinguish from real Typefully IDs
+    const posts: PublishedPost[] = history.tweets.map((tweet, index) => ({
+      id: -(index + 1), // Negative IDs for historic posts
+      preview: tweet.text,
+      published_at: tweet.date,
+      x_published_url: null, // We don't have URLs from screenshots
+      tags: [], // No tags from historic tweets
+    }));
+
+    return {
+      posts,
+      themes: history.themes || null,
+    };
+  } catch {
+    return { posts: [], themes: null };
+  }
 }
 
 /**
@@ -138,6 +198,7 @@ async function fetchAllPublishedDrafts(
 
 /**
  * Main fetch function - gets published X posts from Typefully
+ * Also merges historic tweets for continuity
  */
 export async function fetchTypefullyData(
   apiKey: string
@@ -155,11 +216,11 @@ export async function fetchTypefullyData(
   // Use the first social set (primary account)
   const socialSet = socialSets.results[0];
 
-  // Fetch published drafts
+  // Fetch published drafts from API
   const drafts = await fetchAllPublishedDrafts(apiKey, socialSet.id);
 
   // Filter for X-enabled posts with published URLs
-  const xPosts = drafts
+  const apiPosts = drafts
     .filter((d) => d.x_post_enabled && d.published_at)
     .map((d) => ({
       id: d.id,
@@ -167,13 +228,40 @@ export async function fetchTypefullyData(
       published_at: d.published_at!,
       x_published_url: d.x_published_url,
       tags: d.tags || [],
-    }))
-    .sort(
-      (a, b) =>
-        new Date(b.published_at).getTime() - new Date(a.published_at).getTime()
-    );
+    }));
 
-  const stats = calculateStats(xPosts);
+  // Load historic tweets and merge
+  const { posts: historicPosts, themes } = loadHistoricTweets();
+
+  // Combine and dedupe by preview text (in case same tweet in both sources)
+  const seenPreviews = new Set<string>();
+  const allPosts: PublishedPost[] = [];
+
+  // API posts take priority (they have real IDs and URLs)
+  for (const post of apiPosts) {
+    const normalizedPreview = post.preview.toLowerCase().trim();
+    if (!seenPreviews.has(normalizedPreview)) {
+      seenPreviews.add(normalizedPreview);
+      allPosts.push(post);
+    }
+  }
+
+  // Add historic posts that aren't duplicates
+  for (const post of historicPosts) {
+    const normalizedPreview = post.preview.toLowerCase().trim();
+    if (!seenPreviews.has(normalizedPreview)) {
+      seenPreviews.add(normalizedPreview);
+      allPosts.push(post);
+    }
+  }
+
+  // Sort by date (newest first)
+  allPosts.sort(
+    (a, b) =>
+      new Date(b.published_at).getTime() - new Date(a.published_at).getTime()
+  );
+
+  const stats = calculateStats(allPosts);
 
   return {
     fetched_at: new Date().toISOString(),
@@ -182,7 +270,8 @@ export async function fetchTypefullyData(
       username: socialSet.username,
       name: socialSet.name,
     },
-    published_posts: xPosts,
+    published_posts: allPosts,
+    themes,
     stats,
   };
 }
