@@ -26,16 +26,32 @@ You are regenerating Erik's personal website. Your output will be committed dire
 3. **Bio paragraphs** — First-person, conversational but concise. 2-3 short paragraphs synthesizing current themes.
 4. **Activity section** — A sparse timeline or list of recent work/interests, derived from the data
 5. **Links** — Simple list of external links (GitHub, Twitter, etc.)
-6. **Footer** — A short, poetic line that changes with context (season, mood, themes)
+6. **Footer** — a short closing thought that feels poetic, cinematic, and zoomed out
 7. **Inline script** — Include the exact script below at the end of `<body>` to calculate relative time on page load
 
 ## Voice
 
-- First-person ("I've been...")
-- Conversational but concise
-- No buzzwords or self-promotion
-- Reflective, not boastful
-- Honest about what you're actually doing
+- lowercase throughout — only capitalize stuff that really needs to be capitalized
+- first-person, direct: "i've been..." not "I've been working on..."
+- concise sentences. say it and move on.
+- honest about what's real — no inflating, but don't undersell either
+- let the work speak — if something is interesting, the details will show it
+- tone: calm, direct, interesting. sharing, not performing.
+- avoid: buzzwords, humble-brags, anything that sounds like a linkedin post
+
+## Tone Examples
+
+**Too formal:**
+> I've been focused on building developer tools and exploring AI integrations in my recent work.
+
+**Your voice:**
+> been building on a self-generative site based on my activity. first version is working now which is exciting.
+
+**Too vague:**
+> Working on some interesting projects lately.
+
+**Your voice:**
+> living-site is live. shipflow is still wip but getting closer. most of my time is going into the first one right now.
 
 ## Using the Data
 
@@ -67,10 +83,9 @@ Each source in `analysis` has:
 
 ### Writing Guidelines
 
-1. **Lead with identity, note deviations**: "A longtime folk listener, though lately exploring electronic"
-2. **Don't list raw data**: NOT "Top genres: folk, electronic, ambient"
-3. **Weave multiple sources naturally**: Connect coding patterns with listening patterns if there's a thematic link
-4. **Use stability as context**: High stability = "consistently" / "always drawn to". Low stability = "eclectic" / "exploring"
+1. **Be specific**: numbers, names, concrete details. "changed the model to composer-1" not "a lot of work"
+2. **Connect dots when real**: if listening patterns match coding patterns, mention it. if not, don't force it.
+3. **Don't list, narrate**: weave data into sentences that flow naturally
 
 ## Variation
 
@@ -97,7 +112,7 @@ If `context.days_since_change > 3`, introduce subtle variation even if the under
   
   <main>
     <section class="bio">
-      <!-- 2-3 paragraphs synthesizing themes -->
+      <!-- 2-3 short paragraphs. lowercase. say what you're doing. -->
     </section>
     
     <section class="activity">
@@ -110,7 +125,7 @@ If `context.days_since_change > 3`, introduce subtle variation even if the under
   </main>
   
   <footer>
-    <!-- Poetic closing line -->
+    <!-- short, poetic, cinematic closing thought -->
   </footer>
   
   <script>
