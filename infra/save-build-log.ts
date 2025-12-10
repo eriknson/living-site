@@ -7,7 +7,20 @@ import { readFile, writeFile } from "fs/promises";
 import { existsSync } from "fs";
 
 const HISTORY_PATH = "builds/history.json";
+const FETCH_SUMMARY_PATH = "data/fetch-summary.json";
 const MAX_BUILDS = 20;
+
+interface FetchSourceResult {
+  name: string;
+  status: "success" | "failure" | "skipped";
+  error?: string;
+  summary?: string;
+}
+
+interface FetchSummary {
+  timestamp: string;
+  sources: FetchSourceResult[];
+}
 
 interface StreamEvent {
   type: "system" | "assistant" | "tool_call" | "result";
@@ -200,6 +213,39 @@ async function loadHistory(): Promise<BuildHistory> {
   }
 }
 
+async function loadAndFormatFetchSummary(): Promise<string | null> {
+  if (!existsSync(FETCH_SUMMARY_PATH)) {
+    return null;
+  }
+  
+  try {
+    const content = await readFile(FETCH_SUMMARY_PATH, "utf-8");
+    const summary: FetchSummary = JSON.parse(content);
+    
+    const fetchDate = new Date(summary.timestamp);
+    const parts: string[] = [
+      "=== Data Fetch ===",
+      `Fetched at ${formatTimestamp(fetchDate)}`,
+      "",
+    ];
+    
+    for (const source of summary.sources) {
+      parts.push(`[${source.name}] ${source.status}`);
+      if (source.summary) {
+        parts.push(`  ${source.summary}`);
+      }
+      if (source.error) {
+        parts.push(`  Error: ${source.error}`);
+      }
+      parts.push("");
+    }
+    
+    return parts.join("\n");
+  } catch {
+    return null;
+  }
+}
+
 async function saveBuildLog(outputPath: string): Promise<void> {
   let rawOutput: string;
   try {
@@ -212,6 +258,12 @@ async function saveBuildLog(outputPath: string): Promise<void> {
   const { formatted, status, duration_ms, model } = parseStreamJson(rawOutput);
   const finalStatus = existsSync("generated/index.html") ? "success" : status;
 
+  // Load fetch summary and prepend to output
+  const fetchSummary = await loadAndFormatFetchSummary();
+  const fullOutput = fetchSummary 
+    ? `${fetchSummary}${formatted || rawOutput}`
+    : (formatted || rawOutput);
+
   const now = new Date();
   const entry: BuildEntry = {
     id: generateId(),
@@ -220,7 +272,7 @@ async function saveBuildLog(outputPath: string): Promise<void> {
     status: finalStatus,
     duration_ms,
     model,
-    agent_output: formatted || rawOutput,
+    agent_output: fullOutput,
   };
 
   const history = await loadHistory();

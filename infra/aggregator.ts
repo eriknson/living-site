@@ -1,10 +1,20 @@
 /**
  * Aggregator
- * Combines raw data from fetchers into themes and builds the payload for generation
+ * Combines raw data from fetchers, stores history, computes baselines,
+ * and builds the payload for generation with narrative signals
  */
 
 import { readFile, writeFile } from "fs/promises";
 import { fetchGitHubData, type GitHubData } from "./fetchers/github.js";
+import {
+  fetchSpotifyDataFromEnv,
+  hasSpotifyCredentials,
+  type SpotifyData,
+} from "./fetchers/spotify.js";
+import { saveSnapshot, getRecentSnapshots, type Snapshot } from "./history.js";
+import { computeGitHubBaseline } from "./baselines/github.js";
+import { computeSpotifyBaseline } from "./baselines/spotify.js";
+import type { SourceAnalysis } from "./baseline.js";
 
 interface Identity {
   name: string;
@@ -16,11 +26,35 @@ interface Identity {
   github: string;
 }
 
-interface Theme {
-  label: string;
-  confidence: number; // 0-1
-  source: string;
-  detail?: string;
+interface FetchSourceResult {
+  name: string;
+  status: "success" | "failure" | "skipped";
+  error?: string;
+  summary?: string;
+}
+
+export interface FetchSummary {
+  timestamp: string;
+  sources: FetchSourceResult[];
+}
+
+function summarizeGitHub(data: GitHubData): string {
+  const topLang = Object.entries(data.languages)
+    .sort((a, b) => b[1] - a[1])[0];
+  const parts = [
+    `${data.recent_activity.total_events} events`,
+    `${data.recent_activity.repos_touched.length} repos touched`,
+  ];
+  if (topLang) {
+    parts.push(`top: ${topLang[0]} (${topLang[1]} repos)`);
+  }
+  return parts.join(", ");
+}
+
+function summarizeSpotify(data: SpotifyData): string {
+  const topArtist = data.short_term.artists[0]?.name || "unknown";
+  const topGenre = data.short_term.genres[0] || "unknown";
+  return `Top artist: ${topArtist}, genre: ${topGenre}`;
 }
 
 interface AggregatedData {
@@ -28,9 +62,13 @@ interface AggregatedData {
   identity: Identity;
   sources: {
     github?: GitHubData;
-    // Future: spotify, strava, notion, weather
+    spotify?: SpotifyData;
   };
-  themes: Theme[];
+  analysis: {
+    github?: SourceAnalysis;
+    spotify?: SourceAnalysis;
+  };
+  narrative_signals: string[];
   context: {
     season: string;
     days_since_change: number;
@@ -45,108 +83,164 @@ function getSeason(): string {
   return "winter";
 }
 
-function extractThemesFromGitHub(github: GitHubData): Theme[] {
-  const themes: Theme[] = [];
-
-  // Language focus
-  const sortedLangs = Object.entries(github.languages).sort(
-    (a, b) => b[1] - a[1]
-  );
-  if (sortedLangs.length > 0) {
-    const [topLang, count] = sortedLangs[0];
-    themes.push({
-      label: `${topLang} focused`,
-      confidence: Math.min(count / 10, 1),
-      source: "github",
-      detail: `${count} repos in ${topLang}`,
-    });
-  }
-
-  // Activity level
-  const { commits, repos_touched } = github.recent_activity;
-  if (commits > 20) {
-    themes.push({
-      label: "actively building",
-      confidence: 0.9,
-      source: "github",
-      detail: `${commits} commits across ${repos_touched.length} repos recently`,
-    });
-  } else if (commits > 5) {
-    themes.push({
-      label: "steadily coding",
-      confidence: 0.7,
-      source: "github",
-      detail: `${commits} commits recently`,
-    });
-  }
-
-  // Recent project focus
-  const recentRepos = github.repos.slice(0, 3);
-  for (const repo of recentRepos) {
-    if (repo.description) {
-      themes.push({
-        label: `working on ${repo.name}`,
-        confidence: 0.8,
-        source: "github",
-        detail: repo.description,
-      });
-    }
-  }
-
-  return themes;
-}
-
-async function loadPreviousData(): Promise<AggregatedData | null> {
+async function loadPreviousSignals(): Promise<string[] | null> {
   try {
     const content = await readFile("data/latest.json", "utf-8");
-    return JSON.parse(content);
+    const data = JSON.parse(content) as AggregatedData;
+    return data.narrative_signals || null;
   } catch {
     return null;
   }
 }
 
 function calculateDaysSinceChange(
-  previous: AggregatedData | null,
-  current: Theme[]
+  previousSignals: string[] | null,
+  currentSignals: string[]
 ): number {
-  if (!previous) return 0;
+  if (!previousSignals) return 0;
 
-  const prevLabels = new Set(previous.themes.map((t) => t.label));
-  const currLabels = new Set(current.map((t) => t.label));
+  // Check if signals have meaningfully changed
+  const prevSet = new Set(previousSignals);
+  const currSet = new Set(currentSignals);
 
-  // Check if themes have meaningfully changed
-  const hasNewThemes = [...currLabels].some((l) => !prevLabels.has(l));
-  if (hasNewThemes) return 0;
+  // If more than 30% of signals are new, consider it changed
+  const newSignals = [...currSet].filter((s) => !prevSet.has(s));
+  if (newSignals.length / currentSignals.length > 0.3) return 0;
 
-  return previous.context.days_since_change + 1;
+  // Load previous days_since_change
+  try {
+    const content = require("fs").readFileSync("data/latest.json", "utf-8");
+    const data = JSON.parse(content) as AggregatedData;
+    return (data.context?.days_since_change || 0) + 1;
+  } catch {
+    return 0;
+  }
 }
 
 export async function aggregate(): Promise<AggregatedData> {
+  console.log("Starting aggregation...\n");
+
   // Load identity
   const identityRaw = await readFile("data/identity.json", "utf-8");
   const identity: Identity = JSON.parse(identityRaw);
 
-  // Fetch from sources
-  const github = await fetchGitHubData(
-    identity.github,
-    process.env.GITHUB_TOKEN
+  const sources: AggregatedData["sources"] = {};
+  const analysis: AggregatedData["analysis"] = {};
+  const allNarrativeSignals: string[] = [];
+  const fetchResults: FetchSourceResult[] = [];
+
+  // =========================================================================
+  // GitHub
+  // =========================================================================
+  console.log("Fetching GitHub data...");
+  try {
+    const github = await fetchGitHubData(
+      identity.github,
+      process.env.GITHUB_TOKEN
+    );
+    sources.github = github;
+
+    // Save to history
+    await saveSnapshot("github", github);
+    console.log("  Saved GitHub snapshot to history");
+
+    // Load history and compute baseline
+    const githubHistory = await getRecentSnapshots<GitHubData>("github", 12);
+    console.log(`  Loaded ${githubHistory.length} weeks of GitHub history`);
+
+    const githubAnalysis = computeGitHubBaseline(
+      github,
+      githubHistory.slice(1) // Exclude current week (we just saved it)
+    );
+    analysis.github = githubAnalysis;
+    allNarrativeSignals.push(...githubAnalysis.narrative_signals);
+
+    console.log("  GitHub signals:", githubAnalysis.narrative_signals);
+
+    fetchResults.push({
+      name: "GitHub",
+      status: "success",
+      summary: summarizeGitHub(github),
+    });
+  } catch (err) {
+    console.error("  Failed to fetch GitHub data:", (err as Error).message);
+    fetchResults.push({
+      name: "GitHub",
+      status: "failure",
+      error: (err as Error).message,
+    });
+  }
+
+  // =========================================================================
+  // Spotify (optional)
+  // =========================================================================
+  if (hasSpotifyCredentials()) {
+    console.log("\nFetching Spotify data...");
+    try {
+      const spotify = await fetchSpotifyDataFromEnv();
+      if (spotify) {
+        sources.spotify = spotify;
+
+        // Save to history
+        await saveSnapshot("spotify", spotify);
+        console.log("  Saved Spotify snapshot to history");
+
+        // Load history and compute baseline
+        const spotifyHistory = await getRecentSnapshots<SpotifyData>(
+          "spotify",
+          12
+        );
+        console.log(`  Loaded ${spotifyHistory.length} weeks of Spotify history`);
+
+        const spotifyAnalysis = computeSpotifyBaseline(
+          spotify,
+          spotifyHistory.slice(1)
+        );
+        analysis.spotify = spotifyAnalysis;
+        allNarrativeSignals.push(...spotifyAnalysis.narrative_signals);
+
+        console.log("  Spotify signals:", spotifyAnalysis.narrative_signals);
+
+        fetchResults.push({
+          name: "Spotify",
+          status: "success",
+          summary: summarizeSpotify(spotify),
+        });
+      }
+    } catch (err) {
+      console.error("  Failed to fetch Spotify data:", (err as Error).message);
+      fetchResults.push({
+        name: "Spotify",
+        status: "failure",
+        error: (err as Error).message,
+      });
+    }
+  } else {
+    console.log("\nSpotify credentials not configured, skipping");
+    fetchResults.push({
+      name: "Spotify",
+      status: "skipped",
+      summary: "credentials not configured",
+    });
+  }
+
+  // =========================================================================
+  // Build final output
+  // =========================================================================
+
+  // Load previous signals for change detection
+  const previousSignals = await loadPreviousSignals();
+  const daysSinceChange = calculateDaysSinceChange(
+    previousSignals,
+    allNarrativeSignals
   );
-
-  // Extract themes
-  const themes: Theme[] = [...extractThemesFromGitHub(github)];
-
-  // Sort by confidence
-  themes.sort((a, b) => b.confidence - a.confidence);
-
-  // Load previous data for change detection
-  const previous = await loadPreviousData();
-  const daysSinceChange = calculateDaysSinceChange(previous, themes);
 
   const data: AggregatedData = {
     generated_at: new Date().toISOString(),
     identity,
-    sources: { github },
-    themes: themes.slice(0, 5), // Top 5 themes
+    sources,
+    analysis,
+    narrative_signals: allNarrativeSignals,
     context: {
       season: getSeason(),
       days_since_change: daysSinceChange,
@@ -156,6 +250,17 @@ export async function aggregate(): Promise<AggregatedData> {
   // Write to latest.json
   await writeFile("data/latest.json", JSON.stringify(data, null, 2));
 
+  // Write fetch summary for build logs
+  const fetchSummary: FetchSummary = {
+    timestamp: new Date().toISOString(),
+    sources: fetchResults,
+  };
+  await writeFile("data/fetch-summary.json", JSON.stringify(fetchSummary, null, 2));
+
+  console.log("\n✓ Aggregation complete");
+  console.log(`  Total narrative signals: ${allNarrativeSignals.length}`);
+  console.log(`  Days since meaningful change: ${daysSinceChange}`);
+
   return data;
 }
 
@@ -163,10 +268,9 @@ export async function aggregate(): Promise<AggregatedData> {
 if (import.meta.url === `file://${process.argv[1]}`) {
   aggregate()
     .then((data) => {
-      console.log("Aggregated data written to data/latest.json");
-      console.log(`\nThemes found: ${data.themes.length}`);
-      for (const theme of data.themes) {
-        console.log(`  - ${theme.label} (${theme.source})`);
+      console.log("\n=== Narrative Signals ===");
+      for (const signal of data.narrative_signals) {
+        console.log(`  • ${signal}`);
       }
     })
     .catch((err) => {
@@ -174,4 +278,3 @@ if (import.meta.url === `file://${process.argv[1]}`) {
       process.exit(1);
     });
 }
-

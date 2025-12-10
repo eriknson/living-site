@@ -42,11 +42,35 @@ You are regenerating Erik's personal website. Your output will be committed dire
 You'll receive a JSON payload with:
 
 - `identity`: Static info (name, links)
-- `github`: Recent repos, languages, activity patterns
-- `themes`: Extracted patterns and insights
-- `context`: Season, weather, days since last change
+- `sources`: Raw data from GitHub, Spotify, etc.
+- `analysis`: Per-source analysis with identity patterns, current phase, and stability scores
+- `narrative_signals`: **Pre-computed insights designed for natural prose** — USE THESE
+- `context`: Season, days since last change
 
-Use this data to write about what Erik is actually building and thinking about. Don't list raw data — synthesize it into natural prose.
+### Narrative Signals (Most Important)
+
+The `narrative_signals` array contains pre-computed insights that are ready to weave into prose. **Prioritize these over raw data.** They capture both long-term identity and recent deviations:
+
+Examples:
+- "consistently working in TypeScript and JavaScript"
+- "coding activity noticeably up (35 commits vs typical 20)"
+- "consistently drawn to folk, indie, acoustic"
+- "recently exploring ambient (new for you)"
+
+### Per-Source Analysis
+
+Each source in `analysis` has:
+- `identity`: Long-term stable patterns (who you are)
+- `current_phase`: Recent deviations (what's different lately)
+- `stability_score`: 0-1, how consistent over time
+- `narrative_signals`: Source-specific insights
+
+### Writing Guidelines
+
+1. **Lead with identity, note deviations**: "A longtime folk listener, though lately exploring electronic"
+2. **Don't list raw data**: NOT "Top genres: folk, electronic, ambient"
+3. **Weave multiple sources naturally**: Connect coding patterns with listening patterns if there's a thematic link
+4. **Use stability as context**: High stability = "consistently" / "always drawn to". Low stability = "eclectic" / "exploring"
 
 ## Variation
 
