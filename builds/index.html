@@ -16,7 +16,7 @@
       color: #333;
       max-width: 800px;
       margin: 0 auto;
-      padding: 4rem 1.5rem;
+      padding: 3rem 1rem;
       line-height: 1.6;
     }
     h1 {
@@ -27,11 +27,11 @@
     .subtitle {
       font-size: 0.875rem;
       color: #666;
-      margin-bottom: 2.5rem;
+      margin-bottom: 2rem;
     }
     .back-link {
       display: inline-block;
-      margin-bottom: 2rem;
+      margin-bottom: 1.5rem;
       color: #0066cc;
       text-decoration: none;
       font-size: 0.875rem;
@@ -52,11 +52,12 @@
       overflow: hidden;
     }
     .build-header {
-      padding: 1rem 1.25rem;
+      padding: 0.875rem 1rem;
       cursor: pointer;
       display: flex;
       justify-content: space-between;
-      align-items: center;
+      align-items: flex-start;
+      gap: 0.75rem;
       user-select: none;
     }
     .build-header:hover {
@@ -64,40 +65,31 @@
     }
     .build-info {
       display: flex;
-      align-items: center;
-      gap: 0.75rem;
-    }
-    .build-status {
-      width: 8px;
-      height: 8px;
-      border-radius: 50%;
-    }
-    .build-status.success {
-      background: #22c55e;
-    }
-    .build-status.failure {
-      background: #ef4444;
+      flex-direction: column;
+      gap: 0.25rem;
+      min-width: 0;
     }
     .build-time {
       font-size: 0.9375rem;
       font-weight: 500;
     }
-    .build-id {
-      font-size: 0.75rem;
-      color: #999;
-      font-family: monospace;
+    .build-meta {
+      font-size: 0.8125rem;
+      color: #666;
     }
     .build-chevron {
       font-size: 0.75rem;
       color: #999;
       transition: transform 0.2s ease;
+      flex-shrink: 0;
+      padding-top: 0.125rem;
     }
     .build-item.open .build-chevron {
       transform: rotate(180deg);
     }
     .build-content {
       display: none;
-      padding: 0 1.25rem 1.25rem;
+      padding: 0 1rem 1rem;
       border-top: 1px solid #eee;
     }
     .build-item.open .build-content {
@@ -109,7 +101,7 @@
       padding: 1rem;
       border-radius: 6px;
       font-family: "SF Mono", Monaco, "Cascadia Code", monospace;
-      font-size: 0.8125rem;
+      font-size: 0.75rem;
       line-height: 1.5;
       overflow-x: auto;
       white-space: pre-wrap;
@@ -119,13 +111,28 @@
     }
     .empty-state {
       text-align: center;
-      padding: 3rem;
+      padding: 3rem 1rem;
       color: #666;
     }
     .loading {
       text-align: center;
-      padding: 3rem;
+      padding: 3rem 1rem;
       color: #666;
+    }
+    @media (max-width: 480px) {
+      body {
+        padding: 2rem 0.875rem;
+      }
+      .build-header {
+        padding: 0.75rem;
+      }
+      .build-content {
+        padding: 0 0.75rem 0.75rem;
+      }
+      .build-output {
+        padding: 0.75rem;
+        font-size: 0.6875rem;
+      }
     }
   </style>
 </head>
@@ -146,6 +153,43 @@
   </main>
 
   <script>
+    function relativeTime(timestamp) {
+      const now = Date.now();
+      const date = new Date(timestamp);
+      const seconds = Math.floor((now - date.getTime()) / 1000);
+      
+      if (seconds < 60) return 'just now';
+      if (seconds < 3600) {
+        const mins = Math.floor(seconds / 60);
+        return `${mins} minute${mins === 1 ? '' : 's'} ago`;
+      }
+      if (seconds < 86400) {
+        const hours = Math.floor(seconds / 3600);
+        return `${hours} hour${hours === 1 ? '' : 's'} ago`;
+      }
+      if (seconds < 604800) {
+        const days = Math.floor(seconds / 86400);
+        return `${days} day${days === 1 ? '' : 's'} ago`;
+      }
+      if (seconds < 2592000) {
+        const weeks = Math.floor(seconds / 604800);
+        return `${weeks} week${weeks === 1 ? '' : 's'} ago`;
+      }
+      const months = Math.floor(seconds / 2592000);
+      return `${months} month${months === 1 ? '' : 's'} ago`;
+    }
+    
+    function formatDuration(ms) {
+      if (!ms) return '';
+      const seconds = ms / 1000;
+      return seconds < 10 ? seconds.toFixed(1) + 's' : Math.round(seconds) + 's';
+    }
+    
+    function formatAgent(model) {
+      if (!model) return 'Agent';
+      return model.replace(/\s+/g, '-');
+    }
+    
     async function loadBuilds() {
       const loadingEl = document.getElementById('loading');
       const listEl = document.getElementById('builds-list');
@@ -163,13 +207,18 @@
         }
         
         listEl.style.display = 'block';
-        listEl.innerHTML = data.builds.map(build => `
+        listEl.innerHTML = data.builds.map(build => {
+          const timeAgo = relativeTime(build.timestamp);
+          const duration = formatDuration(build.duration_ms);
+          const agent = formatAgent(build.model);
+          const meta = duration ? `Built by ${agent} in ${duration}` : `Built by ${agent}`;
+          
+          return `
           <li class="build-item" data-id="${build.id}">
             <div class="build-header" onclick="toggleBuild('${build.id}')">
               <div class="build-info">
-                <span class="build-status ${build.status}"></span>
-                <span class="build-time">${build.formatted_timestamp}</span>
-                <span class="build-id">${build.id}</span>
+                <span class="build-time">${timeAgo}</span>
+                <span class="build-meta">${meta}</span>
               </div>
               <span class="build-chevron">▼</span>
             </div>
@@ -177,7 +226,7 @@
               <pre class="build-output">${escapeHtml(build.agent_output)}</pre>
             </div>
           </li>
-        `).join('');
+        `}).join('');
       } catch (err) {
         loadingEl.textContent = 'Failed to load build history';
         console.error('Failed to load builds:', err);
