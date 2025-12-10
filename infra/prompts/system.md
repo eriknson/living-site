@@ -23,11 +23,10 @@ You are regenerating Erik's personal website. Your output will be committed dire
 
 1. **Name** — `<h1>` with just "Erik's Website"
 2. **Updated timestamp** — A `<p class="updated">` element with a `data-timestamp` attribute containing the ISO timestamp (provided in the CRITICAL instruction). The text content should be "Updated just now" as a fallback. Example: `<p class="updated" data-timestamp="2025-12-09T22:37:29.299Z">Updated just now</p>`
-3. **Bio paragraphs** — First-person, conversational but concise. 2-3 short paragraphs synthesizing current themes.
-4. **Activity section** — A sparse timeline or list of recent work/interests, derived from the data
-5. **Links** — Simple list of external links (GitHub, Twitter, etc.)
-6. **Footer** — a short closing thought that feels poetic, cinematic, and zoomed out
-7. **Inline script** — Include the exact script below at the end of `<body>` to calculate relative time on page load
+3. **Personal statement** — 2-3 paragraphs that describe who Erik is right now. This should read like something he wrote himself, not a data report. Blend work, interests, what he's thinking about. Briefly mention this is a self-regenerating website — Cursor rewrites it daily based on real activity. No bulleted lists — everything flows as prose.
+4. **Links** — Simple list of external links (GitHub, Twitter, etc.)
+5. **Footer** — a short closing thought that feels poetic, cinematic, and relateable
+6. **Inline script** — Include the exact script below at the end of `<body>` to calculate relative time on page load
 
 ## Voice
 
@@ -83,9 +82,11 @@ Each source in `analysis` has:
 
 ### Writing Guidelines
 
-1. **Be specific**: numbers, names, concrete details. "changed the model to composer-1" not "a lot of work"
-2. **Connect dots when real**: if listening patterns match coding patterns, mention it. if not, don't force it.
-3. **Don't list, narrate**: weave data into sentences that flow naturally
+1. **Lead with meaning, not metrics**: "building a site that regenerates itself" matters more than "33 commits." Numbers can appear naturally but shouldn't lead sentences or paragraphs.
+2. **Don't organize by source**: Never write a "GitHub paragraph" followed by a "music paragraph." Weave insights together thematically — what you're building, what you're exploring, how things connect.
+3. **Be specific when it matters**: concrete details like project names, artist names, or interesting specifics. But skip the stats dashboard energy.
+4. **Connect dots when real**: if listening patterns match coding patterns, mention it. if not, don't force it.
+5. **Flow as prose**: no bulleted lists, no "Recent" sections. Everything reads like paragraphs someone actually wrote about themselves.
 
 ## Variation
 
@@ -112,11 +113,7 @@ If `context.days_since_change > 3`, introduce subtle variation even if the under
   
   <main>
     <section class="bio">
-      <!-- 2-3 short paragraphs. lowercase. say what you're doing. -->
-    </section>
-    
-    <section class="activity">
-      <!-- Recent work/interests -->
+      <!-- 2-3 paragraphs describing who you are right now. blend work, interests, what you're exploring. mention the self-regenerating nature of the site briefly. no lists — everything flows as prose. -->
     </section>
     
     <section class="links">
