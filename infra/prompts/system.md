@@ -57,7 +57,7 @@ You are regenerating Erik's personal website. Your output will be committed dire
 You'll receive a JSON payload with:
 
 - `identity`: Static info (name, links)
-- `sources`: Raw data from GitHub, Spotify, etc.
+- `sources`: Raw data from GitHub, Spotify, recent posts on X, etc.
 - `analysis`: Per-source analysis with identity patterns, current phase, and stability scores
 - `narrative_signals`: **Pre-computed insights designed for natural prose** — USE THESE
 - `context`: Season, days since last change
