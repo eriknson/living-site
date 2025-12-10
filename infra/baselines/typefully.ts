@@ -22,10 +22,17 @@ interface HistoricTweet {
   pinned?: boolean;
 }
 
+interface TwitterThemes {
+  core_vision: string;
+  beliefs: string[];
+  interests: string[];
+}
+
 interface TwitterHistory {
   imported_at: string;
   source: string;
   username: string;
+  themes?: TwitterThemes;
   tweets: HistoricTweet[];
 }
 
@@ -154,23 +161,38 @@ export function computeTypefullyBaseline(
   // Extract themes from Typefully posts (tags)
   const themes = extractThemes(posts);
 
-  // Extract topics from historic tweets (text analysis)
-  let topics: string[] = [];
+  // Get explicit themes from history, or fall back to text extraction
+  let coreVision: string | null = null;
+  let beliefs: string[] = [];
+  let interests: string[] = [];
   let recentTweets: HistoricTweet[] = [];
   let topTweet: HistoricTweet | null = null;
 
-  if (twitterHistory && twitterHistory.tweets.length > 0) {
-    topics = extractTopicsFromText(twitterHistory.tweets);
-    recentTweets = twitterHistory.tweets.slice(0, 5);
+  if (twitterHistory) {
+    // Use explicit themes if defined
+    if (twitterHistory.themes) {
+      coreVision = twitterHistory.themes.core_vision;
+      beliefs = twitterHistory.themes.beliefs;
+      interests = twitterHistory.themes.interests;
+    }
 
-    // Find highest engagement tweet
-    const tweetsWithLikes = twitterHistory.tweets.filter((t) => t.likes !== null);
-    if (tweetsWithLikes.length > 0) {
-      topTweet = tweetsWithLikes.reduce((best, current) =>
-        (current.likes || 0) > (best.likes || 0) ? current : best
-      );
+    if (twitterHistory.tweets.length > 0) {
+      recentTweets = twitterHistory.tweets.slice(0, 5);
+
+      // Find highest engagement tweet
+      const tweetsWithLikes = twitterHistory.tweets.filter((t) => t.likes !== null);
+      if (tweetsWithLikes.length > 0) {
+        topTweet = tweetsWithLikes.reduce((best, current) =>
+          (current.likes || 0) > (best.likes || 0) ? current : best
+        );
+      }
     }
   }
+
+  // Fall back to text extraction if no explicit themes
+  const topics = interests.length > 0 
+    ? interests 
+    : (twitterHistory ? extractTopicsFromText(twitterHistory.tweets) : []);
 
   // Calculate current frequency from Typefully
   const currentFrequency = calculatePostingFrequency(posts);
@@ -203,18 +225,31 @@ export function computeTypefullyBaseline(
 
   // Generate narrative signals
 
-  // Topic signals from historic tweets (priority - this is the good stuff)
+  // Core vision signal (the main theme)
+  if (coreVision) {
+    narrativeSignals.push(`on X: ${coreVision}`);
+  }
+
+  // Beliefs/philosophy signals
+  if (beliefs.length > 0) {
+    // Pick 1-2 beliefs to highlight
+    const highlightBeliefs = beliefs.slice(0, 2);
+    for (const belief of highlightBeliefs) {
+      narrativeSignals.push(belief);
+    }
+  }
+
+  // Interest signals
   if (topics.length > 0) {
-    const topTopics = topics.slice(0, 3);
-    narrativeSignals.push(`tweets about ${topTopics.join(", ")}`);
+    narrativeSignals.push(`interested in ${topics.join(", ")}`);
   }
 
   // Top performing tweet signal
-  if (topTweet && topTweet.likes && topTweet.likes > 100) {
-    const preview = topTweet.text.length > 50 
-      ? topTweet.text.slice(0, 50) + "..." 
+  if (topTweet && topTweet.likes && topTweet.likes > 1000) {
+    const preview = topTweet.text.length > 40 
+      ? topTweet.text.slice(0, 40) + "..." 
       : topTweet.text;
-    narrativeSignals.push(`recent hit: "${preview}" (${topTweet.likes.toLocaleString()} likes)`);
+    narrativeSignals.push(`viral tweet: "${preview}" (${(topTweet.likes / 1000).toFixed(0)}K likes)`);
   }
 
   // Activity pattern signals from Typefully
@@ -284,7 +319,9 @@ export function computeTypefullyBaseline(
 
   return {
     identity: {
-      topics,
+      core_vision: coreVision,
+      beliefs,
+      interests: topics,
       themes,
       average_frequency: historicalFrequency || currentFrequency,
       posting_style:
