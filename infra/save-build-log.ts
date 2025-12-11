@@ -208,7 +208,7 @@ function parseStreamJson(rawOutput: string): {
           }
 
           // Extract token count from usage data if available
-          const usage = (event as Record<string, unknown>).usage as { total_tokens?: number } | undefined;
+          const usage = (event as unknown as Record<string, unknown>).usage as { total_tokens?: number } | undefined;
           if (usage?.total_tokens) {
             token_count = usage.total_tokens;
             parts.push(`Tokens: ${token_count.toLocaleString()}`);
