@@ -390,11 +390,13 @@ async function saveBuildLog(outputPath: string, modelOverride: string | null): P
     
     // Update or add the build for this model
     const existingBuildIdx = dateEntry.builds.findIndex(b => b.model === model);
+    // Path for manifest should be relative to public/ (Next.js serves public/ at root)
+    const manifestPath = `builds/${dateStr}/${model}.html`;
     const buildInfo: ManifestBuild = {
       model,
       status: finalStatus,
       duration_ms,
-      path: buildPath,
+      path: manifestPath,
     };
     
     if (existingBuildIdx >= 0) {
