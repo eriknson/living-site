@@ -7,7 +7,7 @@ import {
   getModelSlug,
   getAvailableModels,
 } from "@/lib/manifest";
-import { SiteFrame } from "@/components/site-frame";
+import { ModelPageClient } from "./client";
 
 interface ModelPageProps {
   params: Promise<{ model: string }>;
@@ -60,9 +60,10 @@ export default async function ModelPage({ params }: ModelPageProps) {
   }
 
   return (
-    <SiteFrame
-      src={`/${build.path}`}
-      title={`Site built by ${getModelDisplayName(modelId)}`}
+    <ModelPageClient
+      manifest={manifest}
+      modelId={modelId}
+      buildPath={build.path}
     />
   );
 }

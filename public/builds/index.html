@@ -201,10 +201,24 @@
 
   <script>
     const modelNames = {
-      'composer-1': 'Composer',
+      'composer-1': 'Composer 1',
       'claude-4.5-opus-high-thinking': 'Opus 4.5',
-      'gpt-5.1-codex': 'GPT-5.1 Codex'
+      'gpt-5.1-codex': 'GPT-5.1 Codex',
+      'gpt-5.1-codex-max-low-fast': 'GPT-5.1 Codex Max'
     };
+    
+    const modelSlugs = {
+      'composer-1': 'composer-1',
+      'claude-4.5-opus-high-thinking': 'opus-4.5',
+      'gpt-5.1-codex': 'gpt-5.1-codex',
+      'gpt-5.1-codex-max-low-fast': 'gpt-5.1-codex-max'
+    };
+    
+    function getModelUrl(model, isDefault) {
+      // Default model goes to /, others go to /slug
+      if (isDefault) return '/';
+      return '/' + (modelSlugs[model] || model);
+    }
     
     function formatDate(dateStr) {
       const date = new Date(dateStr + 'T00:00:00');
@@ -292,8 +306,11 @@
               `;
             }
             
+            const isDefault = build.model === manifest.default_model;
+            const modelUrl = getModelUrl(build.model, isDefault);
+            
             return `
-              <a href="/?model=${build.model}&date=${date}" class="model-build">
+              <a href="${modelUrl}" class="model-build">
                 <span class="model-name">${name}</span>
                 <span class="model-meta">${duration || 'view'}</span>
               </a>
