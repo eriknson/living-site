@@ -205,16 +205,16 @@ jobs:
             fi
           done
 
-      - name: Set default index.html
+      - name: Set generated/index.html (keep shell at root)
         run: |
           DATE="${{ needs.aggregate.outputs.date }}"
           DEFAULT_MODEL="composer-1"
           
-          # Use composer-1 as the default index.html
+          # Only update generated/index.html for backward compatibility
+          # DO NOT overwrite index.html - that's the shell with model switcher
           if [ -f "builds/${DATE}/${DEFAULT_MODEL}.html" ]; then
-            cp "builds/${DATE}/${DEFAULT_MODEL}.html" index.html
             cp "builds/${DATE}/${DEFAULT_MODEL}.html" generated/index.html
-            echo "Set index.html from ${DEFAULT_MODEL}"
+            echo "Set generated/index.html from ${DEFAULT_MODEL}"
           else
             echo "Warning: Default model build not found"
           fi
@@ -230,12 +230,11 @@ jobs:
           git config --local user.email "action@github.com"
           git config --local user.name "GitHub Action"
           
-          # Stage all build files
+          # Stage all build files (index.html is the shell, don't touch it)
           git add data/latest.json
           git add data/fetch-summary.json
           git add builds/
           git add generated/
-          git add index.html
           
           # Check if there are changes to commit
           if git diff --staged --quiet; then
