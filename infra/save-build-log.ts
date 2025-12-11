@@ -234,7 +234,12 @@ async function loadHistory(): Promise<BuildHistory> {
   }
   try {
     const content = await readFile(HISTORY_PATH, "utf-8");
-    return JSON.parse(content);
+    const parsed = JSON.parse(content);
+    // Handle both { builds: [] } and plain [] formats
+    if (Array.isArray(parsed)) {
+      return { builds: parsed };
+    }
+    return parsed.builds ? parsed : { builds: [] };
   } catch {
     return { builds: [] };
   }
