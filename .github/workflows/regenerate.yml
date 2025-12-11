@@ -128,25 +128,25 @@ jobs:
         run: |
           DATE="${{ needs.aggregate.outputs.date }}"
           MODEL="${{ matrix.model }}"
-          mkdir -p "builds/${DATE}"
+          mkdir -p "public/builds/${DATE}"
           
           # Copy generated HTML to date folder
           if [ -f generated/index.html ]; then
-            cp generated/index.html "builds/${DATE}/${MODEL}.html"
-            echo "Saved build: builds/${DATE}/${MODEL}.html"
+            cp generated/index.html "public/builds/${DATE}/${MODEL}.html"
+            echo "Saved build: public/builds/${DATE}/${MODEL}.html"
           else
             echo "No generated/index.html found"
           fi
           
           # Save build output for logging
-          cp /tmp/build-output.json "builds/${DATE}/${MODEL}-output.json"
+          cp /tmp/build-output.json "public/builds/${DATE}/${MODEL}-output.json"
 
       - name: Upload build artifact
         uses: actions/upload-artifact@v4
         with:
           name: build-${{ matrix.model }}
           path: |
-            builds/${{ needs.aggregate.outputs.date }}/
+            public/builds/${{ needs.aggregate.outputs.date }}/
             generated/index.html
           retention-days: 1
 
@@ -183,17 +183,17 @@ jobs:
       - name: Organize builds
         run: |
           DATE="${{ needs.aggregate.outputs.date }}"
-          mkdir -p "builds/${DATE}"
+          mkdir -p "public/builds/${DATE}"
           
-          # Copy all builds from artifacts to builds folder
-          for dir in artifacts/build-*/builds/${DATE}; do
+          # Copy all builds from artifacts to public/builds folder
+          for dir in artifacts/build-*/public/builds/${DATE}; do
             if [ -d "$dir" ]; then
-              cp -r "$dir"/* "builds/${DATE}/" 2>/dev/null || true
+              cp -r "$dir"/* "public/builds/${DATE}/" 2>/dev/null || true
             fi
           done
           
           echo "Builds collected:"
-          ls -la "builds/${DATE}/"
+          ls -la "public/builds/${DATE}/"
 
       - name: Process build logs and update manifest
         run: |
@@ -201,7 +201,7 @@ jobs:
           
           # Process each model's build output
           for model in composer-1 claude-4.5-opus-high-thinking gpt-5.1-codex; do
-            output_file="builds/${DATE}/${model}-output.json"
+            output_file="public/builds/${DATE}/${model}-output.json"
             if [ -f "$output_file" ]; then
               echo "Processing build log for ${model}..."
               npm run save-build-log -- "$output_file" --model "$model"
@@ -214,9 +214,8 @@ jobs:
           DEFAULT_MODEL="composer-1"
           
           # Only update generated/index.html for backward compatibility
-          # DO NOT overwrite index.html - that's the shell with model switcher
-          if [ -f "builds/${DATE}/${DEFAULT_MODEL}.html" ]; then
-            cp "builds/${DATE}/${DEFAULT_MODEL}.html" generated/index.html
+          if [ -f "public/builds/${DATE}/${DEFAULT_MODEL}.html" ]; then
+            cp "public/builds/${DATE}/${DEFAULT_MODEL}.html" generated/index.html
             echo "Set generated/index.html from ${DEFAULT_MODEL}"
           else
             echo "Warning: Default model build not found"
@@ -226,17 +225,17 @@ jobs:
         run: |
           DATE="${{ needs.aggregate.outputs.date }}"
           # Remove the JSON output files (logs are in history.json)
-          rm -f builds/${DATE}/*-output.json
+          rm -f public/builds/${DATE}/*-output.json
 
       - name: Commit changes
         run: |
           git config --local user.email "action@github.com"
           git config --local user.name "GitHub Action"
           
-          # Stage all build files (index.html is the shell, don't touch it)
+          # Stage all build files
           git add data/latest.json
           git add data/fetch-summary.json
-          git add builds/
+          git add public/builds/
           git add generated/
           
           # Check if there are changes to commit

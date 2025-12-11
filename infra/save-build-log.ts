@@ -7,8 +7,8 @@
 import { readFile, writeFile, mkdir, copyFile } from "fs/promises";
 import { existsSync } from "fs";
 
-const HISTORY_PATH = "builds/history.json";
-const MANIFEST_PATH = "builds/manifest.json";
+const HISTORY_PATH = "public/builds/history.json";
+const MANIFEST_PATH = "public/builds/manifest.json";
 const FETCH_SUMMARY_PATH = "data/fetch-summary.json";
 const GENERATED_PATH = "generated/index.html";
 const MAX_BUILDS = 50;
@@ -332,7 +332,7 @@ async function saveBuildLog(outputPath: string, modelOverride: string | null): P
   
   const now = new Date();
   const dateStr = getDateString(now);
-  const dateDir = `builds/${dateStr}`;
+  const dateDir = `public/builds/${dateStr}`;
   const buildPath = `${dateDir}/${model}.html`;
   
   // Check if build HTML exists (either from generated/ or already in builds/)

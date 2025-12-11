@@ -28,12 +28,25 @@ import type { SourceAnalysis } from "./baseline.js";
 
 interface Identity {
   name: string;
-  location: string;
+  location?: string;
   email: string;
   twitter: string;
   linkedin: string;
-  website: string;
+  website?: string;
   github: string;
+}
+
+interface About {
+  headline: string;
+  about: string;
+  philosophy: {
+    core: string;
+    approach: string[];
+    how_i_build: string[];
+  };
+  values: string[];
+  beliefs: string[];
+  interests: string[];
 }
 
 interface FetchSourceResult {
@@ -78,6 +91,7 @@ function summarizeTypefully(data: TypefullyData): string {
 interface AggregatedData {
   generated_at: string;
   identity: Identity;
+  about: About;
   sources: {
     github?: GitHubData;
     spotify?: SpotifyData;
@@ -141,9 +155,14 @@ function calculateDaysSinceChange(
 export async function aggregate(): Promise<AggregatedData> {
   console.log("Starting aggregation...\n");
 
-  // Load identity
+  // Load identity and about
   const identityRaw = await readFile("data/identity.json", "utf-8");
   const identity: Identity = JSON.parse(identityRaw);
+
+  const aboutRaw = await readFile("data/about.json", "utf-8");
+  const about: About = JSON.parse(aboutRaw);
+
+  console.log("Loaded identity and about data");
 
   const sources: AggregatedData["sources"] = {};
   const analysis: AggregatedData["analysis"] = {};
@@ -310,7 +329,7 @@ export async function aggregate(): Promise<AggregatedData> {
     const weatherSignals: string[] = [];
     weatherSignals.push(`last seen in ${weather.location.description}`);
     weatherSignals.push(
-      `${weather.current.conditions}, ${weather.current.temperature_c}°C (${weather.current.feels_like_description})`
+      `${weather.current.conditions}, ${weather.current.temperature_c}°C`
     );
 
     allNarrativeSignals.push(...weatherSignals);
@@ -344,6 +363,7 @@ export async function aggregate(): Promise<AggregatedData> {
   const data: AggregatedData = {
     generated_at: new Date().toISOString(),
     identity,
+    about,
     sources,
     analysis,
     narrative_signals: allNarrativeSignals,

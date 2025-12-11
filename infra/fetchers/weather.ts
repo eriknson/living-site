@@ -43,7 +43,6 @@ export interface WeatherData {
   };
   current: {
     temperature_c: number;
-    feels_like_description: string;
     conditions: string;
     is_day: boolean;
     wind_speed_kmh: number;
@@ -96,21 +95,6 @@ function weatherCodeToDescription(code: number, isDay: boolean): string {
 }
 
 /**
- * Get a qualitative description of temperature
- */
-function getFeelsLikeDescription(tempC: number): string {
-  if (tempC <= -10) return "bitterly cold";
-  if (tempC <= 0) return "freezing";
-  if (tempC <= 5) return "cold";
-  if (tempC <= 10) return "chilly";
-  if (tempC <= 15) return "cool";
-  if (tempC <= 20) return "mild";
-  if (tempC <= 25) return "warm";
-  if (tempC <= 30) return "hot";
-  return "very hot";
-}
-
-/**
  * Load location from data/location.json
  */
 export async function loadLocation(): Promise<LocationData> {
@@ -151,7 +135,6 @@ export async function fetchWeatherData(): Promise<WeatherData> {
     },
     current: {
       temperature_c: Math.round(current.temperature),
-      feels_like_description: getFeelsLikeDescription(current.temperature),
       conditions: weatherCodeToDescription(current.weathercode, current.is_day === 1),
       is_day: current.is_day === 1,
       wind_speed_kmh: Math.round(current.windspeed),
