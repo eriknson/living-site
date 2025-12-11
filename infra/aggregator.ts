@@ -169,6 +169,13 @@ export async function aggregate(): Promise<AggregatedData> {
   const allNarrativeSignals: string[] = [];
   const fetchResults: FetchSourceResult[] = [];
 
+  // Add About to fetch results
+  fetchResults.push({
+    name: "About",
+    status: "success",
+    summary: about.headline || "Bio & values loaded",
+  });
+
   // =========================================================================
   // GitHub
   // =========================================================================
