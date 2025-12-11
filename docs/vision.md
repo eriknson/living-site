@@ -217,9 +217,9 @@ Inspired by [benji.org](https://benji.org) — minimal, poetic, timeless:
 2. `infra/fetchers/*` fetch data from each API
 3. `infra/aggregator.ts` processes raw data into themes/patterns
 4. Aggregated data saved to `data/latest.json`
-5. `infra/generator.ts` calls Cursor CLI with system prompt + JSON
-6. Cursor CLI generates new `generated/index.html`
-7. Action commits only `generated/` changes
+5. Multiple models generate in parallel, each to its own sandbox (`generated/{model}.html`)
+6. Builds are saved to `public/builds/{date}/{model}.html`
+7. Action commits changes
 8. Push triggers Vercel deployment
 
 ### Fallback Strategy

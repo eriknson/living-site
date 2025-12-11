@@ -1,8 +1,7 @@
 "use client";
 
-import { AboutDropdown } from "./about-dropdown";
 import { ModelSelector } from "./model-selector";
-import { Clock } from "./clock";
+import { BuildTime } from "./build-time";
 import type { Manifest } from "@/lib/manifest";
 
 interface MenuBarProps {
@@ -16,11 +15,17 @@ export function MenuBar({ manifest, currentModel, currentDate, onModelChange }: 
   return (
     <nav className="fixed top-0 left-0 right-0 h-[var(--menu-bar-height)] z-50 flex items-center justify-between px-3 bg-white/40 backdrop-blur-md backdrop-saturate-150 border-b border-black/5 text-[13px] text-black/85 select-none">
       <div className="flex items-center h-full">
-        {/* Site name with About dropdown */}
-        <AboutDropdown manifest={manifest} currentModel={currentModel} currentDate={currentDate} />
+        <span className="h-full px-2.5 font-semibold flex items-center">
+          eriks.design
+        </span>
       </div>
 
       <div className="flex items-center h-full">
+        {/* Build time with about dropdown - hidden on mobile */}
+        <div className="hidden sm:flex items-center h-full">
+          <BuildTime manifest={manifest} currentDate={currentDate} />
+        </div>
+
         {/* Model selector */}
         <ModelSelector
           manifest={manifest}
@@ -28,11 +33,6 @@ export function MenuBar({ manifest, currentModel, currentDate, onModelChange }: 
           currentDate={currentDate}
           onModelChange={onModelChange}
         />
-
-        {/* Clock - hidden on mobile */}
-        <div className="hidden sm:flex items-center h-full">
-          <Clock />
-        </div>
       </div>
     </nav>
   );

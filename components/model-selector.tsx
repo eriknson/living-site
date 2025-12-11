@@ -5,16 +5,12 @@ import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
-  DropdownMenuLabel,
-  DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import type { Manifest } from "@/lib/manifest";
 import {
   formatDuration,
-  formatRelativeTime,
   getSameBatchModels,
-  getBuiltAt,
   getModelDisplayName,
 } from "@/lib/manifest";
 
@@ -30,7 +26,6 @@ export function ModelSelector({ manifest, currentModel, currentDate, onModelChan
   const displayDate = currentDate || manifest?.latest_date;
   // Only show models from the same batch (with duration_ms)
   const sameBatchModels = manifest ? getSameBatchModels(manifest, displayDate || undefined) : [];
-  const builtAt = manifest ? getBuiltAt(manifest, displayDate || undefined) : undefined;
 
   if (!manifest || !currentModel) {
     return (
@@ -44,18 +39,13 @@ export function ModelSelector({ manifest, currentModel, currentDate, onModelChan
   return (
     <DropdownMenu>
       <DropdownMenuTrigger asChild>
-        <button className="h-full px-2.5 hover:bg-black/5 active:bg-black/10 outline-none flex items-center gap-1.5">
+        <button className="h-full px-2.5 hover:bg-black/5 active:bg-black/10 outline-none flex items-center gap-1.5 cursor-pointer">
           <Infinity className="h-4 w-4 opacity-50" strokeWidth={2.5} />
           <span>{getModelDisplayName(currentModel)}</span>
           <ChevronDown className="h-3 w-3 opacity-60" />
         </button>
       </DropdownMenuTrigger>
       <DropdownMenuContent align="end" className="w-56">
-        <DropdownMenuLabel className="font-normal text-black/60">
-          Built {builtAt ? formatRelativeTime(builtAt) : displayDate}
-        </DropdownMenuLabel>
-        <DropdownMenuSeparator />
-
         {sameBatchModels.map((build) => {
           const isActive = build.model === currentModel;
 
@@ -63,7 +53,7 @@ export function ModelSelector({ manifest, currentModel, currentDate, onModelChan
             <DropdownMenuItem
               key={build.model}
               onClick={() => onModelChange(build.model)}
-              className="flex items-center justify-between cursor-pointer"
+              className="flex items-center justify-between"
             >
               <span className="flex items-center gap-2">
                 {isActive ? (

@@ -101,15 +101,15 @@ jobs:
         run: curl https://cursor.com/install -fsS | bash
 
       - name: Clear existing build (start fresh)
-        run: rm -f generated/index.html
+        run: rm -f generated/${{ matrix.model }}.html
 
       - name: Build generation prompt
         run: |
-          cat > /tmp/generation-prompt.txt << 'PROMPT_END'
+          cat > /tmp/generation-prompt.txt << PROMPT_END
           Read infra/prompts/system.md for the design guidelines.
           Read data/latest.json for the current aggregated data.
           
-          Create a new generated/index.html from scratch.
+          Create a new generated/${{ matrix.model }}.html from scratch.
           Output a complete HTML file with embedded CSS.
           Use the data to create a personal website that reflects who Erik is.
           PROMPT_END
@@ -141,12 +141,12 @@ jobs:
           MODEL="${{ matrix.model }}"
           mkdir -p "public/builds/${DATE}"
           
-          # Copy generated HTML to date folder
-          if [ -f generated/index.html ]; then
-            cp generated/index.html "public/builds/${DATE}/${MODEL}.html"
+          # Copy generated HTML to date folder (each model has its own sandbox file)
+          if [ -f "generated/${MODEL}.html" ]; then
+            cp "generated/${MODEL}.html" "public/builds/${DATE}/${MODEL}.html"
             echo "Saved build: public/builds/${DATE}/${MODEL}.html"
           else
-            echo "No generated/index.html found"
+            echo "No generated/${MODEL}.html found"
           fi
           
           # Save build output for logging
@@ -158,7 +158,7 @@ jobs:
           name: build-${{ matrix.model }}
           path: |
             public/builds/${{ needs.aggregate.outputs.date }}/
-            generated/index.html
+            generated/${{ matrix.model }}.html
           retention-days: 1
 
   # Job 3: Commit all builds
@@ -195,6 +195,7 @@ jobs:
         run: |
           DATE="${{ needs.aggregate.outputs.date }}"
           mkdir -p "public/builds/${DATE}"
+          mkdir -p "generated"
           
           # Copy all builds from artifacts to public/builds folder
           for dir in artifacts/build-*/public/builds/${DATE}; do
@@ -203,34 +204,37 @@ jobs:
             fi
           done
           
+          # Copy model-specific generated files from artifacts
+          for model in composer-1 claude-4.5-opus-high-thinking gpt-5.1-codex; do
+            src="artifacts/build-${model}/generated/${model}.html"
+            if [ -f "$src" ]; then
+              cp "$src" "generated/${model}.html"
+              echo "Copied generated/${model}.html"
+            fi
+          done
+          
           echo "Builds collected:"
           ls -la "public/builds/${DATE}/"
+          echo "Generated files:"
+          ls -la "generated/"
 
       - name: Process build logs and update manifest
+        env:
+          GITHUB_RUN_URL: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}
         run: |
           DATE="${{ needs.aggregate.outputs.date }}"
           
           # Process each model's build output
+          # --skip-html-copy: HTML files are already copied by "Organize builds" step
+          # --date: Use the workflow date to ensure consistency across jobs
+          # --github-run-url: Link to this GitHub Actions run
           for model in composer-1 claude-4.5-opus-high-thinking gpt-5.1-codex; do
             output_file="public/builds/${DATE}/${model}-output.json"
             if [ -f "$output_file" ]; then
               echo "Processing build log for ${model}..."
-              npm run save-build-log -- "$output_file" --model "$model"
+              npm run save-build-log -- "$output_file" --model "$model" --date "$DATE" --skip-html-copy --github-run-url "$GITHUB_RUN_URL"
             fi
           done
-
-      - name: Set generated/index.html (keep shell at root)
-        run: |
-          DATE="${{ needs.aggregate.outputs.date }}"
-          DEFAULT_MODEL="composer-1"
-          
-          # Only update generated/index.html for backward compatibility
-          if [ -f "public/builds/${DATE}/${DEFAULT_MODEL}.html" ]; then
-            cp "public/builds/${DATE}/${DEFAULT_MODEL}.html" generated/index.html
-            echo "Set generated/index.html from ${DEFAULT_MODEL}"
-          else
-            echo "Warning: Default model build not found"
-          fi
 
       - name: Cleanup build outputs
         run: |

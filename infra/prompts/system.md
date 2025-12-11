@@ -35,7 +35,7 @@ Clean, minimal aesthetic. Think "quiet confidence."
 
 # Sandbox Rules
 
-**You may ONLY create/edit: `generated/index.html`**
+**You may ONLY create/edit files in the `generated/` folder.**
 
 Do NOT read, modify, or reference any other files in the repository.
 Do NOT suggest changes to infrastructure, configuration, or data files.

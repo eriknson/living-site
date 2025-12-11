@@ -9,13 +9,12 @@ echo "Checking required files..."
 files=(
   "data/identity.json"
   "data/latest.json"
-  "generated/index.html"
   "public/loading/index.html"
   "public/loading/styles.css"
   "docs/product-spec.md"
   "infra/prompts/system.md"
   "infra/aggregator.ts"
-  "infra/generator.ts"
+  "infra/save-build-log.ts"
   "infra/fetchers/github.ts"
 )
 

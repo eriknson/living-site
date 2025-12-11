@@ -1,16 +1,27 @@
 "use client";
 
+import { useEffect, useState } from "react";
 import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
-  DropdownMenuLabel,
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import type { Manifest } from "@/lib/manifest";
-import { formatDuration, getModelDisplayName, getBuildForModel } from "@/lib/manifest";
+import { formatDuration, getModelDisplayName, getBuildForModel, getBuiltAt, formatRelativeTime } from "@/lib/manifest";
 import { ExternalLink } from "lucide-react";
+
+interface DataSource {
+  name: string;
+  status: string;
+  summary: string;
+}
+
+interface FetchSummary {
+  timestamp: string;
+  sources: DataSource[];
+}
 
 interface AboutDropdownProps {
   manifest: Manifest | null;
@@ -19,12 +30,31 @@ interface AboutDropdownProps {
 }
 
 export function AboutDropdown({ manifest, currentModel, currentDate }: AboutDropdownProps) {
+  const [dataSources, setDataSources] = useState<DataSource[]>([]);
+
+  // Fetch data sources
+  useEffect(() => {
+    fetch("/data/fetch-summary.json")
+      .then((res) => res.json())
+      .then((data: FetchSummary) => setDataSources(data.sources))
+      .catch(() => setDataSources([]));
+  }, []);
+
   // Get the build for the currently displayed model/date
   const displayModel = currentModel || manifest?.default_model;
   const displayDate = currentDate || manifest?.latest_date;
   const currentBuild = manifest && displayModel && displayDate
     ? getBuildForModel(manifest, displayModel, displayDate)
     : null;
+  const builtAt = manifest ? getBuiltAt(manifest, displayDate ?? undefined) : undefined;
+
+  // Format "Made by" value
+  const madeByValue = displayModel
+    ? `${getModelDisplayName(displayModel)}${currentBuild?.duration_ms ? ` in ${formatDuration(currentBuild.duration_ms)}` : ""}`
+    : "—";
+
+  // Format "Updated" value
+  const updatedValue = builtAt ? formatRelativeTime(builtAt) : "—";
 
   return (
     <DropdownMenu>
@@ -34,11 +64,6 @@ export function AboutDropdown({ manifest, currentModel, currentDate }: AboutDrop
         </button>
       </DropdownMenuTrigger>
       <DropdownMenuContent align="start" className="w-64">
-        <DropdownMenuLabel className="font-normal text-black/60">
-          About This Site
-        </DropdownMenuLabel>
-        <DropdownMenuSeparator />
-
         <div className="px-2 py-2 text-sm text-black/70 leading-relaxed">
           <p>
             This site regenerates daily using fresh data and AI. Same data,
@@ -48,37 +73,28 @@ export function AboutDropdown({ manifest, currentModel, currentDate }: AboutDrop
 
         <DropdownMenuSeparator />
 
-        <DropdownMenuLabel className="font-normal text-black/60">
-          Current Build
-        </DropdownMenuLabel>
-
-        {manifest && displayModel && (
-          <div className="px-2 py-1.5 text-sm">
-            <div className="flex justify-between">
-              <span className="text-black/60">Model</span>
-              <span>{getModelDisplayName(displayModel)}</span>
-            </div>
-            {currentBuild?.duration_ms && (
-              <div className="flex justify-between">
-                <span className="text-black/60">Build time</span>
-                <span>{formatDuration(currentBuild.duration_ms)}</span>
-              </div>
-            )}
-            <div className="flex justify-between">
-              <span className="text-black/60">Date</span>
-              <span>{displayDate}</span>
-            </div>
+        <div className="px-2 py-1.5 text-sm">
+          <div className="flex justify-between">
+            <span className="text-black/60">Made by</span>
+            <span>{madeByValue}</span>
           </div>
-        )}
+          <div className="flex justify-between">
+            <span className="text-black/60">Updated</span>
+            <span>{updatedValue}</span>
+          </div>
+        </div>
 
         <DropdownMenuSeparator />
 
-        <DropdownMenuLabel className="font-normal text-black/60">
-          Data Sources
-        </DropdownMenuLabel>
-
-        <div className="px-2 py-1.5 text-sm text-black/70">
-          <p>GitHub, Spotify, Typefully, Weather</p>
+        <div className="px-2 py-1.5 text-sm">
+          {dataSources.map((source) => (
+            <div key={source.name} className="flex justify-between">
+              <span className="text-black/60">{source.name}</span>
+              <span className={source.status === "success" ? "text-green-600" : "text-red-600"}>
+                {source.status === "success" ? "Connected" : "Error"}
+              </span>
+            </div>
+          ))}
         </div>
 
         <DropdownMenuSeparator />
@@ -90,7 +106,7 @@ export function AboutDropdown({ manifest, currentModel, currentDate }: AboutDrop
             rel="noopener noreferrer"
             className="flex items-center justify-between"
           >
-            View Source
+            View Source Code
             <ExternalLink className="h-3.5 w-3.5 opacity-60" />
           </a>
         </DropdownMenuItem>
