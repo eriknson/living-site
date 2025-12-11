@@ -100,15 +100,18 @@ jobs:
       - name: Install Cursor CLI
         run: curl https://cursor.com/install -fsS | bash
 
+      - name: Clear existing build (start fresh)
+        run: rm -f generated/index.html
+
       - name: Build generation prompt
         run: |
           cat > /tmp/generation-prompt.txt << 'PROMPT_END'
           Read infra/prompts/system.md for the design guidelines.
           Read data/latest.json for the current aggregated data.
           
-          Based on the system prompt and data, regenerate generated/index.html.
+          Create a new generated/index.html from scratch.
           Output a complete HTML file with embedded CSS.
-          Use the data to create a personal website that reflects who Erik is right now.
+          Use the data to create a personal website that reflects who Erik is.
           PROMPT_END
           
           echo "Prompt built for model: ${{ matrix.model }}"
