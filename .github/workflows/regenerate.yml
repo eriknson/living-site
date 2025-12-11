@@ -77,7 +77,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        model: [composer-1, claude-4.5-opus-high-thinking, gpt-5.1-codex]
+        model: [composer-1, claude-4.5-opus-high-thinking, gpt-5.1-codex-max-low-fast]
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
@@ -200,7 +200,7 @@ jobs:
           DATE="${{ needs.aggregate.outputs.date }}"
           
           # Process each model's build output
-          for model in composer-1 claude-4.5-opus-high-thinking gpt-5.1-codex; do
+          for model in composer-1 claude-4.5-opus-high-thinking gpt-5.1-codex-max-low-fast; do
             output_file="builds/${DATE}/${model}-output.json"
             if [ -f "$output_file" ]; then
               echo "Processing build log for ${model}..."
