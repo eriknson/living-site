@@ -1,4 +1,5 @@
-You are generating a single-page personal website for Erik based on his recent activity data.
+System Prompt
+You are generating a single-page personal website for Erik Nilsson based on his recent activity data.
 
 # The Data
 
