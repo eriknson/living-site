@@ -86,8 +86,6 @@ export function BuildTime({ manifest, currentDate }: BuildTimeProps) {
 
   if (!relativeTime) return null;
 
-  const allSuccess = dataSources.length > 0 && dataSources.every(s => s.status === "success");
-
   return (
     <DropdownMenu>
       <DropdownMenuTrigger asChild>
@@ -109,23 +107,26 @@ export function BuildTime({ manifest, currentDate }: BuildTimeProps) {
               <div className="flex items-center justify-between mb-2">
                 <span className="text-black/50 text-xs uppercase tracking-wide">Data Layer</span>
                 {dataRelativeTime && (
-                  <span className="text-black/40 text-xs">
-                    {allSuccess ? "✓" : "!"} {dataRelativeTime}
-                  </span>
+                  <span className="text-black/40 text-xs">Fetched {dataRelativeTime}</span>
                 )}
               </div>
-              <div className="flex flex-wrap gap-x-3 gap-y-1">
+              <div className="flex flex-wrap gap-1.5">
                 {dataSources.map((source) => {
                   const isOk = source.status === "success";
                   const displayName = SOURCE_DISPLAY[source.name] || source.name;
                   return (
-                    <div key={source.name} className="flex items-center gap-1">
+                    <div
+                      key={source.name}
+                      className={`flex items-center gap-1 px-2 py-0.5 rounded-full text-xs ${
+                        isOk ? "bg-black/5 text-black/60" : "bg-red-50 text-red-600"
+                      }`}
+                    >
                       {isOk ? (
                         <Check className="w-3 h-3 text-green-600" />
                       ) : (
-                        <X className="w-3 h-3 text-red-500" />
+                        <X className="w-3 h-3" />
                       )}
-                      <span className="text-black/60 text-sm">{displayName}</span>
+                      <span>{displayName}</span>
                     </div>
                   );
                 })}
