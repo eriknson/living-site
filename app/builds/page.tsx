@@ -175,7 +175,10 @@ export default function BuildsPage() {
         <div className="space-y-4">
           {manifest.dates.map((dateEntry) => {
             const date = dateEntry.date;
-            const builds = dateEntry.builds || [];
+            // Only show builds for models in the active models list
+            const builds = (dateEntry.builds || []).filter(
+              (b) => manifest.models.includes(b.model)
+            );
             const isExpanded = expandedDate === date;
 
             // Get the first log entry to get github_run_url (shared across models)
