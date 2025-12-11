@@ -25,6 +25,7 @@ export function Clock() {
   if (!time) return null;
 
   return (
-    <div className="px-2.5 py-0.5 text-black/60 tabular-nums">{time}</div>
+    <div className="h-full px-2.5 text-black/60 tabular-nums flex items-center">{time}</div>
   );
 }
+

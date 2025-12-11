@@ -124,6 +124,17 @@ jobs:
           cursor-agent -p --force --model "${{ matrix.model }}" --output-format stream-json "$(cat /tmp/generation-prompt.txt)" > /tmp/build-output.json 2>&1 || true
           echo "Build output captured for ${{ matrix.model }}"
 
+      - name: Verify sandbox (no unauthorized changes)
+        run: |
+          # Check if any files outside generated/ were modified
+          UNAUTHORIZED=$(git diff --name-only | grep -v '^generated/' | grep -v '^$' || true)
+          if [ -n "$UNAUTHORIZED" ]; then
+            echo "ERROR: Agent modified files outside sandbox:"
+            echo "$UNAUTHORIZED"
+            git checkout -- .  # Revert unauthorized changes
+          fi
+          echo "Sandbox verified: no unauthorized changes"
+          
       - name: Prepare build artifact
         run: |
           DATE="${{ needs.aggregate.outputs.date }}"

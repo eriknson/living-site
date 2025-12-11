@@ -32,3 +32,11 @@ Clean, minimal aesthetic. Think "quiet confidence."
 - Open with one defining line (riff on `about.headline`)
 - Present tense, declarative — "Building X" not "I've been working on X"
 - Let the work speak — don't explain, don't list values explicitly
+
+# Sandbox Rules
+
+**You may ONLY create/edit: `generated/index.html`**
+
+Do NOT read, modify, or reference any other files in the repository.
+Do NOT suggest changes to infrastructure, configuration, or data files.
+Your entire output is a single HTML file.

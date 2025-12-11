@@ -1,8 +1,6 @@
 "use client";
 
-import { usePathname } from "next/navigation";
-import Link from "next/link";
-import { Check, ChevronDown } from "lucide-react";
+import { Check, ChevronDown, Infinity } from "lucide-react";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -16,30 +14,21 @@ import {
   formatDuration,
   getAvailableModels,
   getModelDisplayName,
-  getModelIdFromSlug,
-  getModelSlug,
 } from "@/lib/manifest";
 
 interface ModelSelectorProps {
   manifest: Manifest | null;
+  currentModel: string | null;
+  onModelChange: (model: string) => void;
 }
 
-export function ModelSelector({ manifest }: ModelSelectorProps) {
-  const pathname = usePathname();
-
-  // Get current model from URL
-  const pathSlug = pathname === "/" ? null : pathname.slice(1);
-  const currentModelId = pathSlug
-    ? getModelIdFromSlug(pathSlug)
-    : manifest?.default_model;
-
+export function ModelSelector({ manifest, currentModel, onModelChange }: ModelSelectorProps) {
   const availableModels = manifest ? getAvailableModels(manifest) : [];
-  const currentBuild = availableModels.find((b) => b.model === currentModelId);
 
-  if (!manifest) {
+  if (!manifest || !currentModel) {
     return (
-      <div className="px-2.5 py-0.5 text-black/40 flex items-center gap-1">
-        <span className="w-2 h-2 rounded-full bg-black/20" />
+      <div className="h-full px-2.5 text-black/40 flex items-center gap-1.5">
+        <Infinity className="h-4 w-4 opacity-40" strokeWidth={2.5} />
         Loading...
       </div>
     );
@@ -48,9 +37,9 @@ export function ModelSelector({ manifest }: ModelSelectorProps) {
   return (
     <DropdownMenu>
       <DropdownMenuTrigger asChild>
-        <button className="px-2.5 py-0.5 rounded hover:bg-black/5 active:bg-black/10 outline-none flex items-center gap-1.5">
-          <span className="w-2 h-2 rounded-full bg-blue-500" />
-          <span>{getModelDisplayName(currentModelId || "")}</span>
+        <button className="h-full px-2.5 hover:bg-black/5 active:bg-black/10 outline-none flex items-center gap-1.5">
+          <Infinity className="h-4 w-4 opacity-50" strokeWidth={2.5} />
+          <span>{getModelDisplayName(currentModel)}</span>
           <ChevronDown className="h-3 w-3 opacity-60" />
         </button>
       </DropdownMenuTrigger>
@@ -61,30 +50,27 @@ export function ModelSelector({ manifest }: ModelSelectorProps) {
         <DropdownMenuSeparator />
 
         {availableModels.map((build) => {
-          const isActive = build.model === currentModelId;
-          const slug = getModelSlug(build.model);
-          const href = build.model === manifest.default_model ? "/" : `/${slug}`;
+          const isActive = build.model === currentModel;
 
           return (
-            <DropdownMenuItem key={build.model} asChild>
-              <Link
-                href={href}
-                className="flex items-center justify-between cursor-pointer"
-              >
-                <span className="flex items-center gap-2">
-                  {isActive ? (
-                    <Check className="h-4 w-4" />
-                  ) : (
-                    <span className="w-4" />
-                  )}
-                  {getModelDisplayName(build.model)}
-                </span>
-                {build.duration_ms && (
-                  <span className="text-black/40 text-xs">
-                    {formatDuration(build.duration_ms)}
-                  </span>
+            <DropdownMenuItem
+              key={build.model}
+              onClick={() => onModelChange(build.model)}
+              className="flex items-center justify-between cursor-pointer"
+            >
+              <span className="flex items-center gap-2">
+                {isActive ? (
+                  <Check className="h-4 w-4" />
+                ) : (
+                  <span className="w-4" />
                 )}
-              </Link>
+                {getModelDisplayName(build.model)}
+              </span>
+              {build.duration_ms && (
+                <span className="text-black/40 text-xs">
+                  {formatDuration(build.duration_ms)}
+                </span>
+              )}
             </DropdownMenuItem>
           );
         })}
@@ -92,3 +78,4 @@ export function ModelSelector({ manifest }: ModelSelectorProps) {
     </DropdownMenu>
   );
 }
+

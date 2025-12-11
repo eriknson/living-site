@@ -1,0 +1,356 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Build History | Erik</title>
+  <style>
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+      background: #f5f5f5;
+      color: #333;
+      max-width: 800px;
+      margin: 0 auto;
+      padding: 3rem 1rem;
+      line-height: 1.6;
+    }
+    h1 {
+      font-size: 1.5rem;
+      font-weight: 600;
+      margin-bottom: 0.25rem;
+    }
+    .subtitle {
+      font-size: 0.875rem;
+      color: #666;
+      margin-bottom: 2rem;
+    }
+    .back-link {
+      display: inline-block;
+      margin-bottom: 1.5rem;
+      color: #0066cc;
+      text-decoration: none;
+      font-size: 0.875rem;
+    }
+    .back-link:hover {
+      text-decoration: underline;
+    }
+    .back-link::before {
+      content: "← ";
+    }
+    
+    /* Date groups */
+    .date-group {
+      background: #fff;
+      border-radius: 8px;
+      margin-bottom: 1rem;
+      overflow: hidden;
+    }
+    .date-header {
+      padding: 1rem;
+      border-bottom: 1px solid #eee;
+      font-weight: 500;
+    }
+    .date-header .date {
+      font-size: 1rem;
+    }
+    .date-header .relative {
+      font-size: 0.8125rem;
+      color: #666;
+      font-weight: normal;
+      margin-left: 0.5rem;
+    }
+    
+    /* Model builds within a date */
+    .model-builds {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 0.5rem;
+      padding: 1rem;
+    }
+    .model-build {
+      display: flex;
+      flex-direction: column;
+      padding: 0.75rem 1rem;
+      background: #f9f9f9;
+      border-radius: 6px;
+      text-decoration: none;
+      color: inherit;
+      min-width: 140px;
+      transition: background 0.15s ease;
+    }
+    .model-build:hover {
+      background: #f0f0f0;
+    }
+    .model-build.failed {
+      opacity: 0.5;
+    }
+    .model-name {
+      font-size: 0.9375rem;
+      font-weight: 500;
+      color: #0066cc;
+    }
+    .model-build.failed .model-name {
+      color: #666;
+    }
+    .model-meta {
+      font-size: 0.75rem;
+      color: #999;
+      margin-top: 0.25rem;
+    }
+    .model-build.failed .model-meta {
+      color: #c00;
+    }
+    
+    /* Expandable logs section */
+    .logs-toggle {
+      padding: 0.75rem 1rem;
+      border-top: 1px solid #eee;
+      font-size: 0.8125rem;
+      color: #666;
+      cursor: pointer;
+      user-select: none;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+    .logs-toggle:hover {
+      background: #fafafa;
+    }
+    .logs-chevron {
+      font-size: 0.625rem;
+      transition: transform 0.2s ease;
+    }
+    .date-group.logs-open .logs-chevron {
+      transform: rotate(180deg);
+    }
+    .logs-content {
+      display: none;
+      padding: 0 1rem 1rem;
+    }
+    .date-group.logs-open .logs-content {
+      display: block;
+    }
+    .log-entry {
+      margin-top: 0.75rem;
+    }
+    .log-entry-header {
+      font-size: 0.8125rem;
+      font-weight: 500;
+      margin-bottom: 0.5rem;
+      color: #333;
+    }
+    .log-output {
+      background: #1e1e1e;
+      color: #d4d4d4;
+      padding: 0.75rem;
+      border-radius: 6px;
+      font-family: "SF Mono", Monaco, "Cascadia Code", monospace;
+      font-size: 0.6875rem;
+      line-height: 1.5;
+      overflow-x: auto;
+      white-space: pre-wrap;
+      word-break: break-word;
+      max-height: 300px;
+      overflow-y: auto;
+    }
+    
+    .empty-state {
+      text-align: center;
+      padding: 3rem 1rem;
+      color: #666;
+    }
+    .loading {
+      text-align: center;
+      padding: 3rem 1rem;
+      color: #666;
+    }
+    
+    @media (max-width: 480px) {
+      body {
+        padding: 2rem 0.875rem;
+      }
+      .model-builds {
+        flex-direction: column;
+      }
+      .model-build {
+        min-width: unset;
+      }
+    }
+  </style>
+</head>
+<body>
+  <a href="/" class="back-link">Back to site</a>
+  
+  <header>
+    <h1>Build History</h1>
+    <p class="subtitle">Daily builds from multiple AI models</p>
+  </header>
+  
+  <main>
+    <div id="loading" class="loading">Loading build history...</div>
+    <div id="builds-container"></div>
+    <div id="empty-state" class="empty-state" style="display: none;">
+      No builds yet. The site regenerates daily at 6am UTC with 3 different models.
+    </div>
+  </main>
+
+  <script>
+    const modelNames = {
+      'composer-1': 'Composer',
+      'claude-4.5-opus-high-thinking': 'Opus 4.5',
+      'gpt-5.1-codex': 'GPT-5.1 Codex'
+    };
+    
+    function formatDate(dateStr) {
+      const date = new Date(dateStr + 'T00:00:00');
+      return date.toLocaleDateString('en-US', { 
+        weekday: 'long',
+        month: 'long', 
+        day: 'numeric',
+        year: 'numeric'
+      });
+    }
+    
+    function relativeDate(dateStr) {
+      const date = new Date(dateStr + 'T00:00:00');
+      const now = new Date();
+      const diffDays = Math.floor((now - date) / (1000 * 60 * 60 * 24));
+      
+      if (diffDays === 0) return 'today';
+      if (diffDays === 1) return 'yesterday';
+      if (diffDays < 7) return `${diffDays} days ago`;
+      if (diffDays < 14) return '1 week ago';
+      return `${Math.floor(diffDays / 7)} weeks ago`;
+    }
+    
+    function formatDuration(ms) {
+      if (!ms) return '';
+      const seconds = ms / 1000;
+      return seconds < 10 ? seconds.toFixed(1) + 's' : Math.round(seconds) + 's';
+    }
+    
+    function escapeHtml(text) {
+      const div = document.createElement('div');
+      div.textContent = text;
+      return div.innerHTML;
+    }
+    
+    async function loadBuilds() {
+      const loadingEl = document.getElementById('loading');
+      const containerEl = document.getElementById('builds-container');
+      const emptyEl = document.getElementById('empty-state');
+      
+      try {
+        // Load both manifest and history
+        const [manifestRes, historyRes] = await Promise.all([
+          fetch('/builds/manifest.json'),
+          fetch('/builds/history.json')
+        ]);
+        
+        const manifest = await manifestRes.json();
+        const history = await historyRes.json();
+        
+        loadingEl.style.display = 'none';
+        
+        if (!manifest.dates || manifest.dates.length === 0) {
+          emptyEl.style.display = 'block';
+          return;
+        }
+        
+        // Group history logs by date and model
+        const logsByDateModel = {};
+        for (const build of (history.builds || [])) {
+          const date = build.timestamp.split('T')[0];
+          const model = build.model || 'unknown';
+          const key = `${date}-${model}`;
+          if (!logsByDateModel[key]) {
+            logsByDateModel[key] = build;
+          }
+        }
+        
+        // Render date groups
+        containerEl.innerHTML = manifest.dates.map(dateEntry => {
+          const builds = dateEntry.builds || [];
+          const date = dateEntry.date;
+          
+          const modelBuildsHtml = builds.map(build => {
+            const name = modelNames[build.model] || build.model;
+            const duration = formatDuration(build.duration_ms);
+            const isFailed = build.status !== 'success';
+            
+            if (isFailed) {
+              return `
+                <div class="model-build failed">
+                  <span class="model-name">${name}</span>
+                  <span class="model-meta">failed</span>
+                </div>
+              `;
+            }
+            
+            return `
+              <a href="/?model=${build.model}&date=${date}" class="model-build">
+                <span class="model-name">${name}</span>
+                <span class="model-meta">${duration || 'view'}</span>
+              </a>
+            `;
+          }).join('');
+          
+          // Get logs for this date
+          const logsHtml = builds.map(build => {
+            const key = `${date}-${build.model}`;
+            const log = logsByDateModel[key];
+            if (!log) return '';
+            
+            const name = modelNames[build.model] || build.model;
+            return `
+              <div class="log-entry">
+                <div class="log-entry-header">${name}</div>
+                <pre class="log-output">${escapeHtml(log.agent_output || 'No output captured')}</pre>
+              </div>
+            `;
+          }).filter(Boolean).join('');
+          
+          return `
+            <div class="date-group" data-date="${date}">
+              <div class="date-header">
+                <span class="date">${formatDate(date)}</span>
+                <span class="relative">${relativeDate(date)}</span>
+              </div>
+              <div class="model-builds">
+                ${modelBuildsHtml}
+              </div>
+              ${logsHtml ? `
+                <div class="logs-toggle" onclick="toggleLogs('${date}')">
+                  <span>View agent logs</span>
+                  <span class="logs-chevron">▼</span>
+                </div>
+                <div class="logs-content">
+                  ${logsHtml}
+                </div>
+              ` : ''}
+            </div>
+          `;
+        }).join('');
+        
+      } catch (err) {
+        loadingEl.textContent = 'Failed to load build history';
+        console.error('Failed to load builds:', err);
+      }
+    }
+    
+    function toggleLogs(date) {
+      const group = document.querySelector(`.date-group[data-date="${date}"]`);
+      if (group) {
+        group.classList.toggle('logs-open');
+      }
+    }
+    
+    loadBuilds();
+  </script>
+</body>
+</html>

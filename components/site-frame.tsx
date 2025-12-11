@@ -14,3 +14,4 @@ export function SiteFrame({ src, title }: SiteFrameProps) {
     />
   );
 }
+

@@ -1,11 +1,12 @@
 /** @type {import('next').NextConfig} */
 const nextConfig = {
-  // Serve builds folder as static assets
+  // Serve builds folder - handle requests without .html extension
   async rewrites() {
     return [
       {
-        source: '/builds/:path*',
-        destination: '/builds/:path*',
+        // Handle requests without .html extension
+        source: '/builds/:date/:model',
+        destination: '/builds/:date/:model.html',
       },
     ];
   },
@@ -20,3 +21,4 @@ const nextConfig = {
 };
 
 export default nextConfig;
+

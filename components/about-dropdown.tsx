@@ -24,8 +24,8 @@ export function AboutDropdown({ manifest }: AboutDropdownProps) {
   return (
     <DropdownMenu>
       <DropdownMenuTrigger asChild>
-        <button className="px-2.5 py-0.5 rounded hover:bg-black/5 active:bg-black/10 outline-none">
-          About
+        <button className="h-full px-2.5 font-semibold hover:bg-black/5 active:bg-black/10 outline-none flex items-center">
+          eriks.design
         </button>
       </DropdownMenuTrigger>
       <DropdownMenuContent align="start" className="w-64">
@@ -93,3 +93,4 @@ export function AboutDropdown({ manifest }: AboutDropdownProps) {
     </DropdownMenu>
   );
 }
+

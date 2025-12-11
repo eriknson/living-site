@@ -1,6 +1,5 @@
 import type { Metadata } from "next";
 import "./globals.css";
-import { MenuBar } from "@/components/menu-bar";
 
 export const metadata: Metadata = {
   title: "Erik's Website",
@@ -14,10 +13,8 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="en">
-      <body>
-        <MenuBar />
-        <main className="pt-[var(--menu-bar-height)]">{children}</main>
-      </body>
+      <body>{children}</body>
     </html>
   );
 }
+

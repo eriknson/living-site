@@ -1,6 +1,6 @@
 import { notFound, redirect } from "next/navigation";
+import { getManifest } from "@/lib/manifest-server";
 import {
-  getManifest,
   getBuildForModel,
   getModelDisplayName,
   getModelIdFromSlug,
@@ -66,3 +66,4 @@ export default async function ModelPage({ params }: ModelPageProps) {
     />
   );
 }
+

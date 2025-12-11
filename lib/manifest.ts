@@ -1,6 +1,3 @@
-import { promises as fs } from "fs";
-import path from "path";
-
 export interface Build {
   model: string;
   status: string;
@@ -46,12 +43,6 @@ export const slugToModelId: Record<string, string> = Object.entries(
   },
   {} as Record<string, string>
 );
-
-export async function getManifest(): Promise<Manifest> {
-  const manifestPath = path.join(process.cwd(), "public", "builds", "manifest.json");
-  const content = await fs.readFile(manifestPath, "utf-8");
-  return JSON.parse(content);
-}
 
 export function getModelDisplayName(modelId: string): string {
   return modelDisplayNames[modelId] || modelId;
@@ -114,3 +105,4 @@ export function getAvailableModels(
 
   return dateEntry.builds.filter((b) => b.status === "success");
 }
+
