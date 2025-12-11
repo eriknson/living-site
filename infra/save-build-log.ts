@@ -1,14 +1,18 @@
 /**
  * Save Build Log
- * Processes cursor-agent stream-json output and appends to build history
+ * Processes cursor-agent stream-json output, saves HTML to date folders,
+ * and updates both history.json (logs) and manifest.json (build index)
  */
 
-import { readFile, writeFile } from "fs/promises";
+import { readFile, writeFile, mkdir, copyFile } from "fs/promises";
 import { existsSync } from "fs";
 
 const HISTORY_PATH = "builds/history.json";
+const MANIFEST_PATH = "builds/manifest.json";
 const FETCH_SUMMARY_PATH = "data/fetch-summary.json";
-const MAX_BUILDS = 20;
+const GENERATED_PATH = "generated/index.html";
+const MAX_BUILDS = 50;
+const MAX_DATES = 14;
 
 interface FetchSourceResult {
   name: string;
@@ -49,8 +53,31 @@ interface BuildHistory {
   builds: BuildEntry[];
 }
 
+interface ManifestBuild {
+  model: string;
+  status: "success" | "failure";
+  duration_ms?: number;
+  path: string;
+}
+
+interface ManifestDate {
+  date: string;
+  builds: ManifestBuild[];
+}
+
+interface Manifest {
+  default_model: string;
+  models: string[];
+  latest_date: string | null;
+  dates: ManifestDate[];
+}
+
 function generateId(): string {
   return Date.now().toString(36) + Math.random().toString(36).substr(2, 5);
+}
+
+function getDateString(date: Date): string {
+  return date.toISOString().split("T")[0];
 }
 
 function formatTimestamp(date: Date): string {
@@ -213,6 +240,28 @@ async function loadHistory(): Promise<BuildHistory> {
   }
 }
 
+async function loadManifest(): Promise<Manifest> {
+  if (!existsSync(MANIFEST_PATH)) {
+    return {
+      default_model: "composer-1",
+      models: ["composer-1", "claude-4.5-opus-high-thinking", "gpt-5.1-codex"],
+      latest_date: null,
+      dates: [],
+    };
+  }
+  try {
+    const content = await readFile(MANIFEST_PATH, "utf-8");
+    return JSON.parse(content);
+  } catch {
+    return {
+      default_model: "composer-1",
+      models: ["composer-1", "claude-4.5-opus-high-thinking", "gpt-5.1-codex"],
+      latest_date: null,
+      dates: [],
+    };
+  }
+}
+
 async function loadAndFormatFetchSummary(): Promise<string | null> {
   if (!existsSync(FETCH_SUMMARY_PATH)) {
     return null;
@@ -246,7 +295,23 @@ async function loadAndFormatFetchSummary(): Promise<string | null> {
   }
 }
 
-async function saveBuildLog(outputPath: string): Promise<void> {
+function parseArgs(args: string[]): { outputPath: string; model: string | null } {
+  let outputPath = "";
+  let model: string | null = null;
+  
+  for (let i = 0; i < args.length; i++) {
+    if (args[i] === "--model" && args[i + 1]) {
+      model = args[i + 1];
+      i++;
+    } else if (!args[i].startsWith("--")) {
+      outputPath = args[i];
+    }
+  }
+  
+  return { outputPath, model };
+}
+
+async function saveBuildLog(outputPath: string, modelOverride: string | null): Promise<void> {
   let rawOutput: string;
   try {
     rawOutput = await readFile(outputPath, "utf-8");
@@ -255,8 +320,20 @@ async function saveBuildLog(outputPath: string): Promise<void> {
     rawOutput = "Failed to capture build output";
   }
 
-  const { formatted, status, duration_ms, model } = parseStreamJson(rawOutput);
-  const finalStatus = existsSync("generated/index.html") ? "success" : status;
+  const { formatted, status, duration_ms, model: detectedModel } = parseStreamJson(rawOutput);
+  
+  // Use override model if provided, otherwise use detected model
+  const model = modelOverride || detectedModel || "unknown";
+  
+  const now = new Date();
+  const dateStr = getDateString(now);
+  const dateDir = `builds/${dateStr}`;
+  const buildPath = `${dateDir}/${model}.html`;
+  
+  // Check if build HTML exists (either from generated/ or already in builds/)
+  const hasGeneratedHtml = existsSync(GENERATED_PATH);
+  const hasBuildHtml = existsSync(buildPath);
+  const finalStatus = (hasGeneratedHtml || hasBuildHtml) ? "success" : status;
 
   // Load fetch summary and prepend to output
   const fetchSummary = await loadAndFormatFetchSummary();
@@ -264,7 +341,7 @@ async function saveBuildLog(outputPath: string): Promise<void> {
     ? `${fetchSummary}${formatted || rawOutput}`
     : (formatted || rawOutput);
 
-  const now = new Date();
+  // 1. Save to history.json (agent logs - backward compatible)
   const entry: BuildEntry = {
     id: generateId(),
     timestamp: now.toISOString(),
@@ -283,17 +360,66 @@ async function saveBuildLog(outputPath: string): Promise<void> {
   }
 
   await writeFile(HISTORY_PATH, JSON.stringify(history, null, 2));
-  console.log(`Build log saved: ${entry.id} (${entry.status})`);
+  console.log(`Build log saved: ${entry.id} (${finalStatus})`);
+
+  // 2. Save HTML to builds/{date}/{model}.html (if from generated/ and not already there)
+  if (hasGeneratedHtml && !hasBuildHtml) {
+    if (!existsSync(dateDir)) {
+      await mkdir(dateDir, { recursive: true });
+    }
+    
+    await copyFile(GENERATED_PATH, buildPath);
+    console.log(`Build HTML saved: ${buildPath}`);
+  }
+
+  // 3. Update manifest.json (if build was successful)
+  if (finalStatus === "success") {
+    const manifest = await loadManifest();
+    
+    // Find or create the date entry
+    let dateEntry = manifest.dates.find(d => d.date === dateStr);
+    if (!dateEntry) {
+      dateEntry = { date: dateStr, builds: [] };
+      manifest.dates.unshift(dateEntry);
+    }
+    
+    // Update or add the build for this model
+    const existingBuildIdx = dateEntry.builds.findIndex(b => b.model === model);
+    const buildInfo: ManifestBuild = {
+      model,
+      status: finalStatus,
+      duration_ms,
+      path: buildPath,
+    };
+    
+    if (existingBuildIdx >= 0) {
+      dateEntry.builds[existingBuildIdx] = buildInfo;
+    } else {
+      dateEntry.builds.push(buildInfo);
+    }
+    
+    // Update latest date
+    manifest.latest_date = dateStr;
+    
+    // Trim old dates
+    if (manifest.dates.length > MAX_DATES) {
+      manifest.dates = manifest.dates.slice(0, MAX_DATES);
+    }
+    
+    await writeFile(MANIFEST_PATH, JSON.stringify(manifest, null, 2));
+    console.log(`Manifest updated: ${model} for ${dateStr}`);
+  }
 }
 
 if (import.meta.url === `file://${process.argv[1]}`) {
-  const outputPath = process.argv[2];
+  const { outputPath, model } = parseArgs(process.argv.slice(2));
+  
   if (!outputPath) {
-    console.error("Usage: tsx infra/save-build-log.ts <output-file>");
+    console.error("Usage: tsx infra/save-build-log.ts <output-file> [--model <model-name>]");
     process.exit(1);
   }
 
-  saveBuildLog(outputPath)
+  saveBuildLog(outputPath, model)
     .then(() => process.exit(0))
     .catch((err) => {
       console.error("Error:", err.message);

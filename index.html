@@ -10,87 +10,240 @@
       padding: 0;
       box-sizing: border-box;
     }
-    body {
+    
+    .model-switcher {
+      position: fixed;
+      top: 1rem;
+      right: 1rem;
+      z-index: 1000;
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
       font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
-      background: #f5f5f5;
+      font-size: 0.8125rem;
+    }
+    
+    .model-switcher label {
+      color: #999;
+    }
+    
+    .model-switcher select {
+      font-family: inherit;
+      font-size: 0.8125rem;
+      padding: 0.25rem 0.5rem;
+      border: 1px solid #ddd;
+      border-radius: 4px;
+      background: #fff;
       color: #333;
-      max-width: 600px;
-      margin: 0 auto;
-      padding: 4rem 1.5rem;
-      line-height: 1.6;
+      cursor: pointer;
     }
-    h1 {
-      font-size: 1.5rem;
-      font-weight: 600;
-      margin-bottom: 0.25rem;
+    
+    .model-switcher select:hover {
+      border-color: #bbb;
     }
-    .updated {
+    
+    .model-switcher select:focus {
+      outline: none;
+      border-color: #0066cc;
+    }
+    
+    #build-container {
+      min-height: 100vh;
+    }
+    
+    #build-container iframe {
+      width: 100%;
+      height: 100vh;
+      border: none;
+    }
+    
+    .loading {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      height: 100vh;
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+      color: #999;
       font-size: 0.875rem;
+    }
+    
+    .error {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      height: 100vh;
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
       color: #666;
-      margin-bottom: 2.5rem;
+      font-size: 0.875rem;
+      text-align: center;
+      padding: 2rem;
     }
-    .bio {
-      margin-bottom: 2.5rem;
-    }
-    .bio p {
+    
+    .error p {
       margin-bottom: 1rem;
     }
-    .links {
-      margin-bottom: 3rem;
-    }
-    .links a {
+    
+    .error a {
       color: #0066cc;
       text-decoration: none;
-      margin-right: 1.5rem;
-      font-size: 0.9375rem;
     }
-    .links a:hover {
+    
+    .error a:hover {
       text-decoration: underline;
-    }
-    .links a::after {
-      content: " ↗";
-      font-size: 0.75rem;
-    }
-    footer {
-      font-size: 0.875rem;
-      color: #999;
-      font-style: italic;
     }
   </style>
 </head>
 <body>
-  <header>
-    <h1>Erik's Website</h1>
-    <p class="updated" data-timestamp="2025-12-11T11:25:22.442Z">Updated just now</p>
-  </header>
+  <nav class="model-switcher">
+    <label for="model-select">model:</label>
+    <select id="model-select">
+      <option value="composer-1">Composer</option>
+      <option value="claude-4.5-opus-high-thinking">Opus 4.5</option>
+      <option value="gpt-5.1-codex">GPT-5.1 Codex</option>
+    </select>
+  </nav>
   
-  <main>
-    <section class="bio">
-      <p>been focused on me and cursor-commands lately. actively building across a few repos—shipflow is still wip but getting closer, metamask-ds is in the mix too. this site regenerates itself daily based on real activity. cursor pulls from github commits, spotify listening, posts on X, then synthesizes everything into first-person prose. it reflects what's actually happening, not what i think should be there.</p>
-      <p>on X i'm talking about making building software easier and more fun. ai agents as collaborators, not replacements. stay in flow, never leave context. surgical iterations over sweeping rewrites. you set the vision, agents execute. building in public feels right. been posting regularly about developer tools and how we work with ai—comparing agents in context, flow state with parallel agents, that kind of thing.</p>
-      <p>musical taste shifting lately. core stuff is still dream pop, rap, indie—beach house, taylor swift, kanye showing up consistently. but i'm exploring french indie pop and glam rock now, which is new for me. discovering A$AP Rocky and Videoclub. trip hop and neo-psychedelic showing up more too. massive attack, tame impala. not dramatic, just exploration.</p>
-    </section>
-    
-    <section class="links">
-      <a href="https://github.com/eriknson">GitHub</a>
-      <a href="https://twitter.com/erikoverse">Twitter</a>
-      <a href="https://linkedin.com/in/eriknson">LinkedIn</a>
-      <a href="mailto:contact@eriks.design">Email</a>
-    </section>
+  <main id="build-container">
+    <div class="loading">loading...</div>
   </main>
-  
-  <footer>
-    winter's short days. steady building, new sounds in the background. the site regenerates itself, reflecting what's actually happening.
-  </footer>
-  
+
   <script>
-    const el = document.querySelector('[data-timestamp]');
-    const ts = new Date(el.dataset.timestamp);
-    const diff = Date.now() - ts;
-    const mins = Math.floor(diff / 60000);
-    const hrs = Math.floor(mins / 60);
-    const days = Math.floor(hrs / 24);
-    el.textContent = 'Updated ' + (days ? days + 'd ago' : hrs ? hrs + 'h ago' : mins ? mins + 'm ago' : 'just now');
+    const container = document.getElementById('build-container');
+    const select = document.getElementById('model-select');
+    
+    let manifest = null;
+    let currentModel = null;
+    let currentDate = null;
+    
+    // Model display names
+    const modelNames = {
+      'composer-1': 'Composer',
+      'claude-4.5-opus-high-thinking': 'Opus 4.5',
+      'gpt-5.1-codex': 'GPT-5.1 Codex'
+    };
+    
+    // Parse URL parameters
+    function getUrlParams() {
+      const params = new URLSearchParams(window.location.search);
+      return {
+        model: params.get('model'),
+        date: params.get('date')
+      };
+    }
+    
+    // Update URL without reload
+    function updateUrl(model, date) {
+      const params = new URLSearchParams();
+      if (model && model !== manifest?.default_model) {
+        params.set('model', model);
+      }
+      if (date && date !== manifest?.latest_date) {
+        params.set('date', date);
+      }
+      const newUrl = params.toString() 
+        ? `${window.location.pathname}?${params.toString()}`
+        : window.location.pathname;
+      window.history.replaceState({}, '', newUrl);
+    }
+    
+    // Load manifest
+    async function loadManifest() {
+      try {
+        const response = await fetch('/builds/manifest.json');
+        if (!response.ok) throw new Error('Manifest not found');
+        manifest = await response.json();
+        return manifest;
+      } catch (err) {
+        console.error('Failed to load manifest:', err);
+        return null;
+      }
+    }
+    
+    // Update select options based on available builds
+    function updateSelectOptions(date) {
+      const dateEntry = manifest?.dates?.find(d => d.date === date);
+      if (!dateEntry) return;
+      
+      // Update options to show which models have builds
+      Array.from(select.options).forEach(option => {
+        const model = option.value;
+        const hasBuild = dateEntry.builds.some(b => b.model === model && b.status === 'success');
+        option.disabled = !hasBuild;
+        option.textContent = modelNames[model] + (hasBuild ? '' : ' (unavailable)');
+      });
+    }
+    
+    // Load build HTML
+    async function loadBuild(model, date) {
+      container.innerHTML = '<div class="loading">loading...</div>';
+      
+      const buildPath = `/builds/${date}/${model}.html`;
+      
+      try {
+        const response = await fetch(buildPath);
+        if (!response.ok) throw new Error('Build not found');
+        
+        const html = await response.text();
+        
+        // Use srcdoc iframe to isolate the build's styles
+        container.innerHTML = `<iframe srcdoc="${html.replace(/"/g, '&quot;')}" title="Site build by ${modelNames[model] || model}"></iframe>`;
+        
+        currentModel = model;
+        currentDate = date;
+        select.value = model;
+        updateUrl(model, date);
+        
+      } catch (err) {
+        console.error('Failed to load build:', err);
+        container.innerHTML = `
+          <div class="error">
+            <p>Build not available for ${modelNames[model] || model} on ${date}</p>
+            <a href="/" onclick="loadBuild('${manifest?.default_model || 'composer-1'}', '${manifest?.latest_date}'); return false;">Load default build</a>
+          </div>
+        `;
+      }
+    }
+    
+    // Handle model change
+    select.addEventListener('change', (e) => {
+      const model = e.target.value;
+      const date = currentDate || manifest?.latest_date;
+      if (date) {
+        loadBuild(model, date);
+      }
+    });
+    
+    // Initialize
+    async function init() {
+      const loadedManifest = await loadManifest();
+      
+      if (!loadedManifest || !loadedManifest.latest_date) {
+        // No manifest or no builds - show fallback
+        container.innerHTML = `
+          <div class="error">
+            <p>No builds available yet.</p>
+            <p>The site regenerates daily with multiple AI models.</p>
+          </div>
+        `;
+        return;
+      }
+      
+      // Get params from URL
+      const { model: urlModel, date: urlDate } = getUrlParams();
+      
+      // Determine which model and date to load
+      const date = urlDate || loadedManifest.latest_date;
+      const model = urlModel || loadedManifest.default_model || 'composer-1';
+      
+      // Update select options
+      updateSelectOptions(date);
+      
+      // Load the build
+      loadBuild(model, date);
+    }
+    
+    init();
   </script>
 </body>
 </html>
