@@ -14,13 +14,21 @@ on:
   schedule:
     - cron: '0 6 * * *'  # 6am UTC daily
 
+concurrency:
+  group: regenerate-site
+  cancel-in-progress: false
+
 permissions:
   contents: write
+
+env:
+  NODE_VERSION: '20'
 
 jobs:
   # Job 1: Aggregate data (runs once)
   aggregate:
     runs-on: ubuntu-latest
+    timeout-minutes: 10
     outputs:
       date: ${{ steps.date.outputs.date }}
     steps:
@@ -30,7 +38,7 @@ jobs:
       - name: Setup Node.js
         uses: actions/setup-node@v4
         with:
-          node-version: '20'
+          node-version: ${{ env.NODE_VERSION }}
           cache: 'npm'
 
       - name: Install dependencies
@@ -67,13 +75,14 @@ jobs:
           path: |
             data/latest.json
             data/fetch-summary.json
-          retention-days: 1
+          retention-days: 3
 
   # Job 2: Generate with each model (parallel matrix)
   generate:
     needs: aggregate
     if: inputs.dry_run != 'true'
     runs-on: ubuntu-latest
+    timeout-minutes: 30
     strategy:
       fail-fast: false
       matrix:
@@ -85,7 +94,7 @@ jobs:
       - name: Setup Node.js
         uses: actions/setup-node@v4
         with:
-          node-version: '20'
+          node-version: ${{ env.NODE_VERSION }}
           cache: 'npm'
 
       - name: Install dependencies
@@ -118,10 +127,12 @@ jobs:
           cat /tmp/generation-prompt.txt
 
       - name: Generate site with ${{ matrix.model }}
+        id: generate
+        continue-on-error: true
         env:
           CURSOR_API_KEY: ${{ secrets.CURSOR_API_KEY }}
         run: |
-          cursor-agent -p --force --model "${{ matrix.model }}" --output-format stream-json "$(cat /tmp/generation-prompt.txt)" > /tmp/build-output.json 2>&1 || true
+          cursor-agent -p --force --model "${{ matrix.model }}" --output-format stream-json "$(cat /tmp/generation-prompt.txt)" > /tmp/build-output.json 2>&1
           echo "Build output captured for ${{ matrix.model }}"
 
       - name: Verify sandbox (no unauthorized changes)
@@ -159,13 +170,14 @@ jobs:
           path: |
             public/builds/${{ needs.aggregate.outputs.date }}/
             generated/${{ matrix.model }}.html
-          retention-days: 1
+          retention-days: 3
 
   # Job 3: Commit all builds
   commit:
     needs: [aggregate, generate]
     if: inputs.dry_run != 'true'
     runs-on: ubuntu-latest
+    timeout-minutes: 10
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
@@ -173,7 +185,7 @@ jobs:
       - name: Setup Node.js
         uses: actions/setup-node@v4
         with:
-          node-version: '20'
+          node-version: ${{ env.NODE_VERSION }}
           cache: 'npm'
 
       - name: Install dependencies
@@ -204,9 +216,10 @@ jobs:
             fi
           done
           
-          # Copy model-specific generated files from artifacts
-          for model in composer-1 claude-4.5-opus-high-thinking gpt-5.1-codex; do
-            src="artifacts/build-${model}/generated/${model}.html"
+          # Copy model-specific generated files from artifacts (derive models from artifact dirs)
+          for artifact_dir in artifacts/build-*/; do
+            model=$(basename "$artifact_dir" | sed 's/^build-//')
+            src="${artifact_dir}generated/${model}.html"
             if [ -f "$src" ]; then
               cp "$src" "generated/${model}.html"
               echo "Copied generated/${model}.html"
@@ -224,11 +237,12 @@ jobs:
         run: |
           DATE="${{ needs.aggregate.outputs.date }}"
           
-          # Process each model's build output
+          # Process each model's build output (derive models from artifact dirs)
           # --skip-html-copy: HTML files are already copied by "Organize builds" step
           # --date: Use the workflow date to ensure consistency across jobs
           # --github-run-url: Link to this GitHub Actions run
-          for model in composer-1 claude-4.5-opus-high-thinking gpt-5.1-codex; do
+          for artifact_dir in artifacts/build-*/; do
+            model=$(basename "$artifact_dir" | sed 's/^build-//')
             output_file="public/builds/${DATE}/${model}-output.json"
             if [ -f "$output_file" ]; then
               echo "Processing build log for ${model}..."
@@ -260,3 +274,20 @@ jobs:
             git commit -m "Regenerate site (3 models) - $(date -u +%Y-%m-%d)"
             git push
           fi
+
+      - name: Write job summary
+        run: |
+          DATE="${{ needs.aggregate.outputs.date }}"
+          echo "## 🔄 Regenerate Site Results" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "**Date:** ${DATE}" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "### Model Builds" >> $GITHUB_STEP_SUMMARY
+          for artifact_dir in artifacts/build-*/; do
+            model=$(basename "$artifact_dir" | sed 's/^build-//')
+            if [ -f "generated/${model}.html" ]; then
+              echo "- ✅ ${model}" >> $GITHUB_STEP_SUMMARY
+            else
+              echo "- ❌ ${model} (no HTML generated)" >> $GITHUB_STEP_SUMMARY
+            fi
+          done
