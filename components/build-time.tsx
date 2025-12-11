@@ -35,9 +35,10 @@ const SOURCE_DISPLAY: Record<string, string> = {
 interface BuildTimeProps {
   manifest: Manifest | null;
   currentDate?: string | null;
+  currentTimestamp?: string | null;
 }
 
-export function BuildTime({ manifest, currentDate }: BuildTimeProps) {
+export function BuildTime({ manifest, currentDate, currentTimestamp }: BuildTimeProps) {
   const [relativeTime, setRelativeTime] = useState<string>("");
   const [dataSources, setDataSources] = useState<DataSource[]>([]);
   const [dataTimestamp, setDataTimestamp] = useState<string>("");
@@ -46,7 +47,7 @@ export function BuildTime({ manifest, currentDate }: BuildTimeProps) {
   useEffect(() => {
     if (!manifest) return;
 
-    const builtAt = getBuiltAt(manifest, currentDate ?? undefined);
+    const builtAt = getBuiltAt(manifest, currentDate ?? undefined, currentTimestamp ?? undefined);
     if (!builtAt) return;
 
     const updateTime = () => {
@@ -56,7 +57,7 @@ export function BuildTime({ manifest, currentDate }: BuildTimeProps) {
     updateTime();
     const interval = setInterval(updateTime, 60000);
     return () => clearInterval(interval);
-  }, [manifest, currentDate]);
+  }, [manifest, currentDate, currentTimestamp]);
 
   useEffect(() => {
     fetch("/data/fetch-summary.json")

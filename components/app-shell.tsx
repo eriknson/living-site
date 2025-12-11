@@ -6,7 +6,7 @@ import { MenuBar } from "./menu-bar";
 import { getModelDisplayName } from "@/lib/manifest";
 
 function AppContent() {
-  const { manifest, currentModel, currentDate, currentBuildPath, isLoading, setModel } = useManifest();
+  const { manifest, currentModel, currentDate, currentTimestamp, currentBuildPath, isLoading, setModel } = useManifest();
 
   return (
     <>
@@ -14,6 +14,7 @@ function AppContent() {
         manifest={manifest}
         currentModel={currentModel}
         currentDate={currentDate}
+        currentTimestamp={currentTimestamp}
         onModelChange={setModel}
       />
       <main className="pt-[var(--menu-bar-height)]">

@@ -2,19 +2,26 @@ export interface Build {
   model: string;
   status: string;
   duration_ms?: number;
+  line_count?: number;
   path: string;
+}
+
+export interface Batch {
+  timestamp: string; // ISO timestamp, used as unique identifier
+  github_run_url?: string;
+  builds: Build[];
 }
 
 export interface DateEntry {
   date: string;
-  built_at?: string; // ISO timestamp of when this batch was built
-  builds: Build[];
+  batches: Batch[];
 }
 
 export interface Manifest {
   default_model: string;
   models: string[];
   latest_date: string;
+  latest_timestamp: string; // ISO timestamp of the most recent batch
   dates: DateEntry[];
 }
 
@@ -82,48 +89,76 @@ export function formatRelativeTime(dateString: string): string {
   return `${diffDays}d ago`;
 }
 
+// Get a specific batch by date and timestamp
+export function getBatch(
+  manifest: Manifest,
+  date?: string,
+  timestamp?: string
+): Batch | undefined {
+  const targetDate = date || manifest.latest_date;
+  const dateEntry = manifest.dates.find((d) => d.date === targetDate);
+  if (!dateEntry || dateEntry.batches.length === 0) return undefined;
+
+  if (timestamp) {
+    return dateEntry.batches.find((b) => b.timestamp === timestamp);
+  }
+  // Return most recent batch for this date
+  return dateEntry.batches[0];
+}
+
+// Get build for a model within a specific batch
 export function getBuildForModel(
   manifest: Manifest,
   modelId: string,
-  date?: string
+  date?: string,
+  timestamp?: string
 ): Build | undefined {
-  const targetDate = date || manifest.latest_date;
-  const dateEntry = manifest.dates.find((d) => d.date === targetDate);
-  if (!dateEntry) return undefined;
+  const batch = getBatch(manifest, date, timestamp);
+  if (!batch) return undefined;
 
-  return dateEntry.builds.find(
+  return batch.builds.find(
     (b) => b.model === modelId && b.status === "success"
   );
 }
 
+// Get all successful builds from a batch
 export function getAvailableModels(
   manifest: Manifest,
-  date?: string
+  date?: string,
+  timestamp?: string
 ): Build[] {
-  const targetDate = date || manifest.latest_date;
-  const dateEntry = manifest.dates.find((d) => d.date === targetDate);
-  if (!dateEntry) return [];
+  const batch = getBatch(manifest, date, timestamp);
+  if (!batch) return [];
 
-  return dateEntry.builds.filter((b) => b.status === "success");
+  return batch.builds.filter((b) => b.status === "success");
 }
 
-// Get only models built in the same batch (have duration_ms)
+// Alias for getAvailableModels (all builds in a batch are from the same batch)
 export function getSameBatchModels(
   manifest: Manifest,
-  date?: string
+  date?: string,
+  timestamp?: string
 ): Build[] {
-  const targetDate = date || manifest.latest_date;
-  const dateEntry = manifest.dates.find((d) => d.date === targetDate);
-  if (!dateEntry) return [];
-
-  // Only return builds that have duration_ms (indicating they were built in this batch)
-  return dateEntry.builds.filter((b) => b.status === "success" && b.duration_ms !== undefined);
+  return getAvailableModels(manifest, date, timestamp);
 }
 
-// Get the built_at timestamp for a date entry
-export function getBuiltAt(manifest: Manifest, date?: string): string | undefined {
+// Get the timestamp for a batch
+export function getBuiltAt(
+  manifest: Manifest,
+  date?: string,
+  timestamp?: string
+): string | undefined {
+  const batch = getBatch(manifest, date, timestamp);
+  return batch?.timestamp;
+}
+
+// Get all batches for a date
+export function getBatchesForDate(
+  manifest: Manifest,
+  date?: string
+): Batch[] {
   const targetDate = date || manifest.latest_date;
   const dateEntry = manifest.dates.find((d) => d.date === targetDate);
-  return dateEntry?.built_at;
+  return dateEntry?.batches || [];
 }
 

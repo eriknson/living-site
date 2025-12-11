@@ -153,6 +153,7 @@ jobs:
           mkdir -p "public/builds/${DATE}"
           
           # Copy generated HTML to date folder (each model has its own sandbox file)
+          # Final naming with timestamp will happen in commit job
           if [ -f "generated/${MODEL}.html" ]; then
             cp "generated/${MODEL}.html" "public/builds/${DATE}/${MODEL}.html"
             echo "Saved build: public/builds/${DATE}/${MODEL}.html"
@@ -209,14 +210,16 @@ jobs:
           mkdir -p "public/builds/${DATE}"
           mkdir -p "generated"
           
-          # Copy all builds from artifacts to public/builds folder
+          # Copy build output JSONs from artifacts (for log processing)
           for dir in artifacts/build-*/public/builds/${DATE}; do
             if [ -d "$dir" ]; then
-              cp -r "$dir"/* "public/builds/${DATE}/" 2>/dev/null || true
+              # Only copy the output.json files, not the HTML (save-build-log will handle HTML with timestamps)
+              cp "$dir"/*-output.json "public/builds/${DATE}/" 2>/dev/null || true
             fi
           done
           
           # Copy model-specific generated files from artifacts (derive models from artifact dirs)
+          # These will be copied to timestamped paths by save-build-log
           for artifact_dir in artifacts/build-*/; do
             model=$(basename "$artifact_dir" | sed 's/^build-//')
             src="${artifact_dir}generated/${model}.html"
@@ -226,7 +229,7 @@ jobs:
             fi
           done
           
-          echo "Builds collected:"
+          echo "Build outputs collected:"
           ls -la "public/builds/${DATE}/"
           echo "Generated files:"
           ls -la "generated/"
@@ -236,17 +239,20 @@ jobs:
           GITHUB_RUN_URL: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}
         run: |
           DATE="${{ needs.aggregate.outputs.date }}"
+          # Generate a shared batch timestamp for all models in this run
+          BATCH_TIMESTAMP=$(date -u +%Y-%m-%dT%H:%M:%S.000Z)
           
           # Process each model's build output (derive models from artifact dirs)
-          # --skip-html-copy: HTML files are already copied by "Organize builds" step
           # --date: Use the workflow date to ensure consistency across jobs
+          # --batch-timestamp: Shared timestamp for all models in this batch
           # --github-run-url: Link to this GitHub Actions run
+          # save-build-log will copy HTML from generated/{model}.html to builds/{date}/{model}-{timestamp}.html
           for artifact_dir in artifacts/build-*/; do
             model=$(basename "$artifact_dir" | sed 's/^build-//')
             output_file="public/builds/${DATE}/${model}-output.json"
             if [ -f "$output_file" ]; then
               echo "Processing build log for ${model}..."
-              npm run save-build-log -- "$output_file" --model "$model" --date "$DATE" --skip-html-copy --github-run-url "$GITHUB_RUN_URL"
+              npm run save-build-log -- "$output_file" --model "$model" --date "$DATE" --batch-timestamp "$BATCH_TIMESTAMP" --github-run-url "$GITHUB_RUN_URL"
             fi
           done
 
@@ -278,6 +284,10 @@ jobs:
             echo "No changes to commit"
           else
             git commit -m "Regenerate site (3 models) - $(date -u +%Y-%m-%d)"
+            
+            # Pull latest changes and rebase before pushing
+            # This handles the case where another push happened during the workflow
+            git pull --rebase origin main
             git push
           fi
 

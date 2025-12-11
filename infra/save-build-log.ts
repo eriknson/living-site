@@ -64,19 +64,26 @@ interface ManifestBuild {
   model: string;
   status: "success" | "failure";
   duration_ms?: number;
+  line_count?: number;
   path: string;
+}
+
+interface ManifestBatch {
+  timestamp: string; // ISO timestamp, used as unique identifier
+  github_run_url?: string;
+  builds: ManifestBuild[];
 }
 
 interface ManifestDate {
   date: string;
-  built_at?: string; // ISO timestamp of when this batch was built
-  builds: ManifestBuild[];
+  batches: ManifestBatch[];
 }
 
 interface Manifest {
   default_model: string;
   models: string[];
   latest_date: string | null;
+  latest_timestamp: string | null; // ISO timestamp of the most recent batch
   dates: ManifestDate[];
 }
 
@@ -269,6 +276,7 @@ async function loadManifest(): Promise<Manifest> {
       default_model: "composer-1",
       models: ["composer-1", "claude-4.5-opus-high-thinking", "gpt-5.1-codex"],
       latest_date: null,
+      latest_timestamp: null,
       dates: [],
     };
   }
@@ -280,6 +288,7 @@ async function loadManifest(): Promise<Manifest> {
       default_model: "composer-1",
       models: ["composer-1", "claude-4.5-opus-high-thinking", "gpt-5.1-codex"],
       latest_date: null,
+      latest_timestamp: null,
       dates: [],
     };
   }
@@ -322,6 +331,7 @@ interface ParsedArgs {
   outputPath: string;
   model: string | null;
   date: string | null;
+  batchTimestamp: string | null;
   skipHtmlCopy: boolean;
   githubRunUrl: string | null;
 }
@@ -330,6 +340,7 @@ function parseArgs(args: string[]): ParsedArgs {
   let outputPath = "";
   let model: string | null = null;
   let date: string | null = null;
+  let batchTimestamp: string | null = null;
   let skipHtmlCopy = false;
   let githubRunUrl: string | null = null;
   
@@ -339,6 +350,9 @@ function parseArgs(args: string[]): ParsedArgs {
       i++;
     } else if (args[i] === "--date" && args[i + 1]) {
       date = args[i + 1];
+      i++;
+    } else if (args[i] === "--batch-timestamp" && args[i + 1]) {
+      batchTimestamp = args[i + 1];
       i++;
     } else if (args[i] === "--skip-html-copy") {
       skipHtmlCopy = true;
@@ -350,18 +364,19 @@ function parseArgs(args: string[]): ParsedArgs {
     }
   }
   
-  return { outputPath, model, date, skipHtmlCopy, githubRunUrl };
+  return { outputPath, model, date, batchTimestamp, skipHtmlCopy, githubRunUrl };
 }
 
 interface SaveBuildLogOptions {
   modelOverride?: string | null;
   dateOverride?: string | null;
+  batchTimestamp?: string | null;
   skipHtmlCopy?: boolean;
   githubRunUrl?: string | null;
 }
 
 async function saveBuildLog(outputPath: string, options: SaveBuildLogOptions = {}): Promise<void> {
-  const { modelOverride = null, dateOverride = null, skipHtmlCopy = false, githubRunUrl = null } = options;
+  const { modelOverride = null, dateOverride = null, batchTimestamp = null, skipHtmlCopy = false, githubRunUrl = null } = options;
   
   let rawOutput: string;
   try {
@@ -377,18 +392,24 @@ async function saveBuildLog(outputPath: string, options: SaveBuildLogOptions = {
   const model = modelOverride || detectedModel || "unknown";
   
   const now = new Date();
+  // Use batch timestamp if provided (for CI to ensure all models in a run share the same timestamp)
+  const timestamp = batchTimestamp || now.toISOString();
+  const timestampMs = new Date(timestamp).getTime();
+  
   // Use date override if provided (useful for CI to ensure consistent date across jobs)
   const dateStr = dateOverride || getDateString(now);
   const dateDir = `public/builds/${dateStr}`;
-  const buildPath = `${dateDir}/${model}.html`;
+  
+  // New file naming: builds/{date}/{model}-{timestamp}.html
+  const buildFileName = `${model}-${timestampMs}.html`;
+  const buildPath = `${dateDir}/${buildFileName}`;
   
   // Each model has its own sandbox file: generated/{model}.html
   const generatedPath = getGeneratedPath(model);
   
-  // Check if build HTML exists (either from generated/{model}.html or already in builds/)
+  // Check if build HTML exists
   const hasGeneratedHtml = existsSync(generatedPath);
-  const hasBuildHtml = existsSync(buildPath);
-  const finalStatus = (hasGeneratedHtml || hasBuildHtml) ? "success" : status;
+  const finalStatus = hasGeneratedHtml ? "success" : status;
 
   // Load fetch summary and prepend to output
   const fetchSummary = await loadAndFormatFetchSummary();
@@ -405,20 +426,13 @@ async function saveBuildLog(outputPath: string, options: SaveBuildLogOptions = {
     } catch {
       // Ignore if we can't read the file
     }
-  } else if (hasBuildHtml) {
-    try {
-      const htmlContent = await readFile(buildPath, "utf-8");
-      line_count = htmlContent.split("\n").length;
-    } catch {
-      // Ignore if we can't read the file
-    }
   }
 
-  // 1. Save to history.json (agent logs - backward compatible)
+  // 1. Save to history.json (agent logs)
   const entry: BuildEntry = {
     id: generateId(),
-    timestamp: now.toISOString(),
-    formatted_timestamp: formatTimestamp(now),
+    timestamp,
+    formatted_timestamp: formatTimestamp(new Date(timestamp)),
     status: finalStatus,
     duration_ms,
     model,
@@ -438,9 +452,9 @@ async function saveBuildLog(outputPath: string, options: SaveBuildLogOptions = {
   await writeFile(HISTORY_PATH, JSON.stringify(history, null, 2));
   console.log(`Build log saved: ${entry.id} (${finalStatus})`);
 
-  // 2. Save HTML to builds/{date}/{model}.html (if from generated/{model}.html and not already there)
+  // 2. Save HTML to builds/{date}/{model}-{timestamp}.html
   // Skip if --skip-html-copy is set (useful in CI where HTML is already copied by workflow)
-  if (!skipHtmlCopy && hasGeneratedHtml && !hasBuildHtml) {
+  if (!skipHtmlCopy && hasGeneratedHtml) {
     if (!existsSync(dateDir)) {
       await mkdir(dateDir, { recursive: true });
     }
@@ -458,32 +472,42 @@ async function saveBuildLog(outputPath: string, options: SaveBuildLogOptions = {
     // Find or create the date entry
     let dateEntry = manifest.dates.find(d => d.date === dateStr);
     if (!dateEntry) {
-      dateEntry = { date: dateStr, built_at: now.toISOString(), builds: [] };
+      dateEntry = { date: dateStr, batches: [] };
       manifest.dates.unshift(dateEntry);
-    } else {
-      // Update built_at timestamp for this batch
-      dateEntry.built_at = now.toISOString();
     }
     
-    // Update or add the build for this model
-    const existingBuildIdx = dateEntry.builds.findIndex(b => b.model === model);
+    // Find or create the batch for this timestamp
+    let batch = dateEntry.batches.find(b => b.timestamp === timestamp);
+    if (!batch) {
+      batch = { timestamp, github_run_url: githubRunUrl || undefined, builds: [] };
+      // Insert at beginning (most recent first)
+      dateEntry.batches.unshift(batch);
+    } else if (githubRunUrl && !batch.github_run_url) {
+      // Update github_run_url if not set
+      batch.github_run_url = githubRunUrl;
+    }
+    
+    // Add or update the build for this model in this batch
+    const existingBuildIdx = batch.builds.findIndex(b => b.model === model);
     // Path for manifest should be relative to public/ (Next.js serves public/ at root)
-    const manifestPath = `builds/${dateStr}/${model}.html`;
+    const manifestPath = `builds/${dateStr}/${buildFileName}`;
     const buildInfo: ManifestBuild = {
       model,
       status: finalStatus,
       duration_ms,
+      line_count,
       path: manifestPath,
     };
     
     if (existingBuildIdx >= 0) {
-      dateEntry.builds[existingBuildIdx] = buildInfo;
+      batch.builds[existingBuildIdx] = buildInfo;
     } else {
-      dateEntry.builds.push(buildInfo);
+      batch.builds.push(buildInfo);
     }
     
-    // Update latest date
+    // Update latest date and timestamp
     manifest.latest_date = dateStr;
+    manifest.latest_timestamp = timestamp;
     
     // Trim old dates
     if (manifest.dates.length > MAX_DATES) {
@@ -491,19 +515,19 @@ async function saveBuildLog(outputPath: string, options: SaveBuildLogOptions = {
     }
     
     await writeFile(MANIFEST_PATH, JSON.stringify(manifest, null, 2));
-    console.log(`Manifest updated: ${model} for ${dateStr}`);
+    console.log(`Manifest updated: ${model} for ${dateStr} (batch ${timestamp})`);
   }
 }
 
 if (import.meta.url === `file://${process.argv[1]}`) {
-  const { outputPath, model, date, skipHtmlCopy, githubRunUrl } = parseArgs(process.argv.slice(2));
+  const { outputPath, model, date, batchTimestamp, skipHtmlCopy, githubRunUrl } = parseArgs(process.argv.slice(2));
   
   if (!outputPath) {
-    console.error("Usage: tsx infra/save-build-log.ts <output-file> [--model <model-name>] [--date <YYYY-MM-DD>] [--skip-html-copy] [--github-run-url <url>]");
+    console.error("Usage: tsx infra/save-build-log.ts <output-file> [--model <model-name>] [--date <YYYY-MM-DD>] [--batch-timestamp <ISO-timestamp>] [--skip-html-copy] [--github-run-url <url>]");
     process.exit(1);
   }
 
-  saveBuildLog(outputPath, { modelOverride: model, dateOverride: date, skipHtmlCopy, githubRunUrl })
+  saveBuildLog(outputPath, { modelOverride: model, dateOverride: date, batchTimestamp, skipHtmlCopy, githubRunUrl })
     .then(() => process.exit(0))
     .catch((err) => {
       console.error("Error:", err.message);

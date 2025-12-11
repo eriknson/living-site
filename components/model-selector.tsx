@@ -18,14 +18,16 @@ interface ModelSelectorProps {
   manifest: Manifest | null;
   currentModel: string | null;
   currentDate?: string | null;
+  currentTimestamp?: string | null;
   onModelChange: (model: string) => void;
 }
 
-export function ModelSelector({ manifest, currentModel, currentDate, onModelChange }: ModelSelectorProps) {
+export function ModelSelector({ manifest, currentModel, currentDate, currentTimestamp, onModelChange }: ModelSelectorProps) {
   // Use the current date or fall back to latest
   const displayDate = currentDate || manifest?.latest_date;
-  // Only show models from the same batch (with duration_ms)
-  const sameBatchModels = manifest ? getSameBatchModels(manifest, displayDate || undefined) : [];
+  const displayTimestamp = currentTimestamp || manifest?.latest_timestamp;
+  // Only show models from the same batch
+  const sameBatchModels = manifest ? getSameBatchModels(manifest, displayDate || undefined, displayTimestamp || undefined) : [];
 
   if (!manifest || !currentModel) {
     return (

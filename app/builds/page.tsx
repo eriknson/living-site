@@ -25,19 +25,26 @@ interface ManifestBuild {
   model: string;
   status: string;
   duration_ms?: number;
+  line_count?: number;
   path: string;
+}
+
+interface ManifestBatch {
+  timestamp: string;
+  github_run_url?: string;
+  builds: ManifestBuild[];
 }
 
 interface ManifestDate {
   date: string;
-  built_at?: string;
-  builds: ManifestBuild[];
+  batches: ManifestBatch[];
 }
 
 interface Manifest {
   default_model: string;
   models: string[];
   latest_date: string | null;
+  latest_timestamp: string | null;
   dates: ManifestDate[];
 }
 
@@ -48,10 +55,10 @@ const modelNames: Record<string, string> = {
   "gpt-5.1-codex-max-low-fast": "GPT-5.1 Max",
 };
 
-function formatBuildTime(builtAt?: string): string {
-  if (!builtAt) return "";
+function formatBuildTime(timestamp?: string): string {
+  if (!timestamp) return "";
   
-  const date = new Date(builtAt);
+  const date = new Date(timestamp);
   const now = new Date();
   const diffMs = now.getTime() - date.getTime();
   const diffMins = Math.floor(diffMs / 60000);
@@ -99,7 +106,7 @@ function formatDuration(ms?: number): string {
 export default function BuildsPage() {
   const [manifest, setManifest] = useState<Manifest | null>(null);
   const [history, setHistory] = useState<BuildHistory | null>(null);
-  const [expandedDate, setExpandedDate] = useState<string | null>(null);
+  const [expandedBatch, setExpandedBatch] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
@@ -115,14 +122,13 @@ export default function BuildsPage() {
       .catch(() => setLoading(false));
   }, []);
 
-  // Group history logs by date and model
-  const logsByDateModel: Record<string, BuildEntry> = {};
+  // Group history logs by timestamp and model for lookup
+  const logsByTimestampModel: Record<string, BuildEntry> = {};
   for (const build of history?.builds || []) {
-    const date = build.timestamp.split("T")[0];
     const model = build.model || "unknown";
-    const key = `${date}-${model}`;
-    if (!logsByDateModel[key]) {
-      logsByDateModel[key] = build;
+    const key = `${build.timestamp}-${model}`;
+    if (!logsByTimestampModel[key]) {
+      logsByTimestampModel[key] = build;
     }
   }
 
@@ -151,6 +157,14 @@ export default function BuildsPage() {
     );
   }
 
+  // Flatten all batches across all dates for display
+  const allBatches: { date: string; batch: ManifestBatch }[] = [];
+  for (const dateEntry of manifest.dates) {
+    for (const batch of dateEntry.batches) {
+      allBatches.push({ date: dateEntry.date, batch });
+    }
+  }
+
   return (
     <div className="min-h-screen bg-neutral-50">
       <div className="max-w-2xl mx-auto px-4 py-6 sm:py-10">
@@ -171,33 +185,32 @@ export default function BuildsPage() {
           </p>
         </div>
 
-        {/* Date groups */}
+        {/* Batch list */}
         <div className="space-y-4">
-          {manifest.dates.map((dateEntry) => {
-            const date = dateEntry.date;
+          {allBatches.map(({ date, batch }) => {
             // Only show builds for models in the active models list
-            const builds = (dateEntry.builds || []).filter(
+            const builds = batch.builds.filter(
               (b) => manifest.models.includes(b.model)
             );
-            const isExpanded = expandedDate === date;
-
-            // Get the first log entry to get github_run_url (shared across models)
-            const firstLog = logsByDateModel[`${date}-${builds[0]?.model}`];
-            const githubRunUrl = firstLog?.github_run_url;
+            
+            if (builds.length === 0) return null;
+            
+            const isExpanded = expandedBatch === batch.timestamp;
+            const batchKey = `${date}-${batch.timestamp}`;
 
             return (
               <div
-                key={date}
+                key={batchKey}
                 className="bg-white rounded-xl border border-neutral-200 overflow-hidden"
               >
-                {/* Date header */}
+                {/* Batch header */}
                 <div className="px-4 py-3 border-b border-neutral-100 flex items-center justify-between">
                   <span className="font-medium text-neutral-900">
-                    {formatBuildTime(dateEntry.built_at)}
+                    {formatBuildTime(batch.timestamp)}
                   </span>
-                  {githubRunUrl && (
+                  {batch.github_run_url && (
                     <a
-                      href={githubRunUrl}
+                      href={batch.github_run_url}
                       target="_blank"
                       rel="noopener noreferrer"
                       className="text-neutral-400 hover:text-neutral-600 p-1"
@@ -213,7 +226,7 @@ export default function BuildsPage() {
                   {builds.map((build) => {
                     const name = modelNames[build.model] || build.model;
                     const isFailed = build.status !== "success";
-                    const log = logsByDateModel[`${date}-${build.model}`];
+                    const log = logsByTimestampModel[`${batch.timestamp}-${build.model}`];
 
                     if (isFailed) {
                       return (
@@ -231,36 +244,36 @@ export default function BuildsPage() {
                       );
                     }
 
-                      return (
-                        <Link
-                          key={build.model}
-                          href={`/?model=${build.model}&date=${date}`}
-                          className="px-3 py-2.5 rounded-lg bg-neutral-50 hover:bg-neutral-100 transition-colors"
-                        >
-                          <div className="text-sm font-medium text-neutral-900">
-                            {name}
-                          </div>
-                          <div className="flex items-center gap-2 text-xs mt-0.5">
-                            {build.duration_ms && (
-                              <span className="text-neutral-400">{formatDuration(build.duration_ms)}</span>
-                            )}
-                            {log?.line_count && (
-                              <span className="text-green-600 font-medium">+{log.line_count}</span>
-                            )}
-                          </div>
-                        </Link>
-                      );
+                    return (
+                      <Link
+                        key={build.model}
+                        href={`/?model=${build.model}&date=${date}&t=${encodeURIComponent(batch.timestamp)}`}
+                        className="px-3 py-2.5 rounded-lg bg-neutral-50 hover:bg-neutral-100 transition-colors"
+                      >
+                        <div className="text-sm font-medium text-neutral-900">
+                          {name}
+                        </div>
+                        <div className="flex items-center gap-2 text-xs mt-0.5">
+                          {build.duration_ms && (
+                            <span className="text-neutral-400">{formatDuration(build.duration_ms)}</span>
+                          )}
+                          {(build.line_count || log?.line_count) && (
+                            <span className="text-green-600 font-medium">+{build.line_count || log?.line_count}</span>
+                          )}
+                        </div>
+                      </Link>
+                    );
                   })}
                 </div>
 
                 {/* Agent logs toggle */}
                 {builds.some(
-                  (b) => logsByDateModel[`${date}-${b.model}`]?.agent_output
+                  (b) => logsByTimestampModel[`${batch.timestamp}-${b.model}`]?.agent_output
                 ) && (
                   <>
                     <button
                       onClick={() =>
-                        setExpandedDate(isExpanded ? null : date)
+                        setExpandedBatch(isExpanded ? null : batch.timestamp)
                       }
                       className="w-full px-4 py-2.5 border-t border-neutral-100 flex items-center justify-between text-sm text-neutral-500 hover:bg-neutral-50 transition-colors"
                     >
@@ -275,7 +288,7 @@ export default function BuildsPage() {
                     {isExpanded && (
                       <div className="border-t border-neutral-100 p-4 space-y-4">
                         {builds.map((build) => {
-                          const log = logsByDateModel[`${date}-${build.model}`];
+                          const log = logsByTimestampModel[`${batch.timestamp}-${build.model}`];
                           if (!log?.agent_output) return null;
 
                           const name = modelNames[build.model] || build.model;
