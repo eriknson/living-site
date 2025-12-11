@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from "react";
 import Link from "next/link";
-import { ExternalLink, History } from "lucide-react";
+import { ExternalLink, History, Github, Music, Cloud, MessageCircle, User } from "lucide-react";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -12,16 +12,13 @@ import {
 } from "@/components/ui/dropdown-menu";
 import { formatRelativeTime, getBuiltAt, type Manifest } from "@/lib/manifest";
 
-interface DataSource {
-  name: string;
-  status: string;
-  summary: string;
-}
-
-interface FetchSummary {
-  timestamp: string;
-  sources: DataSource[];
-}
+const DATA_VERTICALS = [
+  { name: "GitHub", description: "Repos, commits, languages", icon: Github },
+  { name: "Spotify", description: "Music taste & genres", icon: Music },
+  { name: "X", description: "Posts & themes", icon: MessageCircle },
+  { name: "Weather", description: "Location & conditions", icon: Cloud },
+  { name: "About", description: "Bio & philosophy", icon: User },
+];
 
 interface BuildTimeProps {
   manifest: Manifest | null;
@@ -30,7 +27,6 @@ interface BuildTimeProps {
 
 export function BuildTime({ manifest, currentDate }: BuildTimeProps) {
   const [relativeTime, setRelativeTime] = useState<string>("");
-  const [dataSources, setDataSources] = useState<DataSource[]>([]);
 
   useEffect(() => {
     if (!manifest) return;
@@ -46,13 +42,6 @@ export function BuildTime({ manifest, currentDate }: BuildTimeProps) {
     const interval = setInterval(updateTime, 60000);
     return () => clearInterval(interval);
   }, [manifest, currentDate]);
-
-  useEffect(() => {
-    fetch("/data/fetch-summary.json")
-      .then((res) => res.json())
-      .then((data: FetchSummary) => setDataSources(data.sources))
-      .catch(() => setDataSources([]));
-  }, []);
 
   if (!relativeTime) return null;
 
@@ -73,15 +62,19 @@ export function BuildTime({ manifest, currentDate }: BuildTimeProps) {
         <DropdownMenuSeparator />
 
         <div className="px-2 py-1.5 text-sm">
-          <div className="text-black/50 text-xs uppercase tracking-wide mb-1.5">Data Sources</div>
-          {dataSources.map((source) => (
-            <div key={source.name} className="flex justify-between py-0.5">
-              <span className="text-black/60">{source.name}</span>
-              <span className={source.status === "success" ? "text-green-600" : "text-red-600"}>
-                {source.status === "success" ? "Connected" : "Error"}
-              </span>
-            </div>
-          ))}
+          <div className="text-black/50 text-xs uppercase tracking-wide mb-2">Data Layer</div>
+          <div className="space-y-1.5">
+            {DATA_VERTICALS.map((vertical) => {
+              const Icon = vertical.icon;
+              return (
+                <div key={vertical.name} className="flex items-center gap-2">
+                  <Icon className="w-3.5 h-3.5 text-black/40" />
+                  <span className="text-black/70">{vertical.name}</span>
+                  <span className="text-black/40 text-xs ml-auto">{vertical.description}</span>
+                </div>
+              );
+            })}
+          </div>
         </div>
 
         <DropdownMenuSeparator />

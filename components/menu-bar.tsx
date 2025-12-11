@@ -21,10 +21,8 @@ export function MenuBar({ manifest, currentModel, currentDate, onModelChange }: 
       </div>
 
       <div className="flex items-center h-full">
-        {/* Build time with about dropdown - hidden on mobile */}
-        <div className="hidden sm:flex items-center h-full">
-          <BuildTime manifest={manifest} currentDate={currentDate} />
-        </div>
+        {/* Build time with about dropdown */}
+        <BuildTime manifest={manifest} currentDate={currentDate} />
 
         {/* Model selector */}
         <ModelSelector
