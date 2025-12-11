@@ -249,7 +249,7 @@ async function loadManifest(): Promise<Manifest> {
   if (!existsSync(MANIFEST_PATH)) {
     return {
       default_model: "composer-1",
-      models: ["composer-1", "claude-4.5-opus-high-thinking", "gpt-5.1-codex-max-low-fast"],
+      models: ["composer-1", "claude-4.5-opus-high-thinking", "gpt-5.1-codex"],
       latest_date: null,
       dates: [],
     };
@@ -260,7 +260,7 @@ async function loadManifest(): Promise<Manifest> {
   } catch {
     return {
       default_model: "composer-1",
-      models: ["composer-1", "claude-4.5-opus-high-thinking", "gpt-5.1-codex-max-low-fast"],
+      models: ["composer-1", "claude-4.5-opus-high-thinking", "gpt-5.1-codex"],
       latest_date: null,
       dates: [],
     };
