@@ -59,10 +59,17 @@ Activity is pulled from external APIs and aggregated into themes:
 | Source | Data | Status |
 |--------|------|--------|
 | GitHub | Repos, languages, commit patterns | Active |
-| Spotify | Recently played, top artists | Planned |
+| Spotify | Top artists, tracks, genres by time range | Active |
+| Typefully | Published posts, themes | Active |
+| Weather | Current conditions at location | Active |
+| Location | "Last seen" with coordinates | Active |
 | Strava | Recent activities, stats | Planned |
 
 The aggregator extracts high-level themes like "TypeScript focused" or "actively building" rather than exposing raw data.
+
+### Updating Location
+
+Location can be updated via iOS Shortcut → GitHub API. See [docs/location-shortcut.md](docs/location-shortcut.md) for setup instructions.
 
 ## Build History
 

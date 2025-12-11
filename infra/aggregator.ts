@@ -16,6 +16,10 @@ import {
   hasTypefullyCredentials,
   type TypefullyData,
 } from "./fetchers/typefully.js";
+import {
+  fetchWeatherData,
+  type WeatherData,
+} from "./fetchers/weather.js";
 import { saveSnapshot, getRecentSnapshots, type Snapshot } from "./history.js";
 import { computeGitHubBaseline } from "./baselines/github.js";
 import { computeSpotifyBaseline } from "./baselines/spotify.js";
@@ -78,6 +82,7 @@ interface AggregatedData {
     github?: GitHubData;
     spotify?: SpotifyData;
     typefully?: TypefullyData;
+    weather?: WeatherData;
   };
   analysis: {
     github?: SourceAnalysis;
@@ -290,6 +295,38 @@ export async function aggregate(): Promise<AggregatedData> {
       name: "Typefully",
       status: "skipped",
       summary: "API key not configured",
+    });
+  }
+
+  // =========================================================================
+  // Weather (from location.json)
+  // =========================================================================
+  console.log("\nFetching weather data...");
+  try {
+    const weather = await fetchWeatherData();
+    sources.weather = weather;
+
+    // Add weather-based narrative signals
+    const weatherSignals: string[] = [];
+    weatherSignals.push(`last seen in ${weather.location.description}`);
+    weatherSignals.push(
+      `${weather.current.conditions}, ${weather.current.temperature_c}°C (${weather.current.feels_like_description})`
+    );
+
+    allNarrativeSignals.push(...weatherSignals);
+    console.log("  Weather signals:", weatherSignals);
+
+    fetchResults.push({
+      name: "Weather",
+      status: "success",
+      summary: `${weather.location.description}: ${weather.current.temperature_c}°C, ${weather.current.conditions}`,
+    });
+  } catch (err) {
+    console.error("  Failed to fetch weather data:", (err as Error).message);
+    fetchResults.push({
+      name: "Weather",
+      status: "failure",
+      error: (err as Error).message,
     });
   }
 
