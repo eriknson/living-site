@@ -9,17 +9,22 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import type { Manifest } from "@/lib/manifest";
-import { formatDuration, getModelDisplayName } from "@/lib/manifest";
+import { formatDuration, getModelDisplayName, getBuildForModel } from "@/lib/manifest";
 import { ExternalLink } from "lucide-react";
 
 interface AboutDropdownProps {
   manifest: Manifest | null;
+  currentModel?: string | null;
+  currentDate?: string | null;
 }
 
-export function AboutDropdown({ manifest }: AboutDropdownProps) {
-  const latestBuild = manifest?.dates?.[0]?.builds?.find(
-    (b) => b.model === manifest?.default_model && b.status === "success"
-  );
+export function AboutDropdown({ manifest, currentModel, currentDate }: AboutDropdownProps) {
+  // Get the build for the currently displayed model/date
+  const displayModel = currentModel || manifest?.default_model;
+  const displayDate = currentDate || manifest?.latest_date;
+  const currentBuild = manifest && displayModel && displayDate
+    ? getBuildForModel(manifest, displayModel, displayDate)
+    : null;
 
   return (
     <DropdownMenu>
@@ -47,21 +52,21 @@ export function AboutDropdown({ manifest }: AboutDropdownProps) {
           Current Build
         </DropdownMenuLabel>
 
-        {manifest && (
+        {manifest && displayModel && (
           <div className="px-2 py-1.5 text-sm">
             <div className="flex justify-between">
               <span className="text-black/60">Model</span>
-              <span>{getModelDisplayName(manifest.default_model)}</span>
+              <span>{getModelDisplayName(displayModel)}</span>
             </div>
-            {latestBuild?.duration_ms && (
+            {currentBuild?.duration_ms && (
               <div className="flex justify-between">
                 <span className="text-black/60">Build time</span>
-                <span>{formatDuration(latestBuild.duration_ms)}</span>
+                <span>{formatDuration(currentBuild.duration_ms)}</span>
               </div>
             )}
             <div className="flex justify-between">
               <span className="text-black/60">Date</span>
-              <span>{manifest.latest_date}</span>
+              <span>{displayDate}</span>
             </div>
           </div>
         )}

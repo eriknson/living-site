@@ -19,11 +19,14 @@ import {
 interface ModelSelectorProps {
   manifest: Manifest | null;
   currentModel: string | null;
+  currentDate?: string | null;
   onModelChange: (model: string) => void;
 }
 
-export function ModelSelector({ manifest, currentModel, onModelChange }: ModelSelectorProps) {
-  const availableModels = manifest ? getAvailableModels(manifest) : [];
+export function ModelSelector({ manifest, currentModel, currentDate, onModelChange }: ModelSelectorProps) {
+  // Use the current date or fall back to latest
+  const displayDate = currentDate || manifest?.latest_date;
+  const availableModels = manifest ? getAvailableModels(manifest, displayDate || undefined) : [];
 
   if (!manifest || !currentModel) {
     return (
@@ -45,7 +48,7 @@ export function ModelSelector({ manifest, currentModel, onModelChange }: ModelSe
       </DropdownMenuTrigger>
       <DropdownMenuContent align="end" className="w-56">
         <DropdownMenuLabel className="font-normal text-black/60">
-          Built {manifest.latest_date}
+          Built {displayDate}
         </DropdownMenuLabel>
         <DropdownMenuSeparator />
 
