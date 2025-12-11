@@ -95,7 +95,7 @@ export function BuildTime({ manifest, currentDate }: BuildTimeProps) {
           Built {relativeTime}
         </button>
       </DropdownMenuTrigger>
-      <DropdownMenuContent align="end" className="w-64">
+      <DropdownMenuContent align="end" className="w-60">
         <div className="px-2 py-2 text-sm text-black/70 leading-relaxed">
           <p>
             This site rebuilds itself daily. Three Cursor CLI agents run on GitHub Actions each morning to generate a fresh version of the website.
@@ -114,23 +114,18 @@ export function BuildTime({ manifest, currentDate }: BuildTimeProps) {
                   </span>
                 )}
               </div>
-              <div className="space-y-0.5">
+              <div className="flex flex-wrap gap-x-3 gap-y-1">
                 {dataSources.map((source) => {
                   const isOk = source.status === "success";
                   const displayName = SOURCE_DISPLAY[source.name] || source.name;
                   return (
-                    <div key={source.name} className="flex items-center justify-between py-0.5">
-                      <div className="flex items-center gap-1.5">
-                        {isOk ? (
-                          <Check className="w-3 h-3 text-green-600" />
-                        ) : (
-                          <X className="w-3 h-3 text-red-500" />
-                        )}
-                        <span className="text-black/70">{displayName}</span>
-                      </div>
-                      <span className="text-black/40 text-xs truncate max-w-[140px]">
-                        {source.summary}
-                      </span>
+                    <div key={source.name} className="flex items-center gap-1">
+                      {isOk ? (
+                        <Check className="w-3 h-3 text-green-600" />
+                      ) : (
+                        <X className="w-3 h-3 text-red-500" />
+                      )}
+                      <span className="text-black/60 text-sm">{displayName}</span>
                     </div>
                   );
                 })}
