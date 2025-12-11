@@ -62,6 +62,7 @@ interface ManifestBuild {
 
 interface ManifestDate {
   date: string;
+  built_at?: string; // ISO timestamp of when this batch was built
   builds: ManifestBuild[];
 }
 
@@ -384,8 +385,11 @@ async function saveBuildLog(outputPath: string, modelOverride: string | null): P
     // Find or create the date entry
     let dateEntry = manifest.dates.find(d => d.date === dateStr);
     if (!dateEntry) {
-      dateEntry = { date: dateStr, builds: [] };
+      dateEntry = { date: dateStr, built_at: now.toISOString(), builds: [] };
       manifest.dates.unshift(dateEntry);
+    } else {
+      // Update built_at timestamp for this batch
+      dateEntry.built_at = now.toISOString();
     }
     
     // Update or add the build for this model

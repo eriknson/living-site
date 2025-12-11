@@ -12,7 +12,9 @@ import {
 import type { Manifest } from "@/lib/manifest";
 import {
   formatDuration,
-  getAvailableModels,
+  formatRelativeTime,
+  getSameBatchModels,
+  getBuiltAt,
   getModelDisplayName,
 } from "@/lib/manifest";
 
@@ -26,7 +28,9 @@ interface ModelSelectorProps {
 export function ModelSelector({ manifest, currentModel, currentDate, onModelChange }: ModelSelectorProps) {
   // Use the current date or fall back to latest
   const displayDate = currentDate || manifest?.latest_date;
-  const availableModels = manifest ? getAvailableModels(manifest, displayDate || undefined) : [];
+  // Only show models from the same batch (with duration_ms)
+  const sameBatchModels = manifest ? getSameBatchModels(manifest, displayDate || undefined) : [];
+  const builtAt = manifest ? getBuiltAt(manifest, displayDate || undefined) : undefined;
 
   if (!manifest || !currentModel) {
     return (
@@ -48,11 +52,11 @@ export function ModelSelector({ manifest, currentModel, currentDate, onModelChan
       </DropdownMenuTrigger>
       <DropdownMenuContent align="end" className="w-56">
         <DropdownMenuLabel className="font-normal text-black/60">
-          Built {displayDate}
+          Built {builtAt ? formatRelativeTime(builtAt) : displayDate}
         </DropdownMenuLabel>
         <DropdownMenuSeparator />
 
-        {availableModels.map((build) => {
+        {sameBatchModels.map((build) => {
           const isActive = build.model === currentModel;
 
           return (

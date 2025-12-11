@@ -7,6 +7,7 @@ export interface Build {
 
 export interface DateEntry {
   date: string;
+  built_at?: string; // ISO timestamp of when this batch was built
   builds: Build[];
 }
 
@@ -104,5 +105,25 @@ export function getAvailableModels(
   if (!dateEntry) return [];
 
   return dateEntry.builds.filter((b) => b.status === "success");
+}
+
+// Get only models built in the same batch (have duration_ms)
+export function getSameBatchModels(
+  manifest: Manifest,
+  date?: string
+): Build[] {
+  const targetDate = date || manifest.latest_date;
+  const dateEntry = manifest.dates.find((d) => d.date === targetDate);
+  if (!dateEntry) return [];
+
+  // Only return builds that have duration_ms (indicating they were built in this batch)
+  return dateEntry.builds.filter((b) => b.status === "success" && b.duration_ms !== undefined);
+}
+
+// Get the built_at timestamp for a date entry
+export function getBuiltAt(manifest: Manifest, date?: string): string | undefined {
+  const targetDate = date || manifest.latest_date;
+  const dateEntry = manifest.dates.find((d) => d.date === targetDate);
+  return dateEntry?.built_at;
 }
 
