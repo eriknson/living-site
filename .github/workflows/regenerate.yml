@@ -256,6 +256,11 @@ jobs:
           # Remove the JSON output files (logs are in history.json)
           rm -f public/builds/${DATE}/*-output.json
 
+      - name: Copy fetch summary to public
+        run: |
+          mkdir -p public/data
+          cp data/fetch-summary.json public/data/fetch-summary.json
+
       - name: Commit changes
         run: |
           git config --local user.email "action@github.com"
@@ -264,6 +269,7 @@ jobs:
           # Stage all build files
           git add data/latest.json
           git add data/fetch-summary.json
+          git add public/data/
           git add public/builds/
           git add generated/
           
