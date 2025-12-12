@@ -6,9 +6,9 @@
 
 ## Overview
 
-**pulse** is a minimal, poetic personal website that rebuilds itself daily using AI. Rather than displaying raw activity data ("I listened to 47 songs today"), it synthesizes patterns and themes from multiple sources to create a living portrait that evolves over time.
+**pulse** is a minimal personal website that rebuilds itself daily using AI. It synthesizes patterns from multiple data sources into a living portrait — not "listened to 47 songs" but "drawn to introspective music lately."
 
-The site is generated server-side via the Cursor CLI, which receives a system prompt and aggregated activity data as JSON. Visitors see a theatrical loading screen before the pre-built content appears.
+Multiple AI models generate in parallel. Visitors can compare outputs via a model selector.
 
 ---
 
@@ -19,7 +19,7 @@ The site is generated server-side via the Cursor CLI, which receives a system pr
 │                        DAILY REGENERATION                        │
 ├─────────────────────────────────────────────────────────────────┤
 │                                                                  │
-│   APIs (GitHub, Spotify, Strava, Notion, Weather)               │
+│   APIs (GitHub, Spotify, Typefully, Weather)                    │
 │                           │                                      │
 │                           ▼                                      │
 │                    ┌─────────────┐                               │
@@ -32,11 +32,11 @@ The site is generated server-side via the Cursor CLI, which receives a system pr
 │              └───────────┬────────────┘                          │
 │                          │                                       │
 │                          ▼                                       │
-│                   ┌─────────────┐                                │
-│                   │  Cursor CLI │  Generates HTML/CSS            │
-│                   └──────┬──────┘                                │
-│                          │                                       │
-│                          ▼                                       │
+│         ┌────────────────────────────────────┐                   │
+│         │  Cursor CLI (3 models in parallel) │                   │
+│         └───────────────┬────────────────────┘                   │
+│                         │                                        │
+│                         ▼                                        │
 │              ┌────────────────────────┐                          │
 │              │  Deploy to Vercel      │                          │
 │              └────────────────────────┘                          │
@@ -52,47 +52,74 @@ The site is generated server-side via the Cursor CLI, which receives a system pr
 
 ```
 pulse/
-├── .github/
-│   └── workflows/
-│       └── regenerate.yml        # Daily cron + manual trigger
+├── .github/workflows/
+│   └── regenerate.yml          # Daily cron + manual trigger
 │
-├── infra/                        # 🔒 PROTECTED — Cursor cannot edit
+├── app/                        # Next.js app
+│   ├── page.tsx                # Main page — renders AppShell
+│   ├── builds/page.tsx         # Build history viewer
+│   ├── layout.tsx              # Root layout
+│   └── globals.css             # Tailwind styles
+│
+├── components/
+│   ├── app-shell.tsx           # Menu bar + iframe wrapper
+│   ├── menu-bar.tsx            # Top bar with model selector + about
+│   ├── model-selector.tsx      # Dropdown to switch models
+│   ├── about-dropdown.tsx      # About info dropdown
+│   └── ui/                     # Shared UI components
+│
+├── lib/
+│   ├── manifest.ts             # Build manifest utilities
+│   ├── manifest-context.tsx    # React context for model/date state
+│   └── manifest-server.ts      # Server-side manifest loading
+│
+├── infra/                      # 🔒 PROTECTED — agents cannot edit
 │   ├── fetchers/
-│   │   ├── github.ts             # Repos, languages, commit patterns
-│   │   ├── spotify.ts            # Listening trends, genres, artists
-│   │   ├── strava.ts             # Running patterns, distances
-│   │   ├── notion.ts             # Writing themes
-│   │   └── weather.ts            # Seasonal context
-│   ├── aggregator.ts             # Raw data → themes/patterns
-│   ├── generator.ts              # Orchestrates Cursor CLI
+│   │   ├── github.ts           # Repos, languages, commit patterns
+│   │   ├── spotify.ts          # Listening trends, genres, artists
+│   │   ├── typefully.ts        # X/Twitter posts and themes
+│   │   └── weather.ts          # Location + conditions
+│   ├── baselines/              # Compute trends vs. history
+│   │   ├── github.ts
+│   │   ├── spotify.ts
+│   │   └── typefully.ts
+│   ├── aggregator.ts           # Raw data → themes/patterns → latest.json
+│   ├── history.ts              # Save/load weekly snapshots
+│   ├── save-build-log.ts       # Process agent output → manifest + history
 │   └── prompts/
-│       └── system.md             # The system prompt
+│       └── system.md           # The system prompt for generation
 │
-├── generated/                    # 🎨 CURSOR EDITS THIS ONLY
-│   ├── index.html                # The generated site
-│   └── styles.css                # (or embedded)
+├── generated/                  # 🎨 AGENTS WRITE HERE ONLY
+│   ├── composer-1.html
+│   ├── claude-4.5-opus-high-thinking.html
+│   └── gpt-5.1-codex.html
 │
-├── public/                       # 🔒 PROTECTED — Static assets
-│   └── loading/
-│       ├── index.html            # Loading screen
-│       └── styles.css
+├── public/
+│   ├── builds/                 # Archive of all builds (served statically)
+│   │   ├── manifest.json       # Index: models, dates, build status
+│   │   ├── history.json        # Agent logs for each build
+│   │   └── YYYY-MM-DD/
+│   │       └── {model}.html
+│   └── loading/                # Static loading screen (legacy)
 │
 ├── data/
-│   ├── latest.json               # Current aggregated data
-│   ├── identity.json             # Static info (name, links, etc.)
-│   └── history/                  # Rolling window for trends
+│   ├── latest.json             # Current aggregated data (generated)
+│   ├── fetch-summary.json      # Last fetch results per source
+│   ├── identity.json           # Static: name, email, socials
+│   ├── about.json              # Static: headline, philosophy, values
+│   ├── location.json           # Current location for weather
+│   └── history/                # Weekly snapshots for trend detection
+│       ├── github/
+│       ├── spotify/
+│       └── typefully/
 │
-└── builds/                       # Archive of previous builds
-    └── YYYY-MM-DD.html
+├── scripts/
+│   ├── smoke.sh                # Pre-flight checks before generation
+│   ├── regenerate-local.sh     # Local testing script
+│   └── spotify-auth.ts         # Spotify OAuth helper
+│
+└── vercel.json                 # Vercel deployment config
 ```
-
-### Sandboxing Strategy
-
-The Cursor CLI is explicitly instructed to only edit files in `generated/`. Additionally:
-
-1. The system prompt states: *"You may ONLY edit files in the `generated/` directory"*
-2. The GitHub Action discards any changes outside `generated/` before committing
-3. Critical infra code is in a separate, protected directory
 
 ---
 
@@ -100,225 +127,304 @@ The Cursor CLI is explicitly instructed to only edit files in `generated/`. Addi
 
 | Source | What We Extract | Why |
 |--------|-----------------|-----|
-| **GitHub** | Repos, languages, commit patterns, project themes | What I'm building |
-| **Spotify** | Genre trends, artist patterns, listening moods | What I'm feeling |
-| **Strava** | Running consistency, distances, activity patterns | How I'm moving |
-| **Notion** | Writing themes, topics, recurring ideas | What I'm thinking |
-| **Weather** | Current conditions, season | Contextual variation |
+| **GitHub** | Repos, languages, commit patterns | What I'm building |
+| **Spotify** | Genre trends, artists, listening moods | What I'm feeling |
+| **Typefully** | X posts, themes, posting patterns | What I'm thinking |
+| **Weather** | Location, conditions, season | Contextual variation |
 
 ### Data Philosophy
 
-- **Patterns over events**: Not "listened to Bob Dylan today" but "drawn to folk and introspective music lately"
-- **Time-weighted**: Recent activity matters more, but history informs trends
-- **Synthesized, not listed**: The AI weaves data into natural prose
+- **Patterns over events**: "drawn to dream pop lately" not "listened to Beach House"
+- **Time-weighted**: Recent activity matters more, history informs trends
+- **Synthesized**: AI weaves data into natural prose, doesn't list it
+
+---
+
+## Multi-Model Generation
+
+Three models generate in parallel, each producing its own interpretation:
+
+| Model | File |
+|-------|------|
+| Composer | `generated/composer-1.html` |
+| Claude 4.5 Opus | `generated/claude-4.5-opus-high-thinking.html` |
+| GPT-5.1 Codex | `generated/gpt-5.1-codex.html` |
+
+### Model Selector UI
+
+The Next.js app wraps generated HTML in an iframe with a menu bar. Users can:
+
+- **Switch models** via dropdown in the menu bar
+- **View different dates** via the builds page
+- **See agent logs** showing what each model "thought"
+
+### URL Parameters
+
+State is controlled via query params:
+
+```
+/?model=composer-1&date=2025-12-11
+```
+
+| Param | Default | Description |
+|-------|---------|-------------|
+| `model` | `composer-1` | Which model's output to display |
+| `date` | Latest | Which date's build to show |
+
+The manifest at `public/builds/manifest.json` tracks available models and dates.
 
 ---
 
 ## User Experience
 
-### Loading Screen
+The site loads instantly. No theatrical loading screen — the Next.js app server-renders immediately, and pre-built HTML is served from `public/builds/`.
 
-A static page that doesn't change daily. Creates a theatrical transition:
+### Why It's Fast
 
-```
-┌─────────────────────────────────────────┐
-│                                         │
-│                                         │
-│                                         │
-│            Thinking                     │
-│                                         │
-│            Erik's been building X       │
-│            Listening to folk music      │
-│            Running through winter       │
-│            Writing about Y              │
-│                                         │
-│                                         │
-│                                         │
-└─────────────────────────────────────────┘
-```
-
-- "Thinking" header with subtle color animation
-- Dynamic-feeling loading messages (even though pre-determined)
-- Transitions to the actual site after a few seconds
+1. HTML is pre-generated during CI (not on request)
+2. Next.js serves the app shell instantly
+3. Generated HTML loads in an iframe from static files
+4. Vercel edge caching handles the rest
 
 ### Main Site
 
-Inspired by [benji.org](https://benji.org) — minimal, poetic, timeless:
-
-```
-┌─────────────────────────────────────────┐
-│                                         │
-│  Erik                                   │
-│  Updated December 9, 2024               │
-│                                         │
-│  I'm based in [location], building      │
-│  [what I'm working on].                 │
-│                                         │
-│  Lately I've been [themes from data].   │
-│  [More synthesized content...]          │
-│                                         │
-│  You can reach me at @handle or email.  │
-│                                         │
-│  ─────────────────────────────────────  │
-│                                         │
-│  2024   Project Name              08/12 │
-│  2024   Another Project           03/15 │
-│                                         │
-│                                         │
-│  Letting time pass...                   │
-│                                         │
-└─────────────────────────────────────────┘
-```
+Inspired by [benji.org](https://benji.org) — minimal, poetic, timeless. The generated HTML should feel like a personal statement, not a dashboard.
 
 ---
 
-## Design Specifications
+## Design Guidelines
 
-### Visual Identity (Fixed)
+Passed to models via `infra/prompts/system.md`:
 
-| Property | Value |
-|----------|-------|
-| Background | `#f5f5f5` (light warm gray) |
-| Body text | `#1a1a1a` (near black) |
-| Secondary text | `#999999` (dates, footer) |
-| Links | `#007AFF` (iOS blue) |
-| Font family | System stack: `-apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif` |
-| Body font size | 15px |
-| Line height | 1.6 |
-| Max width | 600px, centered |
-
-### Rules
-
-- No shadows on text (ever)
-- No decorative borders or elements
-- No images unless explicitly provided
-- Generous whitespace — let content breathe
-- Mobile responsive by default
-
-### What May Vary
-
-- Specific wording of bio paragraphs
-- The poetic footer phrase
-- Subtle tonal shifts based on season/weather
-- Which items appear in the timeline
+- **Less is more** — curate ruthlessly
+- **Whitespace** — generous margins, let content breathe
+- **Typography** — body 14-16px, line-height 1.5-1.7, max-width ~650px
+- **Palette** — 1-3 colors, black on white works
+- **No noise** — no gradients, hero sections, shadows on text
+- **Voice** — present tense, declarative, let work speak
 
 ---
 
-## Regeneration Mechanics
+## CI/CD Pipeline
 
 ### Trigger
 
-- **Primary**: Daily cron job via GitHub Actions (e.g., 6:00 AM UTC)
-- **Secondary**: Manual trigger via GitHub Actions workflow dispatch
+- **Daily**: 6:00 AM UTC via GitHub Actions cron
+- **Manual**: Workflow dispatch from GitHub Actions UI
+- **Dry run**: Manual trigger with `dry_run: true` runs aggregation only (no generation)
 
-### Process
+### Three-Job Architecture
 
-1. GitHub Action triggers
-2. `infra/fetchers/*` fetch data from each API
-3. `infra/aggregator.ts` processes raw data into themes/patterns
-4. Aggregated data saved to `data/latest.json`
-5. Multiple models generate in parallel, each to its own sandbox (`generated/{model}.html`)
-6. Builds are saved to `public/builds/{date}/{model}.html`
-7. Action commits changes
-8. Push triggers Vercel deployment
-
-### Fallback Strategy
+The workflow runs three sequential jobs:
 
 ```
-Generation attempt
-       │
-       ├── Success → Commit & deploy
-       │
-       └── Failure → Retry (up to 3x)
-                          │
-                          ├── Success → Commit & deploy
-                          │
-                          └── Still failing → Keep previous build
-                                              Log for manual review
+┌─────────────┐     ┌─────────────────────────────────┐     ┌────────────┐
+│  aggregate  │────▶│  generate (3 models parallel)  │────▶│   commit   │
+└─────────────┘     └─────────────────────────────────┘     └────────────┘
+                           │         │         │
+                    composer-1  claude-4.5  gpt-5.1
 ```
 
-### Variation Strategy
+#### Job 1: `aggregate`
 
-To keep the site feeling alive even when activity patterns haven't shifted:
+Runs once. Fetches all data sources and produces `data/latest.json`.
 
-1. **Contextual data**: Include season, weather, day of week in JSON
-2. **Staleness tracking**: Include `days_since_meaningful_change` in context
-3. **Prompt guidance**: System prompt encourages subtle variation when stale
-4. **Seasonal tone**: Word choice reflects the time of year
+1. Checkout repo
+2. Run smoke test (`npm run smoke`)
+3. Fetch data from GitHub, Spotify, Typefully, Weather
+4. Compute baselines vs. historical snapshots
+5. Save `data/latest.json` and `data/fetch-summary.json`
+6. Upload as artifact for next job
 
----
+#### Job 2: `generate` (parallel matrix)
 
-## Technical Stack
+Runs 3 times in parallel — once per model. Uses GitHub Actions matrix strategy:
 
-| Component | Technology |
-|-----------|------------|
-| Runtime | Node.js 18+ |
-| Language | TypeScript |
-| CI/CD | GitHub Actions |
-| Hosting | Vercel (static) |
-| Generation | Cursor CLI |
-| APIs | GitHub REST, Spotify Web API, Strava API, Notion API, Open-Meteo |
+```yaml
+strategy:
+  fail-fast: false  # Don't cancel others if one fails
+  matrix:
+    model: [composer-1, claude-4.5-opus-high-thinking, gpt-5.1-codex]
+```
+
+Each parallel runner:
+1. Downloads `data/latest.json` artifact
+2. Installs Cursor CLI: `curl https://cursor.com/install -fsS | bash`
+3. Clears previous build: `rm -f generated/{model}.html`
+4. Runs Cursor agent with the model
+5. **Verifies sandbox** (see below)
+6. Uploads `generated/{model}.html` + build output as artifact
+
+#### Job 3: `commit`
+
+Runs once after all generate jobs complete.
+
+1. Downloads all build artifacts
+2. Copies HTML files to `generated/` and `public/builds/{date}/`
+3. Processes build logs → updates `manifest.json` and `history.json`
+4. Commits and pushes to main
+5. **Vercel auto-deploys** on push
+
+### Sandboxing & Safety
+
+Agents must only write to `generated/`. Three layers of enforcement:
+
+**1. System Prompt**
+
+The prompt in `infra/prompts/system.md` explicitly states:
+> "You may ONLY create/edit files in the `generated/` folder"
+
+**2. Sandbox Verification Step**
+
+After each agent runs, the workflow checks for unauthorized changes:
+
+```yaml
+- name: Verify sandbox (no unauthorized changes)
+  run: |
+    UNAUTHORIZED=$(git diff --name-only | grep -v '^generated/' | grep -v '^$' || true)
+    if [ -n "$UNAUTHORIZED" ]; then
+      echo "ERROR: Agent modified files outside sandbox:"
+      echo "$UNAUTHORIZED"
+      git checkout -- .  # Revert ALL unauthorized changes
+    fi
+```
+
+If an agent touches `infra/`, `data/`, `app/`, or anything else:
+- Changes are logged
+- All unauthorized changes are reverted via `git checkout -- .`
+- Only `generated/{model}.html` survives to the artifact
+
+**3. Selective Commit**
+
+The commit job only stages specific paths:
+
+```yaml
+git add data/latest.json
+git add data/fetch-summary.json
+git add public/builds/
+git add generated/
+```
+
+Anything else is ignored.
+
+### Cursor CLI in CI
+
+The Cursor CLI runs headlessly:
+
+```yaml
+- name: Generate
+  env:
+    CURSOR_API_KEY: ${{ secrets.CURSOR_API_KEY }}
+  run: |
+    cursor-agent -p --force --model "${{ matrix.model }}" \
+      --output-format stream-json "$(cat /tmp/prompt.txt)" \
+      > /tmp/build-output.json 2>&1
+```
+
+| Flag | Purpose |
+|------|---------|
+| `-p` | Non-interactive / print mode |
+| `--force` | Don't prompt for confirmation |
+| `--model` | Which model to use |
+| `--output-format stream-json` | Structured output for logs |
+
+Auth: `CURSOR_API_KEY` stored as GitHub secret.
+
+### Failure Handling
+
+- Each model runs with `continue-on-error: true`
+- If one model fails, others still complete
+- Failed models show as "failed" in build history UI
+- Previous successful builds remain available via date selector
+- Commit job runs even with partial failures (commits whatever succeeded)
+
+### Vercel Deployment
+
+Vercel is connected to the repo and auto-deploys on push to `main`.
+
+- `public/builds/` is served statically at `/builds/`
+- `generated/` files are available but typically accessed via `public/builds/{date}/`
+- Next.js app serves the menu bar + iframe at `/`
+- Edge caching makes subsequent loads instant
 
 ---
 
 ## Data Schema
 
-### Identity (Static)
+### identity.json (Static)
 
 ```json
 {
   "name": "Erik",
-  "location": "...",
   "email": "contact@eriks.design",
-  "twitter": "0xago",
+  "twitter": "erikoverse",
   "linkedin": "eriknson",
-  "website": "eriks.design"
+  "github": "eriknson"
 }
 ```
 
-### Aggregated Data (Dynamic)
+### about.json (Static)
 
 ```json
 {
-  "generated_at": "2024-12-09T06:00:00Z",
-  "themes": {
-    "building": {
-      "summary": "Working on developer tools and personal projects",
-      "languages": ["TypeScript", "Python"],
-      "recent_projects": ["pulse", "another-project"],
-      "patterns": ["focused on DX", "exploring AI integrations"]
-    },
-    "listening": {
-      "summary": "Drawn to ambient and folk lately",
-      "top_genres": ["ambient", "folk", "electronic"],
-      "mood": "introspective",
-      "notable_artists": ["Brian Eno", "Bon Iver"]
-    },
-    "moving": {
-      "summary": "Consistent running through the winter",
-      "weekly_distance_km": 35,
-      "pattern": "morning runner",
-      "streak_days": 12
-    },
-    "thinking": {
-      "summary": "Writing about tools for thought",
-      "topics": ["productivity", "AI", "design"],
-      "recent_themes": ["simplicity", "intentional technology"]
-    }
+  "headline": "Product designer who enjoys building with AI",
+  "about": "Believing in simplicity and iterating until every detail feels great...",
+  "philosophy": {
+    "core": "You set the vision, agents do the execution",
+    "approach": ["Move between high-level ideas and tiny surgical edits..."],
+    "how_i_build": ["Set a plan", "Align to your vision", "..."]
   },
+  "values": ["simplicity", "flow state", "craft in the details"],
+  "beliefs": ["AI agents as collaborators, not replacements", "..."],
+  "interests": ["Scandinavian design", "AI agents", "Building in public"]
+}
+```
+
+### latest.json (Dynamic)
+
+```json
+{
+  "generated_at": "2025-12-11T06:00:00Z",
+  "identity": { ... },
+  "about": { ... },
+  "sources": {
+    "github": { "repos": [...], "languages": {...}, "recent_activity": {...} },
+    "spotify": { "short_term": {...}, "medium_term": {...}, "long_term": {...} },
+    "typefully": { "published_posts": [...], "themes": {...}, "stats": {...} },
+    "weather": { "location": {...}, "current": {...} }
+  },
+  "analysis": {
+    "github": { "narrative_signals": [...], "current_phase": {...} },
+    "spotify": { "narrative_signals": [...], "new_explorations": {...} },
+    "typefully": { "narrative_signals": [...], "recent_tweets": [...] }
+  },
+  "narrative_signals": [
+    "currently focused on eriknson/me and eriknson/cursor-commands",
+    "core taste includes dream pop, rap, indie",
+    "on X: making building software easier and more fun",
+    "last seen in Stockholm, Sweden"
+  ],
   "context": {
     "season": "winter",
-    "weather": "overcast",
-    "temperature_c": 8,
-    "day_of_week": "monday",
-    "days_since_last_change": 2
-  },
-  "timeline": [
+    "days_since_change": 0
+  }
+}
+```
+
+### manifest.json (Build Index)
+
+```json
+{
+  "default_model": "composer-1",
+  "models": ["composer-1", "claude-4.5-opus-high-thinking", "gpt-5.1-codex"],
+  "latest_date": "2025-12-11",
+  "dates": [
     {
-      "year": 2024,
-      "title": "pulse",
-      "date": "12/09",
-      "url": "https://github.com/..."
+      "date": "2025-12-11",
+      "built_at": "2025-12-11T19:10:39.740Z",
+      "builds": [
+        { "model": "composer-1", "status": "success", "duration_ms": 9831, "path": "builds/2025-12-11/composer-1.html" }
+      ]
     }
   ]
 }
@@ -326,72 +432,47 @@ To keep the site feeling alive even when activity patterns haven't shifted:
 
 ---
 
-## Implementation Phases
+## Technical Stack
 
-### Phase 1: Foundation (MVP)
-
-- [ ] Scaffold repo structure with sandboxing
-- [ ] Create static loading screen
-- [ ] Set up Vercel deployment
-- [ ] Create identity.json with static data
-- [ ] Write initial system prompt
-- [ ] Test Cursor CLI in GitHub Actions (authentication, execution)
-- [ ] Build GitHub fetcher (simplest API)
-- [ ] Create basic aggregator
-- [ ] End-to-end test: manual trigger → generate → deploy
-
-### Phase 2: Data Sources
-
-- [ ] Add Spotify integration
-- [ ] Add Strava integration
-- [ ] Add weather/seasonal context
-- [ ] Enhance aggregator with theme extraction
-
-### Phase 3: Polish
-
-- [ ] Add Notion integration
-- [ ] Implement historical data for trend detection
-- [ ] Refine system prompt based on outputs
-- [ ] Add fallback/retry logic
-- [ ] Enable daily cron trigger
-
-### Phase 4: Enhancements (Future)
-
-- [ ] Typefully integration
-- [ ] More sophisticated trend analysis
-- [ ] A/B testing different prompt variations
-- [ ] Analytics on generation quality
-
----
-
-## Open Questions
-
-1. **Cursor CLI in CI**: Can it run headlessly in GitHub Actions? What auth is needed?
-2. **Vercel routing**: How to serve loading screen vs generated site? Rewrites?
-3. **Rate limits**: How to handle API rate limits gracefully?
-4. **Cost**: Cursor CLI API costs for daily generation?
-5. **Quality control**: How to detect/prevent bad generations?
+| Component | Technology |
+|-----------|------------|
+| Framework | Next.js 15 |
+| Runtime | Node.js 20 |
+| Language | TypeScript |
+| CI/CD | GitHub Actions |
+| Hosting | Vercel |
+| Generation | Cursor CLI (`cursor-agent`) |
+| APIs | GitHub REST, Spotify Web API, Typefully API, Open-Meteo |
 
 ---
 
 ## Success Criteria
 
-The project is successful when:
-
-1. The site regenerates daily without manual intervention
+1. Site regenerates daily without manual intervention
 2. Content meaningfully reflects actual activity patterns
-3. The output is consistently high-quality and on-brand
-4. Failures are handled gracefully with fallbacks
-5. The loading → site transition feels polished
-6. Visitors perceive the site as "alive" and personal
+3. Multiple models produce varied, quality outputs
+4. Model switching is instant and intuitive
+5. Build history provides transparency into generation
 
 ---
 
 ## References
 
 - Design inspiration: [benji.org](https://benji.org)
-- Cursor CLI docs: [cursor.sh/cli](https://cursor.sh/cli)
+- Cursor CLI: `cursor-agent --help`
 
 ---
 
-*Last updated: December 9, 2024*
+*Last updated: December 11, 2025*
+
+---
+
+## Glossary
+
+| Term | Meaning |
+|------|---------|
+| **Sandbox** | `generated/` folder — the only place agents can write |
+| **Manifest** | `public/builds/manifest.json` — index of all builds |
+| **History** | `public/builds/history.json` — agent logs for each build |
+| **Narrative signals** | High-level insights extracted from data (e.g., "drawn to dream pop lately") |
+| **Baseline** | Historical average used to detect what's new or different |

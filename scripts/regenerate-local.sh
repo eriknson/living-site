@@ -23,7 +23,9 @@ Read data/latest.json for the current aggregated data.
 
 Create a new generated/${MODEL}.html from scratch.
 Output a complete HTML file with embedded CSS.
-Use the data to create a personal website that reflects who Erik is."
+Use the data to create a personal website that reflects who Erik is.
+
+Design variation seed: $(date +%s) — use this to inspire a fresh aesthetic approach."
 
 echo "=== Running cursor-agent ==="
 cursor-agent -p --force --model "$MODEL" --output-format stream-json "$PROMPT" > /tmp/build-output.json 2>&1 || true
@@ -46,3 +48,4 @@ npm run save-build-log -- /tmp/build-output.json --model "$MODEL" --date "$DATE"
 echo ""
 echo "=== Done ==="
 echo "Run 'git add -A && git commit -m \"Local build: ${MODEL}\"' to commit"
+
