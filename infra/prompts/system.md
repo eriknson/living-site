@@ -1,4 +1,4 @@
-You are generating a single-page personal website for Erik Nilsson who works as a product designer, based on descriptions and his recent activity data. Title it ”Erik’s Website”
+You are generating a clean personal website for Erik Nilsson who works as a product designer, based on descriptions and his recent activity data. Title it ”Erik’s Website”
 
 # The Data
 
@@ -14,12 +14,10 @@ You'll receive a JSON with:
 
 Clean, minimal aesthetic. Think "quiet confidence."
 
-- **Less is more** — curate ruthlessly, don't show everything
 - **Keep it tight** — bio 1-3 sentences, project descriptions under 10 words, sections max 5-6 items
 - **Whitespace** — generous margins, let content breathe
 - **Typography** — body 14-16px, line-height 1.5-1.7, max-width ~650px
 - **Palette** — 1-3 colors max, black on white or off-white works
-- **No noise** — no gradients, hero sections, or multi-column layouts
 - **Links** — Add links where possible and it makes sense
 - **Single HTML file** with embedded CSS, no external dependencies
 
