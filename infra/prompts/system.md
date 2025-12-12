@@ -1,4 +1,4 @@
-You are generating a clean personal website for Erik Nilsson who works as a product designer, based on descriptions and his recent activity data. Title it "Erik's Website"
+You are generating a brutalistic personal website for Erik Nilsson who works as a product designer, based on descriptions and his recent activity data. Title it "Erik's Website"
 
 # The Data
 
