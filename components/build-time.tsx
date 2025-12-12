@@ -9,7 +9,13 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
+import {
+  Drawer,
+  DrawerContent,
+  DrawerTrigger,
+} from "@/components/ui/drawer";
 import { formatDuration, formatRelativeTime, getBuiltAt, getModelDisplayName, getBuildForModel, type Manifest } from "@/lib/manifest";
+import { useIsMobile } from "@/lib/use-media-query";
 
 interface DataSource {
   name: string;
@@ -39,7 +45,6 @@ function parseContextFromSources(sources: DataSource[]): ContextItem[] {
         status: source.status,
       });
     } else if (source.name === "GitHub") {
-      // "46 events, 4 repos touched, top: TypeScript (8 repos)"
       const eventsMatch = source.summary.match(/^(\d+)\s+events?/);
       items.push({
         label: "GitHub",
@@ -47,14 +52,12 @@ function parseContextFromSources(sources: DataSource[]): ContextItem[] {
         status: source.status,
       });
     } else if (source.name === "Spotify") {
-      // "Top artist: The Weeknd, genre: french indie pop"
       items.push({
         label: "Spotify",
         value: "Listening history from Spotify",
         status: source.status,
       });
     } else if (source.name === "Typefully") {
-      // "12 posts, 3 this week"
       const totalMatch = source.summary.match(/^(\d+)\s+posts?/);
       items.push({
         label: "X",
@@ -62,7 +65,6 @@ function parseContextFromSources(sources: DataSource[]): ContextItem[] {
         status: source.status,
       });
     } else if (source.name === "Weather") {
-      // "Stockholm, Sweden: 3°C, overcast"
       const weatherMatch = source.summary.match(/([^:]+):\s*(-?\d+)°C/);
       items.push({
         label: "Weather",
@@ -82,9 +84,98 @@ interface BuildTimeProps {
   currentTimestamp?: string | null;
 }
 
+// Mobile drawer content
+function MobileDrawerContent({
+  relativeTime,
+  modelName,
+  durationStr,
+  contextItems,
+  onLinkClick,
+}: {
+  relativeTime: string;
+  modelName: string;
+  durationStr: string;
+  contextItems: ContextItem[];
+  onLinkClick?: () => void;
+}) {
+  return (
+    <div className="px-3 pb-8 space-y-3">
+      {/* Description */}
+      <div className="bg-black/[0.03] rounded-2xl px-4 py-3.5">
+        <p className="text-[15px] text-black/60 leading-relaxed">
+          This website regenerates daily via Cursor CLI agents running on GitHub Actions. Redeploys via Vercel automagically.
+        </p>
+      </div>
+
+      {/* Made by / Updated */}
+      <div className="bg-black/[0.03] rounded-2xl px-4 py-3">
+        <div className="flex justify-between items-baseline py-1">
+          <span className="text-[15px] text-black/50">Made by</span>
+          <span className="text-[15px] text-black/90">
+            {modelName}
+            {durationStr && <span className="text-black/50">{durationStr}</span>}
+          </span>
+        </div>
+        <div className="flex justify-between items-baseline py-1">
+          <span className="text-[15px] text-black/50">Updated</span>
+          <span className="text-[15px] text-black/90">{relativeTime}</span>
+        </div>
+      </div>
+
+      {/* Context */}
+      <div className="bg-black/[0.03] rounded-2xl px-4 py-3">
+        <div className="text-[13px] text-black/40 uppercase tracking-wide pb-2">
+          Context
+        </div>
+        <div className="space-y-2">
+          {contextItems.map((item) => (
+            <div key={item.label} className="flex items-center gap-3 text-[15px]">
+              {item.status === "success" ? (
+                <Check className="h-4 w-4 text-black/25 shrink-0" />
+              ) : (
+                <X className="h-4 w-4 text-red-400 shrink-0" />
+              )}
+              <span className="flex-1 text-black/80">{item.value}</span>
+            </div>
+          ))}
+          {contextItems.length === 0 && (
+            <div className="text-[15px] text-black/40 italic">
+              No context available
+            </div>
+          )}
+        </div>
+      </div>
+
+      {/* Links */}
+      <div className="bg-black/[0.03] rounded-2xl p-1">
+        <Link
+          href="/builds"
+          onClick={onLinkClick}
+          className="flex items-center justify-between px-3 py-3.5 rounded-xl text-[15px] text-black/80 active:bg-black/5 transition-colors"
+        >
+          <span>Build History</span>
+          <History className="h-4 w-4 text-black/30" />
+        </Link>
+        <a
+          href="https://github.com/eriknson/living-site"
+          target="_blank"
+          rel="noopener noreferrer"
+          onClick={onLinkClick}
+          className="flex items-center justify-between px-3 py-3.5 rounded-xl text-[15px] text-black/80 active:bg-black/5 transition-colors"
+        >
+          <span>Source Code</span>
+          <ArrowUpRight className="h-4 w-4 text-black/30" />
+        </a>
+      </div>
+    </div>
+  );
+}
+
 export function BuildTime({ manifest, currentModel, currentDate, currentTimestamp }: BuildTimeProps) {
   const [relativeTime, setRelativeTime] = useState<string>("");
   const [dataSources, setDataSources] = useState<DataSource[]>([]);
+  const [drawerOpen, setDrawerOpen] = useState(false);
+  const isMobile = useIsMobile();
 
   useEffect(() => {
     if (!manifest) return;
@@ -113,28 +204,49 @@ export function BuildTime({ manifest, currentModel, currentDate, currentTimestam
       .catch(() => setDataSources([]));
   }, []);
 
-  // Get the build for the currently displayed model/date
   const displayModel = currentModel || manifest?.default_model;
   const displayDate = currentDate || manifest?.latest_date;
   const currentBuild = manifest && displayModel && displayDate
     ? getBuildForModel(manifest, displayModel, displayDate, currentTimestamp ?? undefined)
     : null;
 
-  // Format "Made by" value
   const modelName = displayModel ? getModelDisplayName(displayModel) : "—";
   const durationStr = currentBuild?.duration_ms ? ` in ${formatDuration(currentBuild.duration_ms)}` : "";
-
-  // Parse context items
   const contextItems = parseContextFromSources(dataSources);
 
   if (!relativeTime) return null;
 
+  const TriggerButton = (
+    <button className="h-full px-2.5 text-black/60 hover:bg-black/5 active:bg-black/10 outline-none flex items-center cursor-pointer">
+      Built {relativeTime}
+    </button>
+  );
+
+  // Mobile: Bottom sheet drawer
+  if (isMobile) {
+    return (
+      <Drawer open={drawerOpen} onOpenChange={setDrawerOpen}>
+        <DrawerTrigger asChild>
+          {TriggerButton}
+        </DrawerTrigger>
+        <DrawerContent aria-label="Build information">
+          <MobileDrawerContent
+            relativeTime={relativeTime}
+            modelName={modelName}
+            durationStr={durationStr}
+            contextItems={contextItems}
+            onLinkClick={() => setDrawerOpen(false)}
+          />
+        </DrawerContent>
+      </Drawer>
+    );
+  }
+
+  // Desktop: Traditional dropdown
   return (
     <DropdownMenu>
       <DropdownMenuTrigger asChild>
-        <button className="h-full px-2.5 text-black/60 hover:bg-black/5 active:bg-black/10 outline-none flex items-center cursor-pointer">
-          Built {relativeTime}
-        </button>
+        {TriggerButton}
       </DropdownMenuTrigger>
       <DropdownMenuContent align="end" className="w-[280px]">
         {/* Description */}
@@ -208,4 +320,3 @@ export function BuildTime({ manifest, currentModel, currentDate, currentTimestam
     </DropdownMenu>
   );
 }
-
