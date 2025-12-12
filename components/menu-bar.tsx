@@ -28,7 +28,7 @@ export function MenuBar({ manifest, currentModel, currentDate, currentTimestamp,
 
       <div className="flex items-center h-full">
         {/* Build time with about dropdown */}
-        <BuildTime manifest={manifest} currentDate={currentDate} currentTimestamp={currentTimestamp} />
+        <BuildTime manifest={manifest} currentModel={currentModel} currentDate={currentDate} currentTimestamp={currentTimestamp} />
 
         {/* Model selector */}
         <ModelSelector
