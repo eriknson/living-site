@@ -83,6 +83,7 @@ jobs:
           retention-days: 3
 
   # Job 2: Generate with each model (parallel matrix)
+  # Uses git worktree for isolation - agent sees no previous builds
   generate:
     needs: aggregate
     if: inputs.dry_run != 'true'
@@ -114,8 +115,31 @@ jobs:
       - name: Install Cursor CLI
         run: curl https://cursor.com/install -fsS | bash
 
-      - name: Clear existing build (start fresh)
-        run: rm -f generated/${{ matrix.model }}.html
+      - name: Create clean worktree (isolated workspace)
+        run: |
+          # Create isolated workspace from current commit
+          git worktree add /tmp/clean-gen --detach HEAD
+          
+          # Remove all build history so agent starts fresh
+          rm -rf /tmp/clean-gen/generated/*.html
+          rm -rf /tmp/clean-gen/public/builds/
+          
+          # Ensure generated folder exists but is empty
+          mkdir -p /tmp/clean-gen/generated
+          touch /tmp/clean-gen/generated/.gitkeep
+          
+          echo "=== Clean workspace created ==="
+          echo "Generated folder contents:"
+          ls -la /tmp/clean-gen/generated/
+          echo ""
+          echo "No public/builds/ visible to agent"
+
+      - name: Copy fresh data to worktree
+        run: |
+          # Copy the freshly aggregated data to the worktree
+          cp data/latest.json /tmp/clean-gen/data/latest.json
+          cp data/fetch-summary.json /tmp/clean-gen/data/fetch-summary.json
+          echo "Fresh data copied to worktree"
 
       - name: Build generation prompt
         run: |
@@ -136,28 +160,38 @@ jobs:
           cat /tmp/generation-prompt.txt
           echo ""
           echo "=== System Prompt (from repo) ==="
-          cat infra/prompts/system.md
+          cat /tmp/clean-gen/infra/prompts/system.md
 
       - name: Generate site with ${{ matrix.model }}
         id: generate
         continue-on-error: true
+        working-directory: /tmp/clean-gen
         env:
           CURSOR_API_KEY: ${{ secrets.CURSOR_API_KEY }}
         run: |
+          echo "Working directory: $(pwd)"
+          echo "Agent can only see:"
+          find . -name "*.html" -o -name "*.json" | grep -v node_modules | head -20
+          echo ""
           cursor-agent -p --force --model "${{ matrix.model }}" --output-format stream-json "$(cat /tmp/generation-prompt.txt)" > /tmp/build-output.json 2>&1
           echo "Build output captured for ${{ matrix.model }}"
 
-      - name: Verify sandbox (no unauthorized changes)
+      - name: Copy result back to main checkout
         run: |
-          # Check if any files outside generated/ were modified
-          UNAUTHORIZED=$(git diff --name-only | grep -v '^generated/' | grep -v '^$' || true)
-          if [ -n "$UNAUTHORIZED" ]; then
-            echo "ERROR: Agent modified files outside sandbox:"
-            echo "$UNAUTHORIZED"
-            git checkout -- .  # Revert unauthorized changes
+          if [ -f "/tmp/clean-gen/generated/${{ matrix.model }}.html" ]; then
+            cp "/tmp/clean-gen/generated/${{ matrix.model }}.html" "generated/${{ matrix.model }}.html"
+            echo "Copied generated file back to main checkout"
+            echo "Line count: $(wc -l < generated/${{ matrix.model }}.html)"
+          else
+            echo "No generated file found in worktree"
           fi
-          echo "Sandbox verified: no unauthorized changes"
-          
+
+      - name: Cleanup worktree
+        if: always()
+        run: |
+          git worktree remove /tmp/clean-gen --force || true
+          echo "Worktree cleaned up"
+
       - name: Prepare build artifact
         run: |
           DATE="${{ needs.aggregate.outputs.date }}"
