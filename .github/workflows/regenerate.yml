@@ -11,6 +11,10 @@ on:
         options:
           - 'false'
           - 'true'
+      build_id:
+        description: 'Build ID for live streaming (auto-generated if empty)'
+        required: false
+        type: string
   schedule:
     - cron: '0 6 * * *'  # 6am UTC daily
 
@@ -23,6 +27,9 @@ permissions:
 
 env:
   NODE_VERSION: '20'
+  BUILD_ID: ${{ inputs.build_id || github.run_id }}
+  BUILD_WEBHOOK_URL: ${{ secrets.BUILD_WEBHOOK_URL }}
+  BUILD_WEBHOOK_SECRET: ${{ secrets.BUILD_WEBHOOK_SECRET }}
 
 jobs:
   # Job 1: Aggregate data (runs once)
@@ -53,6 +60,14 @@ jobs:
         id: seed
         run: echo "seed=$(date +%s)" >> $GITHUB_OUTPUT
 
+      - name: Notify aggregate started
+        if: env.BUILD_WEBHOOK_URL != ''
+        run: |
+          curl -s -X POST "$BUILD_WEBHOOK_URL" \
+            -H "Authorization: Bearer $BUILD_WEBHOOK_SECRET" \
+            -H "Content-Type: application/json" \
+            -d '{"buildId":"'"$BUILD_ID"'","event":"aggregate.started","timestamp":"'"$(date -u +%Y-%m-%dT%H:%M:%S.000Z)"'"}' || true
+
       - name: Run smoke test
         run: npm run smoke
 
@@ -63,7 +78,17 @@ jobs:
           SPOTIFY_CLIENT_SECRET: ${{ secrets.SPOTIFY_CLIENT_SECRET }}
           SPOTIFY_REFRESH_TOKEN: ${{ secrets.SPOTIFY_REFRESH_TOKEN }}
           TYPEFULLY_API_KEY: ${{ secrets.TYPEFULLY_API_KEY }}
-        run: npm run aggregate
+        run: |
+          npm run aggregate 2>&1 | while IFS= read -r line; do
+            echo "$line"
+            # Send log lines to webhook (limit to avoid spam)
+            if [ -n "$BUILD_WEBHOOK_URL" ] && [[ "$line" == *"✓"* ]] || [[ "$line" == *"fetched"* ]] || [[ "$line" == *"Fetching"* ]]; then
+              curl -s -X POST "$BUILD_WEBHOOK_URL" \
+                -H "Authorization: Bearer $BUILD_WEBHOOK_SECRET" \
+                -H "Content-Type: application/json" \
+                -d '{"buildId":"'"$BUILD_ID"'","event":"aggregate.log","data":"'"$(echo "$line" | sed 's/"/\\"/g')"'"}' || true
+            fi
+          done
 
       - name: Show aggregated data
         run: |
@@ -72,6 +97,14 @@ jobs:
           echo ""
           echo "=== Context ==="
           cat data/latest.json | jq '.context'
+
+      - name: Notify aggregate complete
+        if: env.BUILD_WEBHOOK_URL != ''
+        run: |
+          curl -s -X POST "$BUILD_WEBHOOK_URL" \
+            -H "Authorization: Bearer $BUILD_WEBHOOK_SECRET" \
+            -H "Content-Type: application/json" \
+            -d '{"buildId":"'"$BUILD_ID"'","event":"aggregate.complete","timestamp":"'"$(date -u +%Y-%m-%dT%H:%M:%S.000Z)"'"}' || true
 
       - name: Upload data artifact
         uses: actions/upload-artifact@v4
@@ -114,6 +147,14 @@ jobs:
 
       - name: Install Cursor CLI
         run: curl https://cursor.com/install -fsS | bash
+
+      - name: Notify model started
+        if: env.BUILD_WEBHOOK_URL != ''
+        run: |
+          curl -s -X POST "$BUILD_WEBHOOK_URL" \
+            -H "Authorization: Bearer $BUILD_WEBHOOK_SECRET" \
+            -H "Content-Type: application/json" \
+            -d '{"buildId":"'"$BUILD_ID"'","event":"model.started","model":"${{ matrix.model }}","timestamp":"'"$(date -u +%Y-%m-%dT%H:%M:%S.000Z)"'"}' || true
 
       - name: Create clean worktree (isolated workspace)
         run: |
@@ -173,7 +214,22 @@ jobs:
           echo "Agent can only see:"
           find . -name "*.html" -o -name "*.json" | grep -v node_modules | head -20
           echo ""
-          cursor-agent -p --force --model "${{ matrix.model }}" --output-format stream-json "$(cat /tmp/generation-prompt.txt)" > /tmp/build-output.json 2>&1
+          
+          # Run cursor-agent and stream events to webhook
+          cursor-agent -p --force --model "${{ matrix.model }}" --output-format stream-json "$(cat /tmp/generation-prompt.txt)" 2>&1 | tee /tmp/build-output.json | while IFS= read -r line; do
+            # Parse JSON and forward to webhook if it's a valid event
+            if [ -n "$BUILD_WEBHOOK_URL" ]; then
+              TYPE=$(echo "$line" | jq -r '.type // empty' 2>/dev/null)
+              if [ -n "$TYPE" ]; then
+                # Send the stream event to webhook (fire and forget, don't block)
+                curl -s -X POST "$BUILD_WEBHOOK_URL" \
+                  -H "Authorization: Bearer $BUILD_WEBHOOK_SECRET" \
+                  -H "Content-Type: application/json" \
+                  -d '{"buildId":"'"$BUILD_ID"'","event":"model.stream","model":"${{ matrix.model }}","data":'"$line"'}' &
+              fi
+            fi
+          done
+          
           echo "Build output captured for ${{ matrix.model }}"
 
       - name: Copy result back to main checkout
@@ -185,6 +241,19 @@ jobs:
           else
             echo "No generated file found in worktree"
           fi
+
+      - name: Notify model complete
+        if: always() && env.BUILD_WEBHOOK_URL != ''
+        run: |
+          if [ -f "generated/${{ matrix.model }}.html" ]; then
+            STATUS="model.complete"
+          else
+            STATUS="model.error"
+          fi
+          curl -s -X POST "$BUILD_WEBHOOK_URL" \
+            -H "Authorization: Bearer $BUILD_WEBHOOK_SECRET" \
+            -H "Content-Type: application/json" \
+            -d '{"buildId":"'"$BUILD_ID"'","event":"'"$STATUS"'","model":"${{ matrix.model }}","timestamp":"'"$(date -u +%Y-%m-%dT%H:%M:%S.000Z)"'"}' || true
 
       - name: Cleanup worktree
         if: always()
@@ -237,6 +306,14 @@ jobs:
 
       - name: Install dependencies
         run: npm ci
+
+      - name: Notify commit started
+        if: env.BUILD_WEBHOOK_URL != ''
+        run: |
+          curl -s -X POST "$BUILD_WEBHOOK_URL" \
+            -H "Authorization: Bearer $BUILD_WEBHOOK_SECRET" \
+            -H "Content-Type: application/json" \
+            -d '{"buildId":"'"$BUILD_ID"'","event":"commit.started","timestamp":"'"$(date -u +%Y-%m-%dT%H:%M:%S.000Z)"'"}' || true
 
       - name: Download data artifact
         uses: actions/download-artifact@v4
@@ -336,6 +413,28 @@ jobs:
             git pull --rebase origin main
             git push
           fi
+
+      - name: Notify commit complete
+        if: env.BUILD_WEBHOOK_URL != ''
+        run: |
+          curl -s -X POST "$BUILD_WEBHOOK_URL" \
+            -H "Authorization: Bearer $BUILD_WEBHOOK_SECRET" \
+            -H "Content-Type: application/json" \
+            -d '{"buildId":"'"$BUILD_ID"'","event":"commit.complete","timestamp":"'"$(date -u +%Y-%m-%dT%H:%M:%S.000Z)"'"}' || true
+
+      - name: Notify build complete
+        if: always() && env.BUILD_WEBHOOK_URL != ''
+        run: |
+          # Determine final status
+          if [ -f "generated/composer-1.html" ] || [ -f "generated/claude-4.5-opus-high-thinking.html" ] || [ -f "generated/gpt-5.1-codex.html" ]; then
+            STATUS="build.complete"
+          else
+            STATUS="build.error"
+          fi
+          curl -s -X POST "$BUILD_WEBHOOK_URL" \
+            -H "Authorization: Bearer $BUILD_WEBHOOK_SECRET" \
+            -H "Content-Type: application/json" \
+            -d '{"buildId":"'"$BUILD_ID"'","event":"'"$STATUS"'","timestamp":"'"$(date -u +%Y-%m-%dT%H:%M:%S.000Z)"'"}' || true
 
       - name: Write job summary
         run: |
