@@ -31,6 +31,7 @@ jobs:
     timeout-minutes: 10
     outputs:
       date: ${{ steps.date.outputs.date }}
+      variation_seed: ${{ steps.seed.outputs.seed }}
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
@@ -47,6 +48,10 @@ jobs:
       - name: Get date
         id: date
         run: echo "date=$(date -u +%Y-%m-%d)" >> $GITHUB_OUTPUT
+
+      - name: Generate variation seed
+        id: seed
+        run: echo "seed=$(date +%s)" >> $GITHUB_OUTPUT
 
       - name: Run smoke test
         run: npm run smoke
@@ -114,6 +119,8 @@ jobs:
 
       - name: Build generation prompt
         run: |
+          # Use the system.md from the repo (latest version)
+          # Add variation seed to encourage unique designs each run
           cat > /tmp/generation-prompt.txt << PROMPT_END
           Read infra/prompts/system.md for the design guidelines.
           Read data/latest.json for the current aggregated data.
@@ -121,10 +128,15 @@ jobs:
           Create a new generated/${{ matrix.model }}.html from scratch.
           Output a complete HTML file with embedded CSS.
           Use the data to create a personal website that reflects who Erik is.
+          
+          Design variation seed: ${{ needs.aggregate.outputs.variation_seed }} — use this to inspire a fresh aesthetic approach.
           PROMPT_END
           
-          echo "Prompt built for model: ${{ matrix.model }}"
+          echo "=== Generation Prompt ==="
           cat /tmp/generation-prompt.txt
+          echo ""
+          echo "=== System Prompt (from repo) ==="
+          cat infra/prompts/system.md
 
       - name: Generate site with ${{ matrix.model }}
         id: generate
@@ -294,9 +306,11 @@ jobs:
       - name: Write job summary
         run: |
           DATE="${{ needs.aggregate.outputs.date }}"
+          SEED="${{ needs.aggregate.outputs.variation_seed }}"
           echo "## 🔄 Regenerate Site Results" >> $GITHUB_STEP_SUMMARY
           echo "" >> $GITHUB_STEP_SUMMARY
           echo "**Date:** ${DATE}" >> $GITHUB_STEP_SUMMARY
+          echo "**Variation Seed:** ${SEED}" >> $GITHUB_STEP_SUMMARY
           echo "" >> $GITHUB_STEP_SUMMARY
           echo "### Model Builds" >> $GITHUB_STEP_SUMMARY
           for artifact_dir in artifacts/build-*/; do
