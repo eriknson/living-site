@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from "react";
 import Link from "next/link";
-import { ArrowUpRight, History } from "lucide-react";
+import { ArrowUpRight, History, Check, X } from "lucide-react";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -22,52 +22,57 @@ interface FetchSummary {
   sources: DataSource[];
 }
 
-function parseContextFromSources(sources: DataSource[]): {
-  github: string | null;
-  spotify: string | null;
-  twitter: string | null;
-  weather: string | null;
-} {
-  const result = {
-    github: null as string | null,
-    spotify: null as string | null,
-    twitter: null as string | null,
-    weather: null as string | null,
-  };
+interface ContextItem {
+  label: string;
+  value: string;
+  status: "success" | "error";
+}
+
+function parseContextFromSources(sources: DataSource[]): ContextItem[] {
+  const items: ContextItem[] = [];
 
   for (const source of sources) {
-    if (source.status !== "success") continue;
-
-    if (source.name === "GitHub") {
+    if (source.name === "About") {
+      items.push({
+        label: "About",
+        value: "Bio and identity",
+        status: source.status,
+      });
+    } else if (source.name === "GitHub") {
       // "46 events, 4 repos touched, top: TypeScript (8 repos)"
       const eventsMatch = source.summary.match(/^(\d+)\s+events?/);
-      if (eventsMatch) {
-        result.github = `${eventsMatch[1]} events on GitHub`;
-      }
+      items.push({
+        label: "GitHub",
+        value: eventsMatch ? `${eventsMatch[1]} events from GitHub` : source.summary,
+        status: source.status,
+      });
     } else if (source.name === "Spotify") {
       // "Top artist: The Weeknd, genre: french indie pop"
-      const artistMatch = source.summary.match(/Top artist:\s*([^,]+)/);
-      if (artistMatch) {
-        result.spotify = `Listening to ${artistMatch[1].trim()}`;
-      }
+      items.push({
+        label: "Spotify",
+        value: "Listening history from Spotify",
+        status: source.status,
+      });
     } else if (source.name === "Typefully") {
       // "12 posts, 3 this week"
-      const weekMatch = source.summary.match(/(\d+)\s+this\s+week/);
-      if (weekMatch) {
-        const count = parseInt(weekMatch[1], 10);
-        result.twitter = `${count} ${count === 1 ? "post" : "posts"} on X`;
-      }
+      const totalMatch = source.summary.match(/^(\d+)\s+posts?/);
+      items.push({
+        label: "X",
+        value: totalMatch ? `${totalMatch[1]} posts from X` : source.summary,
+        status: source.status,
+      });
     } else if (source.name === "Weather") {
       // "Stockholm, Sweden: 3°C, overcast"
       const weatherMatch = source.summary.match(/([^:]+):\s*(-?\d+)°C/);
-      if (weatherMatch) {
-        const location = weatherMatch[1].trim();
-        result.weather = `${weatherMatch[2]}°C in ${location}`;
-      }
+      items.push({
+        label: "Weather",
+        value: weatherMatch ? `${weatherMatch[2]}°C in ${weatherMatch[1].trim()}` : source.summary,
+        status: source.status,
+      });
     }
   }
 
-  return result;
+  return items;
 }
 
 interface BuildTimeProps {
@@ -120,13 +125,7 @@ export function BuildTime({ manifest, currentModel, currentDate, currentTimestam
   const durationStr = currentBuild?.duration_ms ? ` in ${formatDuration(currentBuild.duration_ms)}` : "";
 
   // Parse context items
-  const context = parseContextFromSources(dataSources);
-  const contextItems = [
-    context.github,
-    context.spotify,
-    context.twitter,
-    context.weather,
-  ].filter(Boolean);
+  const contextItems = parseContextFromSources(dataSources);
 
   if (!relativeTime) return null;
 
@@ -140,7 +139,7 @@ export function BuildTime({ manifest, currentModel, currentDate, currentTimestam
       <DropdownMenuContent align="end" className="w-[280px]">
         {/* Description */}
         <div className="px-3 py-2.5 text-[13px] text-black/60 leading-relaxed">
-          Regenerates daily via Cursor CLI agents running on GitHub Actions. Redeploys via Vercel.
+          This website regenerates daily via Cursor CLI agents running on GitHub Actions. Redeploys via Vercel automagically.
         </div>
 
         <DropdownMenuSeparator />
@@ -163,22 +162,25 @@ export function BuildTime({ manifest, currentModel, currentDate, currentTimestam
         <DropdownMenuSeparator />
 
         {/* Context */}
-        <div className="px-3 py-2.5">
-          <div className="text-[10px] font-semibold tracking-widest text-black/40 uppercase mb-2">
+        <div className="px-3 py-2.5 space-y-1.5">
+          <div className="text-[13px] text-black/50">
             Context
           </div>
-          <div className="space-y-1">
-            {contextItems.map((item, i) => (
-              <div key={i} className="text-[13px] text-black/70">
-                {item}
-              </div>
-            ))}
-            {contextItems.length === 0 && (
-              <div className="text-[13px] text-black/40 italic">
-                No context available
-              </div>
-            )}
-          </div>
+          {contextItems.map((item) => (
+            <div key={item.label} className="flex items-start gap-3 text-[13px]">
+              <span className="flex-1 text-black/80 leading-snug">{item.value}</span>
+              {item.status === "success" ? (
+                <Check className="h-3.5 w-3.5 text-black/20 shrink-0 mt-0.5" />
+              ) : (
+                <X className="h-3.5 w-3.5 text-red-400 shrink-0 mt-0.5" />
+              )}
+            </div>
+          ))}
+          {contextItems.length === 0 && (
+            <div className="text-[13px] text-black/40 italic">
+              No context available
+            </div>
+          )}
         </div>
 
         <DropdownMenuSeparator />
