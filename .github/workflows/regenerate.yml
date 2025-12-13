@@ -146,7 +146,11 @@ jobs:
           path: data/
 
       - name: Install Cursor CLI
-        run: curl https://cursor.com/install -fsS | bash
+        run: |
+          curl https://cursor.com/install -fsS | bash
+          # Verify installation
+          which cursor-agent || echo "cursor-agent not found in PATH"
+          cursor-agent --version || echo "Failed to get cursor-agent version"
 
       - name: Notify model started
         if: env.BUILD_WEBHOOK_URL != ''
@@ -215,7 +219,24 @@ jobs:
           find . -name "*.html" -o -name "*.json" | grep -v node_modules | head -20
           echo ""
           
-          # Run cursor-agent and stream events to webhook
+          # Debug: Check if API key is set (without revealing it)
+          if [ -z "$CURSOR_API_KEY" ]; then
+            echo "ERROR: CURSOR_API_KEY is not set!"
+            exit 1
+          else
+            echo "CURSOR_API_KEY is set (length: ${#CURSOR_API_KEY})"
+          fi
+          
+          # Debug: Verify cursor-agent is available
+          echo "cursor-agent location: $(which cursor-agent 2>/dev/null || echo 'NOT FOUND')"
+          
+          # Debug: Check if required files exist
+          echo "Checking required files..."
+          ls -la infra/prompts/system.md || echo "system.md NOT FOUND"
+          ls -la data/latest.json || echo "latest.json NOT FOUND"
+          
+          # Run cursor-agent and capture exit code properly
+          set -o pipefail
           cursor-agent -p --force --model "${{ matrix.model }}" --output-format stream-json "$(cat /tmp/generation-prompt.txt)" 2>&1 | tee /tmp/build-output.json | while IFS= read -r line; do
             # Parse JSON and forward to webhook if it's a valid event
             if [ -n "$BUILD_WEBHOOK_URL" ]; then
@@ -229,8 +250,14 @@ jobs:
               fi
             fi
           done
+          AGENT_EXIT=$?
           
           echo "Build output captured for ${{ matrix.model }}"
+          echo "cursor-agent exit code: $AGENT_EXIT"
+          
+          # Show last part of build output for debugging
+          echo "=== Last 50 lines of build output ==="
+          tail -50 /tmp/build-output.json 2>/dev/null || echo "No build output captured"
 
       - name: Copy result back to main checkout
         run: |
