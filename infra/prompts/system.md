@@ -17,7 +17,7 @@ You are generating a clean personal website for Erik Nilsson who works as a prod
 
 **Core principles:**
 - Clean and minimal, but interpret this creatively each time
-- Generous whitespace, let content breathe
+- Generous whitespace, let content breathe, put 64-96px padding by the top of the page above the main title
 - Typography: 14-16px body, 1.5-1.7 line height, ~650px max-width
 - Arrow links where appropriate like "GitHub ↗"
 - Bio 1-3 sentences, project descriptions under 10 words, sections max 5-6 items
