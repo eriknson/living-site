@@ -200,11 +200,11 @@ export function BuildsMenuBar() {
   const [dropdownOpen, setDropdownOpen] = useState(false);
   const isMobile = useIsMobile();
 
-  // Poll for build status
+  // Poll for build status (using public endpoint)
   useEffect(() => {
     const checkStatus = async () => {
       try {
-        const res = await fetch("/api/build");
+        const res = await fetch("/api/build-status");
         const { state } = await res.json();
         setBuildState(state?.status === "running" ? state : null);
       } catch {

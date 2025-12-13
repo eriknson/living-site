@@ -135,19 +135,25 @@ function AppContent() {
       <main className="fixed inset-0">
         {hasBuilds ? (
           <div className="relative w-full h-full">
-            {mountedPaths.map(({ model, path }) => {
+            {mountedPaths.map(({ model, path }, index) => {
               const isActive = model === currentModel;
+              // Use a combination of z-index stacking and inert attribute for robust
+              // iframe switching. The active iframe is on top with z-index, inactive
+              // iframes use inert to prevent any interaction including scroll capture.
               return (
                 <iframe
                   key={path}
                   src={`/${path}`}
                   title={`Site built by ${getModelDisplayName(model)}`}
-                  className="w-full h-full border-0 absolute inset-0"
+                  className="absolute inset-0 w-full h-full border-0"
                   style={{
-                    visibility: isActive ? "visible" : "hidden",
+                    zIndex: isActive ? 10 : index,
+                    opacity: isActive ? 1 : 0,
                     pointerEvents: isActive ? "auto" : "none",
-                    WebkitOverflowScrolling: "touch",
                   }}
+                  // inert attribute prevents all interaction including scroll
+                  // @ts-expect-error - inert is a valid HTML attribute but not in React types
+                  inert={isActive ? undefined : ""}
                 />
               );
             })}
