@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Check, ChevronDown, Infinity } from "lucide-react";
 import {
   DropdownMenu,
@@ -35,7 +35,15 @@ interface ModelSelectorProps {
 
 export function ModelSelector({ manifest, currentModel, currentDate, currentTimestamp, onModelChange }: ModelSelectorProps) {
   const [drawerOpen, setDrawerOpen] = useState(false);
+  const [dropdownOpen, setDropdownOpen] = useState(false);
   const isMobile = useIsMobile();
+
+  // Close dropdown when clicking into iframe (window loses focus)
+  useEffect(() => {
+    const handleBlur = () => setDropdownOpen(false);
+    window.addEventListener("blur", handleBlur);
+    return () => window.removeEventListener("blur", handleBlur);
+  }, []);
 
   const displayDate = currentDate || manifest?.latest_date;
   const displayTimestamp = currentTimestamp || manifest?.latest_timestamp;
@@ -59,11 +67,12 @@ export function ModelSelector({ manifest, currentModel, currentDate, currentTime
     setDrawerOpen(false);
   };
 
+  const isOpen = isMobile ? drawerOpen : dropdownOpen;
   const TriggerButton = (
     <button className="h-full px-2.5 hover:bg-black/5 active:bg-black/10 outline-none flex items-center gap-1.5 cursor-pointer">
       <Infinity className="h-4 w-4 opacity-50" strokeWidth={2.5} />
       <span>{getModelDisplayName(currentModel)}</span>
-      <ChevronDown className={cn("h-3 w-3 opacity-60 transition-transform", drawerOpen && isMobile && "rotate-180")} />
+      <ChevronDown className={cn("h-3 w-3 opacity-60 transition-transform", isOpen && "rotate-180")} />
     </button>
   );
 
@@ -109,16 +118,9 @@ export function ModelSelector({ manifest, currentModel, currentDate, currentTime
         </DrawerTrigger>
         <DrawerContent aria-label="Select build model">
           <DrawerHeader className="text-left px-5 pt-1 pb-3">
-            <div className="flex items-baseline justify-between">
-              <span className="text-[15px] font-medium text-black/90">
-                Select Model
-              </span>
-              {relativeTime && (
-                <span className="text-[13px] text-black/40">
-                  Built {relativeTime}
-                </span>
-              )}
-            </div>
+            <span className="text-[15px] font-medium text-black/90">
+              Select Model
+            </span>
           </DrawerHeader>
           <div className="px-3 pb-8">
             <div className="bg-black/[0.03] rounded-2xl p-1">
@@ -132,7 +134,7 @@ export function ModelSelector({ manifest, currentModel, currentDate, currentTime
 
   // Desktop: Traditional dropdown
   return (
-    <DropdownMenu>
+    <DropdownMenu open={dropdownOpen} onOpenChange={setDropdownOpen}>
       <DropdownMenuTrigger asChild>
         {TriggerButton}
       </DropdownMenuTrigger>

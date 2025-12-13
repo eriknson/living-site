@@ -132,9 +132,9 @@ function AppContent() {
         currentTimestamp={currentTimestamp}
         onModelChange={setModel}
       />
-      <main className="pt-[var(--menu-bar-height)]">
+      <main className="fixed inset-0">
         {hasBuilds ? (
-          <div className="relative h-[calc(100vh-var(--menu-bar-height))]">
+          <div className="relative w-full h-full">
             {mountedPaths.map(({ model, path }) => {
               const isActive = model === currentModel;
               return (
@@ -146,13 +146,14 @@ function AppContent() {
                   style={{
                     visibility: isActive ? "visible" : "hidden",
                     pointerEvents: isActive ? "auto" : "none",
+                    WebkitOverflowScrolling: "touch",
                   }}
                 />
               );
             })}
           </div>
         ) : (
-          <div className="flex items-center justify-center h-[calc(100vh-var(--menu-bar-height))] text-black/60">
+          <div className="flex items-center justify-center h-full text-black/60">
             <p>{isLoading ? "Loading..." : "No build available"}</p>
           </div>
         )}
@@ -164,9 +165,9 @@ function AppContent() {
 export function AppShell({ children }: { children?: ReactNode }) {
   return (
     <Suspense fallback={
-      <div className="fixed top-0 left-0 right-0 h-[var(--menu-bar-height)] z-50 flex items-center justify-between px-3 bg-white/40 backdrop-blur-md backdrop-saturate-150 border-b border-black/5 text-[13px] text-black/85 select-none">
+      <div className="fixed top-0 left-0 right-0 h-[var(--menu-bar-height)] z-50 flex items-center justify-between px-3 bg-black/[0.03] backdrop-blur-2xl backdrop-saturate-[1.8] border-b border-black/[0.04] text-[13px] text-black/80 select-none">
         <div className="flex items-center h-full">
-          <span className="font-medium">Erik Björnager</span>
+          <span className="font-medium">eriks.design</span>
         </div>
       </div>
     }>

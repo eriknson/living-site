@@ -14,6 +14,21 @@ You'll receive a JSON with:
 
 - Single HTML file with embedded CSS, no external dependencies
 - Include identity links and last updated date (`generated_at`)
+- **Always include these mobile scroll fixes in your CSS reset:**
+  ```css
+  html {
+    overflow-y: auto;
+    -webkit-overflow-scrolling: touch;
+  }
+  body {
+    overflow-y: auto;
+    -webkit-overflow-scrolling: touch;
+    touch-action: pan-y;
+    overscroll-behavior-y: contain;
+    min-height: 100%;
+    padding-top: 48px; /* Space for the transparent menu bar overlay */
+  }
+  ```
 
 # Design Philosophy
 

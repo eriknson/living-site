@@ -103,14 +103,14 @@ function MobileDrawerContent({
       {/* Description */}
       <div className="bg-black/[0.03] rounded-2xl px-4 py-3.5">
         <p className="text-[15px] text-black/60 leading-relaxed">
-          This website regenerates daily via Cursor CLI agents running on GitHub Actions. Redeploys via Vercel automagically.
+          This website regenerates daily via Cursor CLI agents running on GitHub Actions. Redeploys via Vercel automatically.
         </p>
       </div>
 
       {/* Made by / Updated */}
       <div className="bg-black/[0.03] rounded-2xl px-4 py-3">
         <div className="flex justify-between items-baseline py-1">
-          <span className="text-[15px] text-black/50">Made by</span>
+          <span className="text-[15px] text-black/50">This version made by</span>
           <span className="text-[15px] text-black/90">
             {modelName}
             {durationStr && <span className="text-black/50">{durationStr}</span>}
@@ -146,25 +146,25 @@ function MobileDrawerContent({
         </div>
       </div>
 
-      {/* Links */}
-      <div className="bg-black/[0.03] rounded-2xl p-1">
+      {/* Actions */}
+      <div className="flex gap-2">
         <Link
           href="/builds"
           onClick={onLinkClick}
-          className="flex items-center justify-between px-3 py-3.5 rounded-xl text-[15px] text-black/80 active:bg-black/5 transition-colors"
+          className="flex-1 flex items-center justify-center gap-2 px-4 py-3 rounded-xl text-[15px] font-medium text-black/70 bg-black/[0.06] active:bg-black/10 transition-colors"
         >
+          <History className="h-4 w-4" />
           <span>Build History</span>
-          <History className="h-4 w-4 text-black/30" />
         </Link>
         <a
           href="https://github.com/eriknson/living-site"
           target="_blank"
           rel="noopener noreferrer"
           onClick={onLinkClick}
-          className="flex items-center justify-between px-3 py-3.5 rounded-xl text-[15px] text-black/80 active:bg-black/5 transition-colors"
+          className="flex-1 flex items-center justify-center gap-2 px-4 py-3 rounded-xl text-[15px] font-medium text-black/70 bg-black/[0.06] active:bg-black/10 transition-colors"
         >
-          <span>Source Code</span>
-          <ArrowUpRight className="h-4 w-4 text-black/30" />
+          <ArrowUpRight className="h-4 w-4" />
+          <span>Source</span>
         </a>
       </div>
     </div>
@@ -175,7 +175,15 @@ export function BuildTime({ manifest, currentModel, currentDate, currentTimestam
   const [relativeTime, setRelativeTime] = useState<string>("");
   const [dataSources, setDataSources] = useState<DataSource[]>([]);
   const [drawerOpen, setDrawerOpen] = useState(false);
+  const [dropdownOpen, setDropdownOpen] = useState(false);
   const isMobile = useIsMobile();
+
+  // Close dropdown when clicking into iframe (window loses focus)
+  useEffect(() => {
+    const handleBlur = () => setDropdownOpen(false);
+    window.addEventListener("blur", handleBlur);
+    return () => window.removeEventListener("blur", handleBlur);
+  }, []);
 
   useEffect(() => {
     if (!manifest) return;
@@ -244,14 +252,14 @@ export function BuildTime({ manifest, currentModel, currentDate, currentTimestam
 
   // Desktop: Traditional dropdown
   return (
-    <DropdownMenu>
+    <DropdownMenu open={dropdownOpen} onOpenChange={setDropdownOpen}>
       <DropdownMenuTrigger asChild>
         {TriggerButton}
       </DropdownMenuTrigger>
-      <DropdownMenuContent align="end" className="w-[280px]">
+      <DropdownMenuContent align="end" className="w-[320px]">
         {/* Description */}
         <div className="px-3 py-2.5 text-[13px] text-black/60 leading-relaxed">
-          This website regenerates daily via Cursor CLI agents running on GitHub Actions. Redeploys via Vercel automagically.
+          This website regenerates daily via Cursor CLI agents running on GitHub Actions. Redeploys via Vercel automatically.
         </div>
 
         <DropdownMenuSeparator />
@@ -259,7 +267,7 @@ export function BuildTime({ manifest, currentModel, currentDate, currentTimestam
         {/* Made by / Updated */}
         <div className="px-3 py-2.5 space-y-1">
           <div className="flex justify-between items-baseline text-[13px]">
-            <span className="text-black/50">Made by</span>
+            <span className="text-black/50">This version made by</span>
             <span className="text-black/90">
               {modelName}
               {durationStr && <span className="text-black/50">{durationStr}</span>}
