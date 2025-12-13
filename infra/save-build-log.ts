@@ -4,7 +4,7 @@
  * and updates both history.json (logs) and manifest.json (build index)
  */
 
-import { readFile, writeFile, mkdir, copyFile } from "fs/promises";
+import { readFile, writeFile, mkdir } from "fs/promises";
 import { existsSync } from "fs";
 
 const HISTORY_PATH = "public/builds/history.json";
@@ -12,6 +12,49 @@ const MANIFEST_PATH = "public/builds/manifest.json";
 const FETCH_SUMMARY_PATH = "data/fetch-summary.json";
 const MAX_BUILDS = 50;
 const MAX_DATES = 14;
+
+function injectScrollGuard(html: string): string {
+  // Idempotent: don't inject twice.
+  if (html.includes('id="__living_site_scroll_guard"')) return html;
+
+  const guardCss = [
+    "",
+    '<style id="__living_site_scroll_guard">',
+    "  /* Scroll guard injected at build time to ensure generated pages remain scrollable in iframes. */",
+    "  html, body {",
+    "    height: auto !important;",
+    "    min-height: 100% !important;",
+    "    max-height: none !important;",
+    "    overflow-y: auto !important;",
+    "    overflow-x: hidden !important;",
+    "    position: static !important;",
+    "    -webkit-overflow-scrolling: touch !important;",
+    "    touch-action: pan-y !important;",
+    "    overscroll-behavior-y: contain !important;",
+    "  }",
+    "  /* Avoid accidental fixed full-screen traps that break scrolling on mobile. */",
+    "  body {",
+    "    inset: auto !important;",
+    "  }",
+    "</style>",
+    "",
+  ].join("\n");
+
+  // Prefer injecting before </head> so it wins by being last in head.
+  const headCloseIdx = html.toLowerCase().lastIndexOf("</head>");
+  if (headCloseIdx !== -1) {
+    return html.slice(0, headCloseIdx) + guardCss + html.slice(headCloseIdx);
+  }
+
+  // Fallback: if there's no </head>, inject right after <html ...> or at top.
+  const htmlTagMatch = html.match(/<html[^>]*>/i);
+  if (htmlTagMatch && htmlTagMatch.index !== undefined) {
+    const insertAt = htmlTagMatch.index + htmlTagMatch[0].length;
+    return html.slice(0, insertAt) + "\n<head>" + guardCss + "</head>\n" + html.slice(insertAt);
+  }
+
+  return guardCss + html;
+}
 
 // Each model has its own sandbox file
 function getGeneratedPath(model: string): string {
@@ -458,8 +501,11 @@ async function saveBuildLog(outputPath: string, options: SaveBuildLogOptions = {
     if (!existsSync(dateDir)) {
       await mkdir(dateDir, { recursive: true });
     }
-    
-    await copyFile(generatedPath, buildPath);
+
+    // Inject scroll guard to ensure the archived HTML is always scrollable when embedded.
+    const rawHtml = await readFile(generatedPath, "utf-8");
+    const wrappedHtml = injectScrollGuard(rawHtml);
+    await writeFile(buildPath, wrappedHtml, "utf-8");
     console.log(`Build HTML saved: ${buildPath} (from ${generatedPath})`);
   } else if (skipHtmlCopy) {
     console.log(`Skipping HTML copy (--skip-html-copy flag set)`);

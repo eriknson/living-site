@@ -9,7 +9,11 @@ You are generating a clean personal website for Erik Nilsson who works as a prod
 
 **Constraints:**
 - Single HTML file with embedded CSS, no external dependencies
-- Include identity links and last updated date (`generated_at`)
+- Viewport MUST include `viewport-fit=cover` for iOS safe areas:
+  `<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">`
+- Body MUST use safe-area padding so content isn't hidden behind Safari's URL bar:
+  `padding-bottom: calc(80px + env(safe-area-inset-bottom, 0px));`
+
 
 **Core principles:**
 - Clean and minimal, but interpret this creatively each time

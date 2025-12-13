@@ -30,6 +30,16 @@ function AppContent() {
     [manifest, currentDate, currentTimestamp]
   );
 
+  const supportsInert = useMemo(() => {
+    // `inert` is now supported in modern Safari/Chrome, but we keep a fallback path.
+    // This component is client-only, so `document` exists.
+    try {
+      return "inert" in document.createElement("div");
+    } catch {
+      return false;
+    }
+  }, []);
+
   const hasBuilds = buildPaths.length > 0;
   const batchKey = `${currentDate ?? ""}|${batchTimestamp ?? ""}`;
 
@@ -135,7 +145,7 @@ function AppContent() {
       <main className="fixed inset-0">
         {hasBuilds ? (
           <div className="relative w-full h-full">
-            {mountedPaths.map(({ model, path }, index) => {
+            {mountedPaths.map(({ model, path }) => {
               const isActive = model === currentModel;
               // Use a combination of z-index stacking and inert attribute for robust
               // iframe switching. The active iframe is on top with z-index, inactive
@@ -143,17 +153,28 @@ function AppContent() {
               return (
                 <iframe
                   key={path}
+                  ref={(el) => {
+                    if (!el) return;
+                    // Explicitly remove/set inert attribute via DOM API to work around
+                    // Safari bug where toggling via React doesn't restore scroll.
+                    if (isActive) {
+                      el.removeAttribute("inert");
+                    } else {
+                      el.setAttribute("inert", "");
+                    }
+                  }}
                   src={`/${path}`}
                   title={`Site built by ${getModelDisplayName(model)}`}
                   className="absolute inset-0 w-full h-full border-0"
                   style={{
-                    zIndex: isActive ? 10 : index,
+                    // Never let an inactive iframe sit "above" the active one (even if many are mounted).
+                    zIndex: isActive ? 1 : 0,
                     opacity: isActive ? 1 : 0,
                     pointerEvents: isActive ? "auto" : "none",
+                    // If `inert` isn't supported, ensure inactive iframes can't interfere with scroll/touch
+                    // by removing them from rendering while still allowing them to load/prewarm.
+                    display: !supportsInert && !isActive ? "none" : "block",
                   }}
-                  // inert attribute prevents all interaction including scroll
-                  // @ts-expect-error - inert is a valid HTML attribute but not in React types
-                  inert={isActive ? undefined : ""}
                 />
               );
             })}
