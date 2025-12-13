@@ -45,6 +45,7 @@ function AppContent() {
 
   const [mountedPaths, setMountedPaths] = useState<{ model: string; path: string }[]>([]);
   const warmedBatchKeyRef = useRef<string | null>(null);
+  const iframeRefsMap = useRef<Map<string, HTMLIFrameElement>>(new Map());
 
   const resolveActiveEntry = useCallback(() => {
     if (!hasBuilds) return null;
@@ -133,6 +134,34 @@ function AppContent() {
     });
   }, [batchKey, buildPaths, currentModel, hasBuilds]);
 
+  // Manage inert attribute on iframes after DOM commits - Safari needs explicit DOM manipulation
+  useEffect(() => {
+    // Run after paint to ensure browser has processed any pending layout
+    const rafId = requestAnimationFrame(() => {
+      iframeRefsMap.current.forEach((el, path) => {
+        const entry = mountedPaths.find((p) => p.path === path);
+        if (!entry) return;
+        
+        const isActive = entry.model === currentModel;
+        if (isActive) {
+          el.removeAttribute("inert");
+          // Double RAF to ensure Safari processes the attribute change
+          requestAnimationFrame(() => {
+            try {
+              // Trigger a layout recalculation
+              void el.contentDocument?.body?.offsetHeight;
+            } catch {
+              // Cross-origin or not loaded yet
+            }
+          });
+        } else {
+          el.setAttribute("inert", "");
+        }
+      });
+    });
+    return () => cancelAnimationFrame(rafId);
+  }, [currentModel, mountedPaths]);
+
   return (
     <>
       <MenuBar
@@ -154,13 +183,10 @@ function AppContent() {
                 <iframe
                   key={path}
                   ref={(el) => {
-                    if (!el) return;
-                    // Explicitly remove/set inert attribute via DOM API to work around
-                    // Safari bug where toggling via React doesn't restore scroll.
-                    if (isActive) {
-                      el.removeAttribute("inert");
+                    if (el) {
+                      iframeRefsMap.current.set(path, el);
                     } else {
-                      el.setAttribute("inert", "");
+                      iframeRefsMap.current.delete(path);
                     }
                   }}
                   src={`/${path}`}

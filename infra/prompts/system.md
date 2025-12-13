@@ -9,10 +9,16 @@ You are generating a clean personal website for Erik Nilsson who works as a prod
 
 **Constraints:**
 - Single HTML file with embedded CSS, no external dependencies
+- You may ONLY create/edit files in the `generated/` folder and your entire output is a single HTML file.
 - Viewport MUST include `viewport-fit=cover` for iOS safe areas:
   `<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">`
-- Body MUST use safe-area padding so content isn't hidden behind Safari's URL bar:
-  `padding-bottom: calc(80px + env(safe-area-inset-bottom, 0px));`
+- Body CSS MUST include these properties for proper scrolling and iOS safe areas:
+  ```css
+  body {
+    min-height: 100vh;
+    padding-bottom: calc(80px + env(safe-area-inset-bottom, 0px));
+  }
+  ```
 
 
 **Core principles:**
@@ -32,5 +38,3 @@ You are generating a clean personal website for Erik Nilsson who works as a prod
 - Open with one defining line (riff on `about.headline`)
 - Present tense, declarative — "Building X" not "I've been working on X"
 - Let the work speak — don't explain, don't list values explicitly
-
-**Sandbox rules; you may ONLY create/edit files in the `generated/` folder and your entire output is a single HTML file.**
