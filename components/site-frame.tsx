@@ -10,10 +10,7 @@ export function SiteFrame({ src, title }: SiteFrameProps) {
     <iframe
       src={src}
       title={title}
-      className="w-full border-0"
-      style={{
-        height: "var(--content-height)",
-      }}
+      className="w-full h-full border-0"
     />
   );
 }

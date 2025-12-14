@@ -10,6 +10,7 @@ import { existsSync } from "fs";
 const HISTORY_PATH = "public/builds/history.json";
 const MANIFEST_PATH = "public/builds/manifest.json";
 const FETCH_SUMMARY_PATH = "data/fetch-summary.json";
+const SYSTEM_PROMPT_PATH = "infra/prompts/system.md";
 const MAX_BUILDS = 50;
 const MAX_DATES = 14;
 
@@ -114,6 +115,7 @@ interface ManifestBuild {
 interface ManifestBatch {
   timestamp: string; // ISO timestamp, used as unique identifier
   github_run_url?: string;
+  system_prompt?: string; // The system prompt used for this build batch
   builds: ManifestBuild[];
 }
 
@@ -337,6 +339,17 @@ async function loadManifest(): Promise<Manifest> {
   }
 }
 
+async function loadSystemPrompt(): Promise<string | null> {
+  if (!existsSync(SYSTEM_PROMPT_PATH)) {
+    return null;
+  }
+  try {
+    return await readFile(SYSTEM_PROMPT_PATH, "utf-8");
+  } catch {
+    return null;
+  }
+}
+
 async function loadAndFormatFetchSummary(): Promise<string | null> {
   if (!existsSync(FETCH_SUMMARY_PATH)) {
     return null;
@@ -525,12 +538,28 @@ async function saveBuildLog(outputPath: string, options: SaveBuildLogOptions = {
     // Find or create the batch for this timestamp
     let batch = dateEntry.batches.find(b => b.timestamp === timestamp);
     if (!batch) {
-      batch = { timestamp, github_run_url: githubRunUrl || undefined, builds: [] };
+      // Load system prompt for new batches
+      const systemPrompt = await loadSystemPrompt();
+      batch = { 
+        timestamp, 
+        github_run_url: githubRunUrl || undefined, 
+        system_prompt: systemPrompt || undefined,
+        builds: [] 
+      };
       // Insert at beginning (most recent first)
       dateEntry.batches.unshift(batch);
-    } else if (githubRunUrl && !batch.github_run_url) {
+    } else {
       // Update github_run_url if not set
-      batch.github_run_url = githubRunUrl;
+      if (githubRunUrl && !batch.github_run_url) {
+        batch.github_run_url = githubRunUrl;
+      }
+      // Update system_prompt if not set (in case first model didn't have it)
+      if (!batch.system_prompt) {
+        const systemPrompt = await loadSystemPrompt();
+        if (systemPrompt) {
+          batch.system_prompt = systemPrompt;
+        }
+      }
     }
     
     // Add or update the build for this model in this batch

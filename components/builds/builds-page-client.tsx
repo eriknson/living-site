@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import Link from "next/link";
-import { ArrowUpRight, ScrollText } from "lucide-react";
+import { ArrowUpRight, ScrollText, FileText } from "lucide-react";
 import type { Manifest, Batch, Build } from "@/lib/manifest";
 import {
   Drawer,
@@ -200,6 +200,11 @@ export function BuildsPageClient({
     timestamp: string;
   } | null>(null);
 
+  const [activePrompt, setActivePrompt] = useState<{
+    content: string;
+    timestamp: string;
+  } | null>(null);
+
   // Group history logs by timestamp and model for lookup
   const logsByTimestampModel: Record<string, BuildEntry> = {};
   for (const build of history?.builds || []) {
@@ -259,11 +264,25 @@ export function BuildsPageClient({
 
               return (
                 <section key={batchKey}>
-                  {/* Session header with GitHub icon */}
+                  {/* Session header with prompt and GitHub icons */}
                   <div className="flex items-center gap-2 mb-2.5 px-1">
                     <h2 className="text-sm font-medium text-neutral-700">
                       {formatBuildTime(batch.timestamp)}
                     </h2>
+                    {batch.system_prompt && (
+                      <button
+                        onClick={() =>
+                          setActivePrompt({
+                            content: batch.system_prompt!,
+                            timestamp: batch.timestamp,
+                          })
+                        }
+                        className="text-neutral-300 hover:text-neutral-500 transition-colors"
+                        title="View system prompt"
+                      >
+                        <FileText className="w-4 h-4" />
+                      </button>
+                    )}
                     {batch.github_run_url && (
                       <a
                         href={batch.github_run_url}
@@ -322,6 +341,25 @@ export function BuildsPageClient({
             <div className="px-4 pb-6 overflow-auto">
               <pre className="bg-neutral-900 text-neutral-300 text-xs p-4 rounded-xl overflow-x-auto whitespace-pre-wrap break-words font-mono leading-relaxed">
                 {activeLog.output}
+              </pre>
+            </div>
+          </DrawerContent>
+        </Drawer>
+      )}
+
+      {/* System prompt drawer */}
+      {activePrompt && (
+        <Drawer open onOpenChange={(open) => !open && setActivePrompt(null)}>
+          <DrawerContent className="max-h-[85vh]" aria-label="System prompt">
+            <DrawerHeader className="text-left px-5">
+              <DrawerTitle>System Prompt</DrawerTitle>
+              <DrawerDescription>
+                Prompt used for build at {formatBuildTime(activePrompt.timestamp)}
+              </DrawerDescription>
+            </DrawerHeader>
+            <div className="px-4 pb-6 overflow-auto">
+              <pre className="bg-neutral-900 text-neutral-300 text-xs p-4 rounded-xl overflow-x-auto whitespace-pre-wrap break-words font-mono leading-relaxed">
+                {activePrompt.content}
               </pre>
             </div>
           </DrawerContent>

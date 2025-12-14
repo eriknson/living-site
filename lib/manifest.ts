@@ -9,6 +9,7 @@ export interface Build {
 export interface Batch {
   timestamp: string; // ISO timestamp, used as unique identifier
   github_run_url?: string;
+  system_prompt?: string; // The system prompt used for this build batch
   builds: Build[];
 }
 
