@@ -1,6 +1,6 @@
 "use client";
 
-import { Suspense, type ReactNode, useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { Suspense, type ReactNode, useEffect, useMemo } from "react";
 import { ManifestProvider, useManifest } from "@/lib/manifest-context";
 import { MenuBar } from "./menu-bar";
 import { getModelDisplayName, getBatch, type Manifest } from "@/lib/manifest";
@@ -23,68 +23,52 @@ function getBatchInfo(
 }
 
 function AppContent() {
-  const { manifest, currentModel, currentDate, currentTimestamp, currentBuildPath, isLoading, setModel } = useManifest();
+  const { manifest, currentModel, currentDate, currentTimestamp, isLoading, setModel } = useManifest();
 
-  const { batchTimestamp, buildPaths } = useMemo(
+  const { buildPaths } = useMemo(
     () => getBatchInfo(manifest, currentDate, currentTimestamp),
     [manifest, currentDate, currentTimestamp]
   );
 
   const hasBuilds = buildPaths.length > 0;
-  const batchKey = `${currentDate ?? ""}|${batchTimestamp ?? ""}`;
 
-  const [mountedPaths, setMountedPaths] = useState<{ model: string; path: string }[]>([]);
-  const warmedBatchKeyRef = useRef<string | null>(null);
+  // Prefetch all HTML files for instant switching
+  useEffect(() => {
+    if (!buildPaths.length) return;
+    
+    const links: HTMLLinkElement[] = [];
+    buildPaths.forEach(({ path }) => {
+      const link = document.createElement('link');
+      link.rel = 'prefetch';
+      link.href = `/${path}`;
+      link.as = 'document';
+      document.head.appendChild(link);
+      links.push(link);
+    });
+    
+    return () => {
+      links.forEach(link => link.remove());
+    };
+  }, [buildPaths]);
 
-  const resolveActiveEntry = useCallback(() => {
+  // Get the active path for current model
+  const activePath = useMemo(() => {
     if (!hasBuilds) return null;
     if (currentModel) {
-      const byModel = buildPaths.find((p) => p.model === currentModel);
-      if (byModel) return byModel;
+      const found = buildPaths.find((p) => p.model === currentModel);
+      if (found) return found.path;
     }
-    if (currentBuildPath) {
-      const byPath = buildPaths.find((p) => p.path === currentBuildPath);
-      if (byPath) return byPath;
+    return buildPaths[0]?.path ?? null;
+  }, [buildPaths, currentModel, hasBuilds]);
+
+  const activeModel = useMemo(() => {
+    if (!hasBuilds) return null;
+    if (currentModel) {
+      const found = buildPaths.find((p) => p.model === currentModel);
+      if (found) return found.model;
     }
-    return buildPaths[0] ?? null;
-  }, [buildPaths, currentBuildPath, currentModel, hasBuilds]);
-
-  const warmUpAllIframes = useCallback(() => {
-    if (!hasBuilds) return;
-    setMountedPaths(buildPaths);
-    warmedBatchKeyRef.current = batchKey;
-  }, [batchKey, buildPaths, hasBuilds]);
-
-  // Reset mounted iframes when the batch changes
-  useEffect(() => {
-    if (!hasBuilds) {
-      setMountedPaths([]);
-      warmedBatchKeyRef.current = null;
-      return;
-    }
-
-    const active = resolveActiveEntry();
-    setMountedPaths(active ? [active] : []);
-    warmedBatchKeyRef.current = null;
-
-    // Warm up all iframes after a short delay
-    const timeoutId = setTimeout(() => warmUpAllIframes(), 500);
-    return () => clearTimeout(timeoutId);
-  }, [batchKey, hasBuilds, resolveActiveEntry, warmUpAllIframes]);
-
-  // Ensure newly selected model is mounted if warm-up hasn't finished
-  useEffect(() => {
-    if (!hasBuilds || !currentModel) return;
-    if (warmedBatchKeyRef.current === batchKey) return;
-
-    const active = buildPaths.find((p) => p.model === currentModel);
-    if (!active) return;
-
-    setMountedPaths((prev) => {
-      if (prev.some((p) => p.path === active.path)) return prev;
-      return [...prev, active];
-    });
-  }, [batchKey, buildPaths, currentModel, hasBuilds]);
+    return buildPaths[0]?.model ?? null;
+  }, [buildPaths, currentModel, hasBuilds]);
 
   return (
     <div className="h-dvh flex flex-col">
@@ -98,27 +82,16 @@ function AppContent() {
       />
       
       {/* Content area - fills remaining space */}
-      <div className="flex-1 relative min-h-0">
-        {hasBuilds ? (
-          <>
-            {mountedPaths.map(({ model, path }) => {
-              const isActive = model === currentModel;
-              return (
-                <iframe
-                  key={path}
-                  src={`/${path}`}
-                  title={`Site built by ${getModelDisplayName(model)}`}
-                  className="absolute inset-0 w-full h-full border-0"
-                  style={{
-                    visibility: isActive ? "visible" : "hidden",
-                    pointerEvents: isActive ? "auto" : "none",
-                  }}
-                />
-              );
-            })}
-          </>
+      <div className="flex-1 relative min-h-0 bg-[#0a0a0a]">
+        {activePath ? (
+          <iframe
+            key={activePath}
+            src={`/${activePath}`}
+            title={`Site built by ${getModelDisplayName(activeModel ?? '')}`}
+            className="absolute inset-0 w-full h-full border-0"
+          />
         ) : (
-          <div className="flex items-center justify-center h-full text-black/60">
+          <div className="flex items-center justify-center h-full text-white/60">
             <p>{isLoading ? "Loading..." : "No build available"}</p>
           </div>
         )}

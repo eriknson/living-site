@@ -13,6 +13,23 @@ alwaysApply: true
 - External links: target="_blank" rel="noopener"
 - Use subtle icons that match the typeface where it makes sense
 
+# Viewport Requirements (Critical)
+
+The page is displayed inside an iframe. The background must fill the entire viewport:
+
+```css
+html, body {
+  min-height: 100%;
+  margin: 0;
+  padding: 0;
+}
+body {
+  background: var(--bg); /* or your background color */
+}
+```
+
+This ensures no gaps appear at the bottom of the page.
+
 # Section Behavior
 
 - Sections with high recent activity: expand with detail
