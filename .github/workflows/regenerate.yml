@@ -125,7 +125,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        model: [composer-1, claude-4.5-opus-high-thinking, gpt-5.1-codex]
+        model: [composer-1, claude-4.5-opus-high-thinking, gpt-5.1-codex, gemini-3-pro]
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
@@ -433,7 +433,7 @@ jobs:
           if git diff --staged --quiet; then
             echo "No changes to commit"
           else
-            git commit -m "Regenerate site (3 models) - $(date -u +%Y-%m-%d)"
+            git commit -m "Regenerate site (4 models) - $(date -u +%Y-%m-%d)"
             
             # Pull latest changes and rebase before pushing
             # This handles the case where another push happened during the workflow
@@ -453,7 +453,7 @@ jobs:
         if: always() && env.BUILD_WEBHOOK_URL != ''
         run: |
           # Determine final status
-          if [ -f "generated/composer-1.html" ] || [ -f "generated/claude-4.5-opus-high-thinking.html" ] || [ -f "generated/gpt-5.1-codex.html" ]; then
+          if [ -f "generated/composer-1.html" ] || [ -f "generated/claude-4.5-opus-high-thinking.html" ] || [ -f "generated/gpt-5.1-codex.html" ] || [ -f "generated/gemini-3-pro.html" ]; then
             STATUS="build.complete"
           else
             STATUS="build.error"
