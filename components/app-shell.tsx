@@ -87,7 +87,7 @@ function AppContent() {
   }, [batchKey, buildPaths, currentModel, hasBuilds]);
 
   return (
-    <div className="h-full flex flex-col">
+    <div className="h-dvh flex flex-col">
       {/* Menu bar - fixed height, always on top */}
       <MenuBar
         manifest={manifest}
