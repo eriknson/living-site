@@ -298,7 +298,7 @@ export function BuildsPageClient({
                   </div>
 
                   {/* Model cards grid */}
-                  <div className="grid gap-2 sm:grid-cols-3">
+                  <div className="grid gap-2 sm:grid-cols-2">
                     {builds.map((build: Build) => {
                       const log =
                         logsByTimestampModel[`${batch.timestamp}-${build.model}`];
