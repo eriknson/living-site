@@ -30,15 +30,6 @@ function AppContent() {
     [manifest, currentDate, currentTimestamp]
   );
 
-  const supportsInert = useMemo(() => {
-    // `inert` is now supported in modern Safari/Chrome, but we keep a fallback path.
-    // This component is client-only, so `document` exists.
-    try {
-      return "inert" in document.createElement("div");
-    } catch {
-      return false;
-    }
-  }, []);
 
   const hasBuilds = buildPaths.length > 0;
   const batchKey = `${currentDate ?? ""}|${batchTimestamp ?? ""}`;
@@ -171,7 +162,14 @@ function AppContent() {
         currentTimestamp={currentTimestamp}
         onModelChange={setModel}
       />
-      <main className="fixed inset-0">
+      <main 
+        className="fixed left-0 right-0"
+        style={{
+          top: "var(--menu-bar-height)",
+          bottom: "var(--safe-area-bottom)",
+          height: "var(--content-height)",
+        }}
+      >
         {hasBuilds ? (
           <div className="relative w-full h-full">
             {mountedPaths.map(({ model, path }) => {
@@ -179,29 +177,32 @@ function AppContent() {
               // Use a combination of z-index stacking and inert attribute for robust
               // iframe switching. The active iframe is on top with z-index, inactive
               // iframes use inert to prevent any interaction including scroll capture.
+              // Using visibility:hidden instead of display:none to preserve iframe state in Safari.
               return (
-                <iframe
+                <div
                   key={path}
-                  ref={(el) => {
-                    if (el) {
-                      iframeRefsMap.current.set(path, el);
-                    } else {
-                      iframeRefsMap.current.delete(path);
-                    }
-                  }}
-                  src={`/${path}`}
-                  title={`Site built by ${getModelDisplayName(model)}`}
-                  className="absolute inset-0 w-full h-full border-0"
+                  className="absolute inset-0 w-full h-full overflow-auto"
                   style={{
-                    // Never let an inactive iframe sit "above" the active one (even if many are mounted).
+                    WebkitOverflowScrolling: "touch",
                     zIndex: isActive ? 1 : 0,
+                    visibility: isActive ? "visible" : "hidden",
                     opacity: isActive ? 1 : 0,
                     pointerEvents: isActive ? "auto" : "none",
-                    // If `inert` isn't supported, ensure inactive iframes can't interfere with scroll/touch
-                    // by removing them from rendering while still allowing them to load/prewarm.
-                    display: !supportsInert && !isActive ? "none" : "block",
                   }}
-                />
+                >
+                  <iframe
+                    ref={(el) => {
+                      if (el) {
+                        iframeRefsMap.current.set(path, el);
+                      } else {
+                        iframeRefsMap.current.delete(path);
+                      }
+                    }}
+                    src={`/${path}`}
+                    title={`Site built by ${getModelDisplayName(model)}`}
+                    className="w-full h-full border-0"
+                  />
+                </div>
               );
             })}
           </div>

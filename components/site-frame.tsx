@@ -7,11 +7,19 @@ interface SiteFrameProps {
 
 export function SiteFrame({ src, title }: SiteFrameProps) {
   return (
-    <iframe
-      src={src}
-      title={title}
-      className="w-full h-[calc(100vh-var(--menu-bar-height))] border-0"
-    />
+    <div
+      className="w-full overflow-auto"
+      style={{
+        height: "var(--content-height)",
+        WebkitOverflowScrolling: "touch",
+      }}
+    >
+      <iframe
+        src={src}
+        title={title}
+        className="w-full h-full border-0"
+      />
+    </div>
   );
 }
 
