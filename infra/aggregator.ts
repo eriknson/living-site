@@ -43,15 +43,14 @@ interface Identity {
 
 interface About {
   headline: string;
-  about: string;
-  philosophy: {
-    core: string;
-    approach: string[];
-    how_i_build: string[];
-  };
-  values: string[];
-  beliefs: string[];
-  interests: string[];
+  bio: string;
+}
+
+interface SynthesisHints {
+  activity_level: "high" | "medium" | "low";
+  dominant_theme: string | null;
+  energy: "shipping" | "exploring" | "reflective" | "quiet";
+  cross_source_patterns: string[];
 }
 
 interface FetchSourceResult {
@@ -109,6 +108,7 @@ interface AggregatedData {
     spotify?: SourceAnalysis;
     typefully?: SourceAnalysis;
   };
+  synthesis_hints: SynthesisHints;
   narrative_signals: string[];
   context: {
     season: string;
@@ -122,6 +122,100 @@ function getSeason(): string {
   if (month >= 5 && month <= 7) return "summer";
   if (month >= 8 && month <= 10) return "autumn";
   return "winter";
+}
+
+function computeSynthesisHints(
+  analysis: AggregatedData["analysis"],
+  sources: AggregatedData["sources"]
+): SynthesisHints {
+  const patterns: string[] = [];
+  
+  // Compute activity level from GitHub
+  const githubCommits = sources.github?.recent_activity.commits || 0;
+  const typefullyPosts = sources.typefully?.stats.posts_this_week || 0;
+  
+  let activityLevel: SynthesisHints["activity_level"] = "low";
+  if (githubCommits > 20 || typefullyPosts > 3) {
+    activityLevel = "high";
+  } else if (githubCommits > 5 || typefullyPosts > 1) {
+    activityLevel = "medium";
+  }
+  
+  // Determine energy from work style and music
+  const workStyle = analysis.github?.identity?.work_style;
+  const spotifyStyle = analysis.spotify?.identity?.listening_style;
+  const topGenres = sources.spotify?.short_term.genres.slice(0, 3) || [];
+  
+  let energy: SynthesisHints["energy"] = "quiet";
+  if (workStyle === "focused" && activityLevel === "high") {
+    energy = "shipping";
+  } else if (workStyle === "exploring" || spotifyStyle === "explorer") {
+    energy = "exploring";
+  } else if (activityLevel === "low" && topGenres.some(g => 
+    g.includes("ambient") || g.includes("dream") || g.includes("downtempo")
+  )) {
+    energy = "reflective";
+  } else if (activityLevel === "medium") {
+    energy = "exploring";
+  }
+  
+  // Find dominant theme from repos and tweets
+  const activeRepos = sources.github?.recent_activity.repos_touched || [];
+  const tweetThemes = sources.typefully?.themes?.interests || [];
+  
+  let dominantTheme: string | null = null;
+  
+  // Check for AI/tools theme overlap
+  const aiRelated = activeRepos.some(r => 
+    r.toLowerCase().includes("cursor") || 
+    r.toLowerCase().includes("ai") ||
+    r.toLowerCase().includes("agent")
+  );
+  const tweetsAboutAI = tweetThemes.some(t => 
+    t.toLowerCase().includes("ai") || 
+    t.toLowerCase().includes("agent")
+  );
+  if (aiRelated && tweetsAboutAI) {
+    dominantTheme = "AI tools";
+    patterns.push("AI repos + AI tweets = coherent focus");
+  }
+  
+  // Check for design systems theme
+  const designSystemRepo = activeRepos.some(r => 
+    r.toLowerCase().includes("ds") || 
+    r.toLowerCase().includes("design")
+  );
+  if (designSystemRepo) {
+    dominantTheme = dominantTheme ? `${dominantTheme} + design systems` : "design systems";
+    patterns.push("design system work active");
+  }
+  
+  // Cross-source patterns
+  if (activityLevel === "high" && topGenres.some(g => 
+    g.includes("electronic") || g.includes("house") || g.includes("edm")
+  )) {
+    patterns.push("high-energy music matches shipping pace");
+  }
+  
+  if (activityLevel === "low" && topGenres.some(g => 
+    g.includes("dream pop") || g.includes("ambient")
+  )) {
+    patterns.push("mellow music, quiet code week");
+  }
+  
+  const repoCount = activeRepos.length;
+  if (repoCount > 2) {
+    patterns.push(`touching ${repoCount} repos = exploring mode`);
+  } else if (repoCount === 1 && activityLevel === "high") {
+    patterns.push("single repo focus = heads-down building");
+  }
+  
+  return {
+    activity_level: activityLevel,
+    dominant_theme: dominantTheme,
+    energy,
+    cross_source_patterns: patterns,
+  };
 }
 
 async function loadPreviousSignals(): Promise<string[] | null> {
@@ -179,7 +273,7 @@ export async function aggregate(): Promise<AggregatedData> {
   fetchResults.push({
     name: "About",
     status: "success",
-    summary: about.headline || "Bio & values loaded",
+    summary: about.headline || "Bio loaded",
   });
 
   // =========================================================================
@@ -408,12 +502,17 @@ export async function aggregate(): Promise<AggregatedData> {
     allNarrativeSignals
   );
 
+  // Compute synthesis hints for the agent
+  const synthesisHints = computeSynthesisHints(analysis, sources);
+  console.log("\n  Synthesis hints:", synthesisHints);
+
   const data: AggregatedData = {
     generated_at: new Date().toISOString(),
     identity,
     about,
     sources,
     analysis,
+    synthesis_hints: synthesisHints,
     narrative_signals: allNarrativeSignals,
     context: {
       season: getSeason(),

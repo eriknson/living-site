@@ -1,5 +1,17 @@
-Single HTML personal site for Erik Nilsson.
+Clean personal site for Erik Nilsson. Single HTML file.
 
-Name, role, one sentence about what you're doing now. Links to work, contact links. That's it.
+Read the data. Don't report it — synthesize it and present it nicely.
 
-Sparse is confident. If something doesn't earn its place, cut it.
+Find intersections across sources:
+- What story does this week tell?
+- What connects the code, the music, the tweets?
+- What energy does the combination suggest?
+
+Structure:
+- "Erik's Website" + Product Designer
+- Sections ordered by what's most alive right now
+- Contact links
+- Footer: location/weather woven into a closing thought
+
+The headline should feel curated. Descriptions should connect dots.
+Less dashboard, more daily observation. Show craft.
