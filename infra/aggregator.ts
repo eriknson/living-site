@@ -20,6 +20,11 @@ import {
   fetchWeatherData,
   type WeatherData,
 } from "./fetchers/weather.js";
+import {
+  fetchInspirationData,
+  summarizeInspiration,
+  type InspirationData,
+} from "./fetchers/inspiration.js";
 import { saveSnapshot, getRecentSnapshots, type Snapshot } from "./history.js";
 import { computeGitHubBaseline } from "./baselines/github.js";
 import { computeSpotifyBaseline } from "./baselines/spotify.js";
@@ -97,6 +102,7 @@ interface AggregatedData {
     spotify?: SpotifyData;
     typefully?: TypefullyData;
     weather?: WeatherData;
+    inspiration?: InspirationData;
   };
   analysis: {
     github?: SourceAnalysis;
@@ -351,6 +357,41 @@ export async function aggregate(): Promise<AggregatedData> {
     console.error("  Failed to fetch weather data:", (err as Error).message);
     fetchResults.push({
       name: "Weather",
+      status: "failure",
+      error: (err as Error).message,
+    });
+  }
+
+  // =========================================================================
+  // Inspiration (HN + Reddit design trends)
+  // =========================================================================
+  console.log("\nFetching inspiration data...");
+  try {
+    const inspiration = await fetchInspirationData();
+    sources.inspiration = inspiration;
+
+    // Add inspiration-based narrative signals
+    const inspirationSignals: string[] = [];
+    if (inspiration.combined_keywords.length > 0) {
+      const topKeywords = inspiration.combined_keywords.slice(0, 3).join(", ");
+      inspirationSignals.push(`design community discussing ${topKeywords}`);
+    }
+    if (inspiration.design_direction) {
+      inspirationSignals.push(`today's design direction: ${inspiration.design_direction}`);
+    }
+
+    allNarrativeSignals.push(...inspirationSignals);
+    console.log("  Inspiration signals:", inspirationSignals);
+
+    fetchResults.push({
+      name: "Inspiration",
+      status: "success",
+      summary: summarizeInspiration(inspiration),
+    });
+  } catch (err) {
+    console.error("  Failed to fetch inspiration data:", (err as Error).message);
+    fetchResults.push({
+      name: "Inspiration",
       status: "failure",
       error: (err as Error).message,
     });
