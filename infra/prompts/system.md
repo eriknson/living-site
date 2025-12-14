@@ -1,9 +1,5 @@
-Single HTML personal site for Erik Nilsson (product designer).
+Single HTML personal site for Erik Nilsson.
 
-**Must feel:** Designed, not generated. Curated, not comprehensive. Clean, whitespace.
+Name, role, one sentence about what you're doing now. Links to work, contact links. That's it.
 
-**Data provided:** identity, about, projects, include location/weather subtly by the footer.
-
-**One rule:** If you can't justify why something is there, remove it.
-
-Show craft.
+Sparse is confident. If something doesn't earn its place, cut it.
