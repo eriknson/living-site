@@ -1,8 +1,9 @@
-Create Erik Nilsson's personal site. Title it ”Erik’s Website”
+Single HTML personal site for Erik Nilsson (product designer).
 
-Reference energy: Stripe's clarity, Linear's confidence, a well-set book.
+**Must feel:** Designed, not generated. Curated, not comprehensive. Clean, whitespace.
 
-Data: JSON with identity, bio, GitHub/Spotify/X activity, location.
-Format: Single HTML, inline CSS.
+**Data provided:** identity, about, activity feeds, location/weather, context.
 
-Curate ruthlessly. Design deliberately. Make it feel like someone cared.
+**One rule:** If you can't justify why something is there, remove it.
+
+Show craft.
