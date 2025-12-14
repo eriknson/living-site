@@ -1,0 +1,366 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Erik Nilsson — Product Designer</title>
+    <style>
+        :root {
+            --bg: #F5F5F3;
+            --fg: #1A1A1A;
+            --accent: #2D4CFF; /* Electric Blue */
+            --grid-gap: 2rem;
+            --font-main: "Inter", -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+            --font-mono: "JetBrains Mono", "SF Mono", monospace;
+        }
+
+        @media (prefers-color-scheme: dark) {
+            :root {
+                --bg: #0A0A0A;
+                --fg: #EDEDED;
+                --accent: #4B6BFF;
+            }
+        }
+
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
+
+        body {
+            background-color: var(--bg);
+            color: var(--fg);
+            font-family: var(--font-main);
+            line-height: 1.4;
+            -webkit-font-smoothing: antialiased;
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+            padding: 2rem;
+            max-width: 1400px;
+            margin: 0 auto;
+        }
+
+        header {
+            display: flex;
+            justify-content: space-between;
+            align-items: flex-start;
+            margin-bottom: 4rem;
+            font-family: var(--font-mono);
+            font-size: 0.85rem;
+            opacity: 0.7;
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+        }
+
+        .header-left {
+            display: flex;
+            flex-direction: column;
+            gap: 0.5rem;
+        }
+
+        .header-right {
+            text-align: right;
+            display: flex;
+            flex-direction: column;
+            gap: 0.5rem;
+        }
+
+        h1 {
+            font-size: clamp(2.5rem, 5vw, 4.5rem);
+            line-height: 1.1;
+            font-weight: 500;
+            letter-spacing: -0.03em;
+            margin-bottom: 3rem;
+            max-width: 20ch;
+        }
+
+        h1 .highlight {
+            color: var(--accent);
+        }
+
+        main {
+            display: grid;
+            grid-template-columns: repeat(12, 1fr);
+            gap: var(--grid-gap);
+        }
+
+        .intro {
+            grid-column: 1 / -1;
+            margin-bottom: 4rem;
+        }
+
+        .intro p {
+            font-size: 1.25rem;
+            max-width: 32ch;
+            color: var(--fg);
+            opacity: 0.9;
+        }
+
+        .section-label {
+            font-family: var(--font-mono);
+            font-size: 0.75rem;
+            text-transform: uppercase;
+            letter-spacing: 0.1em;
+            margin-bottom: 1.5rem;
+            display: block;
+            opacity: 0.5;
+            border-top: 1px solid currentColor;
+            padding-top: 1rem;
+        }
+
+        /* Bento Grid */
+        .bento {
+            grid-column: 1 / -1;
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            gap: 1.5rem;
+        }
+
+        .card {
+            background: rgba(125, 125, 125, 0.05);
+            padding: 1.5rem;
+            border-radius: 4px;
+            display: flex;
+            flex-direction: column;
+            justify-content: space-between;
+            min-height: 280px;
+            transition: transform 0.2s ease, background 0.2s ease;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .card:hover {
+            background: rgba(125, 125, 125, 0.08);
+            transform: translateY(-2px);
+        }
+
+        .card-type {
+            font-family: var(--font-mono);
+            font-size: 0.7rem;
+            text-transform: uppercase;
+            opacity: 0.5;
+            margin-bottom: 1rem;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .card-content {
+            flex-grow: 1;
+        }
+
+        .card-title {
+            font-size: 1.25rem;
+            font-weight: 500;
+            margin-bottom: 0.5rem;
+            letter-spacing: -0.02em;
+        }
+
+        .card-desc {
+            font-size: 0.95rem;
+            opacity: 0.7;
+            margin-bottom: 1.5rem;
+        }
+
+        .card-meta {
+            font-family: var(--font-mono);
+            font-size: 0.75rem;
+            opacity: 0.5;
+            margin-top: auto;
+        }
+
+        .music-bars {
+            display: flex;
+            align-items: flex-end;
+            gap: 2px;
+            height: 12px;
+        }
+        
+        .bar {
+            width: 2px;
+            background: currentColor;
+            animation: bounce 1s infinite ease-in-out alternate;
+        }
+        .bar:nth-child(2) { animation-delay: 0.1s; height: 60%; }
+        .bar:nth-child(3) { animation-delay: 0.2s; height: 80%; }
+        .bar:nth-child(4) { animation-delay: 0.3s; height: 40%; }
+
+        @keyframes bounce {
+            from { height: 20%; }
+            to { height: 100%; }
+        }
+
+        /* Specific Card Styles */
+        .card.github {
+            border-left: 2px solid #333;
+        }
+        .card.spotify {
+            border-left: 2px solid #1DB954;
+        }
+        .card.twitter {
+            border-left: 2px solid #1DA1F2;
+        }
+
+        a {
+            color: inherit;
+            text-decoration: none;
+        }
+
+        a.link-arrow::after {
+            content: "→";
+            display: inline-block;
+            margin-left: 0.25rem;
+            transition: transform 0.2s;
+        }
+        a.link-arrow:hover::after {
+            transform: translateX(3px);
+        }
+
+        footer {
+            margin-top: auto;
+            padding-top: 4rem;
+            display: flex;
+            gap: 2rem;
+            font-family: var(--font-mono);
+            font-size: 0.85rem;
+        }
+
+        footer a {
+            opacity: 0.5;
+            transition: opacity 0.2s;
+        }
+        footer a:hover {
+            opacity: 1;
+        }
+
+        @media (max-width: 768px) {
+            h1 {
+                font-size: 2rem;
+            }
+            .bento {
+                grid-template-columns: 1fr;
+            }
+            main {
+                display: block;
+            }
+        }
+    </style>
+</head>
+<body>
+
+    <header>
+        <div class="header-left">
+            <span>Erik Nilsson</span>
+            <span>Product Designer</span>
+        </div>
+        <div class="header-right">
+            <span>Stockholm, SE</span>
+            <span>9°C Overcast</span>
+        </div>
+    </header>
+
+    <main>
+        <div class="intro">
+            <h1>You set the <span class="highlight">vision</span>,<br>agents do the execution.</h1>
+            <p>I build tools that make software development feel like magic. Believing in simplicity and flow state.</p>
+        </div>
+
+        <div class="bento">
+            <!-- Active Project -->
+            <a href="https://github.com/eriknson/shipflow" class="card github">
+                <div class="card-type">
+                    <span>Active Project</span>
+                    <span>Github</span>
+                </div>
+                <div class="card-content">
+                    <div class="card-title">shipflow</div>
+                    <div class="card-desc">Point-and-click editing for Next.js, powered by Cursor Agent.</div>
+                </div>
+                <div class="card-meta">
+                    TypeScript • 1 star
+                </div>
+            </a>
+
+            <!-- Latest Thought -->
+            <div class="card twitter">
+                <div class="card-type">
+                    <span>Latest Thought</span>
+                    <span>X / Twitter</span>
+                </div>
+                <div class="card-content">
+                    <div class="card-desc">"From codebase to roadmap with Cursor. Add in one click via cursor commands: your project, from above."</div>
+                </div>
+                <div class="card-meta">
+                    2025-12-08
+                </div>
+            </div>
+
+            <!-- Now Playing -->
+            <div class="card spotify">
+                <div class="card-type">
+                    <span>On Rotation</span>
+                    <div class="music-bars">
+                        <div class="bar"></div><div class="bar"></div><div class="bar"></div><div class="bar"></div>
+                    </div>
+                </div>
+                <div class="card-content">
+                    <div class="card-title">I Smoked Away My Brain</div>
+                    <div class="card-desc">A$AP Rocky, Imogen Heap</div>
+                </div>
+                <div class="card-meta">
+                    Recently Played
+                </div>
+            </div>
+
+             <!-- Philosophy -->
+             <div class="card">
+                <div class="card-type">
+                    <span>Philosophy</span>
+                    <span>01</span>
+                </div>
+                <div class="card-content">
+                    <div class="card-title">Surgical Moves</div>
+                    <div class="card-desc">Move between high-level ideas and tiny surgical edits without ever leaving flow.</div>
+                </div>
+            </div>
+
+            <!-- Recent Code -->
+            <a href="https://github.com/eriknson/metamask-ds" class="card github">
+                <div class="card-type">
+                    <span>Recent Push</span>
+                    <span>Github</span>
+                </div>
+                <div class="card-content">
+                    <div class="card-title">metamask-ds</div>
+                    <div class="card-desc">Design system exploration and implementation.</div>
+                </div>
+                <div class="card-meta">
+                    TypeScript • Last pushed Dec 12
+                </div>
+            </a>
+
+            <!-- Stack -->
+            <div class="card">
+                 <div class="card-type">
+                    <span>Focus</span>
+                    <span>02</span>
+                </div>
+                <div class="card-content">
+                    <div class="card-title">AI Agents</div>
+                    <div class="card-desc">Collaborators, not replacements. Building software has never been this fun.</div>
+                </div>
+            </div>
+        </div>
+    </main>
+
+    <footer>
+        <a href="mailto:contact@eriks.design" class="link-arrow">Email</a>
+        <a href="https://twitter.com/erikoverse" class="link-arrow">X / Twitter</a>
+        <a href="https://github.com/eriknson" class="link-arrow">Github</a>
+        <a href="https://linkedin.com/in/eriknson" class="link-arrow">LinkedIn</a>
+    </footer>
+
+</body>
+</html>
