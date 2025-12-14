@@ -1,4 +1,4 @@
-Create Erik Nilsson's personal site.
+Create Erik Nilsson's personal site. Title it ”Erik’s Website”
 
 Reference energy: Stripe's clarity, Linear's confidence, a well-set book.
 
