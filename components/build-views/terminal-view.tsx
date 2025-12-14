@@ -13,7 +13,7 @@ interface TerminalViewProps {
 export function TerminalView({ state, onStart, isStarting }: TerminalViewProps) {
   const isIdle = !state && !isStarting;
   const showModelPanes = state?.workflow.aggregate === "complete";
-  const models = ["composer-1", "claude-4.5-opus-high-thinking", "gpt-5.1-codex"];
+  const models = ["composer-1", "claude-4.5-opus-high-thinking", "gpt-5.1-codex", "gemini-3-pro"];
 
   return (
     <div className="min-h-screen bg-white text-neutral-800 font-mono text-xs p-4 pt-[calc(var(--menu-bar-height)+1rem)]">
@@ -192,6 +192,7 @@ function shortenModelName(model: string): string {
     "composer-1": "composer-1",
     "claude-4.5-opus-high-thinking": "claude-4.5",
     "gpt-5.1-codex": "gpt-5.1",
+    "gemini-3-pro": "gemini-3-pro",
   };
   return map[model] || model;
 }

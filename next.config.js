@@ -23,6 +23,11 @@ const nextConfig = {
         destination: '/?model=gpt-5.1-codex-max',
         permanent: true,
       },
+      {
+        source: '/gemini-3-pro',
+        destination: '/?model=gemini-3-pro',
+        permanent: true,
+      },
     ];
   },
   // Serve builds folder - handle requests without .html extension

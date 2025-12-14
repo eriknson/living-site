@@ -71,6 +71,7 @@ function getActiveModels(state: BuildState): string[] {
         "composer-1": "Composer",
         "claude-4.5-opus-high-thinking": "Opus 4.5",
         "gpt-5.1-codex": "GPT-5.1 Codex",
+        "gemini-3-pro": "Gemini 3 Pro",
       };
       return names[model] || model;
     });

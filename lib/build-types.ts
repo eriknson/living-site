@@ -311,6 +311,10 @@ export function createInitialBuildState(buildId: string): BuildState {
         status: "queued",
         rawLog: [],
       },
+      "gemini-3-pro": {
+        status: "queued",
+        rawLog: [],
+      },
     },
     aggregateLog: [],
   };

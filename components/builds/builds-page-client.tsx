@@ -35,6 +35,7 @@ const modelNames: Record<string, string> = {
   "claude-4.5-opus-high-thinking": "Opus 4.5",
   "gpt-5.1-codex": "GPT-5.1 Codex",
   "gpt-5.1-codex-max-low-fast": "GPT-5.1 Max",
+  "gemini-3-pro": "Gemini 3 Pro",
 };
 
 function formatBuildTime(timestamp?: string): string {
