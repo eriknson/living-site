@@ -20,17 +20,11 @@ import {
   fetchWeatherData,
   type WeatherData,
 } from "./fetchers/weather.js";
-import {
-  fetchInspirationData,
-  summarizeInspiration,
-  type InspirationData,
-} from "./fetchers/inspiration.js";
 import { saveSnapshot, getRecentSnapshots, type Snapshot } from "./history.js";
 import { computeGitHubBaseline } from "./baselines/github.js";
 import { computeSpotifyBaseline } from "./baselines/spotify.js";
 import { computeTypefullyBaseline } from "./baselines/typefully.js";
 import type { SourceAnalysis } from "./baseline.js";
-import { pickDoodle } from "./doodle-picker.js";
 
 interface Identity {
   name: string;
@@ -45,13 +39,6 @@ interface Identity {
 interface About {
   headline: string;
   bio: string;
-}
-
-interface SynthesisHints {
-  activity_level: "high" | "medium" | "low";
-  dominant_theme: string | null;
-  energy: "shipping" | "exploring" | "reflective" | "quiet";
-  cross_source_patterns: string[];
 }
 
 interface FetchSourceResult {
@@ -112,22 +99,14 @@ interface AggregatedData {
     spotify?: SpotifyData;
     typefully?: TypefullyData;
     weather?: WeatherData;
-    inspiration?: InspirationData;
   };
   analysis: {
     github?: SourceAnalysis;
     spotify?: SourceAnalysis;
     typefully?: SourceAnalysis;
   };
-  synthesis_hints: SynthesisHints;
-  narrative_signals: string[];
   context: {
     season: string;
-    days_since_change: number;
-  };
-  doodle: {
-    svg: string;
-    source: string;
   };
 }
 
@@ -137,139 +116,6 @@ function getSeason(): string {
   if (month >= 5 && month <= 7) return "summer";
   if (month >= 8 && month <= 10) return "autumn";
   return "winter";
-}
-
-function computeSynthesisHints(
-  analysis: AggregatedData["analysis"],
-  sources: AggregatedData["sources"]
-): SynthesisHints {
-  const patterns: string[] = [];
-  
-  // Compute activity level from GitHub
-  const githubCommits = sources.github?.recent_activity.commits || 0;
-  const typefullyPosts = sources.typefully?.stats.posts_this_week || 0;
-  
-  let activityLevel: SynthesisHints["activity_level"] = "low";
-  if (githubCommits > 20 || typefullyPosts > 3) {
-    activityLevel = "high";
-  } else if (githubCommits > 5 || typefullyPosts > 1) {
-    activityLevel = "medium";
-  }
-  
-  // Determine energy from work style and music
-  const workStyle = analysis.github?.identity?.work_style;
-  const spotifyStyle = analysis.spotify?.identity?.listening_style;
-  const topGenres = sources.spotify?.short_term.genres.slice(0, 3) || [];
-  
-  let energy: SynthesisHints["energy"] = "quiet";
-  if (workStyle === "focused" && activityLevel === "high") {
-    energy = "shipping";
-  } else if (workStyle === "exploring" || spotifyStyle === "explorer") {
-    energy = "exploring";
-  } else if (activityLevel === "low" && topGenres.some(g => 
-    g.includes("ambient") || g.includes("dream") || g.includes("downtempo")
-  )) {
-    energy = "reflective";
-  } else if (activityLevel === "medium") {
-    energy = "exploring";
-  }
-  
-  // Find dominant theme from repos and tweets
-  // Prefer active_repos (sorted by commit activity) over repos_touched
-  const activeReposList = sources.github?.active_repos || [];
-  const activeRepos =
-    activeReposList.length > 0
-      ? activeReposList.map((r) => r.name)
-      : sources.github?.recent_activity.repos_touched || [];
-  const tweetThemes = sources.typefully?.themes?.interests || [];
-  
-  let dominantTheme: string | null = null;
-  
-  // Check for AI/tools theme overlap
-  const aiRelated = activeRepos.some(r => 
-    r.toLowerCase().includes("cursor") || 
-    r.toLowerCase().includes("ai") ||
-    r.toLowerCase().includes("agent")
-  );
-  const tweetsAboutAI = tweetThemes.some(t => 
-    t.toLowerCase().includes("ai") || 
-    t.toLowerCase().includes("agent")
-  );
-  if (aiRelated && tweetsAboutAI) {
-    dominantTheme = "AI tools";
-    patterns.push("AI repos + AI tweets = coherent focus");
-  }
-  
-  // Check for design systems theme
-  const designSystemRepo = activeRepos.some(r => 
-    r.toLowerCase().includes("ds") || 
-    r.toLowerCase().includes("design")
-  );
-  if (designSystemRepo) {
-    dominantTheme = dominantTheme ? `${dominantTheme} + design systems` : "design systems";
-    patterns.push("design system work active");
-  }
-  
-  // Cross-source patterns
-  if (activityLevel === "high" && topGenres.some(g => 
-    g.includes("electronic") || g.includes("house") || g.includes("edm")
-  )) {
-    patterns.push("high-energy music matches shipping pace");
-  }
-  
-  if (activityLevel === "low" && topGenres.some(g => 
-    g.includes("dream pop") || g.includes("ambient")
-  )) {
-    patterns.push("mellow music, quiet code week");
-  }
-  
-  const repoCount = activeRepos.length;
-  if (repoCount > 2) {
-    patterns.push(`touching ${repoCount} repos = exploring mode`);
-  } else if (repoCount === 1 && activityLevel === "high") {
-    patterns.push("single repo focus = heads-down building");
-  }
-  
-  return {
-    activity_level: activityLevel,
-    dominant_theme: dominantTheme,
-    energy,
-    cross_source_patterns: patterns,
-  };
-}
-
-async function loadPreviousSignals(): Promise<string[] | null> {
-  try {
-    const content = await readFile("data/latest.json", "utf-8");
-    const data = JSON.parse(content) as AggregatedData;
-    return data.narrative_signals || null;
-  } catch {
-    return null;
-  }
-}
-
-function calculateDaysSinceChange(
-  previousSignals: string[] | null,
-  currentSignals: string[]
-): number {
-  if (!previousSignals) return 0;
-
-  // Check if signals have meaningfully changed
-  const prevSet = new Set(previousSignals);
-  const currSet = new Set(currentSignals);
-
-  // If more than 30% of signals are new, consider it changed
-  const newSignals = [...currSet].filter((s) => !prevSet.has(s));
-  if (newSignals.length / currentSignals.length > 0.3) return 0;
-
-  // Load previous days_since_change
-  try {
-    const content = require("fs").readFileSync("data/latest.json", "utf-8");
-    const data = JSON.parse(content) as AggregatedData;
-    return (data.context?.days_since_change || 0) + 1;
-  } catch {
-    return 0;
-  }
 }
 
 export async function aggregate(): Promise<AggregatedData> {
@@ -286,7 +132,6 @@ export async function aggregate(): Promise<AggregatedData> {
 
   const sources: AggregatedData["sources"] = {};
   const analysis: AggregatedData["analysis"] = {};
-  const allNarrativeSignals: string[] = [];
   const fetchResults: FetchSourceResult[] = [];
 
   // Add About to fetch results
@@ -320,9 +165,7 @@ export async function aggregate(): Promise<AggregatedData> {
       githubHistory.slice(1) // Exclude current week (we just saved it)
     );
     analysis.github = githubAnalysis;
-    allNarrativeSignals.push(...githubAnalysis.narrative_signals);
-
-    console.log("  GitHub signals:", githubAnalysis.narrative_signals);
+    console.log("  GitHub analysis complete");
 
     fetchResults.push({
       name: "GitHub",
@@ -364,9 +207,7 @@ export async function aggregate(): Promise<AggregatedData> {
           spotifyHistory.slice(1)
         );
         analysis.spotify = spotifyAnalysis;
-        allNarrativeSignals.push(...spotifyAnalysis.narrative_signals);
-
-        console.log("  Spotify signals:", spotifyAnalysis.narrative_signals);
+        console.log("  Spotify analysis complete");
 
         fetchResults.push({
           name: "Spotify",
@@ -417,9 +258,7 @@ export async function aggregate(): Promise<AggregatedData> {
           typefullyHistory.slice(1)
         );
         analysis.typefully = typefullyAnalysis;
-        allNarrativeSignals.push(...typefullyAnalysis.narrative_signals);
-
-        console.log("  Typefully signals:", typefullyAnalysis.narrative_signals);
+        console.log("  Typefully analysis complete");
 
         fetchResults.push({
           name: "Typefully",
@@ -452,16 +291,6 @@ export async function aggregate(): Promise<AggregatedData> {
     const weather = await fetchWeatherData();
     sources.weather = weather;
 
-    // Add weather-based narrative signals
-    const weatherSignals: string[] = [];
-    weatherSignals.push(`last seen in ${weather.location.description}`);
-    weatherSignals.push(
-      `${weather.current.conditions}, ${weather.current.temperature_c}°C`
-    );
-
-    allNarrativeSignals.push(...weatherSignals);
-    console.log("  Weather signals:", weatherSignals);
-
     fetchResults.push({
       name: "Weather",
       status: "success",
@@ -477,65 +306,8 @@ export async function aggregate(): Promise<AggregatedData> {
   }
 
   // =========================================================================
-  // Inspiration (HN + Reddit design trends)
-  // =========================================================================
-  console.log("\nFetching inspiration data...");
-  try {
-    const inspiration = await fetchInspirationData();
-    sources.inspiration = inspiration;
-
-    // Add inspiration-based narrative signals
-    const inspirationSignals: string[] = [];
-    if (inspiration.combined_keywords.length > 0) {
-      const topKeywords = inspiration.combined_keywords.slice(0, 3).join(", ");
-      inspirationSignals.push(`design community discussing ${topKeywords}`);
-    }
-    if (inspiration.design_direction) {
-      inspirationSignals.push(`today's design direction: ${inspiration.design_direction}`);
-    }
-
-    allNarrativeSignals.push(...inspirationSignals);
-    console.log("  Inspiration signals:", inspirationSignals);
-
-    fetchResults.push({
-      name: "Inspiration",
-      status: "success",
-      summary: summarizeInspiration(inspiration),
-    });
-  } catch (err) {
-    console.error("  Failed to fetch inspiration data:", (err as Error).message);
-    fetchResults.push({
-      name: "Inspiration",
-      status: "failure",
-      error: (err as Error).message,
-    });
-  }
-
-  // =========================================================================
   // Build final output
   // =========================================================================
-
-  // Load previous signals for change detection
-  const previousSignals = await loadPreviousSignals();
-  const daysSinceChange = calculateDaysSinceChange(
-    previousSignals,
-    allNarrativeSignals
-  );
-
-  // Compute synthesis hints for the agent
-  const synthesisHints = computeSynthesisHints(analysis, sources);
-  console.log("\n  Synthesis hints:", synthesisHints);
-
-  // Pick a doodle based on conditions
-  console.log("\nPicking doodle...");
-  const doodle = await pickDoodle({
-    weather: sources.weather?.current.conditions,
-    isDay: sources.weather?.current.is_day,
-    energy: synthesisHints.energy,
-    season: getSeason(),
-    topGenre: sources.spotify?.short_term.genres[0],
-  });
-  console.log(`  Selected doodle: ${doodle.source}`);
 
   const data: AggregatedData = {
     generated_at: new Date().toISOString(),
@@ -543,13 +315,9 @@ export async function aggregate(): Promise<AggregatedData> {
     about,
     sources,
     analysis,
-    synthesis_hints: synthesisHints,
-    narrative_signals: allNarrativeSignals,
     context: {
       season: getSeason(),
-      days_since_change: daysSinceChange,
     },
-    doodle,
   };
 
   // Write to latest.json
@@ -563,8 +331,7 @@ export async function aggregate(): Promise<AggregatedData> {
   await writeFile("data/fetch-summary.json", JSON.stringify(fetchSummary, null, 2));
 
   console.log("\n✓ Aggregation complete");
-  console.log(`  Total narrative signals: ${allNarrativeSignals.length}`);
-  console.log(`  Days since meaningful change: ${daysSinceChange}`);
+  console.log(`  Sources fetched: ${fetchResults.filter(r => r.status === "success").length}/${fetchResults.length}`);
 
   return data;
 }
@@ -572,11 +339,9 @@ export async function aggregate(): Promise<AggregatedData> {
 // CLI runner
 if (import.meta.url === `file://${process.argv[1]}`) {
   aggregate()
-    .then((data) => {
-      console.log("\n=== Narrative Signals ===");
-      for (const signal of data.narrative_signals) {
-        console.log(`  • ${signal}`);
-      }
+    .then(() => {
+      console.log("\nRaw data saved to data/latest.json");
+      console.log("Run curator agent next to synthesize insights.");
     })
     .catch((err) => {
       console.error("Error:", err.message);

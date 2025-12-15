@@ -5,11 +5,13 @@ alwaysApply: true
 
 # Daily Doodle
 
-Include the provided `doodle.svg` above "Erik's Website":
-- Inline the SVG content from the data (already selected based on weather/mood/season)
-- Left-align it above the header, ~80-100px wide
+The curator (`data/curator.json`) has selected a doodle that matches the week's vibe.
+
+Load the SVG from `public/doodles/SVG/{curator.doodle.path}` and inline it above "Erik's Website":
+- Read the file and include the SVG content inline
+- Position it above the header, ~80-100px wide
 - Use `currentColor` for the stroke so it matches the page theme
-- No modifications needed—just include it as-is
+- The curator's `doodle.reason` explains why this doodle was chosen
 
 # Technical Constraints
 

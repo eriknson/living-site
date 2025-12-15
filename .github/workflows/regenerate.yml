@@ -87,8 +87,8 @@ jobs:
 
       - name: Show aggregated data
         run: |
-          echo "=== Narrative Signals ==="
-          cat data/latest.json | jq '.narrative_signals'
+          echo "=== Sources ==="
+          cat data/latest.json | jq '.sources | keys'
           echo ""
           echo "=== Context ==="
           cat data/latest.json | jq '.context'
@@ -110,10 +110,95 @@ jobs:
             data/fetch-summary.json
           retention-days: 3
 
-  # Job 2: Generate with each model (parallel matrix)
+  # Job 2: Curator agent synthesizes raw data into creative direction
+  curator:
+    needs: aggregate
+    if: inputs.dry_run != 'true'
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: 'npm'
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Download data artifact
+        uses: actions/download-artifact@v4
+        with:
+          name: aggregated-data
+          path: data/
+
+      - name: Install Cursor CLI
+        run: |
+          curl https://cursor.com/install -fsS | bash
+          cursor-agent --version || echo "Failed to get cursor-agent version"
+
+      - name: Notify curator started
+        if: env.BUILD_WEBHOOK_URL != ''
+        run: |
+          curl -s -X POST "$BUILD_WEBHOOK_URL" \
+            -H "Authorization: Bearer $BUILD_WEBHOOK_SECRET" \
+            -H "Content-Type: application/json" \
+            -d '{"buildId":"'"$BUILD_ID"'","event":"curator.started","timestamp":"'"$(date -u +%Y-%m-%dT%H:%M:%S.000Z)"'"}' || true
+
+      - name: Create clean worktree for curator
+        run: |
+          git worktree add /tmp/curator-workspace --detach HEAD
+          cp data/latest.json /tmp/curator-workspace/data/latest.json
+          rm -f /tmp/curator-workspace/data/curator.json
+          echo "Curator workspace created"
+
+      - name: Run curator agent
+        working-directory: /tmp/curator-workspace
+        env:
+          CURSOR_API_KEY: ${{ secrets.CURSOR_API_KEY }}
+        run: |
+          PROMPT="Read infra/prompts/curator.md for your instructions.
+          Read data/latest.json for the raw data.
+          
+          Create data/curator.json with your curated synthesis.
+          Output only the JSON file, no explanation needed."
+          
+          cursor-agent -p --force --model composer-1 "$PROMPT" 2>&1 || true
+          
+          if [ ! -f "data/curator.json" ]; then
+            echo "ERROR: Curator agent did not create data/curator.json"
+            exit 1
+          fi
+
+      - name: Copy curator output
+        run: |
+          cp /tmp/curator-workspace/data/curator.json data/curator.json
+          echo "=== Curator Output ==="
+          cat data/curator.json
+          git worktree remove /tmp/curator-workspace --force || true
+
+      - name: Notify curator complete
+        if: env.BUILD_WEBHOOK_URL != ''
+        run: |
+          curl -s -X POST "$BUILD_WEBHOOK_URL" \
+            -H "Authorization: Bearer $BUILD_WEBHOOK_SECRET" \
+            -H "Content-Type: application/json" \
+            -d '{"buildId":"'"$BUILD_ID"'","event":"curator.complete","timestamp":"'"$(date -u +%Y-%m-%dT%H:%M:%S.000Z)"'"}' || true
+
+      - name: Upload curator artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: curator-data
+          path: data/curator.json
+          retention-days: 3
+
+  # Job 3: Generate with each model (parallel matrix)
   # Uses git worktree for isolation - agent sees no previous builds
   generate:
-    needs: aggregate
+    needs: [aggregate, curator]
     if: inputs.dry_run != 'true'
     runs-on: ubuntu-latest
     timeout-minutes: 30
@@ -138,6 +223,12 @@ jobs:
         uses: actions/download-artifact@v4
         with:
           name: aggregated-data
+          path: data/
+
+      - name: Download curator artifact
+        uses: actions/download-artifact@v4
+        with:
+          name: curator-data
           path: data/
 
       - name: Install Cursor CLI
@@ -176,20 +267,23 @@ jobs:
 
       - name: Copy fresh data to worktree
         run: |
-          # Copy the freshly aggregated data to the worktree
+          # Copy the freshly aggregated data and curator output to the worktree
           cp data/latest.json /tmp/clean-gen/data/latest.json
           cp data/fetch-summary.json /tmp/clean-gen/data/fetch-summary.json
-          echo "Fresh data copied to worktree"
+          cp data/curator.json /tmp/clean-gen/data/curator.json
+          echo "Fresh data and curator output copied to worktree"
 
       - name: Build generation prompt
         run: |
           cat > /tmp/generation-prompt.txt << PROMPT_END
           Read infra/prompts/system.md for the design guidelines.
-          Read data/latest.json for the current aggregated data.
+          Read data/latest.json for the raw data.
+          Read data/curator.json for the curated creative direction.
           
           Create a new generated/${{ matrix.model }}.html from scratch.
           Output a complete HTML file with embedded CSS.
           Use the data to create a personal website that reflects who Erik is.
+          Follow the curator's direction for mood, doodle, and aesthetic hints.
           PROMPT_END
           
           echo "=== Generation Prompt ==="
@@ -197,6 +291,9 @@ jobs:
           echo ""
           echo "=== System Prompt (from repo) ==="
           cat /tmp/clean-gen/infra/prompts/system.md
+          echo ""
+          echo "=== Curator Direction ==="
+          cat /tmp/clean-gen/data/curator.json
 
       - name: Generate site with ${{ matrix.model }}
         id: generate
@@ -306,9 +403,9 @@ jobs:
             generated/${{ matrix.model }}.html
           retention-days: 3
 
-  # Job 3: Commit all builds
+  # Job 4: Commit all builds
   commit:
-    needs: [aggregate, generate]
+    needs: [aggregate, curator, generate]
     if: inputs.dry_run != 'true'
     runs-on: ubuntu-latest
     timeout-minutes: 10
@@ -337,6 +434,12 @@ jobs:
         uses: actions/download-artifact@v4
         with:
           name: aggregated-data
+          path: data/
+
+      - name: Download curator artifact
+        uses: actions/download-artifact@v4
+        with:
+          name: curator-data
           path: data/
 
       - name: Download all build artifacts
@@ -416,6 +519,7 @@ jobs:
           # Stage all build files
           git add data/latest.json
           git add data/fetch-summary.json
+          git add data/curator.json
           git add public/data/
           git add public/builds/
           git add generated/
