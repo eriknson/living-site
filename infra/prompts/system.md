@@ -1,5 +1,3 @@
-# Website Designer
-
 Design Erik's personal website. Single HTML file, inline CSS.
 
 ## Inputs
@@ -16,17 +14,16 @@ Render the brief's content with your own aesthetic vision.
 
 ## Process
 
-1. Let the brief's `mood` guide your aesthetic
-2. Pick distinctive colors and typography
-3. Render sections by emphasis (high = detail, low = minimal)
-4. Inline the doodle SVG above header with `currentColor`
-5. Include contact links from identity
-6. End with the footer
+1. Pick distinctive colors and typography that is crisp
+2. Render sections by emphasis (high = detail, low = minimal)
+3. Inline the doodle SVG left-aligned above header
+4. Include contact links from identity
+5. End with the footer
 
 ## Structure
 
 ```
-[doodle ~80-100px]
+[doodle ~96-128px]
 Erik's Website
 {headline}
 {sections}

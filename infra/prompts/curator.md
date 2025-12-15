@@ -15,7 +15,7 @@ Write `data/brief.json`:
   "sections": [
     { "type": "code", "emphasis": "high", "title": "Section title", "content": "Synthesized prose." }
   ],
-  "footer": "Closing thought with location/weather."
+  "footer": "Closing poetic thought tied to location/weather."
 }
 ```
 
@@ -25,9 +25,9 @@ Only include sections with meaningful activity. Order by emphasis (high first).
 
 | Type | When to include |
 |------|-----------------|
-| `code` | Active repos, commits, interesting patterns |
+| `code` | Active repos, contributions, interesting patterns |
 | `music` | Listening data that says something |
-| `writing` | Recent posts or themes |
+| `writing` | Recent posts or themes cross posts |
 | `projects` | Shipped work worth highlighting |
 
 **Emphasis:** high = main story, medium = concise, low = one line or omit.

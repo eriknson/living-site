@@ -22,26 +22,7 @@ html, body { min-height: 100%; margin: 0; padding: 0; }
 ## Doodle
 
 Inline SVG from `public/doodles/SVG/{brief.doodle.path}`:
-- ~80-100px wide, above header
-- Use `currentColor` for strokes
-
-## Typography
-
-**Use distinctive fonts:** Newsreader, Lora, Fraunces, DM Sans, Plus Jakarta Sans, Source Serif Pro
-
-**Never:** Inter, Roboto, Arial, system-ui, monospace for body
-
-## Color
-
-Commit to a cohesive palette. Dominant colors with sharp accents.
-
-**Never:** purple/blue gradients on white, neon without purpose, low contrast gray-on-gray
-
-## Atmosphere
-
-Create depth: subtle gradients, light textures, seasonal effects.
-
-**Never:** text shadows, card shadows, decorative borders, pill buttons, badges
+- ~96-128px wide, left-aligned above header
 
 ## Layout
 
@@ -51,4 +32,10 @@ Create depth: subtle gradients, light textures, seasonal effects.
 
 ## Content
 
-Render the brief's prose. Don't rewrite it. Don't add sections. No em-dashes.
+Render the brief's prose. Don't rewrite it. Don't add sections.
+
+## Avoid / Never use
+
+- em dashes, phrasings that feel AI slop or generated
+- purple/blue gradients, neon without purpose
+- text shadows, card shadows, decorative borders, pill buttons, badges
