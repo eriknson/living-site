@@ -82,7 +82,7 @@ function AppContent() {
   }, []);
 
   return (
-    <div className="h-dvh flex flex-col pt-[env(safe-area-inset-top)]">
+    <div className="h-dvh flex flex-col">
       {/* Menu bar - fixed height, always on top */}
       <MenuBar
         manifest={manifest}
@@ -93,14 +93,14 @@ function AppContent() {
       />
       
       {/* Content area - fills remaining space, uses iframe for better mobile support */}
-      <div className="flex-1 relative min-h-0 bg-neutral-100 dark:bg-[#0a0a0a]">
+      <div className="flex-1 relative min-h-0 overflow-hidden pb-[env(safe-area-inset-bottom)] bg-neutral-100 dark:bg-[#0a0a0a]">
         {activePath ? (
           <>
             <iframe
               key={activePath}
               src={`/${activePath}`}
               title={`Site built by ${getModelDisplayName(activeModel ?? '')}`}
-              className="absolute top-0 left-0 right-0 bottom-[env(safe-area-inset-bottom)] w-full h-auto border-0"
+              className="absolute inset-0 w-full h-full border-0"
               onLoad={handleIframeLoad}
             />
             {/* Loading overlay that hides the white flash */}
