@@ -5,110 +5,50 @@ alwaysApply: true
 
 # Design Guardrails
 
-These are the constraints and best practices for generating Erik's website.
+## Technical
 
-## Technical Requirements
-
-- Single HTML file with inline CSS
-- Max-width ~600px, generous margins
+- Single HTML, inline CSS, max-width ~600px
 - Mobile-first (375px baseline)
 - External links: `target="_blank" rel="noopener"`
 
 ### Viewport (Critical)
 
-The page displays in an iframe. The background must fill the entire viewport:
+Page displays in iframe. Background must fill viewport:
 
 ```css
-html, body {
-  min-height: 100%;
-  margin: 0;
-  padding: 0;
-}
-body {
-  background: var(--bg);
-}
+html, body { min-height: 100%; margin: 0; padding: 0; }
 ```
 
-## Doodle Integration
+## Doodle
 
-Load the SVG from `public/doodles/SVG/{brief.doodle.path}` and inline it:
-- Position above "Erik's Website" header
-- Size ~80-100px wide
-- Use `currentColor` for strokes so it matches the page theme
+Inline SVG from `public/doodles/SVG/{brief.doodle.path}`:
+- ~80-100px wide, above header
+- Use `currentColor` for strokes
 
 ## Typography
 
-**Choose distinctive fonts.** The typeface sets the entire tone.
+**Use distinctive fonts:** Newsreader, Lora, Fraunces, DM Sans, Plus Jakarta Sans, Source Serif Pro
 
-Good choices (examples, not exhaustive):
-- Newsreader, Lora, Crimson Pro (editorial, warm)
-- DM Sans, Plus Jakarta Sans, Outfit (modern, clean)
-- Fraunces, Playfair Display (distinctive, characterful)
-- Source Serif Pro, Merriweather (readable, classic)
-
-**Never use:**
-- Inter, Roboto, Arial, system-ui (generic AI slop)
-- Monospace fonts for body text
-- Multiple competing typefaces
+**Never:** Inter, Roboto, Arial, system-ui, monospace for body
 
 ## Color
 
-**Commit to a cohesive palette.** Dominant colors with sharp accents outperform timid, evenly-distributed palettes.
+Commit to a cohesive palette. Dominant colors with sharp accents.
 
-Good approaches:
-- Warm paper tones with a single accent
-- Deep background with light text
-- Muted earth tones that feel seasonal
-- High contrast editorial black/white
+**Never:** purple/blue gradients on white, neon without purpose, low contrast gray-on-gray
 
-**Never use:**
-- Purple/blue gradients on white (clichéd AI aesthetic)
-- Neon accents without purpose
-- Gray-on-gray low contrast
-- Rainbow or too many colors
+## Atmosphere
 
-## Visual Atmosphere
+Create depth: subtle gradients, light textures, seasonal effects.
 
-**Create depth and character**, not flat solid backgrounds.
-
-Consider:
-- Subtle CSS gradients (linear, radial)
-- Very light texture patterns
-- Contextual effects that match the mood
-- Seasonal or time-of-day appropriate atmosphere
-
-**Never use:**
-- Shadows on text
-- Card shadows or decorative borders
-- Hero sections with large images
-- Pill buttons, tags, or badges
+**Never:** text shadows, card shadows, decorative borders, pill buttons, badges
 
 ## Layout
 
-- Sections ordered by the brief's section order (highest emphasis first)
-- High emphasis sections: expand with detail
-- Low emphasis sections: single line or omit
-- No uppercase section labels
-- Links: underlined or subtle hover states
-- Subtle icons where they add meaning
+- Sections ordered by brief (high emphasis first)
+- No uppercase labels
+- Links: underlined or subtle hover
 
-## Content Rendering
+## Content
 
-The brief contains the actual prose. Your job is to render it beautifully.
-
-- Don't rewrite the curator's content
-- Don't add sections not in the brief
-- Don't report raw metrics — the curator already synthesized them
-- Em-dashes are forbidden
-
-## Quality Checklist
-
-Before outputting, verify:
-- [ ] Font is distinctive (not Inter/Roboto/Arial)
-- [ ] Color palette has character
-- [ ] Background has atmosphere (not flat white/gray)
-- [ ] Doodle is inlined with currentColor
-- [ ] Sections follow brief's order and emphasis
-- [ ] Mobile scrolling works (no fixed positioning traps)
-- [ ] Links have hover states
-- [ ] Footer includes the brief's closing thought
+Render the brief's prose. Don't rewrite it. Don't add sections. No em-dashes.
