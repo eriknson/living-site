@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import { track } from "@vercel/analytics";
 import Link from "next/link";
 import { ArrowUpRight, ScrollText, FileText } from "lucide-react";
 import type { Manifest, Batch, Build } from "@/lib/manifest";
@@ -95,12 +96,14 @@ function ModelCard({
   date,
   batchTimestamp,
   onOpenLogs,
+  onViewBuild,
 }: {
   build: Build;
   log?: BuildEntry;
   date: string;
   batchTimestamp: string;
   onOpenLogs: () => void;
+  onViewBuild: () => void;
 }) {
   const name = modelNames[build.model] || build.model;
   const isFailed = build.status !== "success";
@@ -135,6 +138,7 @@ function ModelCard({
             )}
             <Link
               href={`/?model=${build.model}&date=${date}&t=${encodeURIComponent(batchTimestamp)}`}
+              onClick={onViewBuild}
               className="p-1.5 rounded-md text-neutral-300 dark:text-neutral-500 hover:text-neutral-500 dark:hover:text-neutral-300 hover:bg-neutral-100 dark:hover:bg-neutral-700 transition-colors"
               title="View this build"
             >
@@ -177,6 +181,7 @@ function ModelCard({
           )}
           <Link
             href={`/?model=${build.model}&date=${date}&t=${encodeURIComponent(batchTimestamp)}`}
+            onClick={onViewBuild}
             className="w-11 h-11 flex items-center justify-center rounded bg-neutral-50 dark:bg-neutral-700 text-neutral-400 active:bg-neutral-100 dark:active:bg-neutral-600 transition-colors"
             title="View this build"
           >
@@ -272,12 +277,13 @@ export function BuildsPageClient({
                     </h2>
                     {batch.system_prompt && (
                       <button
-                        onClick={() =>
+                        onClick={() => {
+                          track("system_prompt_opened");
                           setActivePrompt({
                             content: batch.system_prompt!,
                             timestamp: batch.timestamp,
-                          })
-                        }
+                          });
+                        }}
                         className="text-neutral-300 dark:text-neutral-500 hover:text-neutral-500 dark:hover:text-neutral-300 transition-colors"
                         title="View system prompt"
                       >
@@ -289,6 +295,7 @@ export function BuildsPageClient({
                         href={batch.github_run_url}
                         target="_blank"
                         rel="noopener noreferrer"
+                        onClick={() => track("github_run_clicked")}
                         className="text-neutral-300 dark:text-neutral-500 hover:text-neutral-500 dark:hover:text-neutral-300 transition-colors"
                         title="View GitHub Actions run"
                       >
@@ -311,13 +318,15 @@ export function BuildsPageClient({
                           log={log}
                           date={date}
                           batchTimestamp={batch.timestamp}
-                          onOpenLogs={() =>
+                          onOpenLogs={() => {
+                            track("agent_logs_opened", { model: build.model });
                             setActiveLog({
                               modelName,
                               output: log?.agent_output || "",
                               timestamp: batch.timestamp,
-                            })
-                          }
+                            });
+                          }}
+                          onViewBuild={() => track("build_viewed", { model: build.model, date })}
                         />
                       );
                     })}

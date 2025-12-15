@@ -1,6 +1,7 @@
 "use client";
 
 import { useCallback, useEffect, useState } from "react";
+import { track } from "@vercel/analytics";
 import { NaturalView } from "@/components/build-views/natural-view";
 import { TerminalView } from "@/components/build-views/terminal-view";
 import { ViewModeMenu } from "@/components/view-mode-menu";
@@ -90,6 +91,7 @@ export default function NewBuildPage() {
         return;
       }
 
+      track("build_started");
       setBuildId(data.buildId);
       // State will be populated by SSE
     } catch (e) {
@@ -118,7 +120,10 @@ export default function NewBuildPage() {
           </a>
 
           {/* View mode menu */}
-          <ViewModeMenu value={viewMode} onChange={setViewMode} />
+          <ViewModeMenu value={viewMode} onChange={(mode) => {
+            track("view_mode_changed", { mode });
+            setViewMode(mode);
+          }} />
         </div>
 
         <div className="flex items-center h-full">

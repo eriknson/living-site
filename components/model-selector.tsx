@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useEffect } from "react";
+import { track } from "@vercel/analytics";
 import { Check, ChevronDown, Infinity } from "lucide-react";
 import {
   DropdownMenu,
@@ -63,6 +64,7 @@ export function ModelSelector({ manifest, currentModel, currentDate, currentTime
   }
 
   const handleSelect = (model: string) => {
+    track("model_switched", { model, previous_model: currentModel });
     onModelChange(model);
     setDrawerOpen(false);
   };
@@ -144,7 +146,10 @@ export function ModelSelector({ manifest, currentModel, currentDate, currentTime
           return (
             <DropdownMenuItem
               key={build.model}
-              onClick={() => onModelChange(build.model)}
+              onClick={() => {
+                track("model_switched", { model: build.model, previous_model: currentModel });
+                onModelChange(build.model);
+              }}
               className="flex items-center justify-between"
             >
               <span className="flex items-center gap-2">

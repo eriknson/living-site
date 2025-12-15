@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import { track } from "@vercel/analytics";
 import Link from "next/link";
 import { ArrowUpRight, History, Check, X } from "lucide-react";
 import {
@@ -160,7 +161,10 @@ function MobileDrawerContent({
           href="https://github.com/eriknson/living-site"
           target="_blank"
           rel="noopener noreferrer"
-          onClick={onLinkClick}
+          onClick={() => {
+            track("source_clicked");
+            onLinkClick?.();
+          }}
           className="flex-1 flex items-center justify-center gap-2 px-4 py-3 rounded-xl text-[15px] font-medium text-black/70 dark:text-white/70 bg-black/[0.06] dark:bg-white/[0.08] active:bg-black/10 dark:active:bg-white/15 transition-colors"
         >
           <ArrowUpRight className="h-4 w-4" />
@@ -233,7 +237,10 @@ export function BuildTime({ manifest, currentModel, currentDate, currentTimestam
   // Mobile: Bottom sheet drawer
   if (isMobile) {
     return (
-      <Drawer open={drawerOpen} onOpenChange={setDrawerOpen}>
+      <Drawer open={drawerOpen} onOpenChange={(open) => {
+        if (open) track("build_info_opened");
+        setDrawerOpen(open);
+      }}>
         <DrawerTrigger asChild>
           {TriggerButton}
         </DrawerTrigger>
@@ -252,7 +259,10 @@ export function BuildTime({ manifest, currentModel, currentDate, currentTimestam
 
   // Desktop: Traditional dropdown
   return (
-    <DropdownMenu open={dropdownOpen} onOpenChange={setDropdownOpen}>
+    <DropdownMenu open={dropdownOpen} onOpenChange={(open) => {
+      if (open) track("build_info_opened");
+      setDropdownOpen(open);
+    }}>
       <DropdownMenuTrigger asChild>
         {TriggerButton}
       </DropdownMenuTrigger>
@@ -318,6 +328,7 @@ export function BuildTime({ manifest, currentModel, currentDate, currentTimestam
             href="https://github.com/eriknson/living-site"
             target="_blank"
             rel="noopener noreferrer"
+            onClick={() => track("source_clicked")}
             className="flex items-center justify-between px-2 py-2 rounded-sm text-[13px] text-black/80 dark:text-white/80 hover:bg-black/5 dark:hover:bg-white/10 active:bg-black/10 dark:active:bg-white/15 transition-colors"
           >
             <span>Source Code</span>
