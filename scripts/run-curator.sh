@@ -16,8 +16,8 @@ cp data/latest.json "$WORKTREE_DIR/data/latest.json"
 # Ensure curator output directory exists
 mkdir -p "$WORKTREE_DIR/data"
 
-# Remove any existing curator output so agent starts fresh
-rm -f "$WORKTREE_DIR/data/curator.json"
+# Remove any existing brief so agent starts fresh
+rm -f "$WORKTREE_DIR/data/brief.json"
 
 echo "Running curator agent in isolated workspace..."
 echo ""
@@ -26,30 +26,30 @@ echo ""
 PROMPT="Read infra/prompts/curator.md for your instructions.
 Read data/latest.json for the raw data.
 
-Create data/curator.json with your curated synthesis.
+Create data/brief.json with your curated synthesis.
 Output only the JSON file, no explanation needed."
 
 # Run cursor-agent
 cd "$WORKTREE_DIR"
 cursor-agent -p --force --model composer-1 "$PROMPT" 2>&1 || true
 
-# Check if curator output was created
-if [ ! -f "$WORKTREE_DIR/data/curator.json" ]; then
-  echo "ERROR: Curator agent did not create data/curator.json"
+# Check if brief was created
+if [ ! -f "$WORKTREE_DIR/data/brief.json" ]; then
+  echo "ERROR: Curator agent did not create data/brief.json"
   git worktree remove "$WORKTREE_DIR" --force 2>/dev/null || true
   exit 1
 fi
 
-# Copy curator output back to main workspace
-cp "$WORKTREE_DIR/data/curator.json" data/curator.json
+# Copy brief back to main workspace
+cp "$WORKTREE_DIR/data/brief.json" data/brief.json
 
 # Cleanup worktree
 cd - > /dev/null
 git worktree remove "$WORKTREE_DIR" --force 2>/dev/null || true
 
 echo ""
-echo "=== Curator Output ==="
-cat data/curator.json
+echo "=== Brief Output ==="
+cat data/brief.json
 echo ""
 echo "✓ Curator synthesis complete"
 

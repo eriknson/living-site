@@ -1,31 +1,22 @@
 ---
-description: Permanent constraints for site generation
+description: Design guardrails for site generation
 alwaysApply: true
 ---
 
-# Daily Doodle
+# Design Guardrails
 
-The curator (`data/curator.json`) has selected a doodle that matches the week's vibe.
+These are the constraints and best practices for generating Erik's website.
 
-Load the SVG from `public/doodles/SVG/{curator.doodle.path}` and inline it above "Erik's Website":
-- Read the file and include the SVG content inline
-- Position it above the header, ~80-100px wide
-- Use `currentColor` for the stroke so it matches the page theme
-- The curator's `doodle.reason` explains why this doodle was chosen
-
-# Technical Constraints
+## Technical Requirements
 
 - Single HTML file with inline CSS
 - Max-width ~600px, generous margins
 - Mobile-first (375px baseline)
-- One elegant typeface (avoid Roboto)
-- Links: underlined or subtle hover
-- External links: target="_blank" rel="noopener"
-- Use subtle icons that match the typeface where it makes sense
+- External links: `target="_blank" rel="noopener"`
 
-# Viewport Requirements (Critical)
+### Viewport (Critical)
 
-The page is displayed inside an iframe. The background must fill the entire viewport:
+The page displays in an iframe. The background must fill the entire viewport:
 
 ```css
 html, body {
@@ -34,25 +25,90 @@ html, body {
   padding: 0;
 }
 body {
-  background: var(--bg); /* or your background color */
+  background: var(--bg);
 }
 ```
 
-This ensures no gaps appear at the bottom of the page.
+## Doodle Integration
 
-# Section Behavior
+Load the SVG from `public/doodles/SVG/{brief.doodle.path}` and inline it:
+- Position above "Erik's Website" header
+- Size ~80-100px wide
+- Use `currentColor` for strokes so it matches the page theme
 
-- Sections with high recent activity: expand with detail
-- Sections with low activity: collapse to single line or omit
-- Order sections by what's most alive, not fixed hierarchy
+## Typography
 
-# Never
+**Choose distinctive fonts.** The typeface sets the entire tone.
 
-- Card shadows, decorative borders
-- Pill buttons, tags, badges
-- Purple/blue gradients
+Good choices (examples, not exhaustive):
+- Newsreader, Lora, Crimson Pro (editorial, warm)
+- DM Sans, Plus Jakarta Sans, Outfit (modern, clean)
+- Fraunces, Playfair Display (distinctive, characterful)
+- Source Serif Pro, Merriweather (readable, classic)
+
+**Never use:**
+- Inter, Roboto, Arial, system-ui (generic AI slop)
+- Monospace fonts for body text
+- Multiple competing typefaces
+
+## Color
+
+**Commit to a cohesive palette.** Dominant colors with sharp accents outperform timid, evenly-distributed palettes.
+
+Good approaches:
+- Warm paper tones with a single accent
+- Deep background with light text
+- Muted earth tones that feel seasonal
+- High contrast editorial black/white
+
+**Never use:**
+- Purple/blue gradients on white (clichéd AI aesthetic)
+- Neon accents without purpose
+- Gray-on-gray low contrast
+- Rainbow or too many colors
+
+## Visual Atmosphere
+
+**Create depth and character**, not flat solid backgrounds.
+
+Consider:
+- Subtle CSS gradients (linear, radial)
+- Very light texture patterns
+- Contextual effects that match the mood
+- Seasonal or time-of-day appropriate atmosphere
+
+**Never use:**
+- Shadows on text
+- Card shadows or decorative borders
 - Hero sections with large images
-- Uppercase section labels
-- Monospace fonts
-- Em-dashes
-- Reporting raw metrics ("31 commits") — synthesize instead
+- Pill buttons, tags, or badges
+
+## Layout
+
+- Sections ordered by the brief's section order (highest emphasis first)
+- High emphasis sections: expand with detail
+- Low emphasis sections: single line or omit
+- No uppercase section labels
+- Links: underlined or subtle hover states
+- Subtle icons where they add meaning
+
+## Content Rendering
+
+The brief contains the actual prose. Your job is to render it beautifully.
+
+- Don't rewrite the curator's content
+- Don't add sections not in the brief
+- Don't report raw metrics — the curator already synthesized them
+- Em-dashes are forbidden
+
+## Quality Checklist
+
+Before outputting, verify:
+- [ ] Font is distinctive (not Inter/Roboto/Arial)
+- [ ] Color palette has character
+- [ ] Background has atmosphere (not flat white/gray)
+- [ ] Doodle is inlined with currentColor
+- [ ] Sections follow brief's order and emphasis
+- [ ] Mobile scrolling works (no fixed positioning traps)
+- [ ] Links have hover states
+- [ ] Footer includes the brief's closing thought

@@ -152,7 +152,7 @@ jobs:
         run: |
           git worktree add /tmp/curator-workspace --detach HEAD
           cp data/latest.json /tmp/curator-workspace/data/latest.json
-          rm -f /tmp/curator-workspace/data/curator.json
+          rm -f /tmp/curator-workspace/data/brief.json
           echo "Curator workspace created"
 
       - name: Run curator agent
@@ -163,21 +163,21 @@ jobs:
           PROMPT="Read infra/prompts/curator.md for your instructions.
           Read data/latest.json for the raw data.
           
-          Create data/curator.json with your curated synthesis.
+          Create data/brief.json with your curated synthesis.
           Output only the JSON file, no explanation needed."
           
           cursor-agent -p --force --model composer-1 "$PROMPT" 2>&1 || true
           
-          if [ ! -f "data/curator.json" ]; then
-            echo "ERROR: Curator agent did not create data/curator.json"
+          if [ ! -f "data/brief.json" ]; then
+            echo "ERROR: Curator agent did not create data/brief.json"
             exit 1
           fi
 
       - name: Copy curator output
         run: |
-          cp /tmp/curator-workspace/data/curator.json data/curator.json
-          echo "=== Curator Output ==="
-          cat data/curator.json
+          cp /tmp/curator-workspace/data/brief.json data/brief.json
+          echo "=== Brief Output ==="
+          cat data/brief.json
           git worktree remove /tmp/curator-workspace --force || true
 
       - name: Notify curator complete
@@ -192,7 +192,7 @@ jobs:
         uses: actions/upload-artifact@v4
         with:
           name: curator-data
-          path: data/curator.json
+          path: data/brief.json
           retention-days: 3
 
   # Job 3: Generate with each model (parallel matrix)
@@ -270,20 +270,18 @@ jobs:
           # Copy the freshly aggregated data and curator output to the worktree
           cp data/latest.json /tmp/clean-gen/data/latest.json
           cp data/fetch-summary.json /tmp/clean-gen/data/fetch-summary.json
-          cp data/curator.json /tmp/clean-gen/data/curator.json
-          echo "Fresh data and curator output copied to worktree"
+          cp data/brief.json /tmp/clean-gen/data/brief.json
+          echo "Fresh data and curator brief copied to worktree"
 
       - name: Build generation prompt
         run: |
           cat > /tmp/generation-prompt.txt << PROMPT_END
-          Read infra/prompts/system.md for the design guidelines.
-          Read data/latest.json for the raw data.
-          Read data/curator.json for the curated creative direction.
+          Read infra/prompts/system.md for your instructions.
+          Read data/brief.json for the curator's editorial brief.
+          Read data/latest.json for raw data (links, repo names, etc).
           
-          Create a new generated/${{ matrix.model }}.html from scratch.
-          Output a complete HTML file with embedded CSS.
-          Use the data to create a personal website that reflects who Erik is.
-          Follow the curator's direction for mood, doodle, and aesthetic hints.
+          Create generated/${{ matrix.model }}.html — a beautiful personal website.
+          Render the brief's content with your own aesthetic vision.
           PROMPT_END
           
           echo "=== Generation Prompt ==="
@@ -292,8 +290,8 @@ jobs:
           echo "=== System Prompt (from repo) ==="
           cat /tmp/clean-gen/infra/prompts/system.md
           echo ""
-          echo "=== Curator Direction ==="
-          cat /tmp/clean-gen/data/curator.json
+          echo "=== Editorial Brief ==="
+          cat /tmp/clean-gen/data/brief.json
 
       - name: Generate site with ${{ matrix.model }}
         id: generate
@@ -519,7 +517,7 @@ jobs:
           # Stage all build files
           git add data/latest.json
           git add data/fetch-summary.json
-          git add data/curator.json
+          git add data/brief.json
           git add public/data/
           git add public/builds/
           git add generated/
