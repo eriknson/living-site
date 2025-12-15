@@ -7,9 +7,9 @@ Design Erik's personal website. Single HTML file, inline CSS.
 
 ## Your Job
 
-Create a brutalistic and professional personal website with emphasis on craft and attention to details. Render the brief's content with your own aesthetic vision.
+Create a clean, minimalistic, and professional personal website with emphasis on craft and attention to details. Render the brief's content with your own aesthetic vision.
 
-1. Pick distinct colors and typography that is crisp
+1. Pick distinct and high end colors and typography that is crisp
 2. Render sections by emphasis (high = detail, low = minimal)
 3. Inline the doodle SVG left-aligned above header
 4. Include contact links from identity
