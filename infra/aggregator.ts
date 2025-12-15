@@ -66,15 +66,25 @@ export interface FetchSummary {
 }
 
 function summarizeGitHub(data: GitHubData): string {
-  const topLang = Object.entries(data.languages)
-    .sort((a, b) => b[1] - a[1])[0];
-  const parts = [
-    `${data.recent_activity.total_events} events`,
-    `${data.recent_activity.repos_touched.length} repos touched`,
-  ];
-  if (topLang) {
-    parts.push(`top: ${topLang[0]} (${topLang[1]} repos)`);
+  const parts: string[] = [];
+
+  // Show most active repos first (from new active_repos field)
+  const activeRepos = data.active_repos || [];
+  const topActive = activeRepos.filter((r) => r.recent_commits > 0).slice(0, 2);
+  if (topActive.length > 0) {
+    const repoStr = topActive.map((r) => r.name).join(", ");
+    parts.push(`active: ${repoStr}`);
   }
+
+  // Activity counts
+  parts.push(`${data.recent_activity.commits} push events`);
+
+  // External contributions
+  const externalCount = data.external_contributions?.length || 0;
+  if (externalCount > 0) {
+    parts.push(`${externalCount} external contributions`);
+  }
+
   return parts.join(", ");
 }
 
@@ -160,7 +170,12 @@ function computeSynthesisHints(
   }
   
   // Find dominant theme from repos and tweets
-  const activeRepos = sources.github?.recent_activity.repos_touched || [];
+  // Prefer active_repos (sorted by commit activity) over repos_touched
+  const activeReposList = sources.github?.active_repos || [];
+  const activeRepos =
+    activeReposList.length > 0
+      ? activeReposList.map((r) => r.name)
+      : sources.github?.recent_activity.repos_touched || [];
   const tweetThemes = sources.typefully?.themes?.interests || [];
   
   let dominantTheme: string | null = null;

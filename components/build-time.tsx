@@ -101,45 +101,45 @@ function MobileDrawerContent({
   return (
     <div className="px-3 pb-8 space-y-3">
       {/* Description */}
-      <div className="bg-black/[0.03] rounded-2xl px-4 py-3.5">
-        <p className="text-[15px] text-black/60 leading-relaxed">
+      <div className="bg-black/[0.03] dark:bg-white/[0.05] rounded-2xl px-4 py-3.5">
+        <p className="text-[15px] text-black/60 dark:text-white/60 leading-relaxed">
           This website regenerates daily via Cursor CLI agents running on GitHub Actions. Redeploys via Vercel automatically.
         </p>
       </div>
 
       {/* Made by / Updated */}
-      <div className="bg-black/[0.03] rounded-2xl px-4 py-3">
+      <div className="bg-black/[0.03] dark:bg-white/[0.05] rounded-2xl px-4 py-3">
         <div className="flex justify-between items-baseline py-1">
-          <span className="text-[15px] text-black/50">This version made by</span>
-          <span className="text-[15px] text-black/90">
+          <span className="text-[15px] text-black/50 dark:text-white/50">This version made by</span>
+          <span className="text-[15px] text-black/90 dark:text-white/90">
             {modelName}
-            {durationStr && <span className="text-black/50">{durationStr}</span>}
+            {durationStr && <span className="text-black/50 dark:text-white/50">{durationStr}</span>}
           </span>
         </div>
         <div className="flex justify-between items-baseline py-1">
-          <span className="text-[15px] text-black/50">Updated</span>
-          <span className="text-[15px] text-black/90">{relativeTime}</span>
+          <span className="text-[15px] text-black/50 dark:text-white/50">Updated</span>
+          <span className="text-[15px] text-black/90 dark:text-white/90">{relativeTime}</span>
         </div>
       </div>
 
       {/* Context */}
-      <div className="bg-black/[0.03] rounded-2xl px-4 py-3">
-        <div className="text-[13px] text-black/40 uppercase tracking-wide pb-2">
+      <div className="bg-black/[0.03] dark:bg-white/[0.05] rounded-2xl px-4 py-3">
+        <div className="text-[13px] text-black/40 dark:text-white/40 uppercase tracking-wide pb-2">
           Context
         </div>
         <div className="space-y-2">
           {contextItems.map((item) => (
             <div key={item.label} className="flex items-center gap-3 text-[15px]">
               {item.status === "success" ? (
-                <Check className="h-4 w-4 text-black/25 shrink-0" />
+                <Check className="h-4 w-4 text-black/25 dark:text-white/25 shrink-0" />
               ) : (
                 <X className="h-4 w-4 text-red-400 shrink-0" />
               )}
-              <span className="flex-1 text-black/80">{item.value}</span>
+              <span className="flex-1 text-black/80 dark:text-white/80">{item.value}</span>
             </div>
           ))}
           {contextItems.length === 0 && (
-            <div className="text-[15px] text-black/40 italic">
+            <div className="text-[15px] text-black/40 dark:text-white/40 italic">
               No context available
             </div>
           )}
@@ -151,7 +151,7 @@ function MobileDrawerContent({
         <Link
           href="/builds"
           onClick={onLinkClick}
-          className="flex-1 flex items-center justify-center gap-2 px-4 py-3 rounded-xl text-[15px] font-medium text-black/70 bg-black/[0.06] active:bg-black/10 transition-colors"
+          className="flex-1 flex items-center justify-center gap-2 px-4 py-3 rounded-xl text-[15px] font-medium text-black/70 dark:text-white/70 bg-black/[0.06] dark:bg-white/[0.08] active:bg-black/10 dark:active:bg-white/15 transition-colors"
         >
           <History className="h-4 w-4" />
           <span>Build History</span>
@@ -161,7 +161,7 @@ function MobileDrawerContent({
           target="_blank"
           rel="noopener noreferrer"
           onClick={onLinkClick}
-          className="flex-1 flex items-center justify-center gap-2 px-4 py-3 rounded-xl text-[15px] font-medium text-black/70 bg-black/[0.06] active:bg-black/10 transition-colors"
+          className="flex-1 flex items-center justify-center gap-2 px-4 py-3 rounded-xl text-[15px] font-medium text-black/70 dark:text-white/70 bg-black/[0.06] dark:bg-white/[0.08] active:bg-black/10 dark:active:bg-white/15 transition-colors"
         >
           <ArrowUpRight className="h-4 w-4" />
           <span>Source</span>
@@ -225,7 +225,7 @@ export function BuildTime({ manifest, currentModel, currentDate, currentTimestam
   if (!relativeTime) return null;
 
   const TriggerButton = (
-    <button className="h-full px-2.5 text-black/60 hover:bg-black/5 active:bg-black/10 outline-none flex items-center cursor-pointer">
+    <button className="h-full px-2.5 text-black/60 dark:text-white/60 hover:bg-black/5 dark:hover:bg-white/10 active:bg-black/10 dark:active:bg-white/15 outline-none flex items-center cursor-pointer">
       Built {relativeTime}
     </button>
   );
@@ -258,7 +258,7 @@ export function BuildTime({ manifest, currentModel, currentDate, currentTimestam
       </DropdownMenuTrigger>
       <DropdownMenuContent align="end" className="w-[320px]">
         {/* Description */}
-        <div className="px-3 py-2.5 text-[13px] text-black/60 leading-relaxed">
+        <div className="px-3 py-2.5 text-[13px] text-black/60 dark:text-white/60 leading-relaxed">
           This website regenerates daily via Cursor CLI agents running on GitHub Actions. Redeploys via Vercel automatically.
         </div>
 
@@ -267,15 +267,15 @@ export function BuildTime({ manifest, currentModel, currentDate, currentTimestam
         {/* Made by / Updated */}
         <div className="px-3 py-2.5 space-y-1">
           <div className="flex justify-between items-baseline text-[13px]">
-            <span className="text-black/50">This version made by</span>
-            <span className="text-black/90">
+            <span className="text-black/50 dark:text-white/50">This version made by</span>
+            <span className="text-black/90 dark:text-white/90">
               {modelName}
-              {durationStr && <span className="text-black/50">{durationStr}</span>}
+              {durationStr && <span className="text-black/50 dark:text-white/50">{durationStr}</span>}
             </span>
           </div>
           <div className="flex justify-between items-baseline text-[13px]">
-            <span className="text-black/50">Updated</span>
-            <span className="text-black/90">{relativeTime}</span>
+            <span className="text-black/50 dark:text-white/50">Updated</span>
+            <span className="text-black/90 dark:text-white/90">{relativeTime}</span>
           </div>
         </div>
 
@@ -283,21 +283,21 @@ export function BuildTime({ manifest, currentModel, currentDate, currentTimestam
 
         {/* Context */}
         <div className="px-3 py-2.5 space-y-1.5">
-          <div className="text-[13px] text-black/50">
+          <div className="text-[13px] text-black/50 dark:text-white/50">
             Context
           </div>
           {contextItems.map((item) => (
             <div key={item.label} className="flex items-start gap-3 text-[13px]">
-              <span className="flex-1 text-black/80 leading-snug">{item.value}</span>
+              <span className="flex-1 text-black/80 dark:text-white/80 leading-snug">{item.value}</span>
               {item.status === "success" ? (
-                <Check className="h-3.5 w-3.5 text-black/20 shrink-0 mt-0.5" />
+                <Check className="h-3.5 w-3.5 text-black/20 dark:text-white/20 shrink-0 mt-0.5" />
               ) : (
                 <X className="h-3.5 w-3.5 text-red-400 shrink-0 mt-0.5" />
               )}
             </div>
           ))}
           {contextItems.length === 0 && (
-            <div className="text-[13px] text-black/40 italic">
+            <div className="text-[13px] text-black/40 dark:text-white/40 italic">
               No context available
             </div>
           )}
@@ -309,19 +309,19 @@ export function BuildTime({ manifest, currentModel, currentDate, currentTimestam
         <div className="px-1 py-1">
           <Link
             href="/builds"
-            className="flex items-center justify-between px-2 py-2 rounded-sm text-[13px] text-black/80 hover:bg-black/5 active:bg-black/10 transition-colors"
+            className="flex items-center justify-between px-2 py-2 rounded-sm text-[13px] text-black/80 dark:text-white/80 hover:bg-black/5 dark:hover:bg-white/10 active:bg-black/10 dark:active:bg-white/15 transition-colors"
           >
             <span>Build History</span>
-            <History className="h-3.5 w-3.5 text-black/40" />
+            <History className="h-3.5 w-3.5 text-black/40 dark:text-white/40" />
           </Link>
           <a
             href="https://github.com/eriknson/living-site"
             target="_blank"
             rel="noopener noreferrer"
-            className="flex items-center justify-between px-2 py-2 rounded-sm text-[13px] text-black/80 hover:bg-black/5 active:bg-black/10 transition-colors"
+            className="flex items-center justify-between px-2 py-2 rounded-sm text-[13px] text-black/80 dark:text-white/80 hover:bg-black/5 dark:hover:bg-white/10 active:bg-black/10 dark:active:bg-white/15 transition-colors"
           >
             <span>Source Code</span>
-            <ArrowUpRight className="h-3.5 w-3.5 text-black/40" />
+            <ArrowUpRight className="h-3.5 w-3.5 text-black/40 dark:text-white/40" />
           </a>
         </div>
       </DropdownMenuContent>

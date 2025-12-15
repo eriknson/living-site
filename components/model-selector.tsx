@@ -55,7 +55,7 @@ export function ModelSelector({ manifest, currentModel, currentDate, currentTime
 
   if (!manifest || !currentModel) {
     return (
-      <div className="h-full px-2.5 text-black/40 flex items-center gap-1.5">
+      <div className="h-full px-2.5 text-black/40 dark:text-white/40 flex items-center gap-1.5">
         <Infinity className="h-4 w-4 opacity-40" strokeWidth={2.5} />
         Loading...
       </div>
@@ -69,7 +69,7 @@ export function ModelSelector({ manifest, currentModel, currentDate, currentTime
 
   const isOpen = isMobile ? drawerOpen : dropdownOpen;
   const TriggerButton = (
-    <button className="h-full px-2.5 hover:bg-black/5 active:bg-black/10 outline-none flex items-center gap-1.5 cursor-pointer">
+    <button className="h-full px-2.5 hover:bg-black/5 dark:hover:bg-white/10 active:bg-black/10 dark:active:bg-white/15 outline-none flex items-center gap-1.5 cursor-pointer">
       <Infinity className="h-4 w-4 opacity-50" strokeWidth={2.5} />
       <span>{getModelDisplayName(currentModel)}</span>
       <ChevronDown className={cn("h-3 w-3 opacity-60 transition-transform", isOpen && "rotate-180")} />
@@ -86,20 +86,20 @@ export function ModelSelector({ manifest, currentModel, currentDate, currentTime
             onClick={() => onSelect(build.model)}
             className={cn(
               "w-full flex items-center justify-between px-4 py-3.5 sm:px-2 sm:py-2.5 rounded-xl sm:rounded-sm text-left transition-colors",
-              "active:bg-black/5 sm:hover:bg-black/5 sm:active:bg-black/10",
-              isActive && "bg-black/[0.04]"
+              "active:bg-black/5 dark:active:bg-white/10 sm:hover:bg-black/5 dark:sm:hover:bg-white/10 sm:active:bg-black/10 dark:sm:active:bg-white/15",
+              isActive && "bg-black/[0.04] dark:bg-white/[0.08]"
             )}
           >
             <span className="flex items-center gap-3 sm:gap-2">
               {isActive ? (
-                <Check className="h-5 w-5 sm:h-4 sm:w-4 text-black/80" />
+                <Check className="h-5 w-5 sm:h-4 sm:w-4 text-black/80 dark:text-white/80" />
               ) : (
                 <span className="w-5 sm:w-4" />
               )}
-              <span className="text-[15px] sm:text-sm text-black/90">{getModelDisplayName(build.model)}</span>
+              <span className="text-[15px] sm:text-sm text-black/90 dark:text-white/90">{getModelDisplayName(build.model)}</span>
             </span>
             {build.duration_ms && (
-              <span className="text-black/40 text-[13px] sm:text-xs tabular-nums">
+              <span className="text-black/40 dark:text-white/40 text-[13px] sm:text-xs tabular-nums">
                 {formatDuration(build.duration_ms)}
               </span>
             )}
@@ -118,12 +118,12 @@ export function ModelSelector({ manifest, currentModel, currentDate, currentTime
         </DrawerTrigger>
         <DrawerContent aria-label="Select build model">
           <DrawerHeader className="text-left px-5 pt-1 pb-3">
-            <span className="text-[15px] font-medium text-black/90">
+            <span className="text-[15px] font-medium text-black/90 dark:text-white/90">
               Select Model
             </span>
           </DrawerHeader>
           <div className="px-3 pb-8">
-            <div className="bg-black/[0.03] rounded-2xl p-1">
+            <div className="bg-black/[0.03] dark:bg-white/[0.05] rounded-2xl p-1">
               <ModelList onSelect={handleSelect} />
             </div>
           </div>
@@ -156,7 +156,7 @@ export function ModelSelector({ manifest, currentModel, currentDate, currentTime
                 {getModelDisplayName(build.model)}
               </span>
               {build.duration_ms && (
-                <span className="text-black/40 text-xs">
+                <span className="text-black/40 dark:text-white/40 text-xs">
                   {formatDuration(build.duration_ms)}
                 </span>
               )}

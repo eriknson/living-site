@@ -22,7 +22,13 @@ import {
 // Commit Theme Detection
 // ============================================================================
 
-type CommitTheme = "features" | "fixes" | "refactoring" | "docs" | "infra" | "misc";
+type CommitTheme =
+  | "features"
+  | "fixes"
+  | "refactoring"
+  | "docs"
+  | "infra"
+  | "misc";
 
 interface ThemeCounts {
   features: number;
@@ -49,9 +55,11 @@ function detectCommitTheme(message: string): CommitTheme {
   // Keyword heuristics
   if (/\b(add|implement|create|new|feature)\b/i.test(lower)) return "features";
   if (/\b(fix|bug|patch|resolve|issue)\b/i.test(lower)) return "fixes";
-  if (/\b(refactor|clean|reorganize|restructure|simplify)\b/i.test(lower)) return "refactoring";
+  if (/\b(refactor|clean|reorganize|restructure|simplify)\b/i.test(lower))
+    return "refactoring";
   if (/\b(doc|readme|comment|typo)\b/i.test(lower)) return "docs";
-  if (/\b(config|setup|ci|deploy|build|deps?|upgrade|update)\b/i.test(lower)) return "infra";
+  if (/\b(config|setup|ci|deploy|build|deps?|upgrade|update)\b/i.test(lower))
+    return "infra";
 
   return "misc";
 }
@@ -121,9 +129,10 @@ function detectEra(
 
   // Determine focus type based on repo diversity
   const currentRepoCount = currentRepos.length;
-  const avgRepoCount = repoHistory.length > 0
-    ? average(repoHistory.map((r) => r.length))
-    : currentRepoCount;
+  const avgRepoCount =
+    repoHistory.length > 0
+      ? average(repoHistory.map((r) => r.length))
+      : currentRepoCount;
 
   // Determine era type
   let eraType: Era["type"];
@@ -157,13 +166,17 @@ function detectEra(
   }
 
   // Find primary repos (most frequently touched in this era)
-  const eraRepoLists = [currentRepos, ...repoHistory.slice(0, eraStartedWeeksAgo)];
+  const eraRepoLists = [
+    currentRepos,
+    ...repoHistory.slice(0, eraStartedWeeksAgo),
+  ];
   const primaryRepos = findCoreItems(eraRepoLists, 0.5).slice(0, 3);
 
   return {
     type: eraType,
     started_weeks_ago: eraStartedWeeksAgo,
-    primary_repos: primaryRepos.length > 0 ? primaryRepos : currentRepos.slice(0, 2),
+    primary_repos:
+      primaryRepos.length > 0 ? primaryRepos : currentRepos.slice(0, 2),
   };
 }
 
@@ -186,13 +199,28 @@ export function computeGitHubBaseline(
   const repoHistory = history.map((s) => s.data.recent_activity.repos_touched);
   const currentRepos = current.recent_activity.repos_touched;
 
+  // Use active_repos if available (sorted by recent commit activity)
+  const activeRepos = current.active_repos || [];
+  const topActiveRepos = activeRepos
+    .filter((r) => r.recent_commits > 0)
+    .slice(0, 5);
+
+  // External contributions
+  const externalContribs = current.external_contributions || [];
+
   // Analyze commit themes
   const commitMessages = current.recent_activity.commit_messages || [];
   const currentThemes = analyzeCommitThemes(commitMessages);
 
   // Calculate stability scores
-  const commitStability = calculateNumericStability([currentCommits, ...commitHistory]);
-  const repoStability = calculateListStability([currentRepos, ...repoHistory], 5);
+  const commitStability = calculateNumericStability([
+    currentCommits,
+    ...commitHistory,
+  ]);
+  const repoStability = calculateListStability(
+    [currentRepos, ...repoHistory],
+    5
+  );
   const stabilityScore = commitStability * 0.5 + repoStability * 0.5;
 
   // Identify core repos (frequently touched over time)
@@ -208,8 +236,24 @@ export function computeGitHubBaseline(
   // Generate Narrative Signals
   // =========================================================================
 
-  // Era-based signal
-  if (era.started_weeks_ago > 4) {
+  // Use active_repos for more accurate "currently working on" signals
+  if (topActiveRepos.length > 0) {
+    const topRepo = topActiveRepos[0];
+    const repoName = topRepo.name;
+
+    if (topActiveRepos.length === 1) {
+      narrativeSignals.push(`deep in ${repoName}`);
+    } else if (topActiveRepos.length === 2) {
+      narrativeSignals.push(
+        `working on ${repoName} and ${topActiveRepos[1].name}`
+      );
+    } else {
+      narrativeSignals.push(
+        `most active in ${repoName} (${topRepo.recent_commits} recent commits)`
+      );
+    }
+  } else if (era.started_weeks_ago > 4) {
+    // Fall back to era-based signal
     const months = Math.floor(era.started_weeks_ago / 4);
     const repoStr = era.primary_repos.slice(0, 2).join(" and ");
     if (era.type === "building") {
@@ -224,6 +268,31 @@ export function computeGitHubBaseline(
   } else if (era.primary_repos.length > 0) {
     const repoStr = era.primary_repos.slice(0, 2).join(" and ");
     narrativeSignals.push(`currently focused on ${repoStr}`);
+  }
+
+  // External contributions signal
+  if (externalContribs.length > 0) {
+    const prContribs = externalContribs.filter(
+      (c) => c.type === "pull_request"
+    );
+    const uniqueExternalRepos = [
+      ...new Set(externalContribs.map((c) => c.repo.split("/").pop())),
+    ];
+
+    if (prContribs.length > 0) {
+      const repoName = prContribs[0].repo.split("/").pop();
+      if (prContribs.length === 1) {
+        narrativeSignals.push(`contributed a PR to ${repoName}`);
+      } else {
+        narrativeSignals.push(
+          `contributing to ${uniqueExternalRepos.slice(0, 2).join(" and ")}`
+        );
+      }
+    } else if (uniqueExternalRepos.length > 0) {
+      narrativeSignals.push(
+        `collaborating on ${uniqueExternalRepos[0]}`
+      );
+    }
   }
 
   // Commit theme signal
@@ -269,22 +338,22 @@ export function computeGitHubBaseline(
     }
   }
 
-  // Focus vs scatter signal
-  if (currentRepos.length === 1) {
-    narrativeSignals.push(`deep in ${currentRepos[0]}`);
-  } else if (currentRepos.length > 4) {
+  // Spread across many projects signal (only if not already covered by active_repos)
+  if (topActiveRepos.length === 0 && currentRepos.length > 4) {
     narrativeSignals.push("spreading work across many projects");
   }
 
   return {
     identity: {
       core_repos: coreRepos,
-      typical_commit_rate: history.length > 0 ? average(commitHistory) : currentCommits,
+      typical_commit_rate:
+        history.length > 0 ? average(commitHistory) : currentCommits,
       work_style: era.type,
     },
     current_phase: {
       commits: currentCommits,
-      active_repos: currentRepos,
+      active_repos: topActiveRepos.map((r) => r.full_name),
+      external_contributions: externalContribs.length,
       commit_themes: currentThemes,
       dominant_theme: dominantTheme,
       trend: commitTrend,

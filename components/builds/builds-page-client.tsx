@@ -110,7 +110,7 @@ function ModelCard({
 
   if (isFailed) {
     return (
-      <div className="bg-white rounded-xl px-3 py-2.5 opacity-50">
+      <div className="bg-white dark:bg-neutral-800 rounded-xl px-3 py-2.5 opacity-50">
         <div className="text-sm font-medium text-neutral-400">{name}</div>
         <div className="text-xs text-red-400 mt-1">Build failed</div>
       </div>
@@ -118,16 +118,16 @@ function ModelCard({
   }
 
   return (
-    <div className="bg-white rounded-xl">
+    <div className="bg-white dark:bg-neutral-800 rounded-xl">
       {/* Desktop layout */}
       <div className="hidden sm:block px-3 py-2.5">
         <div className="flex items-center justify-between gap-2">
-          <span className="text-sm font-medium text-neutral-900">{name}</span>
+          <span className="text-sm font-medium text-neutral-900 dark:text-neutral-100">{name}</span>
           <div className="flex items-center -mr-1">
             {hasLogs && (
               <button
                 onClick={onOpenLogs}
-                className="p-1.5 rounded-md text-neutral-300 hover:text-neutral-500 hover:bg-neutral-100 transition-colors"
+                className="p-1.5 rounded-md text-neutral-300 dark:text-neutral-500 hover:text-neutral-500 dark:hover:text-neutral-300 hover:bg-neutral-100 dark:hover:bg-neutral-700 transition-colors"
                 title="View agent logs"
               >
                 <ScrollText className="w-4 h-4" />
@@ -135,7 +135,7 @@ function ModelCard({
             )}
             <Link
               href={`/?model=${build.model}&date=${date}&t=${encodeURIComponent(batchTimestamp)}`}
-              className="p-1.5 rounded-md text-neutral-300 hover:text-neutral-500 hover:bg-neutral-100 transition-colors"
+              className="p-1.5 rounded-md text-neutral-300 dark:text-neutral-500 hover:text-neutral-500 dark:hover:text-neutral-300 hover:bg-neutral-100 dark:hover:bg-neutral-700 transition-colors"
               title="View this build"
             >
               <ArrowUpRight className="w-4 h-4" />
@@ -147,7 +147,7 @@ function ModelCard({
             <span className="text-neutral-400">{formatDuration(duration)}</span>
           )}
           {lineCount && (
-            <span className="text-green-600 font-medium">+{lineCount}</span>
+            <span className="text-green-600 dark:text-green-400 font-medium">+{lineCount}</span>
           )}
         </div>
       </div>
@@ -155,13 +155,13 @@ function ModelCard({
       {/* Mobile layout */}
       <div className="flex sm:hidden overflow-hidden">
         <div className="flex-1 min-w-0 px-3 py-3">
-          <div className="text-sm font-medium text-neutral-900 truncate">{name}</div>
+          <div className="text-sm font-medium text-neutral-900 dark:text-neutral-100 truncate">{name}</div>
           <div className="flex items-center gap-2.5 mt-1 text-xs">
             {duration && (
               <span className="text-neutral-400">{formatDuration(duration)}</span>
             )}
             {lineCount && (
-              <span className="text-green-600 font-medium">+{lineCount}</span>
+              <span className="text-green-600 dark:text-green-400 font-medium">+{lineCount}</span>
             )}
           </div>
         </div>
@@ -169,7 +169,7 @@ function ModelCard({
           {hasLogs && (
             <button
               onClick={onOpenLogs}
-              className="w-11 h-11 flex items-center justify-center rounded bg-neutral-50 text-neutral-400 active:bg-neutral-100 transition-colors"
+              className="w-11 h-11 flex items-center justify-center rounded bg-neutral-50 dark:bg-neutral-700 text-neutral-400 active:bg-neutral-100 dark:active:bg-neutral-600 transition-colors"
               title="View agent logs"
             >
               <ScrollText className="w-[18px] h-[18px]" />
@@ -177,7 +177,7 @@ function ModelCard({
           )}
           <Link
             href={`/?model=${build.model}&date=${date}&t=${encodeURIComponent(batchTimestamp)}`}
-            className="w-11 h-11 flex items-center justify-center rounded bg-neutral-50 text-neutral-400 active:bg-neutral-100 transition-colors"
+            className="w-11 h-11 flex items-center justify-center rounded bg-neutral-50 dark:bg-neutral-700 text-neutral-400 active:bg-neutral-100 dark:active:bg-neutral-600 transition-colors"
             title="View this build"
           >
             <ArrowUpRight className="w-[18px] h-[18px]" />
@@ -218,7 +218,7 @@ export function BuildsPageClient({
 
   if (!manifest?.dates?.length) {
     return (
-      <div className="h-full overflow-auto bg-neutral-100">
+      <div className="h-full overflow-auto bg-neutral-100 dark:bg-neutral-900">
         <BuildsMenuBar />
         <div className="pt-[var(--menu-bar-height)] p-6">
           <div className="text-center py-12 text-neutral-500">
@@ -238,16 +238,16 @@ export function BuildsPageClient({
   }
 
   return (
-    <div className="h-full overflow-auto bg-neutral-100">
+    <div className="h-full overflow-auto bg-neutral-100 dark:bg-neutral-900">
       <BuildsMenuBar />
       <div className="pt-[var(--menu-bar-height)]">
         <div className="max-w-2xl mx-auto px-4 py-6 sm:py-10">
           {/* Header */}
           <div className="mb-8">
-            <h1 className="text-xl font-semibold text-neutral-900">
+            <h1 className="text-xl font-semibold text-neutral-900 dark:text-neutral-100">
               Build History
             </h1>
-            <p className="text-sm text-neutral-500 mt-1">
+            <p className="text-sm text-neutral-500 dark:text-neutral-400 mt-1">
               Browse and compare model outputs
             </p>
           </div>
@@ -267,7 +267,7 @@ export function BuildsPageClient({
                 <section key={batchKey}>
                   {/* Session header with prompt and GitHub icons */}
                   <div className="flex items-center gap-2 mb-2.5 px-1">
-                    <h2 className="text-sm font-medium text-neutral-700">
+                    <h2 className="text-sm font-medium text-neutral-700 dark:text-neutral-300">
                       {formatBuildTime(batch.timestamp)}
                     </h2>
                     {batch.system_prompt && (
@@ -278,7 +278,7 @@ export function BuildsPageClient({
                             timestamp: batch.timestamp,
                           })
                         }
-                        className="text-neutral-300 hover:text-neutral-500 transition-colors"
+                        className="text-neutral-300 dark:text-neutral-500 hover:text-neutral-500 dark:hover:text-neutral-300 transition-colors"
                         title="View system prompt"
                       >
                         <FileText className="w-4 h-4" />
@@ -289,7 +289,7 @@ export function BuildsPageClient({
                         href={batch.github_run_url}
                         target="_blank"
                         rel="noopener noreferrer"
-                        className="text-neutral-300 hover:text-neutral-500 transition-colors"
+                        className="text-neutral-300 dark:text-neutral-500 hover:text-neutral-500 dark:hover:text-neutral-300 transition-colors"
                         title="View GitHub Actions run"
                       >
                         <GitHubIcon className="w-4 h-4" />

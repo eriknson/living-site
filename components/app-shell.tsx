@@ -82,7 +82,7 @@ function AppContent() {
       />
       
       {/* Content area - fills remaining space */}
-      <div className="flex-1 relative min-h-0 bg-[#0a0a0a]">
+      <div className="flex-1 relative min-h-0 bg-neutral-100 dark:bg-[#0a0a0a]">
         {activePath ? (
           <iframe
             key={activePath}
@@ -91,7 +91,7 @@ function AppContent() {
             className="absolute inset-0 w-full h-full border-0"
           />
         ) : (
-          <div className="flex items-center justify-center h-full text-white/60">
+          <div className="flex items-center justify-center h-full text-black/60 dark:text-white/60">
             <p>{isLoading ? "Loading..." : "No build available"}</p>
           </div>
         )}
@@ -103,7 +103,7 @@ function AppContent() {
 export function AppShell({ children }: { children?: ReactNode }) {
   return (
     <Suspense fallback={
-      <div className="h-[var(--menu-bar-height)] flex items-center justify-between px-3 bg-black/[0.03] backdrop-blur-2xl backdrop-saturate-[1.8] border-b border-black/[0.04] text-[13px] text-black/80 select-none">
+      <div className="h-[var(--menu-bar-height)] flex items-center justify-between px-3 bg-black/[0.03] dark:bg-white/[0.05] backdrop-blur-2xl backdrop-saturate-[1.8] border-b border-black/[0.04] dark:border-white/[0.08] text-[13px] text-black/80 dark:text-white/80 select-none">
         <div className="flex items-center h-full">
           <span className="font-medium">eriks.design</span>
         </div>
