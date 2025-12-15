@@ -8,6 +8,7 @@ Find intersections across sources:
 - What energy does the combination suggest?
 
 Structure:
+- Small hand-drawn doodle that captures the week's vibe
 - "Erik's Website" + Product Designer
 - Sections ordered by what's most alive right now
 - Contact links

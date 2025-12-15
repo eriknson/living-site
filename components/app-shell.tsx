@@ -1,6 +1,6 @@
 "use client";
 
-import { Suspense, type ReactNode, useEffect, useMemo } from "react";
+import { Suspense, type ReactNode, useEffect, useMemo, useState } from "react";
 import { ManifestProvider, useManifest } from "@/lib/manifest-context";
 import { MenuBar } from "./menu-bar";
 import { getModelDisplayName, getBatch, type Manifest } from "@/lib/manifest";
@@ -24,6 +24,7 @@ function getBatchInfo(
 
 function AppContent() {
   const { manifest, currentModel, currentDate, currentTimestamp, isLoading, setModel } = useManifest();
+  const [iframeLoaded, setIframeLoaded] = useState(false);
 
   const { buildPaths } = useMemo(
     () => getBatchInfo(manifest, currentDate, currentTimestamp),
@@ -70,6 +71,11 @@ function AppContent() {
     return buildPaths[0]?.model ?? null;
   }, [buildPaths, currentModel, hasBuilds]);
 
+  // Reset loading state when path changes
+  useEffect(() => {
+    setIframeLoaded(false);
+  }, [activePath]);
+
   return (
     <div className="h-dvh flex flex-col">
       {/* Menu bar - fixed height, always on top */}
@@ -84,12 +90,19 @@ function AppContent() {
       {/* Content area - fills remaining space */}
       <div className="flex-1 relative min-h-0 bg-neutral-100 dark:bg-[#0a0a0a]">
         {activePath ? (
-          <iframe
-            key={activePath}
-            src={`/${activePath}`}
-            title={`Site built by ${getModelDisplayName(activeModel ?? '')}`}
-            className="absolute inset-0 w-full h-full border-0"
-          />
+          <>
+            <iframe
+              key={activePath}
+              src={`/${activePath}`}
+              title={`Site built by ${getModelDisplayName(activeModel ?? '')}`}
+              className="absolute inset-0 w-full h-full border-0"
+              onLoad={() => setIframeLoaded(true)}
+            />
+            {/* Loading overlay that hides the white flash */}
+            {!iframeLoaded && (
+              <div className="absolute inset-0 bg-neutral-100 dark:bg-[#0a0a0a] pointer-events-none" />
+            )}
+          </>
         ) : (
           <div className="flex items-center justify-center h-full text-black/60 dark:text-white/60">
             <p>{isLoading ? "Loading..." : "No build available"}</p>
