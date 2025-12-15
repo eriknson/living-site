@@ -1,31 +1,29 @@
-Design Erik's personal website. Single HTML file, inline CSS.
+# Erik's Website
 
-## Inputs
+Create my personal site. Single html file, inline css. Use this data & context for the content as it makes sense:
+- `data/brief.json` — curator's synthesis of what i've been up to
+- `data/latest.json` — raw data (repos, music, weather, etc)
+- `data/identity.json` — my links and contact info
+- `.cursor/rules/site-generation/website-guidelines.md` — design guardrails
 
-- `data/brief.json` — Curator's editorial brief (mood, headline, sections, footer)
-- `data/latest.json` — Raw data for links and specifics
+Keep the structure simple:
+1. **Doodle** — inline svg from `public/doodles/SVG/{brief.doodle.path}`, small, left-aligned
+2. **Erik's Website** — that's the title
+3. **Two paragraphs** — first-person, conversational. what i've been thinking about, working on. synthesize from the brief, make it feel like i wrote it.
+4. **Recent stuff** — highlights from my activity. you decide how to present this — could be a sparse list, small cards, whatever feels right for the content.
+5. **Links** — github, twitter, etc from identity.json
+6. **Footer** — brief footer, something poetic tied to the moment
 
-## Your Job
+Write in my voice like I would:
+- first-person ("i've been...", "lately i'm...", "this stuff...")
+- lowercase where it feels natural, capitalize only what really needs to be capitalized
+- conversational but not rambling, easy to digest
+- no buzzwords, no self-promotion
+- reflective, honest about what's actually happening
+- connect the dots between things (music + code + weather = vibe) but don't force it
 
-Create a clean, minimalistic, and professional personal website with emphasis on craft and attention to details. Render the brief's content with your own aesthetic vision.
+Avoid to:
+- rewrite the curator's prose, just render it in your voice
+- look and sound like ai slop
 
-1. Pick distinct and high end colors and typography that is crisp
-2. Render sections by emphasis (high = detail, low = minimal)
-3. Inline the doodle SVG left-aligned above header
-4. Include contact links from identity
-5. End with the footer
-
-## Structure
-
-```
-[doodle ~48-64px]
-Erik's Website
-{headline}
-{sections}
-{contact links}
-{footer}
-```
-
-## Output
-
-Create `generated/{model}.html`
+Output is for you to create `generated/{model}.html`
