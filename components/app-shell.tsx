@@ -1,6 +1,6 @@
 "use client";
 
-import { Suspense, type ReactNode, useEffect, useMemo, useState } from "react";
+import { Suspense, type ReactNode, useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { ManifestProvider, useManifest } from "@/lib/manifest-context";
 import { MenuBar } from "./menu-bar";
 import { getModelDisplayName, getBatch, type Manifest } from "@/lib/manifest";
@@ -24,7 +24,10 @@ function getBatchInfo(
 
 function AppContent() {
   const { manifest, currentModel, currentDate, currentTimestamp, isLoading, setModel } = useManifest();
-  const [iframeLoaded, setIframeLoaded] = useState(false);
+  // Track which iframes have loaded
+  const [loadedPaths, setLoadedPaths] = useState<Set<string>>(new Set());
+  // Ref to the container for focus management
+  const containerRef = useRef<HTMLDivElement>(null);
 
   const { buildPaths } = useMemo(
     () => getBatchInfo(manifest, currentDate, currentTimestamp),
@@ -32,25 +35,6 @@ function AppContent() {
   );
 
   const hasBuilds = buildPaths.length > 0;
-
-  // Prefetch all HTML files for instant switching
-  useEffect(() => {
-    if (!buildPaths.length) return;
-    
-    const links: HTMLLinkElement[] = [];
-    buildPaths.forEach(({ path }) => {
-      const link = document.createElement('link');
-      link.rel = 'prefetch';
-      link.href = `/${path}`;
-      link.as = 'document';
-      document.head.appendChild(link);
-      links.push(link);
-    });
-    
-    return () => {
-      links.forEach(link => link.remove());
-    };
-  }, [buildPaths]);
 
   // Get the active path for current model
   const activePath = useMemo(() => {
@@ -62,19 +46,27 @@ function AppContent() {
     return buildPaths[0]?.path ?? null;
   }, [buildPaths, currentModel, hasBuilds]);
 
-  const activeModel = useMemo(() => {
-    if (!hasBuilds) return null;
-    if (currentModel) {
-      const found = buildPaths.find((p) => p.model === currentModel);
-      if (found) return found.model;
-    }
-    return buildPaths[0]?.model ?? null;
-  }, [buildPaths, currentModel, hasBuilds]);
-
-  // Reset loading state when path changes
+  // Clear loaded paths when batch changes (date/timestamp changes)
+  const batchKey = `${currentDate}-${currentTimestamp}`;
+  const prevBatchKeyRef = useRef(batchKey);
   useEffect(() => {
-    setIframeLoaded(false);
-  }, [activePath]);
+    if (prevBatchKeyRef.current !== batchKey) {
+      setLoadedPaths(new Set());
+      prevBatchKeyRef.current = batchKey;
+    }
+  }, [batchKey]);
+
+  // Handle iframe load
+  const handleIframeLoad = useCallback((path: string) => {
+    setLoadedPaths((prev) => {
+      const next = new Set(prev);
+      next.add(path);
+      return next;
+    });
+  }, []);
+
+  // Check if the active iframe is loaded
+  const activeLoaded = activePath ? loadedPaths.has(activePath) : false;
 
   return (
     <div className="h-dvh flex flex-col">
@@ -88,19 +80,39 @@ function AppContent() {
       />
       
       {/* Content area - fills remaining space */}
-      <div className="flex-1 relative min-h-0 bg-neutral-100 dark:bg-[#0a0a0a]">
-        {activePath ? (
+      <div 
+        ref={containerRef}
+        className="flex-1 relative min-h-0 bg-neutral-100 dark:bg-[#0a0a0a] overflow-hidden"
+      >
+        {hasBuilds ? (
           <>
-            <iframe
-              key={activePath}
-              src={`/${activePath}`}
-              title={`Site built by ${getModelDisplayName(activeModel ?? '')}`}
-              className="absolute inset-0 w-full h-full border-0"
-              onLoad={() => setIframeLoaded(true)}
-            />
-            {/* Loading overlay that hides the white flash */}
-            {!iframeLoaded && (
-              <div className="absolute inset-0 bg-neutral-100 dark:bg-[#0a0a0a] pointer-events-none" />
+            {/* Render all iframes but only show the active one */}
+            {buildPaths.map(({ model, path }) => {
+              const isActive = path === activePath;
+              return (
+                <iframe
+                  key={path}
+                  src={`/${path}`}
+                  title={`Site built by ${getModelDisplayName(model)}`}
+                  className="absolute inset-0 w-full h-full border-0"
+                  style={{
+                    // Use visibility + z-index for robust show/hide
+                    // visibility: hidden still allows the iframe to load and maintain state
+                    visibility: isActive ? 'visible' : 'hidden',
+                    zIndex: isActive ? 1 : 0,
+                    // Ensure the iframe can scroll
+                    overflow: 'auto',
+                  }}
+                  onLoad={() => handleIframeLoad(path)}
+                />
+              );
+            })}
+            {/* Loading overlay - only show when active iframe hasn't loaded yet */}
+            {!activeLoaded && (
+              <div 
+                className="absolute inset-0 bg-neutral-100 dark:bg-[#0a0a0a] pointer-events-none"
+                style={{ zIndex: 2 }}
+              />
             )}
           </>
         ) : (
