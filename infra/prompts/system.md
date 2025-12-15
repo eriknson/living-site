@@ -1,1 +1,1 @@
-Create my personal website. Design something that is retro inspired, fun, yet shows craft. Title it "Erik's Website"
+Create my personal website. Design something that is clean, minimalistic, and shows craft. Title it "Erik's Website"
