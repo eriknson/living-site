@@ -276,19 +276,22 @@ jobs:
       - name: Build generation prompt
         run: |
           cat > /tmp/generation-prompt.txt << PROMPT_END
-          Read infra/prompts/system.md for your instructions.
-          Read data/brief.json for the curator's editorial brief.
-          Read data/latest.json for raw data (links, repo names, etc).
-          
-          Create generated/${{ matrix.model }}.html — a beautiful personal website.
-          Render the brief's content with your own aesthetic vision.
+          $(cat /tmp/clean-gen/infra/prompts/system.md)
+
+          ---
+
+          For data and context, read:
+          - .cursor/rules/site-generation/context.md — voice and data sources
+          - .cursor/rules/site-generation/website-guidelines.md — design guardrails
+          - data/brief.json — curator's editorial brief
+          - data/latest.json — raw data
+          - data/identity.json — contact links
+
+          Create generated/${{ matrix.model }}.html
           PROMPT_END
           
           echo "=== Generation Prompt ==="
           cat /tmp/generation-prompt.txt
-          echo ""
-          echo "=== System Prompt (from repo) ==="
-          cat /tmp/clean-gen/infra/prompts/system.md
           echo ""
           echo "=== Editorial Brief ==="
           cat /tmp/clean-gen/data/brief.json

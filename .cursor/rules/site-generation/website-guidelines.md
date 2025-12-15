@@ -9,11 +9,9 @@ alwaysApply: true
 - Single HTML, inline CSS, max-width ~600px
 - Mobile-first (375px baseline)
 - External links: `target="_blank" rel="noopener"`
+- Semantic HTML (header, main, footer)
 
 ## Avoid
 - Em dashes, phrasings that feel AI slop
-- Monospace fonts
-- Borders / dividers
-- All caps
 - Purple/blue gradients, neon without purpose
-- Text shadows, card shadows, decorative borders, pill buttons, badges
+- Generic layouts — make it feel intentional

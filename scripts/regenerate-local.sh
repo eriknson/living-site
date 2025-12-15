@@ -27,13 +27,20 @@ fi
 # Clear existing build for this model
 rm -f "generated/${MODEL}.html"
 
-# Build the prompt
-PROMPT="Read infra/prompts/system.md for your instructions.
-Read data/brief.json for the curator's editorial brief.
-Read data/latest.json for raw data (links, repo names, etc).
+# Build the prompt (inline system.md, then reference supporting files)
+SYSTEM_PROMPT=$(cat infra/prompts/system.md)
+PROMPT="${SYSTEM_PROMPT}
 
-Create generated/${MODEL}.html — a beautiful personal website.
-Render the brief's content with your own aesthetic vision."
+---
+
+For data and context, read:
+- .cursor/rules/site-generation/context.md — voice and data sources
+- .cursor/rules/site-generation/website-guidelines.md — design guardrails
+- data/brief.json — curator's editorial brief
+- data/latest.json — raw data
+- data/identity.json — contact links
+
+Create generated/${MODEL}.html"
 
 echo "=== Running cursor-agent ==="
 cursor-agent -p --force --model "$MODEL" --output-format stream-json "$PROMPT" > /tmp/build-output.json 2>&1 || true

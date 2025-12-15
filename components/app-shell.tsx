@@ -93,7 +93,7 @@ function AppContent() {
       />
       
       {/* Content area - fills remaining space, uses iframe for better mobile support */}
-      <div className="flex-1 relative min-h-0 overflow-hidden pb-[env(safe-area-inset-bottom)] bg-neutral-100 dark:bg-[#0a0a0a]">
+      <div className="flex-1 relative min-h-0 overflow-hidden bg-neutral-100 dark:bg-[#0a0a0a] pb-[env(safe-area-inset-bottom)]">
         {activePath ? (
           <>
             <iframe
