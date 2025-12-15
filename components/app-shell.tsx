@@ -1,6 +1,6 @@
 "use client";
 
-import { Suspense, type ReactNode, useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { Suspense, type ReactNode, useCallback, useEffect, useMemo, useState } from "react";
 import { ManifestProvider, useManifest } from "@/lib/manifest-context";
 import { MenuBar } from "./menu-bar";
 import { getModelDisplayName, getBatch, type Manifest } from "@/lib/manifest";
@@ -25,7 +25,6 @@ function getBatchInfo(
 function AppContent() {
   const { manifest, currentModel, currentDate, currentTimestamp, isLoading, setModel } = useManifest();
   const [iframeReady, setIframeReady] = useState(false);
-  const iframeRef = useRef<HTMLIFrameElement>(null);
 
   const { buildPaths } = useMemo(
     () => getBatchInfo(manifest, currentDate, currentTimestamp),
@@ -78,13 +77,8 @@ function AppContent() {
     };
   }, [buildPaths]);
 
-  // Handle iframe load - focus it to enable scrolling
   const handleIframeLoad = useCallback(() => {
     setIframeReady(true);
-    // Focus the iframe after load to ensure scroll works
-    if (iframeRef.current) {
-      iframeRef.current.focus();
-    }
   }, []);
 
   return (
@@ -98,15 +92,15 @@ function AppContent() {
         onModelChange={setModel}
       />
       
-      {/* Content area - fills remaining space */}
+      {/* Content area - fills remaining space, uses object instead of iframe for better scroll handling */}
       <div className="flex-1 relative min-h-0 bg-neutral-100 dark:bg-[#0a0a0a]">
         {activePath ? (
           <>
-            <iframe
+            <object
               key={activePath}
-              ref={iframeRef}
-              src={`/${activePath}`}
-              title={`Site built by ${getModelDisplayName(activeModel ?? '')}`}
+              data={`/${activePath}`}
+              type="text/html"
+              aria-label={`Site built by ${getModelDisplayName(activeModel ?? '')}`}
               className="absolute inset-0 w-full h-full border-0"
               onLoad={handleIframeLoad}
             />
