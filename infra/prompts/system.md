@@ -1,28 +1,19 @@
 # Erik's Website
 
-Create my personal site. Single html file, inline css. Use this data & context for the content as it makes sense:
-- `data/brief.json` — curator's synthesis of what i've been up to
+Create my personal website as a product designer. Single html file, inline css. 
+
+## Data Sources
+- `data/brief.json` — themes and highlights (use these as **inspiration**, do not copy them)
 - `data/latest.json` — raw data (repos, music, weather, etc)
-- `data/identity.json` — my links and contact info
+- `data/identity.json` — my links
 - `.cursor/rules/site-generation/website-guidelines.md` — design guardrails
 
-Keep the structure simple:
-1. **Erik's Website** — that's the title
-2. **Two paragraphs** — first-person, conversational. what i've been thinking about, working on. synthesize from the brief, make it feel like i wrote it.
-3. **Recent stuff** — highlights from my activity. you decide how to present this — could be a sparse list, small cards, whatever feels right for the content.
-4. **Links** — github, twitter, etc from identity.json
-5. **Footer** — brief footer, something poetic tied to the moment
+## Creative Direction
+Design something that is clean, minimalistic yet effectful and shows craft, and fits the `mood` in the brief.
 
-Write in my voice like I would:
-- first-person ("i've been...", "lately i'm...", "this stuff...")
-- lowercase where it feels natural, capitalize only what really needs to be capitalized
-- conversational but not rambling, easy to digest
-- no buzzwords, no self-promotion
-- reflective, honest about what's actually happening
-- connect the dots between things (music + code + weather = vibe) but don't force it
-
-Avoid to:
-- rewrite the curator's prose, just render it in your voice
-- look and sound like ai slop
+- **Copywriting**: Write the text yourself. The brief provides the *topics*, but you provide the *voice*.
+- **Voice**: First-person, lowercase, conversational. Honest, reflective, no "AI buzzwords".
+- **Visuals**: You can be minimal, experimental, typographic, or data-dense. 
+- **Contact info** Include my links (`identity.json`).
 
 Output is for you to create `generated/{model}.html`
