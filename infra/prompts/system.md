@@ -1,1 +1,1 @@
-Create my personal website as a product designer. Design something that is clean, minimalistic yet effectful and shows craft. Title it "Erik's Website"
+Create my personal website. Design something that is clean, minimalistic yet shows craft. Title it "Erik's Website"
