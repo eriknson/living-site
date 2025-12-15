@@ -30,6 +30,7 @@ import { computeGitHubBaseline } from "./baselines/github.js";
 import { computeSpotifyBaseline } from "./baselines/spotify.js";
 import { computeTypefullyBaseline } from "./baselines/typefully.js";
 import type { SourceAnalysis } from "./baseline.js";
+import { pickDoodle } from "./doodle-picker.js";
 
 interface Identity {
   name: string;
@@ -123,6 +124,10 @@ interface AggregatedData {
   context: {
     season: string;
     days_since_change: number;
+  };
+  doodle: {
+    svg: string;
+    source: string;
   };
 }
 
@@ -521,6 +526,17 @@ export async function aggregate(): Promise<AggregatedData> {
   const synthesisHints = computeSynthesisHints(analysis, sources);
   console.log("\n  Synthesis hints:", synthesisHints);
 
+  // Pick a doodle based on conditions
+  console.log("\nPicking doodle...");
+  const doodle = await pickDoodle({
+    weather: sources.weather?.current.conditions,
+    isDay: sources.weather?.current.is_day,
+    energy: synthesisHints.energy,
+    season: getSeason(),
+    topGenre: sources.spotify?.short_term.genres[0],
+  });
+  console.log(`  Selected doodle: ${doodle.source}`);
+
   const data: AggregatedData = {
     generated_at: new Date().toISOString(),
     identity,
@@ -533,6 +549,7 @@ export async function aggregate(): Promise<AggregatedData> {
       season: getSeason(),
       days_since_change: daysSinceChange,
     },
+    doodle,
   };
 
   // Write to latest.json

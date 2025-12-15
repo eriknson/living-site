@@ -5,21 +5,11 @@ alwaysApply: true
 
 # Daily Doodle
 
-Small hand-drawn illustration above "Erik's Website". Must be recognizable and cute.
-
-**Examples but feel free to remix based on the data:**
-- Coffee cup with steam (cozy/focused)
-- Window with weather outside (rain drops, sun, snow)
-- Laptop, thinking, research, or desk scene
-- Headphones or vinyl record (music)
-- Sun, moon, clouds, snow, storm (time/weather)
-- Small plant or candle or seasonal object (calm vibes)
-
-**Style rules:**
-- Inline SVG, stroke only (no fills), stroke-width 1.5-2px, round linecap/linejoin
-- Slightly wobbly lines (hand-drawn feel), but clearly recognizable objects
-- One color (currentColor), ~100-150px wide, centered above header
-- No animations, no abstract shapes, no blobs, no gradients
+Include the provided `doodle.svg` above "Erik's Website":
+- Inline the SVG content from the data (already selected based on weather/mood/season)
+- Left-align it above the header, ~80-100px wide
+- Use `currentColor` for the stroke so it matches the page theme
+- No modifications needed—just include it as-is
 
 # Technical Constraints
 
@@ -64,5 +54,3 @@ This ensures no gaps appear at the bottom of the page.
 - Monospace fonts
 - Em-dashes
 - Reporting raw metrics ("31 commits") — synthesize instead
-- Animations or transitions on the doodle
-- Abstract shapes, blobs, or unrecognizable doodles
