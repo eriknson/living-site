@@ -5,15 +5,21 @@ alwaysApply: true
 
 # Daily Doodle
 
-Include a small hand-drawn illustration above "Erik's Website" that captures the vibe.
+Small hand-drawn illustration above "Erik's Website". Must be recognizable and cute.
 
-- Synthesize the data: weather, season, music mood, work energy → pick a simple scene
-- Examples: window with rain + coffee cup, clouds over a horizon, laptop with steam rising, sun and a winding path
-- Hand-drawn aesthetic: inline SVG, wobbly imperfect lines, stroke-linecap/linejoin round, 1.5-2px strokes
-- Minimal: line work over fills, one or two colors, 10-20 path commands max
-- Size: ~128-196px wide, left-aligned above header, feels like a margin sketch
+**Examples but feel free to remix based on the data:**
+- Coffee cup with steam (cozy/focused)
+- Window with weather outside (rain drops, sun, snow)
+- Laptop, thinking, research, or desk scene
+- Headphones or vinyl record (music)
+- Sun, moon, clouds, snow, storm (time/weather)
+- Small plant or candle or seasonal object (calm vibes)
 
-This should feel like a quick pen doodle someone made while thinking about their week.
+**Style rules:**
+- Inline SVG, stroke only (no fills), stroke-width 1.5-2px, round linecap/linejoin
+- Slightly wobbly lines (hand-drawn feel), but clearly recognizable objects
+- One color (currentColor), ~100-150px wide, centered above header
+- No animations, no abstract shapes, no blobs, no gradients
 
 # Technical Constraints
 
@@ -58,3 +64,5 @@ This ensures no gaps appear at the bottom of the page.
 - Monospace fonts
 - Em-dashes
 - Reporting raw metrics ("31 commits") — synthesize instead
+- Animations or transitions on the doodle
+- Abstract shapes, blobs, or unrecognizable doodles
