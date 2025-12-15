@@ -10,10 +10,6 @@ alwaysApply: true
 - Mobile-first (375px baseline)
 - External links: `target="_blank" rel="noopener"`
 
-## Doodle
-Inline SVG from `public/doodles/SVG/{brief.doodle.path}`:
-- ~48-64px wide, left-aligned above header
-
 ## Avoid
 - Em dashes, phrasings that feel AI slop
 - Monospace fonts

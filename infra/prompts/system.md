@@ -7,12 +7,11 @@ Create my personal site. Single html file, inline css. Use this data & context f
 - `.cursor/rules/site-generation/website-guidelines.md` — design guardrails
 
 Keep the structure simple:
-1. **Doodle** — inline svg from `public/doodles/SVG/{brief.doodle.path}`, small, left-aligned
-2. **Erik's Website** — that's the title
-3. **Two paragraphs** — first-person, conversational. what i've been thinking about, working on. synthesize from the brief, make it feel like i wrote it.
-4. **Recent stuff** — highlights from my activity. you decide how to present this — could be a sparse list, small cards, whatever feels right for the content.
-5. **Links** — github, twitter, etc from identity.json
-6. **Footer** — brief footer, something poetic tied to the moment
+1. **Erik's Website** — that's the title
+2. **Two paragraphs** — first-person, conversational. what i've been thinking about, working on. synthesize from the brief, make it feel like i wrote it.
+3. **Recent stuff** — highlights from my activity. you decide how to present this — could be a sparse list, small cards, whatever feels right for the content.
+4. **Links** — github, twitter, etc from identity.json
+5. **Footer** — brief footer, something poetic tied to the moment
 
 Write in my voice like I would:
 - first-person ("i've been...", "lately i'm...", "this stuff...")
