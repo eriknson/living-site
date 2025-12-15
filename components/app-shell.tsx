@@ -26,8 +26,8 @@ function AppContent() {
   const { manifest, currentModel, currentDate, currentTimestamp, isLoading, setModel } = useManifest();
   // Track which iframes have loaded
   const [loadedPaths, setLoadedPaths] = useState<Set<string>>(new Set());
-  // Ref to the container for focus management
-  const containerRef = useRef<HTMLDivElement>(null);
+  // Store refs to all iframes by path
+  const iframeRefs = useRef<Map<string, HTMLIFrameElement>>(new Map());
 
   const { buildPaths } = useMemo(
     () => getBatchInfo(manifest, currentDate, currentTimestamp),
@@ -52,9 +52,26 @@ function AppContent() {
   useEffect(() => {
     if (prevBatchKeyRef.current !== batchKey) {
       setLoadedPaths(new Set());
+      iframeRefs.current.clear();
       prevBatchKeyRef.current = batchKey;
     }
   }, [batchKey]);
+
+  // Focus the active iframe when it changes to ensure scroll works
+  useEffect(() => {
+    if (!activePath) return;
+    
+    // Small delay to ensure DOM is updated
+    const timer = setTimeout(() => {
+      const activeIframe = iframeRefs.current.get(activePath);
+      if (activeIframe) {
+        // Focus the iframe to enable scroll interaction
+        activeIframe.focus();
+      }
+    }, 50);
+    
+    return () => clearTimeout(timer);
+  }, [activePath]);
 
   // Handle iframe load
   const handleIframeLoad = useCallback((path: string) => {
@@ -63,6 +80,15 @@ function AppContent() {
       next.add(path);
       return next;
     });
+  }, []);
+
+  // Store iframe ref
+  const setIframeRef = useCallback((path: string, el: HTMLIFrameElement | null) => {
+    if (el) {
+      iframeRefs.current.set(path, el);
+    } else {
+      iframeRefs.current.delete(path);
+    }
   }, []);
 
   // Check if the active iframe is loaded
@@ -80,10 +106,7 @@ function AppContent() {
       />
       
       {/* Content area - fills remaining space */}
-      <div 
-        ref={containerRef}
-        className="flex-1 relative min-h-0 bg-neutral-100 dark:bg-[#0a0a0a] overflow-hidden"
-      >
+      <div className="flex-1 relative min-h-0 bg-neutral-100 dark:bg-[#0a0a0a] overflow-hidden">
         {hasBuilds ? (
           <>
             {/* Render all iframes but only show the active one */}
@@ -92,16 +115,17 @@ function AppContent() {
               return (
                 <iframe
                   key={path}
+                  ref={(el) => setIframeRef(path, el)}
                   src={`/${path}`}
                   title={`Site built by ${getModelDisplayName(model)}`}
                   className="absolute inset-0 w-full h-full border-0"
+                  tabIndex={isActive ? 0 : -1}
                   style={{
-                    // Use visibility + z-index for robust show/hide
-                    // visibility: hidden still allows the iframe to load and maintain state
-                    visibility: isActive ? 'visible' : 'hidden',
+                    // Active iframe: fully visible and interactive
+                    // Hidden iframes: invisible but still loaded in background
+                    opacity: isActive ? 1 : 0,
+                    pointerEvents: isActive ? 'auto' : 'none',
                     zIndex: isActive ? 1 : 0,
-                    // Ensure the iframe can scroll
-                    overflow: 'auto',
                   }}
                   onLoad={() => handleIframeLoad(path)}
                 />
