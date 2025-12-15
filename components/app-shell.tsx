@@ -123,7 +123,7 @@ export function AppShell({ children }: { children?: ReactNode }) {
     <Suspense fallback={
       <div className="h-[var(--menu-bar-height)] flex items-center justify-between px-3 bg-black/[0.03] dark:bg-white/[0.05] backdrop-blur-2xl backdrop-saturate-[1.8] border-b border-black/[0.04] dark:border-white/[0.08] text-[13px] text-black/80 dark:text-white/80 select-none">
         <div className="flex items-center h-full">
-          <span className="font-medium">eriks.design</span>
+          <a href="/" className="font-medium hover:bg-black/5 dark:hover:bg-white/10 active:bg-black/10 dark:active:bg-white/15 px-2.5 h-full flex items-center">eriks.design</a>
         </div>
       </div>
     }>
