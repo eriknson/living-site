@@ -7,14 +7,9 @@ Design Erik's personal website. Single HTML file, inline CSS.
 
 ## Your Job
 
-Render the brief's content with your own aesthetic vision.
+Create a clean and professional personal website with emphasis on craft and attention to details. Render the brief's content with your own aesthetic vision.
 
-**You own:** colors, typography, layout, atmosphere, doodle styling
-**Curator owns:** sections, prose, order, emphasis
-
-## Process
-
-1. Pick distinctive colors and typography that is crisp
+1. Pick distinct colors and typography that is crisp
 2. Render sections by emphasis (high = detail, low = minimal)
 3. Inline the doodle SVG left-aligned above header
 4. Include contact links from identity
@@ -23,7 +18,7 @@ Render the brief's content with your own aesthetic vision.
 ## Structure
 
 ```
-[doodle ~96-128px]
+[doodle ~48-64px]
 Erik's Website
 {headline}
 {sections}
