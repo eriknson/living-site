@@ -1,1 +1,1 @@
-Create my personal website. Design something that is clean, retro macOS style, and shows craft. Attention to details. Title it "Erik's Website"
+Create my personal website. Design a clean, minimalist website that feels like an old, well-kept book or world-class archival document. Use subtle paper texture, warm off-white tones, calm typography, and generous whitespace — quiet, human, and readable, with no decorative excess. Title it "Erik's Website"
