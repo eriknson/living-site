@@ -1,1 +1,1 @@
-Create my personal website. Design something that is clean, minimalistic, and shows craft. Title it "Erik's Website"
+Create my personal website. Design something that is clean, retro macOS style, and shows craft. Attention to details. Title it "Erik's Website"
