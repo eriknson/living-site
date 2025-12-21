@@ -301,6 +301,7 @@ jobs:
           cp data/fetch-summary.json /tmp/clean-gen/data/fetch-summary.json
           cp data/brief.json /tmp/clean-gen/data/brief.json
           # Copy fresh reference.html (fetched from live site)
+          mkdir -p /tmp/clean-gen/fly-context
           cp fly-context/reference.html /tmp/clean-gen/fly-context/reference.html
           echo "Fresh data, brief, and reference.html copied to worktree"
 
@@ -560,11 +561,10 @@ jobs:
           git config --local user.email "action@github.com"
           git config --local user.name "GitHub Action"
           
-          # Stage all build files
+          # Stage all build files (fly-context is gitignored, handled via artifacts)
           git add data/latest.json
           git add data/fetch-summary.json
           git add data/brief.json
-          git add fly-context/reference.html
           git add public/data/
           git add public/builds/
           git add generated/
@@ -622,15 +622,19 @@ jobs:
 
   # Job 5: Deploy Fly agent with fresh reference.html
   deploy-fly:
-    needs: [commit]
+    needs: [aggregate, commit]
     if: inputs.dry_run != 'true'
     runs-on: ubuntu-latest
     timeout-minutes: 10
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
+
+      - name: Download data artifact
+        uses: actions/download-artifact@v4
         with:
-          ref: main  # Get the just-committed changes with fresh reference.html
+          name: aggregated-data
+          path: artifacts/
 
       - name: Setup Fly CLI
         uses: superfly/flyctl-actions/setup-flyctl@master
@@ -639,7 +643,7 @@ jobs:
         run: |
           # Copy fly-context files to infra/fly-agent for Docker build
           mkdir -p infra/fly-agent/fly-context
-          cp fly-context/reference.html infra/fly-agent/fly-context/
+          cp artifacts/fly-context/reference.html infra/fly-agent/fly-context/
           cp fly-context/today.json infra/fly-agent/fly-context/ 2>/dev/null || echo '{"mood":"focused"}' > infra/fly-agent/fly-context/today.json
           echo "Prepared fly-context for deployment"
           ls -la infra/fly-agent/fly-context/
