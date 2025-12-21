@@ -1,15 +1,21 @@
 /**
- * POST /api/generate - Generate site live via Fly.io agent runner
+ * POST /api/generate - Generate site via Cursor Cloud Agents API
  *
- * Minimal context approach: just reference.html + today.json for fast generation.
+ * Flow:
+ * 1. Launch cloud agent on the repo
+ * 2. Poll for completion + conversation (streaming status + messages to client)
+ * 3. Fetch generated file from branch
+ * 4. Cleanup branch and agent
+ * 5. Return HTML
  */
 
 import { NextRequest } from "next/server";
 import { readFile } from "fs/promises";
 import path from "path";
 
-const FLY_AGENT_URL =
-  process.env.FLY_AGENT_URL || "https://living-site-agent.fly.dev";
+const CURSOR_API_KEY = process.env.CURSOR_API_KEY;
+const GITHUB_TOKEN = process.env.GITHUB_TOKEN;
+const GITHUB_REPO = process.env.GITHUB_REPO || "eriknson/living-site";
 
 // Rate limiting
 let lastGeneration = 0;
@@ -17,55 +23,159 @@ const RATE_LIMIT_MS = 60 * 1000; // 1 minute between generations
 
 // In-flight generation tracking
 let generationInProgress = false;
+let currentAgentId: string | null = null;
 
-interface TodayContext {
+interface Brief {
   mood?: string;
-  weather?: string;
+  intro?: string;
+  currently?: Array<{ label: string; value: string }>;
   listening?: string;
-  note?: string;
+  footer?: string;
+  weather_note?: string;
 }
 
-async function loadPromptContext(): Promise<string> {
-  const cwd = process.cwd();
+interface ConversationMessage {
+  id: string;
+  type: "user_message" | "assistant_message";
+  text: string;
+}
 
-  // Load today's minimal context
-  let today: TodayContext = {};
+async function readJSON<T>(filePath: string): Promise<T> {
   try {
-    const todayRaw = await readFile(
-      path.join(cwd, "fly-context/today.json"),
-      "utf-8"
-    );
-    today = JSON.parse(todayRaw);
+    const content = await readFile(filePath, "utf-8");
+    return JSON.parse(content);
   } catch {
-    // Use defaults
+    return {} as T;
   }
+}
 
-  // Super minimal prompt - reference.html has all the stable info
+async function loadReferenceHtml(): Promise<string> {
+  const cwd = process.cwd();
+  
+  // Try local file first (for local dev)
+  try {
+    return await readFile(path.join(cwd, "fly-context/reference.html"), "utf-8");
+  } catch {
+    // Fallback: fetch from live site
+    try {
+      const response = await fetch("https://eriks.design/", {
+        headers: { "User-Agent": "living-site-generator" },
+      });
+      if (response.ok) {
+        return await response.text();
+      }
+    } catch {
+      // Ignore fetch errors
+    }
+  }
+  
+  // Final fallback: minimal reference
+  return `<!DOCTYPE html>
+<html lang="en">
+<head><title>Erik</title></head>
+<body>
+  <h1>Erik</h1>
+  <p>Product designer building with AI. Based in Stockholm, Sweden.</p>
+  <p>Links: <a href="https://x.com/flowstated">X</a>, <a href="https://github.com/eriknson">GitHub</a>, <a href="https://linkedin.com/in/eriknson">LinkedIn</a></p>
+</body>
+</html>`;
+}
+
+async function loadPromptContext(userDirection?: string | null): Promise<string> {
+  const cwd = process.cwd();
+  const brief = await readJSON<Brief>(path.join(cwd, "data/brief.json"));
+  const referenceHtml = await loadReferenceHtml();
+
+  const direction = userDirection?.trim() || "Create something fresh and surprising";
+
+  // Embed reference HTML directly in prompt so agent doesn't need to find files
   const prompt = `Create a fresh variation of Erik's personal site.
 
-Read context/reference.html for the content and design reference, then write generated/live.html.
+## Reference HTML (the current live site - use this as your content baseline)
+\`\`\`html
+${referenceHtml}
+\`\`\`
 
-Today's context:
-- Mood: ${today.mood || "focused"}
-- Weather: ${today.weather || "Stockholm"}
-${today.listening ? `- Listening: ${today.listening}` : ""}
-${today.note ? `- Note: ${today.note}` : ""}
+## Creative direction
+${direction}
 
-Requirements:
-- Single self-contained HTML with embedded CSS
-- Keep the same content/links from reference.html
-- Create a fresh design interpretation (vary layout, colors, typography)
-- Support dark mode via prefers-color-scheme
-- Mobile responsive`;
+## Today's context
+- Mood: ${brief.mood || "focused"}
+${brief.weather_note ? `- Weather: ${brief.weather_note}` : ""}
+${brief.listening ? `- Listening: ${brief.listening}` : ""}
+
+## Task
+Write generated/live.html with a fresh design interpretation. Vary layout, typography, colors.
+Keep the same content and links from the reference above.
+
+## Constraints
+- Single HTML with embedded CSS
+- Mobile responsive, dark mode via prefers-color-scheme
+- No external dependencies
+
+## Avoid
+- AI slop (purple gradients, Inter font)
+- Em dashes
+
+## IMPORTANT: Isolation
+Do NOT read or look at any files in generated/ or public/builds/.
+Those contain outputs from other agents and previous runs.
+Start fresh from the reference HTML provided above. Be original.`;
 
   return prompt;
 }
 
+// Helper to make Cursor API requests
+async function cursorFetch(endpoint: string, options: RequestInit = {}) {
+  const response = await fetch(`https://api.cursor.com${endpoint}`, {
+    ...options,
+    headers: {
+      Authorization: `Bearer ${CURSOR_API_KEY}`,
+      "Content-Type": "application/json",
+      ...options.headers,
+    },
+  });
+  return response;
+}
+
+// Helper to make GitHub API requests
+async function githubFetch(endpoint: string, options: RequestInit = {}) {
+  const response = await fetch(`https://api.github.com${endpoint}`, {
+    ...options,
+    headers: {
+      Authorization: `token ${GITHUB_TOKEN}`,
+      Accept: "application/vnd.github.v3+json",
+      ...options.headers,
+    },
+  });
+  return response;
+}
+
+// Create SSE message
+function sseMessage(data: object): string {
+  return `data: ${JSON.stringify(data)}\n\n`;
+}
+
+// Extract a short summary from assistant message
+function summarizeMessage(text: string): string {
+  // Get first line or first 100 chars
+  const firstLine = text.split("\n")[0].trim();
+  if (firstLine.length <= 100) return firstLine;
+  return firstLine.slice(0, 97) + "...";
+}
+
 export async function POST(request: NextRequest) {
-  // Check if Fly agent URL is configured
-  if (!FLY_AGENT_URL) {
+  // Check configuration
+  if (!CURSOR_API_KEY) {
     return new Response(
-      JSON.stringify({ error: "FLY_AGENT_URL not configured" }),
+      JSON.stringify({ error: "CURSOR_API_KEY not configured" }),
+      { status: 500, headers: { "Content-Type": "application/json" } }
+    );
+  }
+
+  if (!GITHUB_TOKEN) {
+    return new Response(
+      JSON.stringify({ error: "GITHUB_TOKEN not configured" }),
       { status: 500, headers: { "Content-Type": "application/json" } }
     );
   }
@@ -96,151 +206,201 @@ export async function POST(request: NextRequest) {
   lastGeneration = now;
   generationInProgress = true;
 
-  try {
-    // #region agent log
-    const postStartTime = Date.now();
-    fetch('http://127.0.0.1:7242/ingest/7b82bf8a-7c03-4697-b719-1e325f7e9340',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'route.ts:POST:entry',message:'POST /api/generate started',data:{},timestamp:postStartTime,sessionId:'debug-session',hypothesisId:'E'})}).catch(()=>{});
-    // #endregion
+  // Create SSE stream
+  const encoder = new TextEncoder();
+  const stream = new ReadableStream({
+    async start(controller) {
+      const send = (data: object) => {
+        controller.enqueue(encoder.encode(sseMessage(data)));
+      };
 
-    // Load minimal prompt context
-    const prompt = await loadPromptContext();
-
-    // #region agent log
-    const flyFetchStart = Date.now();
-    fetch('http://127.0.0.1:7242/ingest/7b82bf8a-7c03-4697-b719-1e325f7e9340',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'route.ts:POST:flyFetchStart',message:'Starting fetch to Fly.io',data:{promptMs:flyFetchStart-postStartTime},timestamp:flyFetchStart,sessionId:'debug-session',hypothesisId:'E'})}).catch(()=>{});
-    // #endregion
-
-    // Send to Fly.io agent runner
-    const flyResponse = await fetch(FLY_AGENT_URL, {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ prompt }),
-    });
-
-    // #region agent log
-    fetch('http://127.0.0.1:7242/ingest/7b82bf8a-7c03-4697-b719-1e325f7e9340',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'route.ts:POST:flyResponseReceived',message:'Fly.io response headers received',data:{flyFetchMs:Date.now()-flyFetchStart,status:flyResponse.status,ok:flyResponse.ok},timestamp:Date.now(),sessionId:'debug-session',hypothesisId:'E'})}).catch(()=>{});
-    // #endregion
-
-    if (!flyResponse.ok) {
-      generationInProgress = false;
-      const errorText = await flyResponse.text();
-      return new Response(
-        JSON.stringify({ error: `Fly agent error: ${errorText}` }),
-        {
-          status: flyResponse.status,
-          headers: { "Content-Type": "application/json" },
-        }
-      );
-    }
-
-    // Check if response has body to stream
-    if (!flyResponse.body) {
-      generationInProgress = false;
-      return new Response(
-        JSON.stringify({ error: "No response stream from Fly agent" }),
-        { status: 500, headers: { "Content-Type": "application/json" } }
-      );
-    }
-
-    // Create a pass-through stream that cleans up when done
-    const reader = flyResponse.body.getReader();
-    const encoder = new TextEncoder();
-    const decoder = new TextDecoder();
-    // #region agent log
-    let firstChunkTime: number | null = null;
-    let chunkCount = 0;
-    // #endregion
-
-    const stream = new ReadableStream({
-      async start(controller) {
+      try {
+        // Parse user's creative direction
+        let userDirection: string | null = null;
         try {
-          while (true) {
-            const { done, value } = await reader.read();
-            if (done) break;
-            // #region agent log
-            chunkCount++;
-            if (!firstChunkTime) {
-              firstChunkTime = Date.now();
-              const text = decoder.decode(value, { stream: true });
-              fetch('http://127.0.0.1:7242/ingest/7b82bf8a-7c03-4697-b719-1e325f7e9340',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'route.ts:POST:firstChunk',message:'First chunk from Fly.io',data:{msFromFetchStart:firstChunkTime-flyFetchStart,chunkSize:value.length,preview:text.slice(0,200)},timestamp:firstChunkTime,sessionId:'debug-session',hypothesisId:'E'})}).catch(()=>{});
-            }
-            // #endregion
-            controller.enqueue(value);
-          }
-        } catch (error) {
-          console.error("Stream error:", error);
-          controller.enqueue(
-            encoder.encode(
-              `data: ${JSON.stringify({
-                type: "error",
-                message:
-                  error instanceof Error ? error.message : "Stream error",
-              })}\n\n`
-            )
-          );
-        } finally {
-          // #region agent log
-          fetch('http://127.0.0.1:7242/ingest/7b82bf8a-7c03-4697-b719-1e325f7e9340',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'route.ts:POST:streamComplete',message:'Stream from Fly.io complete',data:{totalMs:Date.now()-flyFetchStart,chunkCount,msToFirstChunk:firstChunkTime?firstChunkTime-flyFetchStart:null},timestamp:Date.now(),sessionId:'debug-session',hypothesisId:'E,G'})}).catch(()=>{});
-          // #endregion
-          generationInProgress = false;
-          controller.close();
+          const body = await request.json();
+          userDirection = body.prompt || null;
+        } catch {
+          // No body or invalid JSON
         }
-      },
-      cancel() {
-        generationInProgress = false;
-        reader.cancel();
-      },
-    });
 
-    return new Response(stream, {
-      headers: {
-        "Content-Type": "text/event-stream",
-        "Cache-Control": "no-cache",
-        Connection: "keep-alive",
-      },
-    });
-  } catch (error) {
-    console.error("Generation error:", error);
-    generationInProgress = false;
-    return new Response(
-      JSON.stringify({
-        error: error instanceof Error ? error.message : "Internal server error",
-      }),
-      { status: 500, headers: { "Content-Type": "application/json" } }
-    );
-  }
+        const prompt = await loadPromptContext(userDirection);
+        const branchName = `cursor/live-gen-${Date.now()}`;
+
+        send({ type: "status", status: "launching", message: "Launching cloud agent..." });
+
+        // 1. Launch cloud agent
+        const createResponse = await cursorFetch("/v0/agents", {
+          method: "POST",
+          body: JSON.stringify({
+            prompt: { text: prompt },
+            source: {
+              repository: `https://github.com/${GITHUB_REPO}`,
+              ref: "main",
+            },
+            target: {
+              branchName,
+              autoCreatePr: false,
+            },
+          }),
+        });
+
+        if (!createResponse.ok) {
+          const error = await createResponse.json();
+          throw new Error(error.error?.message || `Failed to create agent: ${createResponse.status}`);
+        }
+
+        const agent = await createResponse.json();
+        currentAgentId = agent.id;
+
+        send({
+          type: "status",
+          status: "running",
+          message: "Agent is starting...",
+          agentId: agent.id,
+          agentUrl: agent.target?.url,
+        });
+
+        // 2. Poll for completion + conversation
+        let status = agent.status;
+        let pollCount = 0;
+        const maxPolls = 120; // 6 minutes max (3s intervals)
+        const seenMessageIds = new Set<string>();
+
+        while (status === "CREATING" || status === "RUNNING") {
+          if (pollCount >= maxPolls) {
+            throw new Error("Generation timed out");
+          }
+
+          await new Promise((resolve) => setTimeout(resolve, 3000));
+          pollCount++;
+
+          // Poll status
+          const statusResponse = await cursorFetch(`/v0/agents/${agent.id}`);
+          if (!statusResponse.ok) {
+            throw new Error("Failed to get agent status");
+          }
+
+          const statusData = await statusResponse.json();
+          status = statusData.status;
+
+          // Poll conversation for new messages
+          try {
+            const convResponse = await cursorFetch(`/v0/agents/${agent.id}/conversation`);
+            if (convResponse.ok) {
+              const convData = await convResponse.json();
+              const messages = (convData.messages || []) as ConversationMessage[];
+
+              // Send new assistant messages as steps
+              for (const msg of messages) {
+                if (msg.type === "assistant_message" && !seenMessageIds.has(msg.id)) {
+                  seenMessageIds.add(msg.id);
+                  send({
+                    type: "step",
+                    id: msg.id,
+                    text: msg.text,
+                    summary: summarizeMessage(msg.text),
+                  });
+                }
+              }
+            }
+          } catch {
+            // Conversation fetch failed, continue with status polling
+          }
+
+          // Send status update
+          send({
+            type: "status",
+            status: status.toLowerCase(),
+            message: status === "RUNNING" ? `Agent working... (${pollCount * 3}s)` : `Status: ${status}`,
+            elapsed: pollCount * 3,
+          });
+        }
+
+        if (status === "ERROR" || status === "EXPIRED") {
+          throw new Error(`Agent failed with status: ${status}`);
+        }
+
+        send({ type: "status", status: "fetching", message: "Fetching generated file..." });
+
+        // 3. Fetch generated file from branch
+        const fileResponse = await githubFetch(
+          `/repos/${GITHUB_REPO}/contents/generated/live.html?ref=${branchName}`,
+          {
+            headers: {
+              Accept: "application/vnd.github.raw",
+            },
+          }
+        );
+
+        if (!fileResponse.ok) {
+          throw new Error(`Failed to fetch generated file: ${fileResponse.status}`);
+        }
+
+        const html = await fileResponse.text();
+
+        send({ type: "status", status: "cleanup", message: "Cleaning up..." });
+
+        // 4. Cleanup: delete branch and agent (fire and forget)
+        Promise.all([
+          githubFetch(`/repos/${GITHUB_REPO}/git/refs/heads/${branchName}`, {
+            method: "DELETE",
+          }).catch(() => {}),
+          cursorFetch(`/v0/agents/${agent.id}`, {
+            method: "DELETE",
+          }).catch(() => {}),
+        ]).catch(() => {});
+
+        // 5. Send complete with HTML
+        send({ type: "complete", html, message: "Generation complete!" });
+
+      } catch (error) {
+        console.error("Generation error:", error);
+        send({
+          type: "error",
+          message: error instanceof Error ? error.message : "Generation failed",
+        });
+      } finally {
+        generationInProgress = false;
+        currentAgentId = null;
+        controller.close();
+      }
+    },
+    cancel() {
+      generationInProgress = false;
+      // Try to stop the agent if it's running
+      if (currentAgentId) {
+        cursorFetch(`/v0/agents/${currentAgentId}/stop`, { method: "POST" }).catch(() => {});
+        currentAgentId = null;
+      }
+    },
+  });
+
+  return new Response(stream, {
+    headers: {
+      "Content-Type": "text/event-stream",
+      "Cache-Control": "no-cache",
+      Connection: "keep-alive",
+    },
+  });
 }
 
 // GET - Check if generation is available
 export async function GET() {
-  const hasFlyUrl = !!FLY_AGENT_URL;
+  const hasApiKey = !!CURSOR_API_KEY;
+  const hasGithubToken = !!GITHUB_TOKEN;
 
   const now = Date.now();
   const cooldownRemaining = Math.max(0, RATE_LIMIT_MS - (now - lastGeneration));
 
-  // Optionally check Fly agent health
-  let flyReady = false;
-  if (hasFlyUrl) {
-    try {
-      const healthCheck = await fetch(`${FLY_AGENT_URL}/health`, {
-        method: "GET",
-        signal: AbortSignal.timeout(3000), // 3 second timeout
-      });
-      flyReady = healthCheck.ok;
-    } catch {
-      flyReady = false;
-    }
-  }
-
   return new Response(
     JSON.stringify({
       available:
-        hasFlyUrl &&
-        flyReady &&
+        hasApiKey &&
+        hasGithubToken &&
         cooldownRemaining === 0 &&
         !generationInProgress,
-      hasApiKey: hasFlyUrl, // Keep for backwards compatibility
-      flyReady,
+      configured: hasApiKey && hasGithubToken,
       cooldownRemaining: Math.ceil(cooldownRemaining / 1000),
       inProgress: generationInProgress,
     }),
