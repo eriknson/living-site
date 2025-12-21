@@ -296,34 +296,23 @@ jobs:
 
       - name: Copy fresh data to worktree
         run: |
-          # Copy the freshly aggregated data and curator output to the worktree
-          cp data/latest.json /tmp/clean-gen/data/latest.json
-          cp data/fetch-summary.json /tmp/clean-gen/data/fetch-summary.json
+          # Copy only what the generator needs: brief.json + reference.html
           cp data/brief.json /tmp/clean-gen/data/brief.json
-          # Copy fresh reference.html (fetched from live site)
           mkdir -p /tmp/clean-gen/fly-context
           cp fly-context/reference.html /tmp/clean-gen/fly-context/reference.html
-          echo "Fresh data, brief, and reference.html copied to worktree"
+          echo "Copied brief.json and reference.html to worktree"
 
       - name: Build generation prompt
         run: |
-          # Read brief.json and identity.json to inline them
-          BRIEF=$(cat /tmp/clean-gen/data/brief.json)
-          IDENTITY=$(cat /tmp/clean-gen/data/identity.json)
-          
           cat > /tmp/generation-prompt.txt << PROMPT_END
           $(cat /tmp/clean-gen/infra/prompts/system.md)
 
           ---
 
-          ## Editorial Brief (today's context)
-          $BRIEF
+          Reference: fly-context/reference.html
+          Today: data/brief.json
 
-          ## Identity
-          $IDENTITY
-
-          Read fly-context/reference.html for design reference.
-          Create generated/${{ matrix.model }}.html
+          Output: generated/${{ matrix.model }}.html
           PROMPT_END
           
           echo "=== Generation Prompt ==="
@@ -355,7 +344,8 @@ jobs:
           # Debug: Check if required files exist
           echo "Checking required files..."
           ls -la infra/prompts/system.md || echo "system.md NOT FOUND"
-          ls -la data/latest.json || echo "latest.json NOT FOUND"
+          ls -la data/brief.json || echo "brief.json NOT FOUND"
+          ls -la fly-context/reference.html || echo "reference.html NOT FOUND"
           
           # Run cursor-agent and capture exit code properly
           set -o pipefail
@@ -620,39 +610,3 @@ jobs:
             fi
           done
 
-  # Job 5: Deploy Fly agent with fresh reference.html
-  deploy-fly:
-    needs: [aggregate, commit]
-    if: inputs.dry_run != 'true'
-    runs-on: ubuntu-latest
-    timeout-minutes: 10
-    steps:
-      - name: Checkout repository
-        uses: actions/checkout@v4
-
-      - name: Download data artifact
-        uses: actions/download-artifact@v4
-        with:
-          name: aggregated-data
-          path: artifacts/
-
-      - name: Setup Fly CLI
-        uses: superfly/flyctl-actions/setup-flyctl@master
-
-      - name: Prepare Fly agent context
-        run: |
-          # Copy fly-context files to infra/fly-agent for Docker build
-          mkdir -p infra/fly-agent/fly-context
-          cp artifacts/fly-context/reference.html infra/fly-agent/fly-context/
-          cp fly-context/today.json infra/fly-agent/fly-context/ 2>/dev/null || echo '{"mood":"focused"}' > infra/fly-agent/fly-context/today.json
-          echo "Prepared fly-context for deployment"
-          ls -la infra/fly-agent/fly-context/
-
-      - name: Deploy Fly agent
-        working-directory: infra/fly-agent
-        env:
-          FLY_API_TOKEN: ${{ secrets.FLY_API_TOKEN }}
-        run: |
-          echo "Deploying Fly agent with fresh reference.html..."
-          flyctl deploy --remote-only
-          echo "✓ Fly agent deployed"

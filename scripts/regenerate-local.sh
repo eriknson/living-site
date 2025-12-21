@@ -10,8 +10,8 @@ echo "Model: $MODEL"
 echo "Date: $DATE"
 echo ""
 
-# Skip aggregation - use existing committed data
-echo "Using existing data/latest.json (skipping aggregation)"
+# Skip aggregation - use existing committed data for curator
+echo "Using existing data/latest.json for curator (skipping aggregation)"
 echo ""
 
 # Run curator agent if brief.json doesn't exist or is older than latest.json
@@ -27,23 +27,17 @@ fi
 # Clear existing build for this model
 rm -f "generated/${MODEL}.html"
 
-# Build the prompt (inline system.md + brief + identity, reference HTML only)
+# Build the prompt
 SYSTEM_PROMPT=$(cat infra/prompts/system.md)
-BRIEF=$(cat data/brief.json)
-IDENTITY=$(cat data/identity.json)
 
 PROMPT="${SYSTEM_PROMPT}
 
 ---
 
-## Editorial Brief (today's context)
-${BRIEF}
+Reference: fly-context/reference.html
+Today: data/brief.json
 
-## Identity
-${IDENTITY}
-
-Read fly-context/reference.html for design reference.
-Create generated/${MODEL}.html"
+Output: generated/${MODEL}.html"
 
 echo "=== Running cursor-agent ==="
 cursor-agent -p --force --model "$MODEL" --output-format stream-json "$PROMPT" > /tmp/build-output.json 2>&1 || true
