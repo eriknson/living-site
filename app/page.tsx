@@ -13,11 +13,6 @@ export default function HomePage() {
 
       {/* Main Content */}
       <main className="max-w-[580px] mx-auto px-6 py-16 md:py-24">
-        {/* Name */}
-        <h1 className="text-[28px] font-semibold mb-6 text-black/90 dark:text-white/90">
-          Erik
-        </h1>
-
         {/* Bio paragraphs - conversational style like leerob/anyblockers */}
         <div className="space-y-5 text-[17px] leading-relaxed text-black/70 dark:text-white/70 mb-10">
           <p>
@@ -82,18 +77,20 @@ export default function HomePage() {
           This site has two experimental modes:{" "}
           <Link
             href="/agent"
-            className="text-black/60 dark:text-white/60 underline underline-offset-3 decoration-black/20 dark:decoration-white/20 hover:decoration-black/40 dark:hover:decoration-white/40 transition-colors"
+            className="font-mono text-[13px] px-1.5 py-0.5 rounded bg-black/[0.04] dark:bg-white/[0.06] text-black/70 dark:text-white/70 hover:bg-black/[0.08] dark:hover:bg-white/[0.1] hover:text-black/90 dark:hover:text-white/90 transition-colors"
+            style={{ fontFamily: "ui-monospace, 'SF Mono', SFMono-Regular, Menlo, Monaco, Consolas, monospace" }}
           >
             /agent
           </Link>{" "}
-          shows daily AI-generated variations, and{" "}
+          shows daily versions built by Cursor CLI on GitHub Actions, and{" "}
           <Link
             href="/new"
-            className="text-black/60 dark:text-white/60 underline underline-offset-3 decoration-black/20 dark:decoration-white/20 hover:decoration-black/40 dark:hover:decoration-white/40 transition-colors"
+            className="font-mono text-[13px] px-1.5 py-0.5 rounded bg-black/[0.04] dark:bg-white/[0.06] text-black/70 dark:text-white/70 hover:bg-black/[0.08] dark:hover:bg-white/[0.1] hover:text-black/90 dark:hover:text-white/90 transition-colors"
+            style={{ fontFamily: "ui-monospace, 'SF Mono', SFMono-Regular, Menlo, Monaco, Consolas, monospace" }}
           >
             /new
           </Link>{" "}
-          regenerates live in ~15 seconds.
+          builds a version ad-hoc.
         </p>
       </main>
 
