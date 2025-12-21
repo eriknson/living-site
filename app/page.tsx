@@ -1,7 +1,44 @@
 "use client";
 
 import Link from "next/link";
+import { Suspense } from "react";
+import { useSearchParams } from "next/navigation";
 import { GlobalMenuBar } from "@/components/global-menu-bar";
+
+function ExperimentalModes() {
+  const searchParams = useSearchParams();
+  const isReference = searchParams.get("reference") === "true";
+
+  if (isReference) return null;
+
+  return (
+    <p className="text-[15px] text-black/50 dark:text-white/50 leading-relaxed">
+      This site has two experimental modes:{" "}
+      <Link
+        href="/agent"
+        className="font-mono text-[13px] px-1.5 py-0.5 rounded bg-black/[0.04] dark:bg-white/[0.06] text-black/70 dark:text-white/70 hover:bg-black/[0.08] dark:hover:bg-white/[0.1] hover:text-black/90 dark:hover:text-white/90 transition-colors"
+        style={{
+          fontFamily:
+            "ui-monospace, 'SF Mono', SFMono-Regular, Menlo, Monaco, Consolas, monospace",
+        }}
+      >
+        /agent
+      </Link>{" "}
+      shows daily versions built by Cursor CLI on GitHub Actions, and{" "}
+      <Link
+        href="/new"
+        className="font-mono text-[13px] px-1.5 py-0.5 rounded bg-black/[0.04] dark:bg-white/[0.06] text-black/70 dark:text-white/70 hover:bg-black/[0.08] dark:hover:bg-white/[0.1] hover:text-black/90 dark:hover:text-white/90 transition-colors"
+        style={{
+          fontFamily:
+            "ui-monospace, 'SF Mono', SFMono-Regular, Menlo, Monaco, Consolas, monospace",
+        }}
+      >
+        /new
+      </Link>{" "}
+      builds a version ad-hoc.
+    </p>
+  );
+}
 
 export default function HomePage() {
   return (
@@ -72,26 +109,10 @@ export default function HomePage() {
           </p>
         </div>
 
-        {/* Experiment section - subtle, part of the flow */}
-        <p className="text-[15px] text-black/50 dark:text-white/50 leading-relaxed">
-          This site has two experimental modes:{" "}
-          <Link
-            href="/agent"
-            className="font-mono text-[13px] px-1.5 py-0.5 rounded bg-black/[0.04] dark:bg-white/[0.06] text-black/70 dark:text-white/70 hover:bg-black/[0.08] dark:hover:bg-white/[0.1] hover:text-black/90 dark:hover:text-white/90 transition-colors"
-            style={{ fontFamily: "ui-monospace, 'SF Mono', SFMono-Regular, Menlo, Monaco, Consolas, monospace" }}
-          >
-            /agent
-          </Link>{" "}
-          shows daily versions built by Cursor CLI on GitHub Actions, and{" "}
-          <Link
-            href="/new"
-            className="font-mono text-[13px] px-1.5 py-0.5 rounded bg-black/[0.04] dark:bg-white/[0.06] text-black/70 dark:text-white/70 hover:bg-black/[0.08] dark:hover:bg-white/[0.1] hover:text-black/90 dark:hover:text-white/90 transition-colors"
-            style={{ fontFamily: "ui-monospace, 'SF Mono', SFMono-Regular, Menlo, Monaco, Consolas, monospace" }}
-          >
-            /new
-          </Link>{" "}
-          builds a version ad-hoc.
-        </p>
+        {/* Experiment section - hidden when ?reference=true */}
+        <Suspense fallback={null}>
+          <ExperimentalModes />
+        </Suspense>
       </main>
 
       {/* Footer */}

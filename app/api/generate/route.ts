@@ -14,7 +14,7 @@ import { readFile } from "fs/promises";
 import path from "path";
 
 const CURSOR_API_KEY = process.env.CURSOR_API_KEY;
-const GITHUB_TOKEN = process.env.GITHUB_TOKEN;
+const GITHUB_TOKEN = process.env.GITHUB_TOKEN || process.env.GITHUB_PAT;
 const GITHUB_REPO = process.env.GITHUB_REPO || "eriknson/living-site";
 
 // Rate limiting

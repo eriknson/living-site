@@ -210,6 +210,9 @@ export function VersionSelector({
           )}>
             New
           </span>
+          <span className="text-[9px] font-medium tracking-wide text-black/40 dark:text-white/40 uppercase bg-black/[0.04] dark:bg-white/[0.05] px-1.5 py-px rounded">
+            Beta
+          </span>
         </span>
       </button>
     </>
@@ -294,6 +297,9 @@ export function VersionSelector({
             <Plus className="h-4 w-4 text-black/50 dark:text-white/50" />
           )}
           <span className={isNew ? "" : "text-black/70 dark:text-white/70"}>New</span>
+          <span className="text-[9px] font-medium tracking-wide text-black/40 dark:text-white/40 uppercase bg-black/[0.04] dark:bg-white/[0.05] px-1.5 py-px rounded">
+            Beta
+          </span>
         </DropdownMenuItem>
       </DropdownMenuContent>
     </DropdownMenu>
