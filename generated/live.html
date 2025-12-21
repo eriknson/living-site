@@ -1,0 +1,468 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Erik</title>
+  <meta name="description" content="Product designer building with AI. Based in Stockholm, Sweden.">
+  <style>
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+
+    :root {
+      --bg: #fffdf8;
+      --text: #2d2a26;
+      --text-soft: #6b6560;
+      --accent: #e85d04;
+      --accent-hover: #d45300;
+      --bubble: #fff4e6;
+      --border: #e8e4dc;
+      --snow: #f0f8ff;
+      --star: #ffd93d;
+    }
+
+    @media (prefers-color-scheme: dark) {
+      :root {
+        --bg: #1a1814;
+        --text: #f5f3ef;
+        --text-soft: #9c9590;
+        --accent: #ff8c42;
+        --accent-hover: #ffa566;
+        --bubble: #2a2520;
+        --border: #3d3830;
+        --snow: #252525;
+        --star: #ffd93d;
+      }
+    }
+
+    @keyframes float {
+      0%, 100% { transform: translateY(0) rotate(0deg); }
+      50% { transform: translateY(-8px) rotate(5deg); }
+    }
+
+    @keyframes twinkle {
+      0%, 100% { opacity: 1; transform: scale(1); }
+      50% { opacity: 0.6; transform: scale(0.8); }
+    }
+
+    @keyframes drift {
+      0% { transform: translateY(-10px) translateX(0); opacity: 0; }
+      10% { opacity: 1; }
+      90% { opacity: 1; }
+      100% { transform: translateY(100vh) translateX(20px); opacity: 0; }
+    }
+
+    body {
+      font-family: Georgia, 'Times New Roman', serif;
+      font-size: 17px;
+      line-height: 1.7;
+      color: var(--text);
+      background: var(--bg);
+      min-height: 100vh;
+      -webkit-font-smoothing: antialiased;
+      overflow-x: hidden;
+    }
+
+    .snowflakes {
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      pointer-events: none;
+      z-index: 0;
+      overflow: hidden;
+    }
+
+    .snowflake {
+      position: absolute;
+      color: var(--border);
+      font-size: 14px;
+      animation: drift linear infinite;
+      opacity: 0;
+    }
+
+    .snowflake:nth-child(1) { left: 5%; animation-duration: 15s; animation-delay: 0s; }
+    .snowflake:nth-child(2) { left: 15%; animation-duration: 18s; animation-delay: 2s; }
+    .snowflake:nth-child(3) { left: 30%; animation-duration: 14s; animation-delay: 4s; }
+    .snowflake:nth-child(4) { left: 50%; animation-duration: 20s; animation-delay: 1s; }
+    .snowflake:nth-child(5) { left: 70%; animation-duration: 16s; animation-delay: 3s; }
+    .snowflake:nth-child(6) { left: 85%; animation-duration: 17s; animation-delay: 5s; }
+    .snowflake:nth-child(7) { left: 95%; animation-duration: 19s; animation-delay: 2.5s; }
+
+    .container {
+      position: relative;
+      z-index: 1;
+      max-width: 520px;
+      margin: 0 auto;
+      padding: 2.5rem 1.5rem;
+    }
+
+    @media (min-width: 480px) {
+      .container {
+        padding: 4rem 2rem;
+      }
+    }
+
+    .header {
+      margin-bottom: 2rem;
+    }
+
+    .name-bubble {
+      display: inline-block;
+      background: var(--bubble);
+      border: 2px dashed var(--border);
+      border-radius: 20px;
+      padding: 0.75rem 1.25rem;
+      margin-bottom: 0.75rem;
+    }
+
+    .name {
+      font-size: 28px;
+      font-weight: normal;
+      letter-spacing: 0.02em;
+    }
+
+    .star {
+      display: inline-block;
+      color: var(--star);
+      font-size: 18px;
+      margin-left: 6px;
+      animation: twinkle 2s ease-in-out infinite;
+    }
+
+    .location-tag {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      background: var(--snow);
+      border-radius: 12px;
+      padding: 0.4rem 0.8rem;
+      font-size: 13px;
+      color: var(--text-soft);
+    }
+
+    .location-icon {
+      font-size: 14px;
+    }
+
+    .intro {
+      background: var(--bubble);
+      border-radius: 16px;
+      padding: 1.25rem;
+      margin-bottom: 2rem;
+      position: relative;
+    }
+
+    .intro::before {
+      content: '"';
+      position: absolute;
+      top: -8px;
+      left: 16px;
+      font-size: 48px;
+      color: var(--accent);
+      opacity: 0.4;
+      font-family: Georgia, serif;
+      line-height: 1;
+    }
+
+    .intro p {
+      position: relative;
+      z-index: 1;
+    }
+
+    .section {
+      margin-bottom: 2rem;
+    }
+
+    .section-title {
+      font-size: 11px;
+      text-transform: uppercase;
+      letter-spacing: 0.15em;
+      color: var(--text-soft);
+      margin-bottom: 0.75rem;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .section-title::after {
+      content: '';
+      flex: 1;
+      height: 1px;
+      background: var(--border);
+    }
+
+    .currently-grid {
+      display: flex;
+      flex-direction: column;
+      gap: 0.5rem;
+    }
+
+    .currently-item {
+      display: flex;
+      gap: 12px;
+      align-items: baseline;
+    }
+
+    .currently-label {
+      font-size: 13px;
+      color: var(--text-soft);
+      min-width: 80px;
+    }
+
+    .currently-value {
+      font-size: 15px;
+    }
+
+    .currently-value a {
+      color: var(--accent);
+      text-decoration: none;
+      border-bottom: 1px dotted var(--accent);
+      transition: all 0.2s;
+    }
+
+    .currently-value a:hover {
+      color: var(--accent-hover);
+      border-bottom-style: solid;
+    }
+
+    .projects-text {
+      font-size: 15px;
+      line-height: 1.8;
+      color: var(--text);
+    }
+
+    .links-row {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 0.5rem;
+      margin-top: 1rem;
+    }
+
+    .link-pill {
+      display: inline-flex;
+      align-items: center;
+      gap: 5px;
+      background: var(--bubble);
+      border: 1px solid var(--border);
+      border-radius: 20px;
+      padding: 0.5rem 1rem;
+      font-size: 14px;
+      color: var(--text);
+      text-decoration: none;
+      transition: all 0.2s;
+    }
+
+    .link-pill:hover {
+      background: var(--accent);
+      color: white;
+      border-color: var(--accent);
+      transform: translateY(-2px);
+    }
+
+    .link-icon {
+      font-size: 13px;
+    }
+
+    .listening-box {
+      background: linear-gradient(135deg, var(--bubble) 0%, var(--snow) 100%);
+      border-radius: 16px;
+      padding: 1rem 1.25rem;
+      position: relative;
+      overflow: hidden;
+    }
+
+    .listening-box::before {
+      content: '♪';
+      position: absolute;
+      right: 16px;
+      top: 12px;
+      font-size: 24px;
+      color: var(--accent);
+      opacity: 0.3;
+      animation: float 3s ease-in-out infinite;
+    }
+
+    .listening-label {
+      font-size: 11px;
+      text-transform: uppercase;
+      letter-spacing: 0.12em;
+      color: var(--text-soft);
+      margin-bottom: 0.4rem;
+    }
+
+    .listening-content {
+      font-size: 14px;
+      line-height: 1.6;
+      color: var(--text);
+      padding-right: 2rem;
+    }
+
+    .weather-note {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      font-size: 13px;
+      color: var(--text-soft);
+      margin-top: 1.5rem;
+    }
+
+    .weather-icon {
+      font-size: 16px;
+    }
+
+    .experimental {
+      margin-top: 2.5rem;
+      padding-top: 1.5rem;
+      border-top: 1px dashed var(--border);
+      font-size: 13px;
+      color: var(--text-soft);
+      line-height: 1.7;
+    }
+
+    .experimental a {
+      color: var(--text);
+      text-decoration: none;
+      background: var(--bubble);
+      padding: 2px 6px;
+      border-radius: 4px;
+      transition: all 0.2s;
+    }
+
+    .experimental a:hover {
+      background: var(--accent);
+      color: white;
+    }
+
+    .footer {
+      margin-top: 3rem;
+      text-align: center;
+      font-size: 12px;
+      color: var(--text-soft);
+    }
+
+    .footer-wave {
+      font-size: 20px;
+      display: block;
+      margin-bottom: 0.5rem;
+    }
+
+    @media (max-width: 400px) {
+      .currently-item {
+        flex-direction: column;
+        gap: 2px;
+      }
+
+      .currently-label {
+        min-width: auto;
+      }
+
+      .links-row {
+        flex-direction: column;
+      }
+
+      .link-pill {
+        justify-content: center;
+      }
+    }
+  </style>
+</head>
+<body>
+  <div class="snowflakes" aria-hidden="true">
+    <span class="snowflake">❄</span>
+    <span class="snowflake">❅</span>
+    <span class="snowflake">❆</span>
+    <span class="snowflake">❄</span>
+    <span class="snowflake">❅</span>
+    <span class="snowflake">❆</span>
+    <span class="snowflake">❄</span>
+  </div>
+
+  <div class="container">
+    <header class="header">
+      <div class="name-bubble">
+        <h1 class="name">Erik <span class="star">★</span></h1>
+      </div>
+      <div class="location-tag">
+        <span class="location-icon">📍</span>
+        Stockholm, Sweden
+      </div>
+    </header>
+
+    <main>
+      <div class="intro">
+        <p>I'm a product designer building with AI. I believe in simplicity and iterating until every detail feels right.</p>
+      </div>
+
+      <section class="section">
+        <h2 class="section-title">Right now</h2>
+        <div class="currently-grid">
+          <div class="currently-item">
+            <span class="currently-label">Building</span>
+            <span class="currently-value">
+              <a href="https://github.com/eriknson/shipflow" target="_blank" rel="noopener">shipflow</a>
+            </span>
+          </div>
+          <div class="currently-item">
+            <span class="currently-label">Working on</span>
+            <span class="currently-value">cursor-commands</span>
+          </div>
+          <div class="currently-item">
+            <span class="currently-label">Location</span>
+            <span class="currently-value">Stockholm</span>
+          </div>
+        </div>
+      </section>
+
+      <section class="section">
+        <h2 class="section-title">Projects</h2>
+        <p class="projects-text">
+          Building shipflow, a point-and-click editing layer for Next.js powered by Cursor Agent. Also exploring ways to spin up agents from my phone using iOS Shortcuts, GitHub Actions, and the Cursor CLI.
+        </p>
+
+        <div class="links-row">
+          <a href="https://x.com/flowstated" target="_blank" rel="noopener" class="link-pill">
+            <span class="link-icon">𝕏</span> X
+          </a>
+          <a href="https://github.com/eriknson" target="_blank" rel="noopener" class="link-pill">
+            <span class="link-icon">◉</span> GitHub
+          </a>
+          <a href="https://linkedin.com/in/eriknson" target="_blank" rel="noopener" class="link-pill">
+            <span class="link-icon">in</span> LinkedIn
+          </a>
+          <a href="mailto:contact@eriks.design" class="link-pill">
+            <span class="link-icon">✉</span> Email
+          </a>
+        </div>
+      </section>
+
+      <section class="section">
+        <div class="listening-box">
+          <div class="listening-label">Listening to</div>
+          <div class="listening-content">
+            Tame Impala, Taylor Swift, Beach House, Fred again.., Parcels, dream pop, neo-psychedelic, stutter house, indie soul
+          </div>
+        </div>
+
+        <div class="weather-note">
+          <span class="weather-icon">❄️</span>
+          2°C, clear
+        </div>
+      </section>
+
+      <div class="experimental">
+        This site has two experimental modes: <a href="/agent">/agent</a> shows daily AI-generated variations, and <a href="/new">/new</a> regenerates live in ~15 seconds.
+      </div>
+    </main>
+
+    <footer class="footer">
+      <span class="footer-wave">👋</span>
+      © 2025
+    </footer>
+  </div>
+</body>
+</html>
