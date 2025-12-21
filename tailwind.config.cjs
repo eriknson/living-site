@@ -9,6 +9,14 @@ module.exports = {
   ],
   theme: {
     extend: {
+      colors: {
+        // Anysphere color palette
+        anysphere: {
+          bg: '#f7f7f4',
+          text: '#26251e',
+          muted: '#8a897f',
+        },
+      },
       keyframes: {
         "accordion-down": {
           from: { height: "0" },

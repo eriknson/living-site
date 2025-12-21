@@ -93,7 +93,7 @@ function AppContent() {
       />
       
       {/* Content area - fills remaining space, uses iframe for better mobile support */}
-      <div className="flex-1 relative min-h-0 overflow-hidden bg-neutral-100 dark:bg-[#0a0a0a] pb-[env(safe-area-inset-bottom)]">
+      <div className="flex-1 relative min-h-0 overflow-hidden bg-anysphere-bg pb-[env(safe-area-inset-bottom)]">
         {activePath ? (
           <>
             <iframe
@@ -105,11 +105,11 @@ function AppContent() {
             />
             {/* Loading overlay that hides the white flash */}
             {!iframeReady && (
-              <div className="absolute inset-0 bg-neutral-100 dark:bg-[#0a0a0a] pointer-events-none" />
+              <div className="absolute inset-0 bg-anysphere-bg pointer-events-none" />
             )}
           </>
         ) : (
-          <div className="flex items-center justify-center h-full text-black/60 dark:text-white/60">
+          <div className="flex items-center justify-center h-full text-anysphere-muted">
             <p>{isLoading ? "Loading..." : "No build available"}</p>
           </div>
         )}
@@ -121,9 +121,9 @@ function AppContent() {
 export function AppShell({ children }: { children?: ReactNode }) {
   return (
     <Suspense fallback={
-      <div className="h-[var(--menu-bar-height)] flex items-center justify-between px-3 bg-black/[0.03] dark:bg-white/[0.05] backdrop-blur-2xl backdrop-saturate-[1.8] border-b border-black/[0.04] dark:border-white/[0.08] text-[13px] text-black/80 dark:text-white/80 select-none">
+      <div className="h-[var(--menu-bar-height)] flex items-center justify-between px-3 bg-[var(--color-hover)] backdrop-blur-2xl backdrop-saturate-[1.8] border-b border-[var(--color-border)] text-[13px] text-anysphere-text select-none">
         <div className="flex items-center h-full">
-          <a href="/" className="font-medium hover:bg-black/5 dark:hover:bg-white/10 active:bg-black/10 dark:active:bg-white/15 px-2.5 h-full flex items-center">eriks.design</a>
+          <a href="/" className="font-medium hover:bg-[var(--color-hover)] active:bg-[var(--color-active)] px-2.5 h-full flex items-center">eriks.design</a>
         </div>
       </div>
     }>

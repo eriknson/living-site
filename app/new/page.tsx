@@ -1,22 +1,83 @@
 "use client";
 
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useState, useRef } from "react";
 import { track } from "@vercel/analytics";
 import { GlobalMenuBar } from "@/components/global-menu-bar";
 import { SiteViewer } from "@/components/site-viewer";
-import { StepList } from "@/components/build-views/step-list";
-import { Step, deriveStep, processEvent } from "@/lib/step-types";
 
-type GenerationStatus = "idle" | "running" | "complete" | "error";
+type GenerationStatus = "idle" | "connecting" | "generating" | "complete" | "error";
+
+interface AgentStep {
+  id: string;
+  label: string;
+  timestamp: number;
+  duration?: number; // duration in seconds when step completed
+}
+
+// Parse agent message into a step label - keep it close to the original summary
+function parseStepLabel(text: string, summary?: string): string {
+  // Choose source text
+  let source = summary && summary.length > 0 && summary.length <= 100
+    ? summary
+    : text.split("\n")[0].trim();
+  
+  // Get first sentence if too long
+  const firstSentence = source.split(/[.!?]/)[0].trim();
+  if (firstSentence.length < source.length && firstSentence.length > 10) {
+    source = firstSentence;
+  }
+  
+  // Clean up common AI prefixes more aggressively
+  let cleaned = source
+    // Remove "Now I have/need/will/etc"
+    .replace(/^now\s+i\s+(have|need|will|am|can|should|want)/i, "")
+    // Remove "I'll/I'm/I will/I am/etc"  
+    .replace(/^i('ll|'m| will| am| need to| want to| can| should| have)\s+/i, "")
+    // Remove "Let me/Let's"
+    .replace(/^(let me|let's)\s+/i, "")
+    // Remove "First/Next, I'll" patterns
+    .replace(/^(first|next|now),?\s*(i('ll|'m| will| am| need to)?\s*)?/i, "")
+    .trim();
+  
+  // If we cleaned too much, use a descriptive fallback based on keywords
+  if (cleaned.length < 5) {
+    const lower = source.toLowerCase();
+    if (lower.includes("context") || lower.includes("read")) {
+      return "Reading context";
+    }
+    if (lower.includes("design") || lower.includes("style")) {
+      return "Planning design";
+    }
+    if (lower.includes("writ") || lower.includes("creat")) {
+      return "Building site";
+    }
+    return "Working";
+  }
+  
+  // Capitalize first letter
+  cleaned = cleaned.charAt(0).toUpperCase() + cleaned.slice(1);
+  
+  // Truncate if still too long
+  if (cleaned.length > 60) {
+    return cleaned.slice(0, 57) + "...";
+  }
+  
+  return cleaned;
+}
 
 export default function NewBuildPage() {
   const [status, setStatus] = useState<GenerationStatus>("idle");
+  const [statusMessage, setStatusMessage] = useState<string>("");
   const [htmlContent, setHtmlContent] = useState<string>("");
-  const [steps, setSteps] = useState<Step[]>([]);
+  const [steps, setSteps] = useState<AgentStep[]>([]);
   const [error, setError] = useState<string | null>(null);
   const [cooldown, setCooldown] = useState<number>(0);
   const [startTime, setStartTime] = useState<number | null>(null);
   const [elapsedTime, setElapsedTime] = useState<number>(0);
+  const [prompt, setPrompt] = useState<string>("");
+  const [agentUrl, setAgentUrl] = useState<string | null>(null);
+  const textareaRef = useRef<HTMLTextAreaElement>(null);
+  const stepsContainerRef = useRef<HTMLDivElement>(null);
 
   // Check availability on mount
   useEffect(() => {
@@ -24,7 +85,7 @@ export default function NewBuildPage() {
       try {
         const res = await fetch("/api/generate");
         const data = await res.json();
-        if (!data.hasApiKey && !data.flyReady) {
+        if (!data.configured) {
           setError("Agent not configured");
         }
         if (data.cooldownRemaining > 0) {
@@ -48,48 +109,46 @@ export default function NewBuildPage() {
 
   // Elapsed time counter during generation
   useEffect(() => {
-    if (status !== "running" || !startTime) return;
+    if ((status !== "connecting" && status !== "generating") || !startTime) return;
     const timer = setInterval(() => {
       setElapsedTime(Math.floor((Date.now() - startTime) / 1000));
     }, 100);
     return () => clearInterval(timer);
   }, [status, startTime]);
 
-  // Complete the last step when generation ends
-  const completeLastStep = useCallback(() => {
-    setSteps((prev) => {
-      if (prev.length === 0) return prev;
-      const last = prev[prev.length - 1];
-      if (last.completedAt) return prev;
-      return prev.map((s, i) =>
-        i === prev.length - 1 ? { ...s, completedAt: Date.now() } : s
-      );
-    });
-  }, []);
+  // Auto-resize textarea
+  useEffect(() => {
+    const textarea = textareaRef.current;
+    if (!textarea) return;
+    textarea.style.height = "auto";
+    textarea.style.height = `${Math.min(textarea.scrollHeight, 200)}px`;
+  }, [prompt]);
+
+  // Auto-scroll to bottom when new steps arrive
+  useEffect(() => {
+    if (stepsContainerRef.current && steps.length > 0) {
+      stepsContainerRef.current.scrollTop = stepsContainerRef.current.scrollHeight;
+    }
+  }, [steps]);
 
   const handleGenerate = useCallback(async () => {
-    setStatus("running");
+    setStatus("connecting");
+    setStatusMessage("Connecting to Cursor Cloud...");
     setError(null);
     setHtmlContent("");
     setSteps([]);
     setStartTime(Date.now());
     setElapsedTime(0);
-
-    // #region agent log
-    const genStartTime = Date.now();
-    fetch('http://127.0.0.1:7242/ingest/7b82bf8a-7c03-4697-b719-1e325f7e9340',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'page.tsx:handleGenerate:start',message:'Client: handleGenerate started',data:{},timestamp:genStartTime,sessionId:'debug-session',hypothesisId:'D'})}).catch(()=>{});
-    // #endregion
+    setAgentUrl(null);
 
     try {
       track("live_generation_started");
 
-      // #region agent log
-      const postFetchStart = Date.now();
-      // #endregion
-      const res = await fetch("/api/generate", { method: "POST" });
-      // #region agent log
-      fetch('http://127.0.0.1:7242/ingest/7b82bf8a-7c03-4697-b719-1e325f7e9340',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'page.tsx:handleGenerate:postFetchComplete',message:'Client: POST fetch response received',data:{postFetchMs:Date.now()-postFetchStart,ok:res.ok,status:res.status},timestamp:Date.now(),sessionId:'debug-session',hypothesisId:'A,D'})}).catch(()=>{});
-      // #endregion
+      const res = await fetch("/api/generate", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ prompt: prompt.trim() || null }),
+      });
 
       if (!res.ok) {
         const data = await res.json();
@@ -104,7 +163,6 @@ export default function NewBuildPage() {
 
       const decoder = new TextDecoder();
       let buffer = "";
-      let firstStepLogged = false;
 
       while (true) {
         const { done, value } = await reader.read();
@@ -118,70 +176,103 @@ export default function NewBuildPage() {
           if (line.startsWith("data: ")) {
             const rawData = line.slice(6);
 
-            // Try to parse as JSON
             let event: Record<string, unknown> | null = null;
             try {
               event = JSON.parse(rawData);
             } catch {
-              // Not JSON - could be spawn event
+              continue;
             }
 
-            // Check for completion/error events
-            if (event) {
-              if (event.type === "complete") {
-                // #region agent log
-                fetch('http://127.0.0.1:7242/ingest/7b82bf8a-7c03-4697-b719-1e325f7e9340',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'page.tsx:handleGenerate:complete',message:'Client: Generation complete event received',data:{totalMs:Date.now()-genStartTime,hasHtml:!!(event.html)},timestamp:Date.now(),sessionId:'debug-session',hypothesisId:'C'})}).catch(()=>{});
-                // #endregion
-                completeLastStep();
-                const html = event.html as string | undefined;
-                if (html) {
-                  setHtmlContent(html);
-                }
-                setStatus("complete");
-                track("live_generation_complete", {
-                  duration: Math.floor(
-                    (Date.now() - (startTime || Date.now())) / 1000
-                  ),
-                });
-                continue;
-              } else if (event.type === "error") {
-                throw new Error(event.message as string);
-              }
-            }
+            if (!event) continue;
 
-            // Derive step from event
-            const derived = deriveStep(event, rawData);
-            if (derived) {
-              // #region agent log - track first step received
-              if (derived.label && !firstStepLogged) {
-                firstStepLogged = true;
-                fetch('http://127.0.0.1:7242/ingest/7b82bf8a-7c03-4697-b719-1e325f7e9340',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'page.tsx:handleGenerate:firstStep',message:'Client: First step received',data:{msToFirstStep:Date.now()-genStartTime,stepLabel:derived.label},timestamp:Date.now(),sessionId:'debug-session',hypothesisId:'C'})}).catch(()=>{});
+            // Handle different event types
+            if (event.type === "complete") {
+              const html = event.html as string | undefined;
+              if (html) {
+                setHtmlContent(html);
               }
-              // #endregion
-              setSteps((prev) => processEvent(prev, derived));
-            }
+              setStatus("complete");
+              track("live_generation_complete", {
+                duration: Math.floor(
+                  (Date.now() - (startTime || Date.now())) / 1000
+                ),
+              });
+            } else if (event.type === "error") {
+              throw new Error(event.message as string);
+                            } else if (event.type === "step") {
+                              const text = event.text as string || "";
+                              const summary = event.summary as string | undefined;
+                              const label = parseStepLabel(text, summary);
+                              const now = Date.now();
+                              
+                              setSteps((prev) => {
+                                // Skip if duplicate ID
+                                if (prev.some((s) => s.id === event.id)) return prev;
+                                
+                                // Skip if same label as last step (consolidate duplicates)
+                                const lastStep = prev[prev.length - 1];
+                                if (lastStep && lastStep.label === label) {
+                                  return prev;
+                                }
+                                
+                                // Mark previous step as complete with duration
+                                const updated = prev.map((s, i) => {
+                                  if (i === prev.length - 1 && !s.duration) {
+                                    return { ...s, duration: Math.round((now - s.timestamp) / 1000) };
+                                  }
+                                  return s;
+                                });
+                                
+                                // Add new step
+                                return [...updated, {
+                                  id: event.id as string,
+                                  label,
+                                  timestamp: now,
+                                }];
+                              });
+                            } else if (event.type === "status") {
+                              // Transition to generating once we get first status update
+                              if (status === "connecting") {
+                                setStatus("generating");
+                              }
+
+                              // Update status message
+                              const message = event.message as string || "Working...";
+                              setStatusMessage(message);
+
+                              // Store agent URL if provided
+                              if (event.agentUrl) {
+                                setAgentUrl(event.agentUrl as string);
+                              }
+                            }
           }
         }
       }
     } catch (e) {
       console.error("Generation error:", e);
-      completeLastStep();
       setError(e instanceof Error ? e.message : "Generation failed");
       setStatus("error");
       track("live_generation_error");
     }
-  }, [completeLastStep, startTime]);
+  }, [prompt, startTime, status]);
 
-  const isBuilding = status === "running";
+  const handleKeyDown = (e: React.KeyboardEvent) => {
+    if (e.key === "Enter" && !e.shiftKey) {
+      e.preventDefault();
+      if (cooldown <= 0 && !error && status === "idle") {
+        handleGenerate();
+      }
+    }
+  };
+
   const isComplete = status === "complete";
+  const isDisabled = cooldown > 0 || !!error || status !== "idle";
 
   return (
-    <div className="h-dvh flex flex-col bg-white dark:bg-[#0a0a0a]">
-      {/* Menu bar - consistent with /agent */}
+    <div className="h-dvh flex flex-col bg-[#e8e6e1]">
+      {/* Menu bar */}
       <GlobalMenuBar
         currentRoute="/new"
-        isBuilding={isBuilding}
-        buildElapsed={elapsedTime}
         buildComplete={isComplete}
         buildTotalTime={elapsedTime}
       />
@@ -190,32 +281,125 @@ export default function NewBuildPage() {
       <main className="flex-1 flex flex-col min-h-0">
         {status === "idle" && (
           <div className="flex-1 flex flex-col items-center justify-center px-4">
-            <div className="text-center max-w-md">
-              <h1 className="text-2xl font-light text-black/90 dark:text-white/90 mb-4">
-                Generate a new site
-              </h1>
-              <p className="text-sm text-black/50 dark:text-white/50 mb-8 leading-relaxed">
-                Composer-1 will create a unique interpretation of your personal
-                website based on your recent activity. Takes about 15-20
-                seconds.
-              </p>
+            <div className="w-full max-w-2xl">
+              {/* Chat input card */}
+              <div className="bg-white rounded-2xl border border-[#d8d6d1] overflow-hidden">
+                {/* Textarea */}
+                <div className="p-4 pb-2">
+                  <textarea
+                    ref={textareaRef}
+                    value={prompt}
+                    onChange={(e) => setPrompt(e.target.value)}
+                    onKeyDown={handleKeyDown}
+                    placeholder="Remix Erik's website"
+                    className="w-full resize-none bg-transparent text-[15px] text-gray-900 placeholder:text-gray-400 focus:outline-none leading-relaxed"
+                    rows={1}
+                    disabled={isDisabled}
+                  />
+                </div>
 
-              {error && <p className="text-sm text-red-500 mb-4">{error}</p>}
+                {/* Bottom bar */}
+                <div className="px-4 pb-3 flex items-center justify-end">
+                  {/* Submit button */}
+                  <button
+                    onClick={handleGenerate}
+                    disabled={isDisabled}
+                    className="w-8 h-8 rounded-full bg-gray-900 text-white flex items-center justify-center hover:bg-gray-800 transition-colors disabled:opacity-30 disabled:cursor-not-allowed"
+                    aria-label="Generate"
+                  >
+                    <svg
+                      width="16"
+                      height="16"
+                      viewBox="0 0 24 24"
+                      fill="none"
+                      stroke="currentColor"
+                      strokeWidth="2"
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                    >
+                      <line x1="12" y1="19" x2="12" y2="5" />
+                      <polyline points="5 12 12 5 19 12" />
+                    </svg>
+                  </button>
+                </div>
+              </div>
 
-              <button
-                onClick={handleGenerate}
-                disabled={cooldown > 0 || !!error}
-                className="px-6 py-2.5 bg-black dark:bg-white text-white dark:text-black text-sm rounded-full hover:bg-black/80 dark:hover:bg-white/80 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
-              >
-                {cooldown > 0 ? `Wait ${cooldown}s` : "Start Generation"}
-              </button>
+{/* Status text - only show when there's a cooldown or error */}
+              {(cooldown > 0 || error) && (
+                <p className="text-center text-sm text-gray-500 mt-4">
+                  {cooldown > 0 ? (
+                    `Available in ${cooldown}s`
+                  ) : (
+                    <span className="text-red-500">{error}</span>
+                  )}
+                </p>
+              )}
             </div>
           </div>
         )}
 
-        {status === "running" && (
-          <div className="flex-1 px-6 py-6 overflow-auto">
-            <StepList steps={steps} />
+        {(status === "connecting" || status === "generating") && (
+          <div className="flex-1 flex flex-col min-h-0">
+            {/* White card container */}
+            <div className="flex-1 mx-4 my-4 bg-white rounded-xl shadow-sm border border-black/5 flex flex-col overflow-hidden">
+              {/* Steps list - matches Cursor Cloud agent style */}
+              <div
+                ref={stepsContainerRef}
+                className="flex-1 overflow-y-auto px-6 py-6"
+              >
+                <div className="space-y-0">
+                  {/* Completed steps */}
+                  {steps.map((step) => {
+                    const isActive = !step.duration;
+                    
+                    return (
+                      <div 
+                        key={step.id}
+                        className="flex items-baseline justify-between py-1"
+                      >
+                        <span
+                          className={`text-[15px] leading-relaxed ${
+                            isActive ? "text-gray-900 font-medium" : "text-gray-400"
+                          }`}
+                        >
+                          {step.label}
+                        </span>
+                        <span className="text-gray-300 text-sm tabular-nums ml-4 flex-shrink-0">
+                          {step.duration !== undefined ? `${step.duration}s` : "0s"}
+                        </span>
+                      </div>
+                    );
+                  })}
+                  
+                  {/* Current activity indicator with elapsed time */}
+                  <div className="flex items-center gap-2 pt-3">
+                    <div className="w-2 h-2 rounded-full bg-gray-400 animate-pulse" />
+                    {/* Show status message when no steps yet, otherwise just elapsed time */}
+                    {steps.length === 0 ? (
+                      <span className="text-gray-400 text-sm">
+                        {statusMessage || "Launching agent..."} <span className="tabular-nums">({elapsedTime}s)</span>
+                      </span>
+                    ) : (
+                      <span className="text-gray-400 text-sm tabular-nums">{elapsedTime}s</span>
+                    )}
+                  </div>
+                </div>
+              </div>
+
+              {/* Footer with agent link */}
+              {agentUrl && (
+                <div className="px-6 pb-4 border-t border-gray-100 pt-3">
+                  <a
+                    href={agentUrl}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="text-sm text-gray-400 hover:text-gray-600 underline underline-offset-2"
+                  >
+                    View agent in Cursor
+                  </a>
+                </div>
+              )}
+            </div>
           </div>
         )}
 
@@ -224,18 +408,19 @@ export default function NewBuildPage() {
             {htmlContent ? (
               <SiteViewer htmlContent={htmlContent} />
             ) : (
-              /* No HTML - show success message */
               <div className="flex-1 flex flex-col items-center justify-center px-4">
                 <div className="text-center max-w-md">
-                  <p className="text-lg text-black/70 dark:text-white/70 mb-4">
+                  <p className="text-lg text-gray-600 mb-4">
                     Generation complete!
                   </p>
                   <button
                     onClick={() => {
                       setStatus("idle");
                       setError(null);
+                      setPrompt("");
+                      setSteps([]);
                     }}
-                    className="px-6 py-2.5 bg-black dark:bg-white text-white dark:text-black text-sm rounded-full hover:bg-black/80 dark:hover:bg-white/80 transition-colors"
+                    className="px-6 py-2.5 bg-gray-900 text-white text-sm rounded-full hover:bg-gray-800 transition-colors"
                   >
                     Generate Another
                   </button>
@@ -251,15 +436,16 @@ export default function NewBuildPage() {
               <p className="text-2xl font-light text-red-500 mb-4">
                 Something went wrong
               </p>
-              <p className="text-sm text-black/50 dark:text-white/50 mb-8">
+              <p className="text-sm text-gray-500 mb-8">
                 {error || "Failed to generate the site"}
               </p>
               <button
                 onClick={() => {
                   setStatus("idle");
                   setError(null);
+                  setSteps([]);
                 }}
-                className="px-6 py-2.5 bg-black dark:bg-white text-white dark:text-black text-sm rounded-full hover:bg-black/80 dark:hover:bg-white/80 transition-colors"
+                className="px-6 py-2.5 bg-gray-900 text-white text-sm rounded-full hover:bg-gray-800 transition-colors"
               >
                 Try Again
               </button>

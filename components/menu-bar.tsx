@@ -15,14 +15,14 @@ interface MenuBarProps {
 
 export function MenuBar({ manifest, currentModel, currentDate, currentTimestamp, onModelChange }: MenuBarProps) {
   return (
-    <nav className="shrink-0 h-[calc(var(--menu-bar-height)+env(safe-area-inset-top))] pt-[env(safe-area-inset-top)] z-50 flex items-center justify-between px-3 bg-black/[0.03] dark:bg-white/[0.05] backdrop-blur-2xl backdrop-saturate-[1.8] border-b border-black/[0.04] dark:border-white/[0.08] text-[13px] text-black/80 dark:text-white/80 select-none">
+    <nav className="shrink-0 h-[calc(var(--menu-bar-height)+env(safe-area-inset-top))] pt-[env(safe-area-inset-top)] z-50 flex items-center justify-between px-3 bg-[var(--color-hover)] backdrop-blur-2xl backdrop-saturate-[1.8] border-b border-[var(--color-border)] text-[13px] text-anysphere-text select-none">
       <div className="flex items-center h-full">
         {/* Black circle on very small screens */}
-        <Link href="/" className="h-full px-2.5 flex items-center min-[375px]:hidden hover:bg-black/5 dark:hover:bg-white/10 active:bg-black/10 dark:active:bg-white/15">
-          <span className="w-3 h-3 bg-black dark:bg-white rounded-full" />
+        <Link href="/" className="h-full px-2.5 flex items-center min-[375px]:hidden hover:bg-[var(--color-hover)] active:bg-[var(--color-active)]">
+          <span className="w-3 h-3 bg-anysphere-text rounded-full" />
         </Link>
         {/* Full text on larger screens */}
-        <Link href="/" className="h-full px-2.5 font-semibold hidden min-[375px]:flex items-center hover:bg-black/5 dark:hover:bg-white/10 active:bg-black/10 dark:active:bg-white/15">
+        <Link href="/" className="h-full px-2.5 font-semibold hidden min-[375px]:flex items-center hover:bg-[var(--color-hover)] active:bg-[var(--color-active)]">
           eriks.design
         </Link>
       </div>

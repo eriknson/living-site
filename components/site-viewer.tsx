@@ -2,6 +2,24 @@
 
 import { useEffect, useRef, useState } from "react";
 
+/**
+ * Rewrites CSS selectors targeting `body` to also target `.shadow-root`
+ * This ensures body-level styles apply correctly in Shadow DOM
+ */
+function rewriteBodySelectors(css: string): string {
+  return css
+    // body { ... } → body, .shadow-root { ... }
+    .replace(/\bbody\s*\{/g, "body, .shadow-root {")
+    // body.class { ... } → body.class, .shadow-root.class { ... }
+    .replace(/\bbody(\.[a-zA-Z_-][\w-]*)\s*\{/g, "body$1, .shadow-root$1 {")
+    // body[attr] { ... } → body[attr], .shadow-root[attr] { ... }
+    .replace(/\bbody(\[[^\]]+\])\s*\{/g, "body$1, .shadow-root$1 {")
+    // body::pseudo { ... } → body::pseudo, .shadow-root::pseudo { ... }
+    .replace(/\bbody(::?[a-zA-Z-]+)\s*\{/g, "body$1, .shadow-root$1 {")
+    // body in comma-separated selectors: body, other { } → body, .shadow-root, other { }
+    .replace(/\bbody\s*,/g, "body, .shadow-root,");
+}
+
 interface SiteViewerProps {
   /** URL to fetch HTML content from (for /agent) */
   src?: string;
@@ -68,10 +86,14 @@ export function SiteViewer({ src, htmlContent, onLoad }: SiteViewerProps) {
     const parser = new DOMParser();
     const doc = parser.parseFromString(content, "text/html");
 
-    // Extract styles
-    const styles = Array.from(doc.querySelectorAll("style"))
-      .map((s) => s.outerHTML)
+    // Remove nav/header elements to avoid duplicate headers with app shell
+    doc.querySelectorAll("nav, header").forEach((el) => el.remove());
+
+    // Extract styles and rewrite body selectors for shadow DOM compatibility
+    const rawStyles = Array.from(doc.querySelectorAll("style"))
+      .map((s) => s.textContent || "")
       .join("\n");
+    const styles = `<style>${rewriteBodySelectors(rawStyles)}</style>`;
 
     // Extract stylesheet links (fonts, external CSS)
     const styleLinks = Array.from(doc.querySelectorAll('link[rel="stylesheet"]'))

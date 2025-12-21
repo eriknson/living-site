@@ -87,6 +87,13 @@ npm run generate:api     # Generate via Anthropic API (local)
 
 | Variable | Used For |
 |----------|----------|
-| `CURSOR_API_KEY` | CI generation via Cursor CLI |
-| `GITHUB_TOKEN` | Fetching GitHub activity |
+| `CURSOR_API_KEY` | CI generation via Cursor CLI / Cloud Agents API |
+| `GITHUB_TOKEN` | Fetching GitHub activity + Cloud Agents branch operations |
+| `GITHUB_REPO` | Repository for Cloud Agents (default: `eriknson/living-site`) |
 | `ANTHROPIC_API_KEY` | Local generation (optional) |
+
+### Live Generation (/new)
+
+The `/new` page uses [Cursor Cloud Agents API](https://cursor.com/docs/cloud-agent/api/endpoints) to generate sites on-demand. This requires:
+- `CURSOR_API_KEY` from your [Cursor Dashboard](https://cursor.com/settings)
+- `GITHUB_TOKEN` with repo access (contents:read, delete refs)

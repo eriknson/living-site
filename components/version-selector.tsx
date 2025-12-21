@@ -3,7 +3,7 @@
 import { useState, useEffect, useCallback } from "react";
 import { useRouter } from "next/navigation";
 import { track } from "@vercel/analytics";
-import { Check, ChevronDown, Infinity, Plus, Loader2 } from "lucide-react";
+import { Check, ChevronDown, Infinity, Plus } from "lucide-react";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -35,16 +35,6 @@ interface VersionSelectorProps {
   currentDate?: string | null;
   currentTimestamp?: string | null;
   onModelChange?: (model: string) => void;
-  // For /new page building state
-  isBuilding?: boolean;
-  buildElapsed?: number;
-}
-
-// Format elapsed time as m:ss
-function formatElapsed(seconds: number): string {
-  const mins = Math.floor(seconds / 60);
-  const secs = seconds % 60;
-  return `${mins}:${secs.toString().padStart(2, "0")}`;
 }
 
 export function VersionSelector({
@@ -54,8 +44,6 @@ export function VersionSelector({
   currentDate,
   currentTimestamp,
   onModelChange,
-  isBuilding,
-  buildElapsed = 0,
 }: VersionSelectorProps) {
   const router = useRouter();
   const [drawerOpen, setDrawerOpen] = useState(false);
@@ -103,7 +91,7 @@ export function VersionSelector({
   // Determine what to show as the current selection
   const getDisplayName = () => {
     if (isHome) return "Erik";
-    if (isNew && isBuilding) return `Building... ${formatElapsed(buildElapsed)}`;
+    if (isNew) return "New";
     if (isAgent && currentModel) return getModelDisplayName(currentModel);
     return "Select version";
   };
@@ -140,11 +128,7 @@ export function VersionSelector({
   
   const TriggerButton = (
     <button className="h-full px-2.5 hover:bg-black/5 dark:hover:bg-white/10 active:bg-black/10 dark:active:bg-white/15 outline-none flex items-center gap-1.5 cursor-pointer">
-      {isNew && isBuilding ? (
-        <Loader2 className="h-4 w-4 opacity-50 animate-spin" strokeWidth={2.5} />
-      ) : (
-        <Infinity className="h-4 w-4 opacity-50" strokeWidth={2.5} />
-      )}
+      <Infinity className="h-4 w-4 opacity-50" strokeWidth={2.5} />
       <span>{getDisplayName()}</span>
       <ChevronDown className={cn("h-3 w-3 opacity-60 transition-transform", isOpen && "rotate-180")} />
     </button>
@@ -204,46 +188,30 @@ export function VersionSelector({
         );
       })}
 
-      {/* Building state (only show when on /new and building) */}
-      {isNew && isBuilding && (
-        <>
-          <div className="h-px bg-black/10 dark:bg-white/10 my-1" />
-          <div
-            className={cn(
-              "w-full flex items-center justify-between px-4 py-3.5 sm:px-2 sm:py-2.5 rounded-xl sm:rounded-sm text-left",
-              "bg-black/[0.04] dark:bg-white/[0.08]"
-            )}
-          >
-            <span className="flex items-center gap-3 sm:gap-2">
-              <Loader2 className="h-5 w-5 sm:h-4 sm:w-4 text-black/80 dark:text-white/80 animate-spin" />
-              <span className="text-[15px] sm:text-sm text-black/90 dark:text-white/90">
-                Building... {formatElapsed(buildElapsed)}
-              </span>
-            </span>
-          </div>
-        </>
-      )}
-
-      {/* New action (hide when already on /new) */}
-      {!isNew && (
-        <>
-          <div className="h-px bg-black/10 dark:bg-white/10 my-1" />
-          <button
-            onClick={() => onSelect("new")}
-            className={cn(
-              "w-full flex items-center px-4 py-3.5 sm:px-2 sm:py-2.5 rounded-xl sm:rounded-sm text-left transition-colors",
-              "active:bg-black/5 dark:active:bg-white/10 sm:hover:bg-black/5 dark:sm:hover:bg-white/10 sm:active:bg-black/10 dark:sm:active:bg-white/15"
-            )}
-          >
-            <span className="flex items-center gap-3 sm:gap-2">
-              <Plus className="h-5 w-5 sm:h-4 sm:w-4 text-black/50 dark:text-white/50" />
-              <span className="text-[15px] sm:text-sm text-black/70 dark:text-white/70">
-                New
-              </span>
-            </span>
-          </button>
-        </>
-      )}
+      {/* New action */}
+      <div className="h-px bg-black/10 dark:bg-white/10 my-1" />
+      <button
+        onClick={() => onSelect("new")}
+        className={cn(
+          "w-full flex items-center px-4 py-3.5 sm:px-2 sm:py-2.5 rounded-xl sm:rounded-sm text-left transition-colors",
+          "active:bg-black/5 dark:active:bg-white/10 sm:hover:bg-black/5 dark:sm:hover:bg-white/10 sm:active:bg-black/10 dark:sm:active:bg-white/15",
+          isNew && "bg-black/[0.04] dark:bg-white/[0.08]"
+        )}
+      >
+        <span className="flex items-center gap-3 sm:gap-2">
+          {isNew ? (
+            <Check className="h-5 w-5 sm:h-4 sm:w-4 text-black/80 dark:text-white/80" />
+          ) : (
+            <Plus className="h-5 w-5 sm:h-4 sm:w-4 text-black/50 dark:text-white/50" />
+          )}
+          <span className={cn(
+            "text-[15px] sm:text-sm",
+            isNew ? "text-black/90 dark:text-white/90" : "text-black/70 dark:text-white/70"
+          )}>
+            New
+          </span>
+        </span>
+      </button>
     </>
   );
 
@@ -317,27 +285,16 @@ export function VersionSelector({
           );
         })}
 
-        {/* Building state (only show when on /new and building) */}
-        {isNew && isBuilding && (
-          <>
-            <DropdownMenuSeparator />
-            <div className="flex items-center gap-2 px-2 py-2.5 text-sm bg-black/[0.04] dark:bg-white/[0.08] rounded-sm">
-              <Loader2 className="h-4 w-4 animate-spin" />
-              <span>Building... {formatElapsed(buildElapsed)}</span>
-            </div>
-          </>
-        )}
-
-        {/* New action (hide when already on /new) */}
-        {!isNew && (
-          <>
-            <DropdownMenuSeparator />
-            <DropdownMenuItem onClick={handleGenerateNew} className="flex items-center gap-2">
-              <Plus className="h-4 w-4 text-black/50 dark:text-white/50" />
-              <span className="text-black/70 dark:text-white/70">New</span>
-            </DropdownMenuItem>
-          </>
-        )}
+        {/* New action */}
+        <DropdownMenuSeparator />
+        <DropdownMenuItem onClick={handleGenerateNew} className="flex items-center gap-2">
+          {isNew ? (
+            <Check className="h-4 w-4" />
+          ) : (
+            <Plus className="h-4 w-4 text-black/50 dark:text-white/50" />
+          )}
+          <span className={isNew ? "" : "text-black/70 dark:text-white/70"}>New</span>
+        </DropdownMenuItem>
       </DropdownMenuContent>
     </DropdownMenu>
   );
