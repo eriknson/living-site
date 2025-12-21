@@ -66,6 +66,12 @@ jobs:
       - name: Run smoke test
         run: npm run smoke
 
+      - name: Fetch live site as reference
+        run: |
+          echo "Fetching live site to update reference.html..."
+          curl -sL https://eriks.design/ -o fly-context/reference.html
+          echo "Updated fly-context/reference.html ($(wc -c < fly-context/reference.html) bytes)"
+
       - name: Aggregate data
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
@@ -108,6 +114,7 @@ jobs:
           path: |
             data/latest.json
             data/fetch-summary.json
+            fly-context/reference.html
           retention-days: 3
 
   # Job 2: Curator agent synthesizes raw data into creative direction
@@ -133,7 +140,16 @@ jobs:
         uses: actions/download-artifact@v4
         with:
           name: aggregated-data
-          path: data/
+          path: artifacts/
+
+      - name: Organize downloaded files
+        run: |
+          # Move data files to data/
+          cp artifacts/data/latest.json data/latest.json
+          cp artifacts/data/fetch-summary.json data/fetch-summary.json
+          # Move reference.html to fly-context/
+          cp artifacts/fly-context/reference.html fly-context/reference.html
+          echo "Artifacts organized"
 
       - name: Install Cursor CLI
         run: |
@@ -223,13 +239,23 @@ jobs:
         uses: actions/download-artifact@v4
         with:
           name: aggregated-data
-          path: data/
+          path: artifacts/aggregated/
 
       - name: Download curator artifact
         uses: actions/download-artifact@v4
         with:
           name: curator-data
-          path: data/
+          path: artifacts/curator/
+
+      - name: Organize downloaded files
+        run: |
+          # Move data files to data/
+          cp artifacts/aggregated/data/latest.json data/latest.json
+          cp artifacts/aggregated/data/fetch-summary.json data/fetch-summary.json
+          cp artifacts/curator/brief.json data/brief.json
+          # Move reference.html to fly-context/
+          cp artifacts/aggregated/fly-context/reference.html fly-context/reference.html
+          echo "Artifacts organized"
 
       - name: Install Cursor CLI
         run: |
@@ -271,30 +297,33 @@ jobs:
           cp data/latest.json /tmp/clean-gen/data/latest.json
           cp data/fetch-summary.json /tmp/clean-gen/data/fetch-summary.json
           cp data/brief.json /tmp/clean-gen/data/brief.json
-          echo "Fresh data and curator brief copied to worktree"
+          # Copy fresh reference.html (fetched from live site)
+          cp fly-context/reference.html /tmp/clean-gen/fly-context/reference.html
+          echo "Fresh data, brief, and reference.html copied to worktree"
 
       - name: Build generation prompt
         run: |
+          # Read brief.json and identity.json to inline them
+          BRIEF=$(cat /tmp/clean-gen/data/brief.json)
+          IDENTITY=$(cat /tmp/clean-gen/data/identity.json)
+          
           cat > /tmp/generation-prompt.txt << PROMPT_END
           $(cat /tmp/clean-gen/infra/prompts/system.md)
 
           ---
 
-          For data and context, read:
-          - .cursor/rules/site-generation/context.md — voice and data sources
-          - .cursor/rules/site-generation/website-guidelines.md — design guardrails
-          - data/brief.json — curator's editorial brief
-          - data/latest.json — raw data
-          - data/identity.json — contact links
+          ## Editorial Brief (today's context)
+          $BRIEF
 
+          ## Identity
+          $IDENTITY
+
+          Read fly-context/reference.html for design reference.
           Create generated/${{ matrix.model }}.html
           PROMPT_END
           
           echo "=== Generation Prompt ==="
           cat /tmp/generation-prompt.txt
-          echo ""
-          echo "=== Editorial Brief ==="
-          cat /tmp/clean-gen/data/brief.json
 
       - name: Generate site with ${{ matrix.model }}
         id: generate
@@ -435,13 +464,23 @@ jobs:
         uses: actions/download-artifact@v4
         with:
           name: aggregated-data
-          path: data/
+          path: artifacts/aggregated/
 
       - name: Download curator artifact
         uses: actions/download-artifact@v4
         with:
           name: curator-data
-          path: data/
+          path: artifacts/curator/
+
+      - name: Organize data files
+        run: |
+          # Move data files to data/
+          cp artifacts/aggregated/data/latest.json data/latest.json
+          cp artifacts/aggregated/data/fetch-summary.json data/fetch-summary.json
+          cp artifacts/curator/brief.json data/brief.json
+          # Update reference.html from live site
+          cp artifacts/aggregated/fly-context/reference.html fly-context/reference.html
+          echo "Data files organized"
 
       - name: Download all build artifacts
         uses: actions/download-artifact@v4
@@ -521,6 +560,7 @@ jobs:
           git add data/latest.json
           git add data/fetch-summary.json
           git add data/brief.json
+          git add fly-context/reference.html
           git add public/data/
           git add public/builds/
           git add generated/
@@ -575,3 +615,36 @@ jobs:
               echo "- ❌ ${model} (no HTML generated)" >> $GITHUB_STEP_SUMMARY
             fi
           done
+
+  # Job 5: Deploy Fly agent with fresh reference.html
+  deploy-fly:
+    needs: [commit]
+    if: inputs.dry_run != 'true'
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        with:
+          ref: main  # Get the just-committed changes with fresh reference.html
+
+      - name: Setup Fly CLI
+        uses: superfly/flyctl-actions/setup-flyctl@master
+
+      - name: Prepare Fly agent context
+        run: |
+          # Copy fly-context files to infra/fly-agent for Docker build
+          mkdir -p infra/fly-agent/fly-context
+          cp fly-context/reference.html infra/fly-agent/fly-context/
+          cp fly-context/today.json infra/fly-agent/fly-context/ 2>/dev/null || echo '{"mood":"focused"}' > infra/fly-agent/fly-context/today.json
+          echo "Prepared fly-context for deployment"
+          ls -la infra/fly-agent/fly-context/
+
+      - name: Deploy Fly agent
+        working-directory: infra/fly-agent
+        env:
+          FLY_API_TOKEN: ${{ secrets.FLY_API_TOKEN }}
+        run: |
+          echo "Deploying Fly agent with fresh reference.html..."
+          flyctl deploy --remote-only
+          echo "✓ Fly agent deployed"
