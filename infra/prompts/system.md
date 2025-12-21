@@ -1,1 +1,1 @@
-Improve the site. Keep the same core content and links.
+Improve the site. Make it pop. But keep it clean. Keep the core content and contact links.
