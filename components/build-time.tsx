@@ -78,8 +78,16 @@ function parseContextFromSources(sources: DataSource[]): ContextItem[] {
   return items;
 }
 
+type RouteType = "/" | "/agent" | "/new";
+
+interface ManualVersionData {
+  lastUpdated: string;
+  source: string;
+}
+
 interface BuildTimeProps {
-  manifest: Manifest | null;
+  currentRoute: RouteType;
+  manifest?: Manifest | null;
   currentModel?: string | null;
   currentDate?: string | null;
   currentTimestamp?: string | null;
@@ -87,12 +95,14 @@ interface BuildTimeProps {
 
 // Mobile drawer content
 function MobileDrawerContent({
+  isHome,
   relativeTime,
   modelName,
   durationStr,
   contextItems,
   onLinkClick,
 }: {
+  isHome: boolean;
   relativeTime: string;
   modelName: string;
   durationStr: string;
@@ -104,7 +114,9 @@ function MobileDrawerContent({
       {/* Description */}
       <div className="bg-black/[0.03] dark:bg-white/[0.05] rounded-2xl px-4 py-3.5">
         <p className="text-[15px] text-black/60 dark:text-white/60 leading-relaxed">
-          This website regenerates daily via Cursor CLI agents running on GitHub Actions. Redeploys via Vercel automatically.
+          {isHome
+            ? "This is the manually designed version of the site, crafted by Erik."
+            : "This website regenerates daily via Cursor CLI agents running on GitHub Actions. Redeploys via Vercel automatically."}
         </p>
       </div>
 
@@ -123,40 +135,44 @@ function MobileDrawerContent({
         </div>
       </div>
 
-      {/* Context */}
-      <div className="bg-black/[0.03] dark:bg-white/[0.05] rounded-2xl px-4 py-3">
-        <div className="text-[13px] text-black/40 dark:text-white/40 uppercase tracking-wide pb-2">
-          Context
+      {/* Context - only for agent versions */}
+      {!isHome && (
+        <div className="bg-black/[0.03] dark:bg-white/[0.05] rounded-2xl px-4 py-3">
+          <div className="text-[13px] text-black/40 dark:text-white/40 uppercase tracking-wide pb-2">
+            Context
+          </div>
+          <div className="space-y-2">
+            {contextItems.map((item) => (
+              <div key={item.label} className="flex items-center gap-3 text-[15px]">
+                {item.status === "success" ? (
+                  <Check className="h-4 w-4 text-black/25 dark:text-white/25 shrink-0" />
+                ) : (
+                  <X className="h-4 w-4 text-red-400 shrink-0" />
+                )}
+                <span className="flex-1 text-black/80 dark:text-white/80">{item.value}</span>
+              </div>
+            ))}
+            {contextItems.length === 0 && (
+              <div className="text-[15px] text-black/40 dark:text-white/40 italic">
+                No context available
+              </div>
+            )}
+          </div>
         </div>
-        <div className="space-y-2">
-          {contextItems.map((item) => (
-            <div key={item.label} className="flex items-center gap-3 text-[15px]">
-              {item.status === "success" ? (
-                <Check className="h-4 w-4 text-black/25 dark:text-white/25 shrink-0" />
-              ) : (
-                <X className="h-4 w-4 text-red-400 shrink-0" />
-              )}
-              <span className="flex-1 text-black/80 dark:text-white/80">{item.value}</span>
-            </div>
-          ))}
-          {contextItems.length === 0 && (
-            <div className="text-[15px] text-black/40 dark:text-white/40 italic">
-              No context available
-            </div>
-          )}
-        </div>
-      </div>
+      )}
 
       {/* Actions */}
       <div className="flex gap-2">
-        <Link
-          href="/builds"
-          onClick={onLinkClick}
-          className="flex-1 flex items-center justify-center gap-2 px-4 py-3 rounded-xl text-[15px] font-medium text-black/70 dark:text-white/70 bg-black/[0.06] dark:bg-white/[0.08] active:bg-black/10 dark:active:bg-white/15 transition-colors"
-        >
-          <History className="h-4 w-4" />
-          <span>Build History</span>
-        </Link>
+        {!isHome && (
+          <Link
+            href="/builds"
+            onClick={onLinkClick}
+            className="flex-1 flex items-center justify-center gap-2 px-4 py-3 rounded-xl text-[15px] font-medium text-black/70 dark:text-white/70 bg-black/[0.06] dark:bg-white/[0.08] active:bg-black/10 dark:active:bg-white/15 transition-colors"
+          >
+            <History className="h-4 w-4" />
+            <span>Build History</span>
+          </Link>
+        )}
         <a
           href="https://github.com/eriknson/living-site"
           target="_blank"
@@ -165,7 +181,7 @@ function MobileDrawerContent({
             track("source_clicked");
             onLinkClick?.();
           }}
-          className="flex-1 flex items-center justify-center gap-2 px-4 py-3 rounded-xl text-[15px] font-medium text-black/70 dark:text-white/70 bg-black/[0.06] dark:bg-white/[0.08] active:bg-black/10 dark:active:bg-white/15 transition-colors"
+          className={`${isHome ? "w-full" : "flex-1"} flex items-center justify-center gap-2 px-4 py-3 rounded-xl text-[15px] font-medium text-black/70 dark:text-white/70 bg-black/[0.06] dark:bg-white/[0.08] active:bg-black/10 dark:active:bg-white/15 transition-colors`}
         >
           <ArrowUpRight className="h-4 w-4" />
           <span>Source</span>
@@ -175,12 +191,16 @@ function MobileDrawerContent({
   );
 }
 
-export function BuildTime({ manifest, currentModel, currentDate, currentTimestamp }: BuildTimeProps) {
+export function BuildTime({ currentRoute, manifest, currentModel, currentDate, currentTimestamp }: BuildTimeProps) {
   const [relativeTime, setRelativeTime] = useState<string>("");
+  const [manualVersionDate, setManualVersionDate] = useState<string | null>(null);
   const [dataSources, setDataSources] = useState<DataSource[]>([]);
   const [drawerOpen, setDrawerOpen] = useState(false);
   const [dropdownOpen, setDropdownOpen] = useState(false);
   const isMobile = useIsMobile();
+
+  const isHome = currentRoute === "/";
+  const isAgent = currentRoute === "/agent";
 
   // Close dropdown when clicking into iframe (window loses focus)
   useEffect(() => {
@@ -189,8 +209,37 @@ export function BuildTime({ manifest, currentModel, currentDate, currentTimestam
     return () => window.removeEventListener("blur", handleBlur);
   }, []);
 
+  // Fetch manual version date for Erik's version
   useEffect(() => {
-    if (!manifest) return;
+    if (!isHome) return;
+
+    fetch("/data/manual-version.json")
+      .then((res) => {
+        if (!res.ok) throw new Error("Not found");
+        return res.json();
+      })
+      .then((data: ManualVersionData) => {
+        setManualVersionDate(data.lastUpdated);
+      })
+      .catch(() => setManualVersionDate(null));
+  }, [isHome]);
+
+  // Update relative time for manual version
+  useEffect(() => {
+    if (!isHome || !manualVersionDate) return;
+
+    const updateTime = () => {
+      setRelativeTime(formatRelativeTime(manualVersionDate));
+    };
+
+    updateTime();
+    const interval = setInterval(updateTime, 60000);
+    return () => clearInterval(interval);
+  }, [isHome, manualVersionDate]);
+
+  // Update relative time for agent version
+  useEffect(() => {
+    if (!isAgent || !manifest) return;
 
     const builtAt = getBuiltAt(manifest, currentDate ?? undefined, currentTimestamp ?? undefined);
     if (!builtAt) return;
@@ -202,9 +251,12 @@ export function BuildTime({ manifest, currentModel, currentDate, currentTimestam
     updateTime();
     const interval = setInterval(updateTime, 60000);
     return () => clearInterval(interval);
-  }, [manifest, currentDate, currentTimestamp]);
+  }, [isAgent, manifest, currentDate, currentTimestamp]);
 
   useEffect(() => {
+    // Only fetch data sources for agent page
+    if (!isAgent) return;
+
     fetch("/data/fetch-summary.json")
       .then((res) => {
         if (!res.ok) throw new Error("Not found");
@@ -214,7 +266,7 @@ export function BuildTime({ manifest, currentModel, currentDate, currentTimestam
         setDataSources(data.sources);
       })
       .catch(() => setDataSources([]));
-  }, []);
+  }, [isAgent]);
 
   const displayModel = currentModel || manifest?.default_model;
   const displayDate = currentDate || manifest?.latest_date;
@@ -222,15 +274,20 @@ export function BuildTime({ manifest, currentModel, currentDate, currentTimestam
     ? getBuildForModel(manifest, displayModel, displayDate, currentTimestamp ?? undefined)
     : null;
 
-  const modelName = displayModel ? getModelDisplayName(displayModel) : "—";
+  const modelName = isHome ? "Erik" : (displayModel ? getModelDisplayName(displayModel) : "—");
   const durationStr = currentBuild?.duration_ms ? ` in ${formatDuration(currentBuild.duration_ms)}` : "";
   const contextItems = parseContextFromSources(dataSources);
 
+  // Don't render on /new page
+  if (currentRoute === "/new") return null;
+
   if (!relativeTime) return null;
 
+  const triggerText = `Built ${relativeTime}`;
+  
   const TriggerButton = (
     <button className="h-full px-2.5 text-black/60 dark:text-white/60 hover:bg-black/5 dark:hover:bg-white/10 active:bg-black/10 dark:active:bg-white/15 outline-none flex items-center cursor-pointer">
-      Built {relativeTime}
+      {triggerText}
     </button>
   );
 
@@ -246,6 +303,7 @@ export function BuildTime({ manifest, currentModel, currentDate, currentTimestam
         </DrawerTrigger>
         <DrawerContent aria-label="Build information">
           <MobileDrawerContent
+            isHome={isHome}
             relativeTime={relativeTime}
             modelName={modelName}
             durationStr={durationStr}
@@ -269,7 +327,9 @@ export function BuildTime({ manifest, currentModel, currentDate, currentTimestam
       <DropdownMenuContent align="end" className="w-[320px]">
         {/* Description */}
         <div className="px-3 py-2.5 text-[13px] text-black/60 dark:text-white/60 leading-relaxed">
-          This website regenerates daily via Cursor CLI agents running on GitHub Actions. Redeploys via Vercel automatically.
+          {isHome
+            ? "This is the manually designed version of the site, crafted by Erik."
+            : "This website regenerates daily via Cursor CLI agents running on GitHub Actions. Redeploys via Vercel automatically."}
         </div>
 
         <DropdownMenuSeparator />
@@ -289,41 +349,46 @@ export function BuildTime({ manifest, currentModel, currentDate, currentTimestam
           </div>
         </div>
 
-        <DropdownMenuSeparator />
-
-        {/* Context */}
-        <div className="px-3 py-2.5 space-y-1.5">
-          <div className="text-[13px] text-black/50 dark:text-white/50">
-            Context
-          </div>
-          {contextItems.map((item) => (
-            <div key={item.label} className="flex items-start gap-3 text-[13px]">
-              <span className="flex-1 text-black/80 dark:text-white/80 leading-snug">{item.value}</span>
-              {item.status === "success" ? (
-                <Check className="h-3.5 w-3.5 text-black/20 dark:text-white/20 shrink-0 mt-0.5" />
-              ) : (
-                <X className="h-3.5 w-3.5 text-red-400 shrink-0 mt-0.5" />
+        {/* Context - only for agent versions */}
+        {!isHome && (
+          <>
+            <DropdownMenuSeparator />
+            <div className="px-3 py-2.5 space-y-1.5">
+              <div className="text-[13px] text-black/50 dark:text-white/50">
+                Context
+              </div>
+              {contextItems.map((item) => (
+                <div key={item.label} className="flex items-start gap-3 text-[13px]">
+                  <span className="flex-1 text-black/80 dark:text-white/80 leading-snug">{item.value}</span>
+                  {item.status === "success" ? (
+                    <Check className="h-3.5 w-3.5 text-black/20 dark:text-white/20 shrink-0 mt-0.5" />
+                  ) : (
+                    <X className="h-3.5 w-3.5 text-red-400 shrink-0 mt-0.5" />
+                  )}
+                </div>
+              ))}
+              {contextItems.length === 0 && (
+                <div className="text-[13px] text-black/40 dark:text-white/40 italic">
+                  No context available
+                </div>
               )}
             </div>
-          ))}
-          {contextItems.length === 0 && (
-            <div className="text-[13px] text-black/40 dark:text-white/40 italic">
-              No context available
-            </div>
-          )}
-        </div>
+          </>
+        )}
 
         <DropdownMenuSeparator />
 
         {/* Links */}
         <div className="px-1 py-1">
-          <Link
-            href="/builds"
-            className="flex items-center justify-between px-2 py-2 rounded-sm text-[13px] text-black/80 dark:text-white/80 hover:bg-black/5 dark:hover:bg-white/10 active:bg-black/10 dark:active:bg-white/15 transition-colors"
-          >
-            <span>Build History</span>
-            <History className="h-3.5 w-3.5 text-black/40 dark:text-white/40" />
-          </Link>
+          {!isHome && (
+            <Link
+              href="/builds"
+              className="flex items-center justify-between px-2 py-2 rounded-sm text-[13px] text-black/80 dark:text-white/80 hover:bg-black/5 dark:hover:bg-white/10 active:bg-black/10 dark:active:bg-white/15 transition-colors"
+            >
+              <span>Build History</span>
+              <History className="h-3.5 w-3.5 text-black/40 dark:text-white/40" />
+            </Link>
+          )}
           <a
             href="https://github.com/eriknson/living-site"
             target="_blank"

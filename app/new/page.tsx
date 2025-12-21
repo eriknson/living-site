@@ -2,183 +2,271 @@
 
 import { useCallback, useEffect, useState } from "react";
 import { track } from "@vercel/analytics";
-import { NaturalView } from "@/components/build-views/natural-view";
-import { TerminalView } from "@/components/build-views/terminal-view";
-import { ViewModeMenu } from "@/components/view-mode-menu";
-import type { BuildState, BuildEvent, SSEMessage } from "@/lib/build-types";
+import { GlobalMenuBar } from "@/components/global-menu-bar";
+import { SiteViewer } from "@/components/site-viewer";
+import { StepList } from "@/components/build-views/step-list";
+import { Step, deriveStep, processEvent } from "@/lib/step-types";
 
-type ViewMode = "natural" | "terminal";
+type GenerationStatus = "idle" | "running" | "complete" | "error";
 
 export default function NewBuildPage() {
-  const [viewMode, setViewMode] = useState<ViewMode>("natural");
-  const [buildId, setBuildId] = useState<string | null>(null);
-  const [buildState, setBuildState] = useState<BuildState | null>(null);
-  const [isStarting, setIsStarting] = useState(false);
+  const [status, setStatus] = useState<GenerationStatus>("idle");
+  const [htmlContent, setHtmlContent] = useState<string>("");
+  const [steps, setSteps] = useState<Step[]>([]);
   const [error, setError] = useState<string | null>(null);
+  const [cooldown, setCooldown] = useState<number>(0);
+  const [startTime, setStartTime] = useState<number | null>(null);
+  const [elapsedTime, setElapsedTime] = useState<number>(0);
 
-  // Check for existing build on mount
+  // Check availability on mount
   useEffect(() => {
-    const checkExisting = async () => {
+    const checkAvailability = async () => {
       try {
-        const res = await fetch("/api/build");
+        const res = await fetch("/api/generate");
         const data = await res.json();
-        if (data.currentBuild && data.state?.status === "running") {
-          setBuildId(data.currentBuild);
-          setBuildState(data.state);
+        if (!data.hasApiKey && !data.flyReady) {
+          setError("Agent not configured");
+        }
+        if (data.cooldownRemaining > 0) {
+          setCooldown(data.cooldownRemaining);
         }
       } catch {
-        // Ignore errors on initial check
+        // Ignore
       }
     };
-    checkExisting();
+    checkAvailability();
   }, []);
 
-  // Subscribe to SSE when we have a buildId
+  // Countdown timer for cooldown
   useEffect(() => {
-    if (!buildId) return;
+    if (cooldown <= 0) return;
+    const timer = setInterval(() => {
+      setCooldown((c) => Math.max(0, c - 1));
+    }, 1000);
+    return () => clearInterval(timer);
+  }, [cooldown]);
 
-    const eventSource = new EventSource(`/api/build/stream?id=${buildId}`);
+  // Elapsed time counter during generation
+  useEffect(() => {
+    if (status !== "running" || !startTime) return;
+    const timer = setInterval(() => {
+      setElapsedTime(Math.floor((Date.now() - startTime) / 1000));
+    }, 100);
+    return () => clearInterval(timer);
+  }, [status, startTime]);
 
-    eventSource.onmessage = (event) => {
-      try {
-        const message: SSEMessage = JSON.parse(event.data);
+  // Complete the last step when generation ends
+  const completeLastStep = useCallback(() => {
+    setSteps((prev) => {
+      if (prev.length === 0) return prev;
+      const last = prev[prev.length - 1];
+      if (last.completedAt) return prev;
+      return prev.map((s, i) =>
+        i === prev.length - 1 ? { ...s, completedAt: Date.now() } : s
+      );
+    });
+  }, []);
 
-        switch (message.type) {
-          case "state":
-            setBuildState(message.data as BuildState);
-            break;
-
-          case "event":
-            // Events are already processed server-side into state
-            // But we could use them for additional UI updates
-            break;
-
-          case "done":
-            eventSource.close();
-            break;
-
-          case "error":
-            setError(message.data as string);
-            eventSource.close();
-            break;
-        }
-      } catch (e) {
-        console.error("Failed to parse SSE message:", e);
-      }
-    };
-
-    eventSource.onerror = () => {
-      // SSE will auto-reconnect, but if it keeps failing we should handle it
-      console.error("SSE connection error");
-    };
-
-    return () => {
-      eventSource.close();
-    };
-  }, [buildId]);
-
-  const handleStart = useCallback(async () => {
-    setIsStarting(true);
+  const handleGenerate = useCallback(async () => {
+    setStatus("running");
     setError(null);
+    setHtmlContent("");
+    setSteps([]);
+    setStartTime(Date.now());
+    setElapsedTime(0);
+
+    // #region agent log
+    const genStartTime = Date.now();
+    fetch('http://127.0.0.1:7242/ingest/7b82bf8a-7c03-4697-b719-1e325f7e9340',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'page.tsx:handleGenerate:start',message:'Client: handleGenerate started',data:{},timestamp:genStartTime,sessionId:'debug-session',hypothesisId:'D'})}).catch(()=>{});
+    // #endregion
 
     try {
-      const res = await fetch("/api/build", { method: "POST" });
-      const data = await res.json();
+      track("live_generation_started");
+
+      // #region agent log
+      const postFetchStart = Date.now();
+      // #endregion
+      const res = await fetch("/api/generate", { method: "POST" });
+      // #region agent log
+      fetch('http://127.0.0.1:7242/ingest/7b82bf8a-7c03-4697-b719-1e325f7e9340',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'page.tsx:handleGenerate:postFetchComplete',message:'Client: POST fetch response received',data:{postFetchMs:Date.now()-postFetchStart,ok:res.ok,status:res.status},timestamp:Date.now(),sessionId:'debug-session',hypothesisId:'A,D'})}).catch(()=>{});
+      // #endregion
 
       if (!res.ok) {
-        setError(data.error || "Failed to start build");
-        setIsStarting(false);
-        return;
+        const data = await res.json();
+        if (res.status === 429) {
+          setCooldown(data.retryAfter || 60);
+        }
+        throw new Error(data.error || "Failed to generate");
       }
 
-      track("build_started");
-      setBuildId(data.buildId);
-      // State will be populated by SSE
+      const reader = res.body?.getReader();
+      if (!reader) throw new Error("No response stream");
+
+      const decoder = new TextDecoder();
+      let buffer = "";
+      let firstStepLogged = false;
+
+      while (true) {
+        const { done, value } = await reader.read();
+        if (done) break;
+
+        buffer += decoder.decode(value, { stream: true });
+        const lines = buffer.split("\n");
+        buffer = lines.pop() || "";
+
+        for (const line of lines) {
+          if (line.startsWith("data: ")) {
+            const rawData = line.slice(6);
+
+            // Try to parse as JSON
+            let event: Record<string, unknown> | null = null;
+            try {
+              event = JSON.parse(rawData);
+            } catch {
+              // Not JSON - could be spawn event
+            }
+
+            // Check for completion/error events
+            if (event) {
+              if (event.type === "complete") {
+                // #region agent log
+                fetch('http://127.0.0.1:7242/ingest/7b82bf8a-7c03-4697-b719-1e325f7e9340',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'page.tsx:handleGenerate:complete',message:'Client: Generation complete event received',data:{totalMs:Date.now()-genStartTime,hasHtml:!!(event.html)},timestamp:Date.now(),sessionId:'debug-session',hypothesisId:'C'})}).catch(()=>{});
+                // #endregion
+                completeLastStep();
+                const html = event.html as string | undefined;
+                if (html) {
+                  setHtmlContent(html);
+                }
+                setStatus("complete");
+                track("live_generation_complete", {
+                  duration: Math.floor(
+                    (Date.now() - (startTime || Date.now())) / 1000
+                  ),
+                });
+                continue;
+              } else if (event.type === "error") {
+                throw new Error(event.message as string);
+              }
+            }
+
+            // Derive step from event
+            const derived = deriveStep(event, rawData);
+            if (derived) {
+              // #region agent log - track first step received
+              if (derived.label && !firstStepLogged) {
+                firstStepLogged = true;
+                fetch('http://127.0.0.1:7242/ingest/7b82bf8a-7c03-4697-b719-1e325f7e9340',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'page.tsx:handleGenerate:firstStep',message:'Client: First step received',data:{msToFirstStep:Date.now()-genStartTime,stepLabel:derived.label},timestamp:Date.now(),sessionId:'debug-session',hypothesisId:'C'})}).catch(()=>{});
+              }
+              // #endregion
+              setSteps((prev) => processEvent(prev, derived));
+            }
+          }
+        }
+      }
     } catch (e) {
-      setError("Failed to start build");
-      console.error(e);
-    } finally {
-      setIsStarting(false);
+      console.error("Generation error:", e);
+      completeLastStep();
+      setError(e instanceof Error ? e.message : "Generation failed");
+      setStatus("error");
+      track("live_generation_error");
     }
-  }, []);
+  }, [completeLastStep, startTime]);
+
+  const isBuilding = status === "running";
+  const isComplete = status === "complete";
 
   return (
-    <>
-      {/* Menu bar */}
-      <nav className="fixed top-0 left-0 right-0 h-[var(--menu-bar-height)] z-50 flex items-center justify-between px-3 bg-white/40 backdrop-blur-md backdrop-saturate-150 border-b border-black/5 text-[13px] text-black/85 select-none">
-        <div className="flex items-center h-full">
-          {/* Black circle on very small screens */}
-          <span className="h-full px-2.5 flex items-center min-[375px]:hidden">
-            <span className="w-3 h-3 bg-black rounded-full" />
-          </span>
-          {/* Full text on larger screens */}
-          <a
-            href="/"
-            className="h-full px-2.5 font-semibold hidden min-[375px]:flex items-center hover:bg-black/5 transition-colors"
-          >
-            eriks.design
-          </a>
+    <div className="h-dvh flex flex-col bg-white dark:bg-[#0a0a0a]">
+      {/* Menu bar - consistent with /agent */}
+      <GlobalMenuBar
+        currentRoute="/new"
+        isBuilding={isBuilding}
+        buildElapsed={elapsedTime}
+        buildComplete={isComplete}
+        buildTotalTime={elapsedTime}
+      />
 
-          {/* View mode menu */}
-          <ViewModeMenu value={viewMode} onChange={(mode) => {
-            track("view_mode_changed", { mode });
-            setViewMode(mode);
-          }} />
-        </div>
+      {/* Main content */}
+      <main className="flex-1 flex flex-col min-h-0">
+        {status === "idle" && (
+          <div className="flex-1 flex flex-col items-center justify-center px-4">
+            <div className="text-center max-w-md">
+              <h1 className="text-2xl font-light text-black/90 dark:text-white/90 mb-4">
+                Generate a new site
+              </h1>
+              <p className="text-sm text-black/50 dark:text-white/50 mb-8 leading-relaxed">
+                Composer-1 will create a unique interpretation of your personal
+                website based on your recent activity. Takes about 15-20
+                seconds.
+              </p>
 
-        <div className="flex items-center h-full">
-          {/* Build status indicator */}
-          {buildState && (
-            <div className="flex items-center gap-2 px-2.5 text-xs text-black/60">
-              <span
-                className={`w-2 h-2 rounded-full ${
-                  buildState.status === "running"
-                    ? "bg-amber-500 animate-pulse"
-                    : buildState.status === "complete"
-                      ? "bg-green-500"
-                      : "bg-red-500"
-                }`}
-              />
-              <span>
-                {buildState.status === "running"
-                  ? "Building..."
-                  : buildState.status === "complete"
-                    ? "Complete"
-                    : "Failed"}
-              </span>
+              {error && <p className="text-sm text-red-500 mb-4">{error}</p>}
+
+              <button
+                onClick={handleGenerate}
+                disabled={cooldown > 0 || !!error}
+                className="px-6 py-2.5 bg-black dark:bg-white text-white dark:text-black text-sm rounded-full hover:bg-black/80 dark:hover:bg-white/80 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+              >
+                {cooldown > 0 ? `Wait ${cooldown}s` : "Start Generation"}
+              </button>
             </div>
-          )}
-        </div>
-      </nav>
+          </div>
+        )}
 
-      {/* View content */}
-      {viewMode === "natural" ? (
-        <NaturalView
-          state={buildState}
-          onStart={handleStart}
-          isStarting={isStarting}
-        />
-      ) : (
-        <TerminalView
-          state={buildState}
-          onStart={handleStart}
-          isStarting={isStarting}
-        />
-      )}
+        {status === "running" && (
+          <div className="flex-1 px-6 py-6 overflow-auto">
+            <StepList steps={steps} />
+          </div>
+        )}
 
-      {/* Error toast */}
-      {error && (
-        <div className="fixed bottom-4 left-1/2 -translate-x-1/2 px-4 py-2 bg-red-100 text-red-800 text-sm rounded-lg border border-red-200">
-          {error}
-          <button
-            onClick={() => setError(null)}
-            className="ml-3 text-red-600 hover:text-red-800"
-          >
-            ×
-          </button>
-        </div>
-      )}
-    </>
+        {status === "complete" && (
+          <div className="flex-1 flex flex-col min-h-0">
+            {htmlContent ? (
+              <SiteViewer htmlContent={htmlContent} />
+            ) : (
+              /* No HTML - show success message */
+              <div className="flex-1 flex flex-col items-center justify-center px-4">
+                <div className="text-center max-w-md">
+                  <p className="text-lg text-black/70 dark:text-white/70 mb-4">
+                    Generation complete!
+                  </p>
+                  <button
+                    onClick={() => {
+                      setStatus("idle");
+                      setError(null);
+                    }}
+                    className="px-6 py-2.5 bg-black dark:bg-white text-white dark:text-black text-sm rounded-full hover:bg-black/80 dark:hover:bg-white/80 transition-colors"
+                  >
+                    Generate Another
+                  </button>
+                </div>
+              </div>
+            )}
+          </div>
+        )}
+
+        {status === "error" && (
+          <div className="flex-1 flex flex-col items-center justify-center px-4">
+            <div className="text-center max-w-md">
+              <p className="text-2xl font-light text-red-500 mb-4">
+                Something went wrong
+              </p>
+              <p className="text-sm text-black/50 dark:text-white/50 mb-8">
+                {error || "Failed to generate the site"}
+              </p>
+              <button
+                onClick={() => {
+                  setStatus("idle");
+                  setError(null);
+                }}
+                className="px-6 py-2.5 bg-black dark:bg-white text-white dark:text-black text-sm rounded-full hover:bg-black/80 dark:hover:bg-white/80 transition-colors"
+              >
+                Try Again
+              </button>
+            </div>
+          </div>
+        )}
+      </main>
+    </div>
   );
 }
-

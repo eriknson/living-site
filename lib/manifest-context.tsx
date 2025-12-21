@@ -76,7 +76,7 @@ export function ManifestProvider({ children }: { children: ReactNode }) {
       }
 
       const queryString = params.toString();
-      router.replace(queryString ? `/?${queryString}` : "/", { scroll: false });
+      router.replace(queryString ? `/agent?${queryString}` : "/agent", { scroll: false });
     },
     [router, searchParams]
   );

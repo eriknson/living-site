@@ -1,8 +1,16 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
 import { track } from "@vercel/analytics";
 import { Check, ChevronDown, Infinity } from "lucide-react";
+
+// #region agent log
+function logModelEvent(msg: string, data: Record<string, unknown>, hypId: string) {
+  const fullData = {...data,bodyOverflow:document.body.style.overflow,bodyTouchAction:document.body.style.touchAction,bodyPointerEvents:document.body.style.pointerEvents};
+  console.log(`[DEBUG ${hypId}] ${msg}:`, JSON.stringify(fullData));
+  fetch('http://127.0.0.1:7242/ingest/7b82bf8a-7c03-4697-b719-1e325f7e9340',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'model-selector.tsx',message:msg,data:fullData,timestamp:Date.now(),sessionId:'debug-session',hypothesisId:hypId})}).catch(()=>{});
+}
+// #endregion
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -63,11 +71,17 @@ export function ModelSelector({ manifest, currentModel, currentDate, currentTime
     );
   }
 
-  const handleSelect = (model: string) => {
+  const handleSelect = useCallback((model: string) => {
+    // #region agent log
+    logModelEvent('model_select_start', { model, previousModel: currentModel, isMobile, drawerOpen }, 'D,E');
+    // #endregion
     track("model_switched", { model, previous_model: currentModel });
     onModelChange(model);
     setDrawerOpen(false);
-  };
+    // #region agent log
+    setTimeout(() => logModelEvent('model_select_after_drawer_close', { model }, 'D,E'), 100);
+    // #endregion
+  }, [currentModel, isMobile, drawerOpen, onModelChange]);
 
   const isOpen = isMobile ? drawerOpen : dropdownOpen;
   const TriggerButton = (

@@ -1,17 +1,12 @@
 ---
-description: Design guardrails for site generation
-alwaysApply: true
+description: Design guardrails for generated HTML
+globs:
+  - generated/*.html
 ---
 
 # Design Guardrails
 
-## Technical
 - Single HTML, inline CSS, max-width ~600px
-- Mobile-first (375px baseline)
+- Mobile-first, semantic HTML
 - External links: `target="_blank" rel="noopener"`
-- Semantic HTML (header, main, footer)
-
-## Avoid
-- Em dashes, phrasings that feel AI slop
-- Purple/blue gradients, neon without purpose
-- Generic layouts — make it feel intentional
+- Avoid: em dashes, purple gradients, generic layouts

@@ -5,13 +5,41 @@ import { Drawer as DrawerPrimitive } from "vaul";
 import * as VisuallyHidden from "@radix-ui/react-visually-hidden";
 import { cn } from "@/lib/utils";
 
+// #region agent log
+function logBodyStyles(event: string, hypothesisId: string) {
+  const body = document.body;
+  const html = document.documentElement;
+  const overlayCount = document.querySelectorAll('[data-vaul-overlay]').length;
+  const drawerCount = document.querySelectorAll('[data-vaul-drawer]').length;
+  const vaulNoPointerEvents = document.querySelectorAll('[data-vaul-no-pointer-events]').length;
+  const anyVaulAttr = document.querySelectorAll('[data-vaul-drawer-visible]').length;
+  const fixedElements = document.querySelectorAll('.fixed.inset-0').length;
+  const computedBody = getComputedStyle(body);
+  const computedHtml = getComputedStyle(html);
+  const data = {bodyOverflow:body.style.overflow,bodyTouchAction:body.style.touchAction,bodyPointerEvents:body.style.pointerEvents,htmlOverflow:html.style.overflow,bodyPosition:body.style.position,bodyDataVaul:body.getAttribute('data-vaul-drawer-visible'),overlayCount,drawerCount,vaulNoPointerEvents,anyVaulAttr,fixedElements,computedBodyOverflow:computedBody.overflow,computedBodyPosition:computedBody.position,computedHtmlOverflow:computedHtml.overflow,webkitOverflowScrolling:(body.style as unknown as Record<string,string>).webkitOverflowScrolling,isIOS:/iPad|iPhone|iPod/.test(navigator.userAgent)};
+  console.log(`[DEBUG ${hypothesisId}] ${event}:`, JSON.stringify(data));
+  fetch('http://127.0.0.1:7242/ingest/7b82bf8a-7c03-4697-b719-1e325f7e9340',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'drawer.tsx:log',message:event,data,timestamp:Date.now(),sessionId:'debug-session',hypothesisId})}).catch(()=>{});
+}
+// #endregion
+
 const Drawer = ({
   shouldScaleBackground = false,
   noBodyStyles = true,
+  onOpenChange,
   ...props
-}: React.ComponentProps<typeof DrawerPrimitive.Root>) => (
-  <DrawerPrimitive.Root shouldScaleBackground={shouldScaleBackground} noBodyStyles={noBodyStyles} {...props} />
-);
+}: React.ComponentProps<typeof DrawerPrimitive.Root>) => {
+  // #region agent log
+  const handleOpenChange = React.useCallback((open: boolean) => {
+    logBodyStyles(open ? 'drawer_opening' : 'drawer_closing', 'A,B,C');
+    onOpenChange?.(open);
+    setTimeout(() => logBodyStyles(open ? 'drawer_opened_50ms' : 'drawer_closed_50ms', 'A,B,C'), 50);
+    setTimeout(() => logBodyStyles(open ? 'drawer_opened_200ms' : 'drawer_closed_200ms', 'A,B,C'), 200);
+  }, [onOpenChange]);
+  // #endregion
+  return (
+    <DrawerPrimitive.Root shouldScaleBackground={shouldScaleBackground} noBodyStyles={noBodyStyles} onOpenChange={handleOpenChange} {...props} />
+  );
+};
 Drawer.displayName = "Drawer";
 
 const DrawerTrigger = DrawerPrimitive.Trigger;

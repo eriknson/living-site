@@ -108,6 +108,7 @@ interface AggregatedData {
   context: {
     season: string;
   };
+  reference?: string; // HTML content of the reference page
 }
 
 function getSeason(): string {
@@ -306,6 +307,27 @@ export async function aggregate(): Promise<AggregatedData> {
   }
 
   // =========================================================================
+  // Load reference page (if available)
+  // =========================================================================
+  let reference: string | undefined;
+  try {
+    reference = await readFile("infra/prompts/reference.html", "utf-8");
+    console.log("\n✓ Loaded reference page");
+    fetchResults.push({
+      name: "Reference",
+      status: "success",
+      summary: `${reference.length} bytes`,
+    });
+  } catch {
+    console.log("\n⚠ Reference page not found (run export-reference first)");
+    fetchResults.push({
+      name: "Reference",
+      status: "skipped",
+      summary: "file not found",
+    });
+  }
+
+  // =========================================================================
   // Build final output
   // =========================================================================
 
@@ -318,6 +340,7 @@ export async function aggregate(): Promise<AggregatedData> {
     context: {
       season: getSeason(),
     },
+    reference,
   };
 
   // Write to latest.json

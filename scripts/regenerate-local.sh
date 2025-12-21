@@ -27,19 +27,22 @@ fi
 # Clear existing build for this model
 rm -f "generated/${MODEL}.html"
 
-# Build the prompt (inline system.md, then reference supporting files)
+# Build the prompt (inline system.md + brief + identity, reference HTML only)
 SYSTEM_PROMPT=$(cat infra/prompts/system.md)
+BRIEF=$(cat data/brief.json)
+IDENTITY=$(cat data/identity.json)
+
 PROMPT="${SYSTEM_PROMPT}
 
 ---
 
-For data and context, read:
-- .cursor/rules/site-generation/context.md — voice and data sources
-- .cursor/rules/site-generation/website-guidelines.md — design guardrails
-- data/brief.json — curator's editorial brief
-- data/latest.json — raw data
-- data/identity.json — contact links
+## Editorial Brief (today's context)
+${BRIEF}
 
+## Identity
+${IDENTITY}
+
+Read fly-context/reference.html for design reference.
 Create generated/${MODEL}.html"
 
 echo "=== Running cursor-agent ==="

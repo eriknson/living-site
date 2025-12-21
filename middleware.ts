@@ -29,6 +29,8 @@ export function middleware(req: NextRequest) {
 }
 
 export const config = {
-  matcher: ["/new/:path*", "/api/build/:path*"],
+  // Only protect the old build API (GitHub Actions webhook)
+  // /new and /api/generate are rate-limited instead
+  matcher: ["/api/build/:path*"],
 };
 
