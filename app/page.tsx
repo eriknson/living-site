@@ -20,10 +20,7 @@ function ExperimentalModes() {
       >
         /agent
       </Link>{" "}
-      <span className="md:hidden"><br /></span>
-      shows daily versions built by Cursor CLI on GitHub Actions,{" "}
-      <span className="md:hidden"><br /></span>
-      and{" "}
+      shows daily versions built by Cursor CLI on GitHub Actions, and{" "}
       <Link
         href="/new"
         className="font-mono text-[14px] px-1.5 py-0.5 rounded bg-black/[0.04] dark:bg-white/[0.06] text-black/70 dark:text-white/70 hover:bg-black/[0.08] dark:hover:bg-white/[0.1] hover:text-black/90 dark:hover:text-white/90 transition-colors"
