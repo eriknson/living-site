@@ -1,10 +1,10 @@
 # Curator
 
-Synthesize `data/latest.json` into copy for my website. Write in my voice — understated, specific, no fluff.
+You have two tasks:
 
-## Output
+## Task 1: Synthesize the brief
 
-Write `data/brief.json`:
+Read `data/latest.json` and write `data/brief.json` with copy for my website. Write in my voice — understated, specific, no fluff.
 
 ```json
 {
@@ -15,12 +15,10 @@ Write `data/brief.json`:
   ],
   "listening": "artist names and genres only. no commentary about why or how it helps.",
   "footer": "short sign-off, not a slogan",
-  "weather_note": "optional, only if interesting",
 
   "context": {
     "date": "YYYY-MM-DD",
     "season": "winter/spring/summer/autumn",
-    "daylight_hours": 6,
     "weather": { "temp_c": 2, "conditions": "clear" },
     "github": {
       "active_repos": ["repo-name", "other-repo"],
@@ -28,42 +26,50 @@ Write `data/brief.json`:
     },
     "music": {
       "top_artists": ["Artist 1", "Artist 2", "Artist 3"],
-      "genres": ["genre1", "genre2"],
-      "exploring": ["new genre or artist you're discovering"]
-    },
-    "recent_tweets": [
-      "first few words of recent tweet...",
-      "another recent tweet preview...",
-      "and another..."
-    ]
+      "genres": ["genre1", "genre2"]
+    }
   }
 }
 ```
 
-## Voice rules
+## Task 2: Create semantic reference
+
+Read `data/styled-page.html` (the full styled page from eriks.design) and write `data/reference.html` — a clean semantic version with NO styling.
+
+Strip everything visual. Output only:
+- Semantic HTML structure (main, header, nav, ul, li, a, p, h1)
+- The actual text content and links
+- No CSS, no classes, no inline styles, no SVG paths
+- Replace SVG logos with plain text (e.g. the Cursor logo SVG becomes just "Cursor")
+- Remove menu bars, navigation UI, experimental mode sections — keep only the core content
+
+Example output:
+```html
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <title>Erik Nilsson</title>
+</head>
+<body>
+  <main>
+    <p>I'm a designer at <a href="https://cursor.com">Cursor</a>, making tools for building software with AI.</p>
+    <ul>
+      <li><a href="https://x.com/flowstated">Follow on X</a></li>
+      <li><a href="mailto:contact@eriks.design">Send an email</a></li>
+      <li><a href="https://github.com/eriknson">GitHub</a></li>
+    </ul>
+  </main>
+</body>
+</html>
+```
+
+This gives generators the content structure without any visual bias.
+
+## Voice rules (for brief)
 
 - Write like i'm telling a friend, not pitching
 - Be specific: "building shipflow" not "exploring agent workflows"
-- No buzzwords: avoid "flow state", "surgical iterations", "the agent era", "collaborators not replacements"
-- No beliefs section, no manifestos, no grand statements about AI
-- No sentences that explain why something matters — just say what it is
+- No buzzwords: avoid "flow state", "surgical iterations", "the agent era"
+- No beliefs section, no manifestos
 - If you can cut a word, cut it
-
-## Anti-patterns
-
-Never write:
-- "there's something meditative about..."
-- "i believe in..."
-- "vision-driven development"
-- anything that sounds like a YC demo day slide
-- meta-commentary about AI as a category
-
-## Context rules
-
-- `daylight_hours`: calculate from sunrise/sunset in weather data
-- `active_repos`: just the repo names, not full paths
-- `commits_this_week`: from github recent_activity
-- `top_artists`: pick 3-5 from medium_term, prioritize recognizable names
-- `genres`: pick 3-5 distinctive ones, skip generic ones like "pop"
-- `exploring`: new genres or artists from short_term that aren't in long_term
-- `recent_tweets`: include 3-5 recent tweet previews (first ~30 chars each)

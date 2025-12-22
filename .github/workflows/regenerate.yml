@@ -66,12 +66,11 @@ jobs:
       - name: Run smoke test
         run: npm run smoke
 
-      - name: Fetch live site as reference
+      - name: Fetch live site for curator
         run: |
-          echo "Fetching clean reference HTML..."
-          mkdir -p fly-context
-          curl -sL "https://eriks.design/reference" -o fly-context/reference.html
-          echo "Updated fly-context/reference.html ($(wc -c < fly-context/reference.html) bytes)"
+          echo "Fetching styled page for curator to process..."
+          curl -sL "https://eriks.design" -o data/styled-page.html
+          echo "Saved data/styled-page.html ($(wc -c < data/styled-page.html) bytes)"
 
       - name: Aggregate data
         env:
@@ -115,7 +114,7 @@ jobs:
           path: |
             data/latest.json
             data/fetch-summary.json
-            fly-context/reference.html
+            data/styled-page.html
           retention-days: 3
 
   # Job 2: Curator agent synthesizes raw data into creative direction
@@ -148,9 +147,7 @@ jobs:
           # Move data files to data/
           cp artifacts/data/latest.json data/latest.json
           cp artifacts/data/fetch-summary.json data/fetch-summary.json
-          # Move reference.html to fly-context/ (create dir since it's gitignored)
-          mkdir -p fly-context
-          cp artifacts/fly-context/reference.html fly-context/reference.html
+          cp artifacts/data/styled-page.html data/styled-page.html
           echo "Artifacts organized"
 
       - name: Install Cursor CLI
@@ -170,7 +167,9 @@ jobs:
         run: |
           git worktree add /tmp/curator-workspace --detach HEAD
           cp data/latest.json /tmp/curator-workspace/data/latest.json
+          cp data/styled-page.html /tmp/curator-workspace/data/styled-page.html
           rm -f /tmp/curator-workspace/data/brief.json
+          rm -f /tmp/curator-workspace/data/reference.html
           echo "Curator workspace created"
 
       - name: Run curator agent
@@ -179,21 +178,20 @@ jobs:
           CURSOR_API_KEY: ${{ secrets.CURSOR_API_KEY }}
         run: |
           PROMPT="Read infra/prompts/curator.md for your instructions.
-          Read data/latest.json for the raw data.
           
-          Create data/brief.json with your curated synthesis.
-          Output only the JSON file, no explanation needed."
+          Task 1: Read data/latest.json → Write data/brief.json
+          Task 2: Read data/styled-page.html → Write data/reference.html (semantic version)"
           
           cursor-agent -p --force --model composer-1 "$PROMPT" 2>&1 || true
 
       - name: Copy curator output or create fallback
         run: |
+          # Copy brief.json
           if [ -f "/tmp/curator-workspace/data/brief.json" ]; then
             cp /tmp/curator-workspace/data/brief.json data/brief.json
             echo "=== Brief Output (from curator) ==="
           else
             echo "⚠ Curator did not create brief.json, generating fallback..."
-            # Create minimal fallback brief from latest.json
             node -e "
               const latest = require('./data/latest.json');
               const gh = latest.sources?.github || {};
@@ -206,20 +204,40 @@ jobs:
                 intro: repos.length ? 'Working on ' + repos.join(' and ') + '.' : 'Building with AI.',
                 currently: [{ label: 'building', value: repos.join(', ') || 'projects' }],
                 listening: artists.join(', ') || 'music',
-                footer: latest.identity?.name?.split(' ')[0]?.toLowerCase() || 'erik',
-                context: {
-                  date: new Date().toISOString().split('T')[0],
-                  season: latest.context?.season || 'winter',
-                  weather: weather.current ? { temp_c: weather.current.temperature_c, conditions: weather.current.conditions } : null,
-                  github: { active_repos: repos, commits_this_week: gh.recent_activity?.commits || 0 },
-                  music: { top_artists: artists, genres: (spotify.medium_term?.genres || []).slice(0, 3) }
-                }
+                footer: latest.identity?.name?.split(' ')[0]?.toLowerCase() || 'erik'
               };
               console.log(JSON.stringify(brief, null, 2));
             " > data/brief.json
             echo "=== Brief Output (fallback) ==="
           fi
           cat data/brief.json
+          
+          # Copy reference.html (semantic version)
+          if [ -f "/tmp/curator-workspace/data/reference.html" ]; then
+            cp /tmp/curator-workspace/data/reference.html data/reference.html
+            echo "=== Reference HTML (from curator) ==="
+            head -20 data/reference.html
+          else
+            echo "⚠ Curator did not create reference.html, creating minimal fallback..."
+            cat > data/reference.html << 'FALLBACK'
+<!DOCTYPE html>
+<html lang="en">
+<head><meta charset="utf-8"><title>Erik Nilsson</title></head>
+<body>
+<main>
+<p>Designer at <a href="https://cursor.com">Cursor</a>, making tools for building software with AI.</p>
+<ul>
+<li><a href="https://x.com/flowstated">Follow on X</a></li>
+<li><a href="mailto:contact@eriks.design">Send an email</a></li>
+<li><a href="https://github.com/eriknson">GitHub</a></li>
+</ul>
+</main>
+</body>
+</html>
+FALLBACK
+            echo "=== Reference HTML (fallback) ==="
+          fi
+          
           git worktree remove /tmp/curator-workspace --force || true
 
       - name: Notify curator complete
@@ -234,7 +252,9 @@ jobs:
         uses: actions/upload-artifact@v4
         with:
           name: curator-data
-          path: data/brief.json
+          path: |
+            data/brief.json
+            data/reference.html
           retention-days: 3
 
   # Job 3: Generate with each model (parallel matrix)
@@ -278,10 +298,8 @@ jobs:
           # Move data files to data/
           cp artifacts/aggregated/data/latest.json data/latest.json
           cp artifacts/aggregated/data/fetch-summary.json data/fetch-summary.json
-          cp artifacts/curator/brief.json data/brief.json
-          # Move reference.html to fly-context/ (create dir since it's gitignored)
-          mkdir -p fly-context
-          cp artifacts/aggregated/fly-context/reference.html fly-context/reference.html
+          cp artifacts/curator/data/brief.json data/brief.json
+          cp artifacts/curator/data/reference.html data/reference.html
           echo "Artifacts organized"
 
       - name: Install Cursor CLI
@@ -322,8 +340,7 @@ jobs:
         run: |
           # Copy only what the generator needs: brief.json + reference.html
           cp data/brief.json /tmp/clean-gen/data/brief.json
-          mkdir -p /tmp/clean-gen/fly-context
-          cp fly-context/reference.html /tmp/clean-gen/fly-context/reference.html
+          cp data/reference.html /tmp/clean-gen/data/reference.html
           echo "Copied brief.json and reference.html to worktree"
 
       - name: Build generation prompt
@@ -333,7 +350,7 @@ jobs:
 
           ---
 
-          Reference: fly-context/reference.html
+          Reference: data/reference.html
           Today: data/brief.json
 
           Output: generated/${{ matrix.model }}.html
@@ -369,7 +386,7 @@ jobs:
           echo "Checking required files..."
           ls -la infra/prompts/system.md || echo "system.md NOT FOUND"
           ls -la data/brief.json || echo "brief.json NOT FOUND"
-          ls -la fly-context/reference.html || echo "reference.html NOT FOUND"
+          ls -la data/reference.html || echo "reference.html NOT FOUND"
           
           # Run cursor-agent and capture exit code properly
           set -o pipefail
@@ -495,10 +512,8 @@ jobs:
           # Move data files to data/
           cp artifacts/aggregated/data/latest.json data/latest.json
           cp artifacts/aggregated/data/fetch-summary.json data/fetch-summary.json
-          cp artifacts/curator/brief.json data/brief.json
-          # Update reference.html from live site (create dir since it's gitignored)
-          mkdir -p fly-context
-          cp artifacts/aggregated/fly-context/reference.html fly-context/reference.html
+          cp artifacts/curator/data/brief.json data/brief.json
+          cp artifacts/curator/data/reference.html data/reference.html
           echo "Data files organized"
 
       - name: Download all build artifacts
@@ -575,7 +590,7 @@ jobs:
           git config --local user.email "action@github.com"
           git config --local user.name "GitHub Action"
           
-          # Stage all build files (fly-context is gitignored, handled via artifacts)
+          # Stage all build files
           git add data/latest.json
           git add data/fetch-summary.json
           git add data/brief.json

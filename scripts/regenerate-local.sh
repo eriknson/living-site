@@ -10,12 +10,11 @@ echo "Model: $MODEL"
 echo "Date: $DATE"
 echo ""
 
-# Ensure reference.html exists (fetch if missing)
-if [ ! -f "fly-context/reference.html" ]; then
-  echo "Fetching reference.html from live site..."
-  mkdir -p fly-context
-  curl -sL "https://eriks.design/reference" -o fly-context/reference.html
-  echo "✓ Saved fly-context/reference.html"
+# Ensure styled-page.html exists (fetch if missing)
+if [ ! -f "data/styled-page.html" ]; then
+  echo "Fetching styled page from live site..."
+  curl -sL "https://eriks.design" -o data/styled-page.html
+  echo "✓ Saved data/styled-page.html"
   echo ""
 fi
 
@@ -23,13 +22,13 @@ fi
 echo "Using existing data/latest.json for curator (skipping aggregation)"
 echo ""
 
-# Run curator agent if brief.json doesn't exist or is older than latest.json
-if [ ! -f "data/brief.json" ] || [ "data/latest.json" -nt "data/brief.json" ]; then
+# Run curator agent if brief.json or reference.html doesn't exist
+if [ ! -f "data/brief.json" ] || [ ! -f "data/reference.html" ] || [ "data/latest.json" -nt "data/brief.json" ]; then
   echo "=== Running Curator Agent ==="
   npm run curator
   echo ""
 else
-  echo "Using existing data/brief.json"
+  echo "Using existing data/brief.json and data/reference.html"
   echo ""
 fi
 
@@ -43,7 +42,7 @@ PROMPT="${SYSTEM_PROMPT}
 
 ---
 
-Reference: fly-context/reference.html
+Reference: data/reference.html
 Today: data/brief.json
 
 Output: generated/${MODEL}.html"
@@ -69,4 +68,3 @@ npm run save-build-log -- /tmp/build-output.json --model "$MODEL" --date "$DATE"
 echo ""
 echo "=== Done ==="
 echo "Run 'git add -A && git commit -m \"Local build: ${MODEL}\"' to commit"
-

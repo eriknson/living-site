@@ -342,8 +342,8 @@ export async function aggregate(): Promise<AggregatedData> {
   // =========================================================================
   // Build final output
   // =========================================================================
-  // Note: reference.html is fetched by the workflow directly to fly-context/
-  // and passed to agents via artifacts. No need to load it here.
+  // Note: The styled page is fetched by the workflow and the curator converts
+  // it to semantic reference.html. No need to handle it here.
 
   const data: AggregatedData = {
     generated_at: new Date().toISOString(),
