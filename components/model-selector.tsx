@@ -2,7 +2,8 @@
 
 import { useState, useEffect, useCallback } from "react";
 import { track } from "@vercel/analytics";
-import { Check, ChevronDown, Infinity } from "lucide-react";
+import { Check, ChevronDown } from "lucide-react";
+import { InfinityIcon } from "@/components/icons/infinity-icon";
 
 // #region agent log
 function logModelEvent(msg: string, data: Record<string, unknown>, hypId: string) {
@@ -65,7 +66,7 @@ export function ModelSelector({ manifest, currentModel, currentDate, currentTime
   if (!manifest || !currentModel) {
     return (
       <div className="h-full px-2.5 text-black/40 dark:text-white/40 flex items-center gap-1.5">
-        <Infinity className="h-4 w-4 opacity-40" strokeWidth={2.5} />
+        <InfinityIcon className="h-4 w-4 opacity-40" />
         Loading...
       </div>
     );
@@ -86,7 +87,7 @@ export function ModelSelector({ manifest, currentModel, currentDate, currentTime
   const isOpen = isMobile ? drawerOpen : dropdownOpen;
   const TriggerButton = (
     <button className="h-full px-2.5 hover:bg-black/5 dark:hover:bg-white/10 active:bg-black/10 dark:active:bg-white/15 outline-none flex items-center gap-1.5 cursor-pointer">
-      <Infinity className="h-4 w-4 opacity-50" strokeWidth={2.5} />
+      <InfinityIcon className="h-4 w-4 opacity-50" />
       <span>{getModelDisplayName(currentModel)}</span>
       <ChevronDown className={cn("h-3 w-3 opacity-60 transition-transform", isOpen && "rotate-180")} />
     </button>

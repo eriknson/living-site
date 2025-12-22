@@ -113,24 +113,24 @@ function ModelCard({
 
   if (isFailed) {
     return (
-      <div className="bg-white dark:bg-neutral-800 rounded-xl px-3 py-2.5 opacity-50">
-        <div className="text-sm font-medium text-neutral-400">{name}</div>
+      <div className="bg-black/[0.03] dark:bg-white/[0.05] rounded-xl px-3 py-2.5 opacity-50">
+        <div className="text-sm font-medium text-black/40 dark:text-white/40">{name}</div>
         <div className="text-xs text-red-400 mt-1">Build failed</div>
       </div>
     );
   }
 
   return (
-    <div className="bg-white dark:bg-neutral-800 rounded-xl">
+    <div className="bg-black/[0.03] dark:bg-white/[0.05] rounded-xl">
       {/* Desktop layout */}
       <div className="hidden sm:block px-3 py-2.5">
         <div className="flex items-center justify-between gap-2">
-          <span className="text-sm font-medium text-neutral-900 dark:text-neutral-100">{name}</span>
+          <span className="text-sm font-medium text-black/85 dark:text-white/85">{name}</span>
           <div className="flex items-center -mr-1">
             {hasLogs && (
               <button
                 onClick={onOpenLogs}
-                className="p-1.5 rounded-md text-neutral-300 dark:text-neutral-500 hover:text-neutral-500 dark:hover:text-neutral-300 hover:bg-neutral-100 dark:hover:bg-neutral-700 transition-colors"
+                className="p-1.5 rounded-md text-black/25 dark:text-white/25 hover:text-black/50 dark:hover:text-white/50 hover:bg-black/5 dark:hover:bg-white/10 transition-colors"
                 title="View agent logs"
               >
                 <ScrollText className="w-4 h-4" />
@@ -139,7 +139,7 @@ function ModelCard({
             <Link
               href={`/?model=${build.model}&date=${date}&t=${encodeURIComponent(batchTimestamp)}`}
               onClick={onViewBuild}
-              className="p-1.5 rounded-md text-neutral-300 dark:text-neutral-500 hover:text-neutral-500 dark:hover:text-neutral-300 hover:bg-neutral-100 dark:hover:bg-neutral-700 transition-colors"
+              className="p-1.5 rounded-md text-black/25 dark:text-white/25 hover:text-black/50 dark:hover:text-white/50 hover:bg-black/5 dark:hover:bg-white/10 transition-colors"
               title="View this build"
             >
               <ArrowUpRight className="w-4 h-4" />
@@ -148,7 +148,7 @@ function ModelCard({
         </div>
         <div className="flex items-center gap-2.5 mt-1 text-xs">
           {duration && (
-            <span className="text-neutral-400">{formatDuration(duration)}</span>
+            <span className="text-black/40 dark:text-white/40">{formatDuration(duration)}</span>
           )}
           {lineCount && (
             <span className="text-green-600 dark:text-green-400 font-medium">+{lineCount}</span>
@@ -159,10 +159,10 @@ function ModelCard({
       {/* Mobile layout */}
       <div className="flex sm:hidden overflow-hidden">
         <div className="flex-1 min-w-0 px-3 py-3">
-          <div className="text-sm font-medium text-neutral-900 dark:text-neutral-100 truncate">{name}</div>
+          <div className="text-sm font-medium text-black/85 dark:text-white/85 truncate">{name}</div>
           <div className="flex items-center gap-2.5 mt-1 text-xs">
             {duration && (
-              <span className="text-neutral-400">{formatDuration(duration)}</span>
+              <span className="text-black/40 dark:text-white/40">{formatDuration(duration)}</span>
             )}
             {lineCount && (
               <span className="text-green-600 dark:text-green-400 font-medium">+{lineCount}</span>
@@ -173,7 +173,7 @@ function ModelCard({
           {hasLogs && (
             <button
               onClick={onOpenLogs}
-              className="w-11 h-11 flex items-center justify-center rounded bg-neutral-50 dark:bg-neutral-700 text-neutral-400 active:bg-neutral-100 dark:active:bg-neutral-600 transition-colors"
+              className="w-11 h-11 flex items-center justify-center rounded-lg bg-black/[0.03] dark:bg-white/[0.05] text-black/40 dark:text-white/40 active:bg-black/[0.06] dark:active:bg-white/[0.1] transition-colors"
               title="View agent logs"
             >
               <ScrollText className="w-[18px] h-[18px]" />
@@ -182,7 +182,7 @@ function ModelCard({
           <Link
             href={`/?model=${build.model}&date=${date}&t=${encodeURIComponent(batchTimestamp)}`}
             onClick={onViewBuild}
-            className="w-11 h-11 flex items-center justify-center rounded bg-neutral-50 dark:bg-neutral-700 text-neutral-400 active:bg-neutral-100 dark:active:bg-neutral-600 transition-colors"
+            className="w-11 h-11 flex items-center justify-center rounded-lg bg-black/[0.03] dark:bg-white/[0.05] text-black/40 dark:text-white/40 active:bg-black/[0.06] dark:active:bg-white/[0.1] transition-colors"
             title="View this build"
           >
             <ArrowUpRight className="w-[18px] h-[18px]" />
@@ -223,10 +223,12 @@ export function BuildsPageClient({
 
   if (!manifest?.dates?.length) {
     return (
-      <div className="h-full overflow-auto bg-neutral-100 dark:bg-neutral-900">
-        <BuildsMenuBar />
-        <div className="pt-[var(--menu-bar-height)] p-6">
-          <div className="text-center py-12 text-neutral-500">
+      <div className="min-h-dvh bg-[#fafaf9] dark:bg-[#0a0a0a] text-[#1a1a1a] dark:text-[#e5e5e5]">
+        <div className="sticky top-0 z-50">
+          <BuildsMenuBar />
+        </div>
+        <div className="p-6">
+          <div className="text-center py-12 text-black/50 dark:text-white/50">
             No builds yet. The site regenerates daily with multiple AI models.
           </div>
         </div>
@@ -243,16 +245,18 @@ export function BuildsPageClient({
   }
 
   return (
-    <div className="h-full overflow-auto bg-neutral-100 dark:bg-neutral-900">
-      <BuildsMenuBar />
-      <div className="pt-[var(--menu-bar-height)]">
-        <div className="max-w-2xl mx-auto px-4 py-6 sm:py-10">
+    <div className="min-h-dvh bg-[#fafaf9] dark:bg-[#0a0a0a] text-[#1a1a1a] dark:text-[#e5e5e5]">
+      <div className="sticky top-0 z-50">
+        <BuildsMenuBar />
+      </div>
+      <div>
+        <div className="max-w-[640px] mx-auto px-6 pb-6">
           {/* Header */}
           <div className="mb-8">
-            <h1 className="text-xl font-semibold text-neutral-900 dark:text-neutral-100">
+            <h1 className="text-xl font-semibold text-black/85 dark:text-white/85">
               Build History
             </h1>
-            <p className="text-sm text-neutral-500 dark:text-neutral-400 mt-1">
+            <p className="text-sm text-black/50 dark:text-white/50 mt-1">
               Browse and compare model outputs
             </p>
           </div>
@@ -272,7 +276,7 @@ export function BuildsPageClient({
                 <section key={batchKey}>
                   {/* Session header with prompt and GitHub icons */}
                   <div className="flex items-center gap-2 mb-2.5 px-1">
-                    <h2 className="text-sm font-medium text-neutral-700 dark:text-neutral-300">
+                    <h2 className="text-sm font-medium text-black/70 dark:text-white/70">
                       {formatBuildTime(batch.timestamp)}
                     </h2>
                     {batch.system_prompt && (
@@ -284,7 +288,7 @@ export function BuildsPageClient({
                             timestamp: batch.timestamp,
                           });
                         }}
-                        className="text-neutral-300 dark:text-neutral-500 hover:text-neutral-500 dark:hover:text-neutral-300 transition-colors"
+                        className="text-black/25 dark:text-white/25 hover:text-black/50 dark:hover:text-white/50 transition-colors"
                         title="View system prompt"
                       >
                         <FileText className="w-4 h-4" />
@@ -296,7 +300,7 @@ export function BuildsPageClient({
                         target="_blank"
                         rel="noopener noreferrer"
                         onClick={() => track("github_run_clicked")}
-                        className="text-neutral-300 dark:text-neutral-500 hover:text-neutral-500 dark:hover:text-neutral-300 transition-colors"
+                        className="text-black/25 dark:text-white/25 hover:text-black/50 dark:hover:text-white/50 transition-colors"
                         title="View GitHub Actions run"
                       >
                         <GitHubIcon className="w-4 h-4" />

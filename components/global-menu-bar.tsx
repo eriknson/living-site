@@ -35,7 +35,7 @@ export function GlobalMenuBar({
 
   return (
     <nav className="shrink-0 py-4 pt-[calc(1rem+env(safe-area-inset-top))] z-50 text-[13px] text-anysphere-text select-none">
-      <div className="max-w-[580px] mx-auto w-full h-full flex items-center justify-between px-6">
+      <div className="max-w-[640px] mx-auto w-full h-full flex items-center justify-between px-6">
         <div className="flex items-center h-full">
           {/* Black circle on very small screens */}
           {isHome ? (

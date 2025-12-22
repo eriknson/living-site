@@ -238,7 +238,7 @@ export function BuildsMenuBar() {
   const isBuilding = buildState?.status === "running";
 
   const TriggerButton = (
-    <button className="h-full px-2.5 text-black/60 dark:text-white/60 hover:bg-black/5 dark:hover:bg-white/10 active:bg-black/10 dark:active:bg-white/15 outline-none flex items-center gap-2 cursor-pointer">
+    <button className="h-full px-2.5 rounded-full text-black/60 dark:text-white/60 hover:bg-black/5 dark:hover:bg-white/10 active:bg-black/10 dark:active:bg-white/15 outline-none flex items-center gap-2 cursor-pointer">
       {isBuilding ? (
         <>
           <span className="w-2 h-2 bg-blue-500 rounded-full animate-pulse" />
@@ -393,34 +393,36 @@ export function BuildsMenuBar() {
   };
 
   return (
-    <nav className="fixed top-0 left-0 right-0 h-[var(--menu-bar-height)] z-50 flex items-center justify-between px-3 bg-black/[0.03] dark:bg-white/[0.05] backdrop-blur-2xl backdrop-saturate-[1.8] border-b border-black/[0.04] dark:border-white/[0.08] text-[13px] text-black/80 dark:text-white/80 select-none">
-      {/* Left: Site name → links to live site */}
-      <div className="flex items-center h-full">
-        {/* Black circle on very small screens */}
-        <Link href="/" className="h-full px-2.5 flex items-center min-[375px]:hidden hover:bg-black/5 dark:hover:bg-white/10 active:bg-black/10 dark:active:bg-white/15">
-          <span className="w-3 h-3 bg-black dark:bg-white rounded-full" />
-        </Link>
-        {/* Full text on larger screens */}
-        <Link href="/" className="h-full px-2.5 font-semibold hidden min-[375px]:flex items-center hover:bg-black/5 dark:hover:bg-white/10 active:bg-black/10 dark:active:bg-white/15">
-          eriks.design
-        </Link>
-      </div>
+    <nav className="shrink-0 py-4 pt-[calc(1rem+env(safe-area-inset-top))] z-50 text-[13px] text-anysphere-text select-none bg-[#fafaf9] dark:bg-[#0a0a0a]">
+      <div className="max-w-[640px] mx-auto w-full h-full flex items-center justify-between px-6">
+        {/* Left: Site name → links to live site */}
+        <div className="flex items-center h-full">
+          {/* Black circle on very small screens */}
+          <Link href="/" className="h-full flex items-center min-[375px]:hidden hover:opacity-70 transition-opacity">
+            <span className="w-3 h-3 bg-anysphere-text rounded-full" />
+          </Link>
+          {/* Full text on larger screens */}
+          <Link href="/" className="h-full font-semibold hidden min-[375px]:flex items-center hover:opacity-70 transition-opacity">
+            eriks.design
+          </Link>
+        </div>
 
-      {/* Right: Build status + GitHub */}
-      <div className="flex items-center h-full">
-        {/* Build status with dropdown/drawer */}
-        {renderStatusMenu()}
+        {/* Right: Build status + GitHub */}
+        <div className="flex items-center gap-2 h-full">
+          {/* Build status with dropdown/drawer */}
+          {renderStatusMenu()}
 
-        {/* GitHub link */}
-        <a
-          href="https://github.com/eriknson/living-site/actions"
-          target="_blank"
-          rel="noopener noreferrer"
-          className="h-full px-2.5 flex items-center hover:bg-black/5 dark:hover:bg-white/10 active:bg-black/10 dark:active:bg-white/15"
-          title="View GitHub Actions"
-        >
-          <GitHubIcon className="w-4 h-4" />
-        </a>
+          {/* GitHub link */}
+          <a
+            href="https://github.com/eriknson/living-site/actions"
+            target="_blank"
+            rel="noopener noreferrer"
+            className="p-2 rounded-full hover:bg-black/5 dark:hover:bg-white/10 active:bg-black/10 dark:active:bg-white/15 transition-colors"
+            title="View GitHub Actions"
+          >
+            <GitHubIcon className="w-4 h-4" />
+          </a>
+        </div>
       </div>
     </nav>
   );

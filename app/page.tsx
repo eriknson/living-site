@@ -12,7 +12,7 @@ function ExperimentalModes() {
   if (isReference) return null;
 
   return (
-    <p className="text-[14px] text-black/35 dark:text-white/35 leading-[1.8] max-w-[580px] mx-auto px-6 pb-6">
+    <p className="text-[14px] text-black/35 dark:text-white/35 leading-[1.8] max-w-[640px] mx-auto px-6 pb-6">
       This site has two experimental modes to rebuild itself. Explore{" "}
       <Link
         href="/agent"
@@ -35,12 +35,12 @@ function ExperimentalModes() {
 // ========== TUNING PROPS - Adjust these to change all pills at once ==========
 const PILL_CONFIG = {
   // Icon settings
-  iconSize: 20,           // Icon size in px (was 20)
-  iconStrokeWidth: 0.8,   // Stroke width to make icons slightly bolder (0 = no extra stroke)
+  iconSize: 24,           // Icon size in px (was 20)
+  iconStrokeWidth: 0.6,   // Stroke width to make icons slightly bolder (0 = no extra stroke)
   iconOpacity: 0.9,       // Default icon opacity (0-1)
   iconHoverOpacity: 1,  // Icon opacity on hover (0-1)
   // Label settings
-  fontSize: 18,           // Text size in px (was inherited ~24px)
+  fontSize: 21,           // Text size in px (was inherited ~24px)
   fontWeight: 450,        // Font weight (400 = normal, 500 = medium, 600 = semibold)
   labelOpacity: 0.9,      // Label opacity (0-1)
   labelHoverOpacity: 1, // Label opacity on hover (0-1)
@@ -50,9 +50,9 @@ const PILL_CONFIG = {
   bgOpacityDark: 0.06,    // Background opacity (dark mode)
   bgHoverOpacityDark: 0.03, // Background opacity on hover (dark mode)
   // Layout settings
-  gap: 8,                // Gap between icon and text in px
-  paddingX: 14,           // Horizontal padding in px
-  paddingY: 6,            // Vertical padding in px
+  gap: 10,                // Gap between icon and text in px
+  paddingX: 16,           // Horizontal padding in px
+  paddingY: 7,            // Vertical padding in px
   borderRadius: 999,      // Full rounded
 };
 
@@ -64,11 +64,14 @@ export default function HomePage() {
         <GlobalMenuBar currentRoute="/" />
       </div>
 
-      {/* Main Content - wrapper for proper flex layout */}
+      {/* Main Content */}
       <div className="flex-1 flex flex-col">
-        <main className="max-w-[580px] mx-auto px-6 pt-16 md:py-24 w-full">
+        <main className="max-w-[640px] mx-auto px-6 pt-16 md:pt-24 w-full">
           {/* Bio paragraph */}
-          <div className="text-[24px] md:text-[34px] leading-relaxed text-black/85 dark:text-white/85 mb-5 md:mb-5">
+          <div 
+            className="leading-snug text-black/85 dark:text-white/85"
+            style={{ fontSize: 'clamp(24px, 5vw, 34px)' }}
+          >
             <p>
               I'm building{" "}
             {/* ========== CURSOR PILL ========== */}
@@ -76,9 +79,9 @@ export default function HomePage() {
               href="https://cursor.com"
               className="group inline-flex items-center pill-bg"
               style={{
-                padding: `${PILL_CONFIG.paddingY}px ${PILL_CONFIG.paddingX}px`,
+                padding: '0.15em 0.4em',
                 borderRadius: PILL_CONFIG.borderRadius,
-                transform: "translateY(0.2em)",
+                transform: "translateY(0.15em)",
                 '--bg-opacity': PILL_CONFIG.bgOpacity,
                 '--bg-hover-opacity': PILL_CONFIG.bgHoverOpacity,
                 '--bg-opacity-dark': PILL_CONFIG.bgOpacityDark,
@@ -107,15 +110,19 @@ export default function HomePage() {
                 <path fill="currentColor" d="M2238.7,214.5c0,29.96-17.28,53-40.33,62.99v.77c24.2,3.46,36.49,20.74,36.87,44.17l1.15,85.26h-56.07l-1.15-76.04c-.38-16.9-10.37-27.27-30.34-27.27h-93.33v103.31h-56.07V138.08h154.78c50.7,0,84.49,25.73,84.49,76.43h0ZM2182.24,222.19c0-23.04-12.29-35.72-35.33-35.72h-91.41v71.43h92.17c21.12,0,34.57-12.67,34.57-35.72h0Z"/>
               </svg>
             </a>
-              , the best way to design software with AI.
+              , the best<br />
+              way to design software with AI.
             </p>
           </div>
 
         </main>
 
-        {/* Contact links - pushed to bottom left on all screen sizes */}
-        <div className="flex-1 max-w-[580px] mx-auto px-6 pb-6 w-full flex flex-col">
-          <ul className="space-y-3 list-none p-0 m-0 mt-auto">
+        {/* Spacer: fills remaining space on mobile, min 128px on desktop */}
+        <div className="flex-1 md:flex-none md:min-h-[128px]" />
+
+        {/* Contact links */}
+        <div className="max-w-[640px] mx-auto px-6 w-full">
+          <ul className="space-y-3 list-none p-0 m-0">
             {/* Follow on X */}
             <li>
               <a
@@ -281,18 +288,20 @@ export default function HomePage() {
                   className="text-black/35 dark:text-white/35"
                   style={{ fontWeight: PILL_CONFIG.fontWeight }}
                 >
-                  Read my thoughts <span className="opacity-70">(soon)</span>
+                  Read my thoughts (soon)
                 </span>
               </span>
             </li>
           </ul>
         </div>
-      </div>
 
-      {/* Experiment section - hidden when ?reference=true, positioned at bottom */}
-      <Suspense fallback={null}>
-        <ExperimentalModes />
-      </Suspense>
+        {/* Experiment section - hidden when ?reference=true */}
+        <div className="pt-8">
+          <Suspense fallback={null}>
+            <ExperimentalModes />
+          </Suspense>
+        </div>
+      </div>
     </div>
   );
 }
