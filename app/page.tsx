@@ -14,7 +14,7 @@ const PILL_CONFIG = {
   iconHoverOpacity: 1,  // Icon opacity on hover (0-1)
   // Label settings
   fontSize: 18,           // Text size in px (was inherited ~24px)
-  fontWeight: 450,        // Font weight (400 = normal, 500 = medium, 600 = semibold)
+  fontWeight: 500,        // Font weight (400 = normal, 500 = medium, 600 = semibold)
   labelOpacity: 0.9,      // Label opacity (0-1)
   labelHoverOpacity: 1, // Label opacity on hover (0-1)
   // Background settings
@@ -73,7 +73,7 @@ function HomeContent() {
             style={{ fontSize: 'clamp(24px, 5vw, 34px)' }}
           >
             <p>
-              I'm building{" "}
+              I'm a designer at{" "}
             {/* ========== CURSOR PILL ========== */}
             <a
               href="https://cursor.com"
@@ -91,7 +91,7 @@ function HomeContent() {
               rel="noopener noreferrer"
             >
               <svg
-                className="pill-icon dark:invert"
+                className="pill-icon text-black dark:text-white"
                 style={{
                   height: "1em",
                   width: "auto",
@@ -110,8 +110,7 @@ function HomeContent() {
                 <path fill="currentColor" d="M2238.7,214.5c0,29.96-17.28,53-40.33,62.99v.77c24.2,3.46,36.49,20.74,36.87,44.17l1.15,85.26h-56.07l-1.15-76.04c-.38-16.9-10.37-27.27-30.34-27.27h-93.33v103.31h-56.07V138.08h154.78c50.7,0,84.49,25.73,84.49,76.43h0ZM2182.24,222.19c0-23.04-12.29-35.72-35.33-35.72h-91.41v71.43h92.17c21.12,0,34.57-12.67,34.57-35.72h0Z"/>
               </svg>
             </a>
-              , the best<br />
-              way to design software with AI.
+            , making <br /> tools for the future of building software.
             </p>
           </div>
 

@@ -6,15 +6,29 @@
   --menu-bar-height: 36px;
   --menu-bar-font-size: 15px;
   --menu-bar-logo-size: 16px;
-  color-scheme: light;
+  color-scheme: light dark;
   
-  /* Anysphere color palette */
+  /* Anysphere color palette - Light mode */
   --color-bg: #f7f7f4;
   --color-text: #26251e;
+  --color-muted: #8a897f;
   --color-text-muted: #8a897f;
   --color-border: rgba(38, 37, 30, 0.08);
   --color-hover: rgba(38, 37, 30, 0.05);
   --color-active: rgba(38, 37, 30, 0.10);
+}
+
+@media (prefers-color-scheme: dark) {
+  :root {
+    /* Anysphere color palette - Dark mode */
+    --color-bg: #0a0a0a;
+    --color-text: #e5e5e5;
+    --color-muted: #737373;
+    --color-text-muted: #737373;
+    --color-border: rgba(255, 255, 255, 0.08);
+    --color-hover: rgba(255, 255, 255, 0.05);
+    --color-active: rgba(255, 255, 255, 0.10);
+  }
 }
 
 @media (max-width: 640px) {
@@ -45,7 +59,6 @@ body {
   overflow-x: hidden;
 }
 
-/* Force light mode - generated content doesn't reliably support dark mode */
 html {
   background: var(--color-bg);
   color: var(--color-text);
@@ -86,6 +99,7 @@ html {
 }
 
 /* Pill background - uses CSS custom properties for configurable opacity */
+/* Light mode: black at low opacity. Dark mode: white at low opacity. */
 .pill-bg {
   background-color: rgb(0 0 0 / var(--bg-opacity, 0.05));
   transition: background-color 0.15s ease;
@@ -93,13 +107,15 @@ html {
 }
 
 .pill-bg:hover {
-  background-color: rgb(0 0 0 / var(--bg-hover-opacity, 0.03));
+  background-color: rgb(0 0 0 / var(--bg-hover-opacity, 0.08));
 }
 
-:is(.dark .pill-bg) {
-  background-color: rgb(255 255 255 / var(--bg-opacity-dark, 0.06));
-}
+@media (prefers-color-scheme: dark) {
+  .pill-bg {
+    background-color: rgb(255 255 255 / var(--bg-opacity-dark, 0.06)) !important;
+  }
 
-:is(.dark .pill-bg):hover {
-  background-color: rgb(255 255 255 / var(--bg-hover-opacity-dark, 0.03));
+  .pill-bg:hover {
+    background-color: rgb(255 255 255 / var(--bg-hover-opacity-dark, 0.1)) !important;
+  }
 }

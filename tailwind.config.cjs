@@ -1,8 +1,7 @@
 /** @type {import('tailwindcss').Config} */
 module.exports = {
-  // Use class-based dark mode (never applied) for consistent light theme
-  // Generated content doesn't reliably support dark mode
-  darkMode: "class",
+  // Use system preference for dark mode
+  darkMode: "media",
   content: [
     "./app/**/*.{js,ts,jsx,tsx,mdx}",
     "./components/**/*.{js,ts,jsx,tsx,mdx}",
@@ -10,11 +9,12 @@ module.exports = {
   theme: {
     extend: {
       colors: {
-        // Anysphere color palette
+        // Anysphere color palette - light mode values
+        // Dark mode handled via CSS variables in globals.css
         anysphere: {
-          bg: '#f7f7f4',
-          text: '#26251e',
-          muted: '#8a897f',
+          bg: 'var(--color-bg)',
+          text: 'var(--color-text)',
+          muted: 'var(--color-muted)',
         },
       },
       keyframes: {

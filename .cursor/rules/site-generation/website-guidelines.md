@@ -1,12 +1,23 @@
 ---
-description: Design guardrails for generated HTML
+description: Technical requirements for generated HTML
 globs:
   - generated/*.html
 ---
 
-# Design Guardrails
+# Technical Requirements
 
-- Single HTML, inline CSS, max-width ~600px
-- Mobile-first, semantic HTML
+- Single HTML file with inline CSS
+- Must work on mobile
+- Support both light and dark mode (prefers-color-scheme)
 - External links: `target="_blank" rel="noopener"`
-- Avoid: em dashes, purple gradients, generic layouts
+
+# Creative Freedom
+
+You have full creative license. Be opinionated about:
+- Typography (Google Fonts are fine)
+- Colors and palette
+- Layout and spacing
+- Animations and interactions
+- Overall aesthetic
+
+Make something you genuinely think is good design.

@@ -306,7 +306,7 @@ export default function NewBuildPage() {
           <div className="flex-1 flex flex-col items-center justify-center">
             <div className="w-full max-w-[640px] px-6">
               {/* Chat input card */}
-              <div className="bg-white rounded-2xl border border-[#d8d6d1] overflow-hidden">
+              <div className="bg-white dark:bg-white/5 rounded-2xl border border-[#d8d6d1] dark:border-white/10 overflow-hidden">
                 {/* Textarea */}
                 <div className="p-4 pb-2">
                   <textarea
@@ -315,7 +315,7 @@ export default function NewBuildPage() {
                     onChange={(e) => setPrompt(e.target.value)}
                     onKeyDown={handleKeyDown}
                     placeholder="Describe your remix of Erik's website"
-                    className="w-full resize-none bg-transparent text-[15px] text-gray-900 placeholder:text-gray-400 focus:outline-none leading-relaxed"
+                    className="w-full resize-none bg-transparent text-[15px] text-gray-900 dark:text-gray-100 placeholder:text-gray-400 dark:placeholder:text-gray-500 focus:outline-none leading-relaxed"
                     rows={1}
                     disabled={isDisabled}
                   />
@@ -327,7 +327,7 @@ export default function NewBuildPage() {
                   <button
                     onClick={handleGenerate}
                     disabled={isDisabled}
-                    className="w-8 h-8 rounded-full bg-gray-900 text-white flex items-center justify-center hover:bg-gray-800 transition-colors disabled:opacity-30 disabled:cursor-not-allowed"
+                    className="w-8 h-8 rounded-full bg-gray-900 dark:bg-white text-white dark:text-gray-900 flex items-center justify-center hover:bg-gray-800 dark:hover:bg-gray-200 transition-colors disabled:opacity-30 disabled:cursor-not-allowed"
                     aria-label="Generate"
                   >
                     <svg
@@ -360,7 +360,7 @@ export default function NewBuildPage() {
                     key={example}
                     onClick={() => setPrompt(example)}
                     disabled={isDisabled}
-                    className="px-3 py-1.5 text-[15px] text-gray-500 bg-white/60 hover:bg-white hover:text-gray-700 rounded-full border border-gray-200 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                    className="px-3 py-1.5 text-[15px] text-gray-500 dark:text-gray-400 bg-white/60 dark:bg-white/5 hover:bg-white dark:hover:bg-white/10 hover:text-gray-700 dark:hover:text-gray-300 rounded-full border border-gray-200 dark:border-white/10 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
                   >
                     {example}
                   </button>
@@ -369,7 +369,7 @@ export default function NewBuildPage() {
 
               {/* Status text - only show when there's a cooldown or error */}
               {(cooldown > 0 || error) && (
-                <p className="text-center text-[15px] text-gray-500 mt-4">
+                <p className="text-center text-[15px] text-gray-500 dark:text-gray-400 mt-4">
                   {cooldown > 0 ? (
                     `Available in ${cooldown}s`
                   ) : (
@@ -383,8 +383,8 @@ export default function NewBuildPage() {
 
         {(status === "connecting" || status === "generating") && (
           <div className="flex-1 flex flex-col min-h-0">
-            {/* White card container */}
-            <div className="flex-1 mx-4 my-4 bg-white rounded-xl shadow-sm border border-black/5 flex flex-col overflow-hidden">
+            {/* Card container */}
+            <div className="flex-1 mx-4 my-4 bg-white dark:bg-white/5 rounded-xl shadow-sm border border-black/5 dark:border-white/10 flex flex-col overflow-hidden">
               {/* Steps list - matches Cursor Cloud agent style */}
               <div
                 ref={stepsContainerRef}
@@ -402,12 +402,12 @@ export default function NewBuildPage() {
                       >
                         <span
                           className={`text-[15px] leading-relaxed ${
-                            isActive ? "text-gray-900 font-medium" : "text-gray-400"
+                            isActive ? "text-gray-900 dark:text-gray-100 font-medium" : "text-gray-400 dark:text-gray-500"
                           }`}
                         >
                           {step.label}
                         </span>
-                        <span className="text-gray-300 text-[13px] tabular-nums ml-4 flex-shrink-0">
+                        <span className="text-gray-300 dark:text-gray-600 text-[13px] tabular-nums ml-4 flex-shrink-0">
                           {step.duration !== undefined ? `${step.duration}s` : "0s"}
                         </span>
                       </div>
@@ -416,14 +416,14 @@ export default function NewBuildPage() {
                   
                   {/* Current activity indicator with elapsed time */}
                   <div className="flex items-center gap-2 pt-3">
-                    <div className="w-2 h-2 rounded-full bg-gray-400 animate-pulse" />
+                    <div className="w-2 h-2 rounded-full bg-gray-400 dark:bg-gray-500 animate-pulse" />
                     {/* Show status message when no steps yet, otherwise just elapsed time */}
                     {steps.length === 0 ? (
-                      <span className="text-gray-400 text-[15px]">
+                      <span className="text-gray-400 dark:text-gray-500 text-[15px]">
                         {statusMessage || "Launching agent..."} <span className="tabular-nums">({elapsedTime}s)</span>
                       </span>
                     ) : (
-                      <span className="text-gray-400 text-[15px] tabular-nums">{elapsedTime}s</span>
+                      <span className="text-gray-400 dark:text-gray-500 text-[15px] tabular-nums">{elapsedTime}s</span>
                     )}
                   </div>
                 </div>
@@ -431,12 +431,12 @@ export default function NewBuildPage() {
 
               {/* Footer with agent link */}
               {agentUrl && (
-                <div className="px-6 pb-4 border-t border-gray-100 pt-3">
+                <div className="px-6 pb-4 border-t border-gray-100 dark:border-white/10 pt-3">
                   <a
                     href={agentUrl}
                     target="_blank"
                     rel="noopener noreferrer"
-                    className="text-[15px] text-gray-400 hover:text-gray-600 underline underline-offset-2"
+                    className="text-[15px] text-gray-400 dark:text-gray-500 hover:text-gray-600 dark:hover:text-gray-300 underline underline-offset-2"
                   >
                     View agent in Cursor
                   </a>
@@ -460,7 +460,7 @@ export default function NewBuildPage() {
                       setHtmlContent("");
                       setSteps([]);
                     }}
-                    className="px-5 py-2.5 bg-gray-900 text-white text-[15px] rounded-full hover:bg-gray-800 transition-colors shadow-lg shadow-black/20 flex items-center gap-2"
+                    className="px-5 py-2.5 bg-gray-900 dark:bg-white text-white dark:text-gray-900 text-[15px] rounded-full hover:bg-gray-800 dark:hover:bg-gray-200 transition-colors shadow-lg shadow-black/20 flex items-center gap-2"
                   >
                     <svg
                       width="14"
@@ -481,7 +481,7 @@ export default function NewBuildPage() {
             ) : (
               <div className="flex-1 flex flex-col items-center justify-center px-4">
                 <div className="text-center max-w-md">
-                  <p className="text-lg text-gray-600 mb-4">
+                  <p className="text-lg text-gray-600 dark:text-gray-400 mb-4">
                     Generation complete!
                   </p>
                   <button
@@ -491,7 +491,7 @@ export default function NewBuildPage() {
                       setPrompt("");
                       setSteps([]);
                     }}
-                    className="px-6 py-2.5 bg-gray-900 text-white text-[15px] rounded-full hover:bg-gray-800 transition-colors"
+                    className="px-6 py-2.5 bg-gray-900 dark:bg-white text-white dark:text-gray-900 text-[15px] rounded-full hover:bg-gray-800 dark:hover:bg-gray-200 transition-colors"
                   >
                     Generate Another
                   </button>
@@ -507,7 +507,7 @@ export default function NewBuildPage() {
               <p className="text-2xl font-light text-red-500 mb-4">
                 Something went wrong
               </p>
-              <p className="text-[15px] text-gray-500 mb-8">
+              <p className="text-[15px] text-gray-500 dark:text-gray-400 mb-8">
                 {error || "Failed to generate the site"}
               </p>
               <button
@@ -516,7 +516,7 @@ export default function NewBuildPage() {
                   setError(null);
                   setSteps([]);
                 }}
-                className="px-6 py-2.5 bg-gray-900 text-white text-[15px] rounded-full hover:bg-gray-800 transition-colors"
+                className="px-6 py-2.5 bg-gray-900 dark:bg-white text-white dark:text-gray-900 text-[15px] rounded-full hover:bg-gray-800 dark:hover:bg-gray-200 transition-colors"
               >
                 Try Again
               </button>
