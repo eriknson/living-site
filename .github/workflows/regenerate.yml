@@ -185,16 +185,40 @@ jobs:
           Output only the JSON file, no explanation needed."
           
           cursor-agent -p --force --model composer-1 "$PROMPT" 2>&1 || true
-          
-          if [ ! -f "data/brief.json" ]; then
-            echo "ERROR: Curator agent did not create data/brief.json"
-            exit 1
-          fi
 
-      - name: Copy curator output
+      - name: Copy curator output or create fallback
         run: |
-          cp /tmp/curator-workspace/data/brief.json data/brief.json
-          echo "=== Brief Output ==="
+          if [ -f "/tmp/curator-workspace/data/brief.json" ]; then
+            cp /tmp/curator-workspace/data/brief.json data/brief.json
+            echo "=== Brief Output (from curator) ==="
+          else
+            echo "⚠ Curator did not create brief.json, generating fallback..."
+            # Create minimal fallback brief from latest.json
+            node -e "
+              const latest = require('./data/latest.json');
+              const gh = latest.sources?.github || {};
+              const spotify = latest.sources?.spotify || {};
+              const weather = latest.sources?.weather || {};
+              const repos = (gh.active_repos || []).filter(r => r.is_owned).slice(0, 2).map(r => r.name);
+              const artists = (spotify.medium_term?.artists || []).slice(0, 3).map(a => a.name);
+              const brief = {
+                mood: latest.context?.season + ' focus',
+                intro: repos.length ? 'Working on ' + repos.join(' and ') + '.' : 'Building with AI.',
+                currently: [{ label: 'building', value: repos.join(', ') || 'projects' }],
+                listening: artists.join(', ') || 'music',
+                footer: latest.identity?.name?.split(' ')[0]?.toLowerCase() || 'erik',
+                context: {
+                  date: new Date().toISOString().split('T')[0],
+                  season: latest.context?.season || 'winter',
+                  weather: weather.current ? { temp_c: weather.current.temperature_c, conditions: weather.current.conditions } : null,
+                  github: { active_repos: repos, commits_this_week: gh.recent_activity?.commits || 0 },
+                  music: { top_artists: artists, genres: (spotify.medium_term?.genres || []).slice(0, 3) }
+                }
+              };
+              console.log(JSON.stringify(brief, null, 2));
+            " > data/brief.json
+            echo "=== Brief Output (fallback) ==="
+          fi
           cat data/brief.json
           git worktree remove /tmp/curator-workspace --force || true
 

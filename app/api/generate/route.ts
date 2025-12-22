@@ -1,5 +1,5 @@
 /**
- * POST /api/generate - Generate site via Cursor Cloud Agents API
+ * POST /api/generate - Generate remix site via Cursor Cloud Agents API
  *
  * Flow:
  * 1. Launch cloud agent on the repo
@@ -10,8 +10,6 @@
  */
 
 import { NextRequest } from "next/server";
-import { readFile } from "fs/promises";
-import path from "path";
 
 const CURSOR_API_KEY = process.env.CURSOR_API_KEY;
 const GITHUB_TOKEN = process.env.GITHUB_TOKEN || process.env.GITHUB_PAT;
@@ -24,14 +22,6 @@ const RATE_LIMIT_MS = 60 * 1000; // 1 minute between generations
 // In-flight generation tracking
 let generationInProgress = false;
 let currentAgentId: string | null = null;
-
-interface LightContext {
-  date?: string;
-  season?: string;
-  weather?: { temp_c?: number; conditions?: string };
-  listening?: string[];
-  building?: string[];
-}
 
 interface ConversationMessage {
   id: string;
@@ -50,6 +40,12 @@ const FALLBACK_HTML = `<!DOCTYPE html>
 </body>
 </html>`;
 
+// Default creative direction when user doesn't provide one
+const DEFAULT_DIRECTION = `Create a beautiful, modern, and unique personal website. 
+Be creative with the design - try something unexpected like a game-inspired UI, 
+a retro aesthetic, brutalist design, or an elegant minimal approach.
+Surprise me with something fresh and distinctive.`;
+
 async function loadReferenceHtml(): Promise<string> {
   // Fetch from live site with ?reference=true for clean version (no menu bar, no disclaimer)
   try {
@@ -66,50 +62,46 @@ async function loadReferenceHtml(): Promise<string> {
   return FALLBACK_HTML;
 }
 
-async function loadSystemPrompt(): Promise<string> {
-  try {
-    return await readFile(path.join(process.cwd(), "infra/prompts/system.md"), "utf-8");
-  } catch {
-    return "Improve the site. Make the structure and UX really nice, clean, and structured.";
-  }
-}
+async function buildRemixPrompt(userDirection?: string | null): Promise<string> {
+  const referenceHtml = await loadReferenceHtml();
+  const direction = userDirection?.trim() || DEFAULT_DIRECTION;
 
-async function loadContext(): Promise<LightContext> {
-  try {
-    const content = await readFile(path.join(process.cwd(), "data/context.json"), "utf-8");
-    return JSON.parse(content);
-  } catch {
-    return {};
-  }
-}
+  const prompt = `You are an expert creative technologist and web designer.
+Your task is to create a creative "remix" of Erik's personal website based on the user's direction.
 
-async function loadPromptContext(userDirection?: string | null): Promise<string> {
-  const [referenceHtml, systemPrompt, context] = await Promise.all([
-    loadReferenceHtml(),
-    loadSystemPrompt(),
-    loadContext(),
-  ]);
-
-  // Build prompt: system.md is directional, reference is always included, context is optional
-  const prompt = `${systemPrompt}
-
-## Reference Site (keep the same content/links)
+## Reference Site (source of content)
+Use the text content, links, and information from this HTML. You can completely change the structure, layout, colors, fonts, and CSS.
 \`\`\`html
 ${referenceHtml}
 \`\`\`
 
-## Today's Context (optional, use for theming if you want)
-${JSON.stringify(context, null, 2)}
+## Creative Direction
+${direction}
 
-${userDirection?.trim() ? `## Creative Direction\n${userDirection.trim()}` : ""}
+## Output Requirements
+1. Write a SINGLE HTML file to \`generated/live.html\`
+2. Include ALL CSS inline within a <style> tag (no external stylesheets)
+3. Include any JS inline within a <script> tag if needed
+4. The site must be fully responsive and look great on mobile
+5. Support dark mode with @media (prefers-color-scheme: dark)
 
-## Output
-Write generated/live.html - single HTML with embedded CSS, responsive, dark mode support.
+## Design Guidelines
+- Be BOLD and creative - don't make a generic website
+- If the user asks for "8-bit", make it look like a retro pixel game
+- If they ask for "brutalist", make it raw and industrial
+- If they ask for "luxury", make it feel premium and elegant
+- Match the aesthetic to the creative direction
 
-## IMPORTANT: Isolation
-Do NOT read or look at any files in generated/ or public/builds/.
-Those contain outputs from other agents and previous runs.
-Start fresh from the reference HTML provided above. Be original.`;
+## Content to Keep
+- Name: Erik
+- Role: Product designer building with AI
+- Location: Stockholm, Sweden
+- Links: X (@flowstated), GitHub (eriknson), Email (contact@eriks.design)
+
+## IMPORTANT
+- Do NOT read any files in generated/ or public/builds/ - start fresh
+- Create something original and distinctive
+- The output must be a valid, standalone HTML file`;
 
   return prompt;
 }
@@ -213,7 +205,7 @@ export async function POST(request: NextRequest) {
           // No body or invalid JSON
         }
 
-        const prompt = await loadPromptContext(userDirection);
+        const prompt = await buildRemixPrompt(userDirection);
         const branchName = `cursor/live-gen-${Date.now()}`;
 
         send({ type: "status", status: "launching", message: "Launching cloud agent..." });

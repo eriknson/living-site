@@ -3,28 +3,9 @@
  * Shared types for real-time build streaming between GHA and browser
  */
 
-// Stream event from cursor-agent
-export interface StreamEvent {
-  type: "system" | "assistant" | "tool_call" | "result";
-  subtype?: "init" | "started" | "completed";
-  model?: string;
-  message?: {
-    content: Array<{ type: string; text?: string }>;
-  };
-  tool_call?: {
-    readToolCall?: {
-      args: { path: string };
-      result?: { success?: { totalLines: number } };
-    };
-    writeToolCall?: {
-      args: { path: string };
-      result?: { success?: { linesCreated: number; fileSize: number } };
-    };
-  };
-  duration_ms?: number;
-  is_error?: boolean;
-  result?: string;
-}
+// Re-export StreamEvent from shared types
+export type { StreamEvent } from "./shared-types";
+import type { StreamEvent } from "./shared-types";
 
 // Workflow phase status
 export type PhaseStatus = "pending" | "running" | "complete" | "error";

@@ -62,30 +62,7 @@ function getGeneratedPath(model: string): string {
   return `generated/${model}.html`;
 }
 
-interface FetchSourceResult {
-  name: string;
-  status: "success" | "failure" | "skipped";
-  error?: string;
-  summary?: string;
-}
-
-interface FetchSummary {
-  timestamp: string;
-  sources: FetchSourceResult[];
-}
-
-interface StreamEvent {
-  type: "system" | "assistant" | "tool_call" | "result";
-  subtype?: string;
-  model?: string;
-  message?: {
-    content: Array<{ type: string; text?: string }>;
-  };
-  tool_call?: Record<string, unknown>;
-  result?: string;
-  is_error?: boolean;
-  duration_ms?: number;
-}
+import type { FetchSourceResult, FetchSummary, StreamEvent } from "../lib/shared-types.js";
 
 interface BuildEntry {
   id: string;

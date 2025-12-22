@@ -41,17 +41,10 @@ interface About {
   bio: string;
 }
 
-interface FetchSourceResult {
-  name: string;
-  status: "success" | "failure" | "skipped";
-  error?: string;
-  summary?: string;
-}
-
-export interface FetchSummary {
-  timestamp: string;
-  sources: FetchSourceResult[];
-}
+// FetchSummary types are defined in lib/shared-types.ts
+// Re-exported here for backwards compatibility
+export type { FetchSummary, FetchSourceResult } from "../lib/shared-types.js";
+import type { FetchSourceResult, FetchSummary } from "../lib/shared-types.js";
 
 function summarizeGitHub(data: GitHubData): string {
   const parts: string[] = [];
@@ -108,7 +101,6 @@ interface AggregatedData {
   context: {
     season: string;
   };
-  reference?: string; // HTML content of the reference page
 }
 
 function getSeason(): string {
@@ -348,29 +340,10 @@ export async function aggregate(): Promise<AggregatedData> {
   }
 
   // =========================================================================
-  // Load reference page (if available)
-  // =========================================================================
-  let reference: string | undefined;
-  try {
-    reference = await readFile("infra/prompts/reference.html", "utf-8");
-    console.log("\n✓ Loaded reference page");
-    fetchResults.push({
-      name: "Reference",
-      status: "success",
-      summary: `${reference.length} bytes`,
-    });
-  } catch {
-    console.log("\n⚠ Reference page not found (run export-reference first)");
-    fetchResults.push({
-      name: "Reference",
-      status: "skipped",
-      summary: "file not found",
-    });
-  }
-
-  // =========================================================================
   // Build final output
   // =========================================================================
+  // Note: reference.html is fetched by the workflow directly to fly-context/
+  // and passed to agents via artifacts. No need to load it here.
 
   const data: AggregatedData = {
     generated_at: new Date().toISOString(),
@@ -381,7 +354,6 @@ export async function aggregate(): Promise<AggregatedData> {
     context: {
       season: getSeason(),
     },
-    reference,
   };
 
   // Write to latest.json (full data for records/dashboards)
