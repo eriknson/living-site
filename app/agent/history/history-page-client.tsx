@@ -378,3 +378,4 @@ export function HistoryPageClient({
     </div>
   );
 }
+

@@ -56,3 +56,4 @@ function writeOutput(data: { lastUpdated: string; source: string }) {
 }
 
 extractManualVersionDate();
+
