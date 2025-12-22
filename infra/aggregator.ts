@@ -119,6 +119,47 @@ function getSeason(): string {
   return "winter";
 }
 
+// Lightweight context for agent consumption (replaces heavy latest.json for prompts)
+interface LightContext {
+  date: string;
+  season: string;
+  weather?: { temp_c: number; conditions: string };
+  listening?: string[];
+  building?: string[];
+}
+
+function buildLightContext(data: AggregatedData): LightContext {
+  const context: LightContext = {
+    date: new Date().toISOString().split("T")[0],
+    season: data.context.season,
+  };
+
+  // Weather
+  if (data.sources.weather?.current) {
+    context.weather = {
+      temp_c: data.sources.weather.current.temperature_c,
+      conditions: data.sources.weather.current.conditions,
+    };
+  }
+
+  // Top artists from Spotify (medium term for stability)
+  if (data.sources.spotify?.medium_term?.artists) {
+    context.listening = data.sources.spotify.medium_term.artists
+      .slice(0, 5)
+      .map((a) => a.name);
+  }
+
+  // Active repos from GitHub
+  if (data.sources.github?.active_repos) {
+    context.building = data.sources.github.active_repos
+      .filter((r) => r.is_owned)
+      .slice(0, 3)
+      .map((r) => r.name);
+  }
+
+  return context;
+}
+
 export async function aggregate(): Promise<AggregatedData> {
   console.log("Starting aggregation...\n");
 
@@ -343,8 +384,12 @@ export async function aggregate(): Promise<AggregatedData> {
     reference,
   };
 
-  // Write to latest.json
+  // Write to latest.json (full data for records/dashboards)
   await writeFile("data/latest.json", JSON.stringify(data, null, 2));
+
+  // Write lightweight context.json (for agent prompts)
+  const lightContext = buildLightContext(data);
+  await writeFile("data/context.json", JSON.stringify(lightContext, null, 2));
 
   // Write fetch summary for build logs
   const fetchSummary: FetchSummary = {
@@ -355,6 +400,7 @@ export async function aggregate(): Promise<AggregatedData> {
 
   console.log("\n✓ Aggregation complete");
   console.log(`  Sources fetched: ${fetchResults.filter(r => r.status === "success").length}/${fetchResults.length}`);
+  console.log(`  Wrote context.json (${JSON.stringify(lightContext).length} bytes)`);
 
   return data;
 }

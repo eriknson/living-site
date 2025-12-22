@@ -25,13 +25,12 @@ const RATE_LIMIT_MS = 60 * 1000; // 1 minute between generations
 let generationInProgress = false;
 let currentAgentId: string | null = null;
 
-interface Brief {
-  mood?: string;
-  intro?: string;
-  currently?: Array<{ label: string; value: string }>;
-  listening?: string;
-  footer?: string;
-  weather_note?: string;
+interface LightContext {
+  date?: string;
+  season?: string;
+  weather?: { temp_c?: number; conditions?: string };
+  listening?: string[];
+  building?: string[];
 }
 
 interface ConversationMessage {
@@ -40,82 +39,72 @@ interface ConversationMessage {
   text: string;
 }
 
-async function readJSON<T>(filePath: string): Promise<T> {
-  try {
-    const content = await readFile(filePath, "utf-8");
-    return JSON.parse(content);
-  } catch {
-    return {} as T;
-  }
-}
-
-async function loadReferenceHtml(): Promise<string> {
-  const cwd = process.cwd();
-  
-  // Try local file first (for local dev)
-  try {
-    return await readFile(path.join(cwd, "fly-context/reference.html"), "utf-8");
-  } catch {
-    // Fallback: fetch from live site
-    try {
-      const response = await fetch("https://eriks.design/", {
-        headers: { "User-Agent": "living-site-generator" },
-      });
-      if (response.ok) {
-        return await response.text();
-      }
-    } catch {
-      // Ignore fetch errors
-    }
-  }
-  
-  // Final fallback: minimal reference
-  return `<!DOCTYPE html>
+// Minimal fallback if live site fetch fails
+const FALLBACK_HTML = `<!DOCTYPE html>
 <html lang="en">
 <head><title>Erik</title></head>
 <body>
   <h1>Erik</h1>
   <p>Product designer building with AI. Based in Stockholm, Sweden.</p>
-  <p>Links: <a href="https://x.com/flowstated">X</a>, <a href="https://github.com/eriknson">GitHub</a>, <a href="https://linkedin.com/in/eriknson">LinkedIn</a></p>
+  <p>Links: <a href="https://x.com/flowstated">X</a>, <a href="https://github.com/eriknson">GitHub</a>, <a href="mailto:contact@eriks.design">Email</a></p>
 </body>
 </html>`;
+
+async function loadReferenceHtml(): Promise<string> {
+  // Fetch from live site with ?reference=true for clean version (no menu bar, no disclaimer)
+  try {
+    const response = await fetch("https://eriks.design/?reference=true", {
+      headers: { "User-Agent": "living-site-generator" },
+    });
+    if (response.ok) {
+      return await response.text();
+    }
+  } catch {
+    // Ignore fetch errors
+  }
+  
+  return FALLBACK_HTML;
+}
+
+async function loadSystemPrompt(): Promise<string> {
+  try {
+    return await readFile(path.join(process.cwd(), "infra/prompts/system.md"), "utf-8");
+  } catch {
+    return "Improve the site. Make the structure and UX really nice, clean, and structured.";
+  }
+}
+
+async function loadContext(): Promise<LightContext> {
+  try {
+    const content = await readFile(path.join(process.cwd(), "data/context.json"), "utf-8");
+    return JSON.parse(content);
+  } catch {
+    return {};
+  }
 }
 
 async function loadPromptContext(userDirection?: string | null): Promise<string> {
-  const cwd = process.cwd();
-  const brief = await readJSON<Brief>(path.join(cwd, "data/brief.json"));
-  const referenceHtml = await loadReferenceHtml();
+  const [referenceHtml, systemPrompt, context] = await Promise.all([
+    loadReferenceHtml(),
+    loadSystemPrompt(),
+    loadContext(),
+  ]);
 
-  const direction = userDirection?.trim() || "Create something fresh and surprising";
+  // Build prompt: system.md is directional, reference is always included, context is optional
+  const prompt = `${systemPrompt}
 
-  // Embed reference HTML directly in prompt so agent doesn't need to find files
-  const prompt = `Create a fresh variation of Erik's personal site.
-
-## Reference HTML (the current live site - use this as your content baseline)
+## Reference Site (keep the same content/links)
 \`\`\`html
 ${referenceHtml}
 \`\`\`
 
-## Creative direction
-${direction}
+## Today's Context (optional, use for theming if you want)
+${JSON.stringify(context, null, 2)}
 
-## Today's context
-- Mood: ${brief.mood || "focused"}
-${brief.weather_note ? `- Weather: ${brief.weather_note}` : ""}
-${brief.listening ? `- Listening: ${brief.listening}` : ""}
+${userDirection?.trim() ? `## Creative Direction\n${userDirection.trim()}` : ""}
 
-## Task
-Write generated/live.html with a fresh design interpretation. Vary layout, typography, colors.
-Keep the same content and links from the reference above.
-
-## Constraints
-- Single HTML with embedded CSS
-- Mobile responsive, dark mode via prefers-color-scheme
-- No external dependencies
-
-## Avoid
-- AI slop (purple gradients, Inter font)
-- Em dashes
+## Output
+Write generated/live.html - single HTML with embedded CSS, responsive, dark mode support.
 
 ## IMPORTANT: Isolation
 Do NOT read or look at any files in generated/ or public/builds/.
