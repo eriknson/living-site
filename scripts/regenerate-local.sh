@@ -10,6 +10,15 @@ echo "Model: $MODEL"
 echo "Date: $DATE"
 echo ""
 
+# Ensure reference.html exists (fetch if missing)
+if [ ! -f "fly-context/reference.html" ]; then
+  echo "Fetching reference.html from live site..."
+  mkdir -p fly-context
+  curl -sL "https://eriks.design/?reference=true" -o fly-context/reference.html
+  echo "✓ Saved fly-context/reference.html"
+  echo ""
+fi
+
 # Skip aggregation - use existing committed data for curator
 echo "Using existing data/latest.json for curator (skipping aggregation)"
 echo ""

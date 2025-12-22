@@ -19,11 +19,6 @@ const nextConfig = {
         permanent: true,
       },
       {
-        source: '/gpt-5.1-codex-max',
-        destination: '/?model=gpt-5.1-codex-max',
-        permanent: true,
-      },
-      {
         source: '/gemini-3-pro',
         destination: '/?model=gemini-3-pro',
         permanent: true,

@@ -1,99 +1,109 @@
 # Living Site
 
-A self-regenerating personal website. An AI agent rewrites the site daily based on real activity data — no manual updates needed.
+A self-regenerating personal website. AI agents rewrite the site daily based on real activity data.
 
-Built with [Cursor CLI](https://cursor.com/docs/cli) running headless in GitHub Actions.
-
-## The Concept
-
-Instead of a static portfolio that gets stale, this site stays current automatically. An agent reads activity from various sources, synthesizes it into natural prose, and regenerates the HTML.
-
-The agent follows strict design guidelines but has creative freedom in how it presents the content. Each build produces slightly different output while maintaining consistency.
+Built with [Cursor CLI](https://cursor.com/docs/cli) running in GitHub Actions.
 
 ## How It Works
 
 ```
-┌─────────────┐     ┌─────────────┐     ┌─────────────┐     ┌─────────────┐
-│   Fetch     │ ──▶ │  Aggregate  │ ──▶ │  Generate   │ ──▶ │   Deploy    │
-│  Activity   │     │   Themes    │     │  Cursor CLI │     │   Vercel    │
-└─────────────┘     └─────────────┘     └─────────────┘     └─────────────┘
+┌─────────────┐     ┌─────────────┐     ┌─────────────┐     ┌─────────────┐     ┌─────────────┐
+│   Fetch     │ ──▶ │  Aggregate  │ ──▶ │   Curator   │ ──▶ │  Generate   │ ──▶ │   Deploy    │
+│  Activity   │     │   Data      │     │   Agent     │     │   Agents    │     │   Vercel    │
+└─────────────┘     └─────────────┘     └─────────────┘     └─────────────┘     └─────────────┘
 ```
 
-1. **Fetch** — Pull activity from connected sources (GitHub, more coming)
-2. **Aggregate** — Extract themes and patterns from raw data
-3. **Generate** — Cursor CLI reads the prompt + data, rewrites the site
-4. **Deploy** — Changes committed to main, Vercel auto-deploys
+1. **Fetch** — Pull activity from GitHub, Spotify, Typefully, Weather APIs
+2. **Aggregate** — Combine raw data and compute historical baselines
+3. **Curator** — AI agent synthesizes data into a creative brief
+4. **Generate** — 4 models build variations in parallel (Composer, Opus, GPT-5.1, Gemini)
+5. **Deploy** — HTML committed to main, Vercel auto-deploys
 
-Runs daily at 6am UTC via GitHub Actions, or triggered manually.
+Runs daily at 6am UTC via GitHub Actions.
 
 ## File Structure
 
 ```
+├── app/                      # Next.js app
+│   ├── page.tsx              # Manual home page (eriks.design)
+│   ├── agent/                # /agent - daily generated versions
+│   ├── new/                  # /new - on-demand generation
+│   └── api/                  # Build triggers, status endpoints
+│
 ├── infra/
-│   ├── prompts/system.md    # Design rules, voice, constraints (locked)
-│   ├── aggregator.ts        # Theme extraction logic (locked)
-│   └── fetchers/            # Data source clients (locked)
-│       └── github.ts
+│   ├── prompts/
+│   │   ├── system.md         # Design guidelines for generators
+│   │   └── curator.md        # Instructions for curator agent
+│   ├── aggregator.ts         # Data collection + baseline computation
+│   ├── fetchers/             # API clients (GitHub, Spotify, etc.)
+│   ├── baselines/            # Historical pattern analysis
+│   └── save-build-log.ts     # Build logging + manifest updates
 │
 ├── data/
-│   ├── identity.json        # Static info: name, links (locked)
-│   └── latest.json          # Aggregated activity data (generated)
+│   ├── identity.json         # Name, links, socials
+│   ├── about.json            # Bio headline
+│   ├── location.json         # Current location
+│   ├── latest.json           # Most recent aggregated data
+│   ├── brief.json            # Curator output for generators
+│   └── history/              # Weekly snapshots per source
 │
-├── generated/
-│   └── index.html           # The site (agent-written)
+├── generated/                # Agent-written HTML (one per model)
+│   ├── composer-1.html
+│   ├── claude-4.5-opus-high-thinking.html
+│   ├── gpt-5.1-codex.html
+│   └── gemini-3-pro.html
 │
-├── builds/
-│   ├── history.json         # Build logs with agent reasoning
-│   └── index.html           # Build history viewer at /builds
+├── public/builds/            # Archived builds by date
+│   ├── manifest.json         # Index of all builds
+│   ├── history.json          # Agent logs
+│   └── YYYY-MM-DD/           # HTML files per model per day
 │
-└── index.html               # Production copy (synced from generated/)
+└── lib/                      # Shared utilities and types
 ```
 
-**Locked files** define the rules and identity — the agent can't modify these.  
-**Generated files** are written by the agent each build cycle.
-
 ## Data Sources
-
-Activity is pulled from external APIs and aggregated into themes:
 
 | Source | Data | Status |
 |--------|------|--------|
 | GitHub | Repos, languages, commit patterns | Active |
-| Spotify | Top artists, tracks, genres by time range | Active |
-| Typefully | Published posts, themes | Active |
+| Spotify | Top artists, tracks, genres | Active |
+| Typefully | Published posts from X | Active |
 | Weather | Current conditions at location | Active |
-| Location | "Last seen" with coordinates | Active |
-| Strava | Recent activities, stats | Planned |
+| Location | Coordinates via iOS Shortcut | Active |
 
-The aggregator extracts high-level themes like "TypeScript focused" or "actively building" rather than exposing raw data.
-
-### Updating Location
-
-Location can be updated via iOS Shortcut → GitHub API. See [docs/location-shortcut.md](docs/location-shortcut.md) for setup instructions.
-
-## Build History
-
-Each build captures the full agent conversation — what it read, what it changed, and why. View at `/builds` on the live site.
+Historical data is stored weekly in `data/history/` and used to compute baselines for detecting changes in patterns.
 
 ## Local Development
 
 ```bash
 npm install
-npm run aggregate        # Fetch activity + extract themes
-npm run generate:api     # Generate via Anthropic API (local)
+npm run dev              # Start Next.js dev server
+npm run aggregate        # Fetch activity + compute baselines
+npm run curator          # Run curator agent locally
 ```
 
-## Environment
+## Environment Variables
 
-| Variable | Used For |
-|----------|----------|
-| `CURSOR_API_KEY` | CI generation via Cursor CLI / Cloud Agents API |
-| `GITHUB_TOKEN` | Fetching GitHub activity + Cloud Agents branch operations |
-| `GITHUB_REPO` | Repository for Cloud Agents (default: `eriknson/living-site`) |
-| `ANTHROPIC_API_KEY` | Local generation (optional) |
+| Variable | Required | Used For |
+|----------|----------|----------|
+| `CURSOR_API_KEY` | Yes | Cursor CLI / Cloud Agents API |
+| `GITHUB_TOKEN` | Yes | Fetching GitHub activity |
+| `KV_REST_API_URL` | Yes | Upstash Redis for build state |
+| `KV_REST_API_TOKEN` | Yes | Upstash Redis auth |
+| `SPOTIFY_CLIENT_ID` | No | Spotify API |
+| `SPOTIFY_CLIENT_SECRET` | No | Spotify API |
+| `SPOTIFY_REFRESH_TOKEN` | No | Spotify API |
+| `TYPEFULLY_API_KEY` | No | Typefully API |
+| `ADMIN_USER` | No | Basic auth for build webhook |
+| `ADMIN_PASS` | No | Basic auth for build webhook |
 
-### Live Generation (/new)
+## Routes
 
-The `/new` page uses [Cursor Cloud Agents API](https://cursor.com/docs/cloud-agent/api/endpoints) to generate sites on-demand. This requires:
-- `CURSOR_API_KEY` from your [Cursor Dashboard](https://cursor.com/settings)
-- `GITHUB_TOKEN` with repo access (contents:read, delete refs)
+- `/` — Manual home page
+- `/agent` — View daily AI-generated versions
+- `/new` — Generate a fresh build on-demand via Cloud Agents
+- `/builds` — Build history and logs
+
+## License
+
+MIT

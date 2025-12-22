@@ -1,8 +1,8 @@
 /**
- * Export the main page as static HTML for agents to read
+ * Export the main page as static HTML for local development
  * 
- * This script fetches the rendered page from the production site
- * and saves it as public/reference.html
+ * Fetches the rendered page from the production site and saves it
+ * to fly-context/reference.html (same location used by the CI workflow).
  * 
  * Usage: npm run export-reference
  */
@@ -11,15 +11,15 @@ import { writeFileSync, mkdirSync } from "fs";
 import { join } from "path";
 
 const SITE_URL = process.env.SITE_URL || "https://eriks.design";
-const OUTPUT_PATH = join(process.cwd(), "infra", "prompts", "reference.html");
+const OUTPUT_PATH = join(process.cwd(), "fly-context", "reference.html");
 
 async function exportReference() {
-  console.log(`Fetching reference page from ${SITE_URL}...`);
+  console.log(`Fetching reference page from ${SITE_URL}?reference=true...`);
 
   try {
-    const response = await fetch(SITE_URL, {
+    const response = await fetch(`${SITE_URL}?reference=true`, {
       headers: {
-        "User-Agent": "ReferenceExporter/1.0",
+        "User-Agent": "living-site-generator",
         Accept: "text/html",
       },
     });
@@ -30,8 +30,8 @@ async function exportReference() {
 
     const html = await response.text();
 
-    // Ensure infra/prompts directory exists
-    mkdirSync(join(process.cwd(), "infra", "prompts"), { recursive: true });
+    // Ensure fly-context directory exists
+    mkdirSync(join(process.cwd(), "fly-context"), { recursive: true });
 
     // Write the HTML file
     writeFileSync(OUTPUT_PATH, html, "utf-8");
@@ -45,4 +45,3 @@ async function exportReference() {
 }
 
 exportReference();
-

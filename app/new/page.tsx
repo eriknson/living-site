@@ -291,7 +291,7 @@ export default function NewBuildPage() {
                     value={prompt}
                     onChange={(e) => setPrompt(e.target.value)}
                     onKeyDown={handleKeyDown}
-                    placeholder="Remix Erik's website"
+                    placeholder="Describe your remix..."
                     className="w-full resize-none bg-transparent text-[15px] text-gray-900 placeholder:text-gray-400 focus:outline-none leading-relaxed"
                     rows={1}
                     disabled={isDisabled}
@@ -324,7 +324,27 @@ export default function NewBuildPage() {
                 </div>
               </div>
 
-{/* Status text - only show when there's a cooldown or error */}
+              {/* Example prompts */}
+              <div className="mt-4 flex flex-wrap gap-2 justify-center">
+                {[
+                  "8-bit retro game style",
+                  "Brutalist concrete aesthetic",
+                  "Y2K nostalgia",
+                  "Luxury fashion brand",
+                  "Terminal / hacker theme",
+                ].map((example) => (
+                  <button
+                    key={example}
+                    onClick={() => setPrompt(example)}
+                    disabled={isDisabled}
+                    className="px-3 py-1.5 text-sm text-gray-500 bg-white/60 hover:bg-white hover:text-gray-700 rounded-full border border-gray-200 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                  >
+                    {example}
+                  </button>
+                ))}
+              </div>
+
+              {/* Status text - only show when there's a cooldown or error */}
               {(cooldown > 0 || error) && (
                 <p className="text-center text-sm text-gray-500 mt-4">
                   {cooldown > 0 ? (
@@ -404,9 +424,37 @@ export default function NewBuildPage() {
         )}
 
         {status === "complete" && (
-          <div className="flex-1 flex flex-col min-h-0">
+          <div className="flex-1 flex flex-col min-h-0 relative">
             {htmlContent ? (
-              <SiteViewer htmlContent={htmlContent} />
+              <>
+                <SiteViewer htmlContent={htmlContent} />
+                {/* Floating new remix button */}
+                <div className="absolute bottom-6 left-1/2 -translate-x-1/2">
+                  <button
+                    onClick={() => {
+                      setStatus("idle");
+                      setError(null);
+                      setHtmlContent("");
+                      setSteps([]);
+                    }}
+                    className="px-5 py-2.5 bg-gray-900 text-white text-sm rounded-full hover:bg-gray-800 transition-colors shadow-lg shadow-black/20 flex items-center gap-2"
+                  >
+                    <svg
+                      width="14"
+                      height="14"
+                      viewBox="0 0 24 24"
+                      fill="none"
+                      stroke="currentColor"
+                      strokeWidth="2"
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                    >
+                      <path d="M12 5v14M5 12h14" />
+                    </svg>
+                    New remix
+                  </button>
+                </div>
+              </>
             ) : (
               <div className="flex-1 flex flex-col items-center justify-center px-4">
                 <div className="text-center max-w-md">

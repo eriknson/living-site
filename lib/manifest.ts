@@ -31,7 +31,6 @@ export const modelDisplayNames: Record<string, string> = {
   "composer-1": "Composer 1",
   "claude-4.5-opus-high-thinking": "Opus 4.5",
   "gpt-5.1-codex": "GPT-5.1 Codex",
-  "gpt-5.1-codex-max-low-fast": "GPT-5.1 Codex Max",
   "gemini-3-pro": "Gemini 3 Pro",
 };
 
@@ -40,7 +39,6 @@ export const modelSlugs: Record<string, string> = {
   "composer-1": "composer-1",
   "claude-4.5-opus-high-thinking": "opus-4.5",
   "gpt-5.1-codex": "gpt-5.1-codex",
-  "gpt-5.1-codex-max-low-fast": "gpt-5.1-codex-max",
   "gemini-3-pro": "gemini-3-pro",
 };
 
