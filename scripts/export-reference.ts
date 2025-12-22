@@ -14,10 +14,10 @@ const SITE_URL = process.env.SITE_URL || "https://eriks.design";
 const OUTPUT_PATH = join(process.cwd(), "fly-context", "reference.html");
 
 async function exportReference() {
-  console.log(`Fetching reference page from ${SITE_URL}?reference=true...`);
+  console.log(`Fetching reference page from ${SITE_URL}/reference...`);
 
   try {
-    const response = await fetch(`${SITE_URL}?reference=true`, {
+    const response = await fetch(`${SITE_URL}/reference`, {
       headers: {
         "User-Agent": "living-site-generator",
         Accept: "text/html",

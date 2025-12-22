@@ -57,9 +57,9 @@ a retro aesthetic, brutalist design, or an elegant minimal approach.
 Surprise me with something fresh and distinctive.`;
 
 async function loadReferenceHtml(): Promise<string> {
-  // Fetch from live site with ?reference=true for clean version (no menu bar, no disclaimer)
+  // Fetch clean reference HTML (standalone, no Next.js framework code)
   try {
-    const response = await fetch("https://eriks.design/?reference=true", {
+    const response = await fetch("https://eriks.design/reference", {
       headers: { "User-Agent": "living-site-generator" },
     });
     if (response.ok) {

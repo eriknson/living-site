@@ -1,8 +1,6 @@
 "use client";
 
 import Link from "next/link";
-import { Suspense } from "react";
-import { useSearchParams } from "next/navigation";
 import { GlobalMenuBar } from "@/components/global-menu-bar";
 
 // ========== TUNING PROPS - Adjust these to change all pills at once ==========
@@ -55,17 +53,12 @@ function ExperimentalModes() {
 }
 
 function HomeContent() {
-  const searchParams = useSearchParams();
-  const isReference = searchParams.get("reference") === "true";
-
   return (
     <div className="min-h-dvh bg-[#fafaf9] dark:bg-[#0a0a0a] text-[#1a1a1a] dark:text-[#e5e5e5] flex flex-col">
-      {/* Menu Bar - hidden in reference mode for clean agent context */}
-      {!isReference && (
-        <div className="sticky top-0 z-50 bg-[#fafaf9] dark:bg-[#0a0a0a]">
-          <GlobalMenuBar currentRoute="/" />
-        </div>
-      )}
+      {/* Menu Bar */}
+      <div className="sticky top-0 z-50 bg-[#fafaf9] dark:bg-[#0a0a0a]">
+        <GlobalMenuBar currentRoute="/" />
+      </div>
 
       {/* Main Content */}
       <div className="flex-1 flex flex-col">
@@ -79,7 +72,7 @@ function HomeContent() {
               I'm a designer at{" "}
             {/* ========== CURSOR PILL ========== */}
             <a
-              href="https://cursor.com"
+              href="https://cursor.com/home"
               className="group inline-flex items-center pill-bg"
               style={{
                 padding: '0.15em 0.4em',
@@ -227,21 +220,15 @@ function HomeContent() {
           </ul>
         </div>
 
-        {/* Experiment section - hidden in reference mode */}
-        {!isReference && (
-          <div className="pt-8">
-            <ExperimentalModes />
-          </div>
-        )}
+        {/* Experiment section */}
+        <div className="pt-8">
+          <ExperimentalModes />
+        </div>
       </div>
     </div>
   );
 }
 
 export default function HomePage() {
-  return (
-    <Suspense fallback={null}>
-      <HomeContent />
-    </Suspense>
-  );
+  return <HomeContent />;
 }

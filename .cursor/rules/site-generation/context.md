@@ -10,4 +10,4 @@ The brief (data/brief.json) gives you the content. Use your own words—the brie
 
 # Reference
 
-fly-context/reference.html shows how the site looks now. You're not bound by it—feel free to diverge completely.
+fly-context/reference.html is a clean, standalone HTML file showing the current site design. It contains all CSS inlined with no framework code. You're not bound by it—feel free to diverge completely.
