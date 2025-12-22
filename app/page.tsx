@@ -12,18 +12,21 @@ function ExperimentalModes() {
   if (isReference) return null;
 
   return (
-    <p className="text-[17px] text-black/50 dark:text-white/50 leading-relaxed">
+    <p className="text-[14px] text-black/50 dark:text-white/50 leading-relaxed max-w-[580px] mx-auto px-6 pb-12">
       This site has two experimental modes:{" "}
       <Link
         href="/agent"
-        className="font-mono text-[17px] px-1.5 py-0.5 rounded bg-black/[0.04] dark:bg-white/[0.06] text-black/70 dark:text-white/70 hover:bg-black/[0.08] dark:hover:bg-white/[0.1] hover:text-black/90 dark:hover:text-white/90 transition-colors"
+        className="font-mono text-[14px] px-1.5 py-0.5 rounded bg-black/[0.04] dark:bg-white/[0.06] text-black/70 dark:text-white/70 hover:bg-black/[0.08] dark:hover:bg-white/[0.1] hover:text-black/90 dark:hover:text-white/90 transition-colors"
       >
         /agent
       </Link>{" "}
-      shows daily versions built by Cursor CLI on GitHub Actions, and{" "}
+      <span className="md:hidden"><br /></span>
+      shows daily versions built by Cursor CLI on GitHub Actions,{" "}
+      <span className="md:hidden"><br /></span>
+      and{" "}
       <Link
         href="/new"
-        className="font-mono text-[17px] px-1.5 py-0.5 rounded bg-black/[0.04] dark:bg-white/[0.06] text-black/70 dark:text-white/70 hover:bg-black/[0.08] dark:hover:bg-white/[0.1] hover:text-black/90 dark:hover:text-white/90 transition-colors"
+        className="font-mono text-[14px] px-1.5 py-0.5 rounded bg-black/[0.04] dark:bg-white/[0.06] text-black/70 dark:text-white/70 hover:bg-black/[0.08] dark:hover:bg-white/[0.1] hover:text-black/90 dark:hover:text-white/90 transition-colors"
       >
         /new
       </Link>{" "}
@@ -34,14 +37,14 @@ function ExperimentalModes() {
 
 export default function HomePage() {
   return (
-    <div className="min-h-dvh bg-[#fafaf9] dark:bg-[#0a0a0a] text-[#1a1a1a] dark:text-[#e5e5e5]">
+    <div className="min-h-dvh bg-[#fafaf9] dark:bg-[#0a0a0a] text-[#1a1a1a] dark:text-[#e5e5e5] flex flex-col">
       {/* Menu Bar */}
       <div className="sticky top-0 z-50">
         <GlobalMenuBar currentRoute="/" />
       </div>
 
       {/* Main Content */}
-      <main className="max-w-[580px] mx-auto px-6 py-16 md:py-24">
+      <main className="flex-1 max-w-[580px] mx-auto px-6 py-16 md:py-24 w-full">
         {/* Bio paragraphs - conversational style like leerob/anyblockers */}
         <div className="space-y-5 text-[17px] leading-relaxed text-black/70 dark:text-white/70 mb-10">
           <p>
@@ -87,12 +90,12 @@ export default function HomePage() {
             </li>
           </ul>
         </div>
-
-        {/* Experiment section - hidden when ?reference=true */}
-        <Suspense fallback={null}>
-          <ExperimentalModes />
-        </Suspense>
       </main>
+
+      {/* Experiment section - hidden when ?reference=true, positioned at bottom */}
+      <Suspense fallback={null}>
+        <ExperimentalModes />
+      </Suspense>
     </div>
   );
 }
