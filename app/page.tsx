@@ -31,7 +31,7 @@ const PILL_CONFIG = {
 
 function ExperimentalModes() {
   return (
-    <p className="text-[15px] text-black/35 dark:text-white/35 leading-[1.8] max-w-[640px] mx-auto px-6 pb-6">
+    <p className="text-[13px] sm:text-[15px] text-black/35 dark:text-white/35 leading-[1.8] max-w-[640px] mx-auto px-6 pb-6">
       This site has two experimental modes to rebuild itself. Explore{" "}
       <Link
         href="/agent"
@@ -59,7 +59,7 @@ function HomeContent() {
     <div className="min-h-dvh bg-[#fafaf9] dark:bg-[#0a0a0a] text-[#1a1a1a] dark:text-[#e5e5e5] flex flex-col">
       {/* Menu Bar - hidden in reference mode for clean agent context */}
       {!isReference && (
-        <div className="sticky top-0 z-50">
+        <div className="sticky top-0 z-50 bg-[#fafaf9] dark:bg-[#0a0a0a]">
           <GlobalMenuBar currentRoute="/" />
         </div>
       )}

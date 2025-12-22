@@ -210,7 +210,7 @@ export function BuildsPageClient({
   if (!manifest?.dates?.length) {
     return (
       <div className="min-h-dvh bg-[#fafaf9] dark:bg-[#0a0a0a] text-[#1a1a1a] dark:text-[#e5e5e5]">
-        <div className="sticky top-0 z-50">
+        <div className="sticky top-0 z-50 bg-[#fafaf9] dark:bg-[#0a0a0a]">
           <BuildsMenuBar />
         </div>
         <div className="p-6">
@@ -232,7 +232,7 @@ export function BuildsPageClient({
 
   return (
     <div className="min-h-dvh bg-[#fafaf9] dark:bg-[#0a0a0a] text-[#1a1a1a] dark:text-[#e5e5e5]">
-      <div className="sticky top-0 z-50">
+      <div className="sticky top-0 z-50 bg-[#fafaf9] dark:bg-[#0a0a0a]">
         <BuildsMenuBar />
       </div>
       <div>
