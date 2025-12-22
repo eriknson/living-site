@@ -1,6 +1,6 @@
 import type { Metadata, Viewport } from "next";
 import { Analytics } from "@vercel/analytics/next";
-import { IBM_Plex_Serif, IBM_Plex_Sans } from "next/font/google";
+import { IBM_Plex_Serif, IBM_Plex_Sans, IBM_Plex_Mono } from "next/font/google";
 import "./globals.css";
 
 const ibmPlexSerif = IBM_Plex_Serif({
@@ -14,6 +14,13 @@ const ibmPlexSans = IBM_Plex_Sans({
   weight: ["400", "500"],
   subsets: ["latin"],
   variable: "--font-ibm-plex-sans",
+  display: "swap",
+});
+
+const ibmPlexMono = IBM_Plex_Mono({
+  weight: ["400", "500"],
+  subsets: ["latin"],
+  variable: "--font-ibm-plex-mono",
   display: "swap",
 });
 
@@ -55,7 +62,7 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <html lang="en" className={`${ibmPlexSerif.variable} ${ibmPlexSans.variable}`}>
+    <html lang="en" className={`${ibmPlexSerif.variable} ${ibmPlexSans.variable} ${ibmPlexMono.variable}`}>
       <body>
         {children}
         <Analytics />

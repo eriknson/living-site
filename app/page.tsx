@@ -16,10 +16,9 @@ function ExperimentalModes() {
       This site has two experimental modes:{" "}
       <Link
         href="/agent"
-        className="font-mono text-[13px] px-1.5 py-0.5 rounded bg-black/[0.04] dark:bg-white/[0.06] text-black/70 dark:text-white/70 hover:bg-black/[0.08] dark:hover:bg-white/[0.1] hover:text-black/90 dark:hover:text-white/90 transition-colors"
+        className="text-[12px] px-1.5 py-0.5 rounded bg-black/[0.04] dark:bg-white/[0.06] text-black/70 dark:text-white/70 hover:bg-black/[0.08] dark:hover:bg-white/[0.1] hover:text-black/90 dark:hover:text-white/90 transition-colors"
         style={{
-          fontFamily:
-            "ui-monospace, 'SF Mono', SFMono-Regular, Menlo, Monaco, Consolas, monospace",
+          fontFamily: "var(--font-ibm-plex-mono), monospace",
         }}
       >
         /agent
@@ -27,10 +26,9 @@ function ExperimentalModes() {
       shows daily versions built by Cursor CLI on GitHub Actions, and{" "}
       <Link
         href="/new"
-        className="font-mono text-[13px] px-1.5 py-0.5 rounded bg-black/[0.04] dark:bg-white/[0.06] text-black/70 dark:text-white/70 hover:bg-black/[0.08] dark:hover:bg-white/[0.1] hover:text-black/90 dark:hover:text-white/90 transition-colors"
+        className="text-[12px] px-1.5 py-0.5 rounded bg-black/[0.04] dark:bg-white/[0.06] text-black/70 dark:text-white/70 hover:bg-black/[0.08] dark:hover:bg-white/[0.1] hover:text-black/90 dark:hover:text-white/90 transition-colors"
         style={{
-          fontFamily:
-            "ui-monospace, 'SF Mono', SFMono-Regular, Menlo, Monaco, Consolas, monospace",
+          fontFamily: "var(--font-ibm-plex-mono), monospace",
         }}
       >
         /new
