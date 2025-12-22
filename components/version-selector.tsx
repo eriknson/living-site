@@ -127,10 +127,10 @@ export function VersionSelector({
   const isOpen = isMobile ? drawerOpen : dropdownOpen;
   
   const TriggerButton = (
-    <button className="h-full px-2.5 hover:bg-black/5 dark:hover:bg-white/10 active:bg-black/10 dark:active:bg-white/15 outline-none flex items-center gap-1.5 cursor-pointer">
-      <Infinity className="h-4 w-4 opacity-50" strokeWidth={2.5} />
-      <span>{getDisplayName()}</span>
-      <ChevronDown className={cn("h-3 w-3 opacity-60 transition-transform", isOpen && "rotate-180")} />
+    <button className="px-3 py-1 rounded-full bg-black/[0.03] dark:bg-white/[0.06] hover:bg-black/[0.06] dark:hover:bg-white/[0.1] active:bg-black/[0.08] dark:active:bg-white/[0.12] outline-none flex items-center gap-1.5 cursor-pointer transition-colors">
+      <Infinity className="h-3.5 w-3.5 opacity-50" strokeWidth={2.5} />
+      <span className="text-[12px] font-medium">{getDisplayName()}</span>
+      <ChevronDown className={cn("h-2.5 w-2.5 opacity-50 transition-transform", isOpen && "rotate-180")} />
     </button>
   );
 
