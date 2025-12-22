@@ -1,1 +1,3 @@
-Make an improved version of Erik’s personal website. Use the same core content and contact links but add and remove stuff as you see fits to make it better. Make choices you think are good to create a nice website.
+The reference is a sketch. Build the finished piece.
+
+Keep the aesthetic but go further—add sections, animations, micro-details. Make it feel crafted.
