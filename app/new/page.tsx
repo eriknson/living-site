@@ -16,6 +16,26 @@ interface AgentStep {
 
 // Parse agent message into a step label - keep it close to the original summary
 function parseStepLabel(text: string, summary?: string): string {
+  // Handle tool call summaries (e.g., "write: live.html")
+  if (summary?.includes(":") && summary.length < 50) {
+    const [tool, file] = summary.split(":");
+    const toolName = tool.trim().toLowerCase();
+    const fileName = file?.trim() || "";
+    
+    // Format tool calls nicely
+    if (toolName === "write" || toolName === "edit_file" || toolName === "search_replace") {
+      return `Writing ${fileName}`;
+    }
+    if (toolName === "read_file" || toolName === "read") {
+      return `Reading ${fileName}`;
+    }
+    if (toolName === "codebase_search" || toolName === "grep") {
+      return `Searching codebase`;
+    }
+    // Return as-is for other tool calls
+    return summary;
+  }
+
   // Choose source text
   let source = summary && summary.length > 0 && summary.length <= 100
     ? summary
@@ -50,6 +70,9 @@ function parseStepLabel(text: string, summary?: string): string {
     }
     if (lower.includes("writ") || lower.includes("creat")) {
       return "Building site";
+    }
+    if (lower.includes("html") || lower.includes("css")) {
+      return "Writing code";
     }
     return "Working";
   }
@@ -269,7 +292,7 @@ export default function NewBuildPage() {
   const isDisabled = cooldown > 0 || !!error || status !== "idle";
 
   return (
-    <div className="h-dvh flex flex-col bg-[#e8e6e1]">
+    <div className="h-dvh flex flex-col bg-[#fafaf9] dark:bg-[#0a0a0a]">
       {/* Menu bar */}
       <GlobalMenuBar
         currentRoute="/new"
@@ -280,8 +303,8 @@ export default function NewBuildPage() {
       {/* Main content */}
       <main className="flex-1 flex flex-col min-h-0">
         {status === "idle" && (
-          <div className="flex-1 flex flex-col items-center justify-center px-4">
-            <div className="w-full max-w-2xl">
+          <div className="flex-1 flex flex-col items-center justify-center">
+            <div className="w-full max-w-[640px] px-6">
               {/* Chat input card */}
               <div className="bg-white rounded-2xl border border-[#d8d6d1] overflow-hidden">
                 {/* Textarea */}
@@ -291,7 +314,7 @@ export default function NewBuildPage() {
                     value={prompt}
                     onChange={(e) => setPrompt(e.target.value)}
                     onKeyDown={handleKeyDown}
-                    placeholder="Describe your remix..."
+                    placeholder="Describe your remix of Erik's website"
                     className="w-full resize-none bg-transparent text-[15px] text-gray-900 placeholder:text-gray-400 focus:outline-none leading-relaxed"
                     rows={1}
                     disabled={isDisabled}
@@ -337,7 +360,7 @@ export default function NewBuildPage() {
                     key={example}
                     onClick={() => setPrompt(example)}
                     disabled={isDisabled}
-                    className="px-3 py-1.5 text-sm text-gray-500 bg-white/60 hover:bg-white hover:text-gray-700 rounded-full border border-gray-200 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                    className="px-3 py-1.5 text-[15px] text-gray-500 bg-white/60 hover:bg-white hover:text-gray-700 rounded-full border border-gray-200 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
                   >
                     {example}
                   </button>
@@ -346,7 +369,7 @@ export default function NewBuildPage() {
 
               {/* Status text - only show when there's a cooldown or error */}
               {(cooldown > 0 || error) && (
-                <p className="text-center text-sm text-gray-500 mt-4">
+                <p className="text-center text-[15px] text-gray-500 mt-4">
                   {cooldown > 0 ? (
                     `Available in ${cooldown}s`
                   ) : (
@@ -384,7 +407,7 @@ export default function NewBuildPage() {
                         >
                           {step.label}
                         </span>
-                        <span className="text-gray-300 text-sm tabular-nums ml-4 flex-shrink-0">
+                        <span className="text-gray-300 text-[13px] tabular-nums ml-4 flex-shrink-0">
                           {step.duration !== undefined ? `${step.duration}s` : "0s"}
                         </span>
                       </div>
@@ -396,11 +419,11 @@ export default function NewBuildPage() {
                     <div className="w-2 h-2 rounded-full bg-gray-400 animate-pulse" />
                     {/* Show status message when no steps yet, otherwise just elapsed time */}
                     {steps.length === 0 ? (
-                      <span className="text-gray-400 text-sm">
+                      <span className="text-gray-400 text-[15px]">
                         {statusMessage || "Launching agent..."} <span className="tabular-nums">({elapsedTime}s)</span>
                       </span>
                     ) : (
-                      <span className="text-gray-400 text-sm tabular-nums">{elapsedTime}s</span>
+                      <span className="text-gray-400 text-[15px] tabular-nums">{elapsedTime}s</span>
                     )}
                   </div>
                 </div>
@@ -413,7 +436,7 @@ export default function NewBuildPage() {
                     href={agentUrl}
                     target="_blank"
                     rel="noopener noreferrer"
-                    className="text-sm text-gray-400 hover:text-gray-600 underline underline-offset-2"
+                    className="text-[15px] text-gray-400 hover:text-gray-600 underline underline-offset-2"
                   >
                     View agent in Cursor
                   </a>
@@ -437,7 +460,7 @@ export default function NewBuildPage() {
                       setHtmlContent("");
                       setSteps([]);
                     }}
-                    className="px-5 py-2.5 bg-gray-900 text-white text-sm rounded-full hover:bg-gray-800 transition-colors shadow-lg shadow-black/20 flex items-center gap-2"
+                    className="px-5 py-2.5 bg-gray-900 text-white text-[15px] rounded-full hover:bg-gray-800 transition-colors shadow-lg shadow-black/20 flex items-center gap-2"
                   >
                     <svg
                       width="14"
@@ -468,7 +491,7 @@ export default function NewBuildPage() {
                       setPrompt("");
                       setSteps([]);
                     }}
-                    className="px-6 py-2.5 bg-gray-900 text-white text-sm rounded-full hover:bg-gray-800 transition-colors"
+                    className="px-6 py-2.5 bg-gray-900 text-white text-[15px] rounded-full hover:bg-gray-800 transition-colors"
                   >
                     Generate Another
                   </button>
@@ -484,7 +507,7 @@ export default function NewBuildPage() {
               <p className="text-2xl font-light text-red-500 mb-4">
                 Something went wrong
               </p>
-              <p className="text-sm text-gray-500 mb-8">
+              <p className="text-[15px] text-gray-500 mb-8">
                 {error || "Failed to generate the site"}
               </p>
               <button
@@ -493,7 +516,7 @@ export default function NewBuildPage() {
                   setError(null);
                   setSteps([]);
                 }}
-                className="px-6 py-2.5 bg-gray-900 text-white text-sm rounded-full hover:bg-gray-800 transition-colors"
+                className="px-6 py-2.5 bg-gray-900 text-white text-[15px] rounded-full hover:bg-gray-800 transition-colors"
               >
                 Try Again
               </button>

@@ -17,14 +17,6 @@ import {
 import { useIsMobile } from "@/lib/use-media-query";
 import type { BuildState } from "@/lib/build-types";
 
-function GitHubIcon({ className }: { className?: string }) {
-  return (
-    <svg viewBox="0 0 16 16" fill="currentColor" className={className}>
-      <path d="M8 0C3.58 0 0 3.58 0 8c0 3.54 2.29 6.53 5.47 7.59.4.07.55-.17.55-.38 0-.19-.01-.82-.01-1.49-2.01.37-2.53-.49-2.69-.94-.09-.23-.48-.94-.82-1.13-.28-.15-.68-.52-.01-.53.63-.01 1.08.58 1.23.82.72 1.21 1.87.87 2.33.66.07-.52.28-.87.51-1.07-1.78-.2-3.64-.89-3.64-3.95 0-.87.31-1.59.82-2.15-.08-.2-.36-1.02.08-2.12 0 0 .67-.21 2.2.82.64-.18 1.32-.27 2-.27.68 0 1.36.09 2 .27 1.53-1.04 2.2-.82 2.2-.82.44 1.1.16 1.92.08 2.12.51.56.82 1.27.82 2.15 0 3.07-1.87 3.75-3.65 3.95.29.25.54.73.54 1.48 0 1.07-.01 1.93-.01 2.2 0 .21.15.46.55.38A8.013 8.013 0 0016 8c0-4.42-3.58-8-8-8z" />
-    </svg>
-  );
-}
-
 function getNextBuildTime(): Date {
   const now = new Date();
   const next = new Date(now);
@@ -238,17 +230,14 @@ export function BuildsMenuBar() {
   const isBuilding = buildState?.status === "running";
 
   const TriggerButton = (
-    <button className="h-full px-2.5 rounded-full text-black/60 dark:text-white/60 hover:bg-black/5 dark:hover:bg-white/10 active:bg-black/10 dark:active:bg-white/15 outline-none flex items-center gap-2 cursor-pointer">
+    <button className="h-full px-3 rounded-full text-black/60 dark:text-white/60 hover:bg-black/5 dark:hover:bg-white/10 active:bg-black/10 dark:active:bg-white/15 outline-none flex items-center gap-2 cursor-pointer">
       {isBuilding ? (
         <>
-          <span className="w-2 h-2 bg-blue-500 rounded-full animate-pulse" />
+          <span className="w-2.5 h-2.5 bg-blue-500 rounded-full animate-pulse" />
           <span>Building · {elapsed}</span>
         </>
       ) : (
-        <>
-          <span className="w-2 h-2 bg-green-500 rounded-full animate-pulse" />
-          <span>Next build in {countdown}</span>
-        </>
+        <span>Next build in {countdown}</span>
       )}
     </button>
   );
@@ -393,16 +382,16 @@ export function BuildsMenuBar() {
   };
 
   return (
-    <nav className="shrink-0 py-4 pt-[calc(1rem+env(safe-area-inset-top))] z-50 text-[13px] text-anysphere-text select-none bg-[#fafaf9] dark:bg-[#0a0a0a]">
+    <nav className="shrink-0 py-4 pt-[calc(1rem+env(safe-area-inset-top))] z-50 text-[length:var(--menu-bar-font-size)] text-anysphere-text select-none bg-[#fafaf9] dark:bg-[#0a0a0a]">
       <div className="max-w-[640px] mx-auto w-full h-full flex items-center justify-between px-6">
         {/* Left: Site name → links to live site */}
         <div className="flex items-center h-full">
           {/* Black circle on very small screens */}
           <Link href="/" className="h-full flex items-center min-[375px]:hidden hover:opacity-70 transition-opacity">
-            <span className="w-3 h-3 bg-anysphere-text rounded-full" />
+            <span className="w-3.5 h-3.5 bg-anysphere-text rounded-full" />
           </Link>
           {/* Full text on larger screens */}
-          <Link href="/" className="h-full font-semibold hidden min-[375px]:flex items-center hover:opacity-70 transition-opacity">
+          <Link href="/" className="h-full font-semibold text-[length:var(--menu-bar-logo-size)] hidden min-[375px]:flex items-center hover:opacity-70 transition-opacity">
             eriks.design
           </Link>
         </div>
@@ -412,16 +401,6 @@ export function BuildsMenuBar() {
           {/* Build status with dropdown/drawer */}
           {renderStatusMenu()}
 
-          {/* GitHub link */}
-          <a
-            href="https://github.com/eriknson/living-site/actions"
-            target="_blank"
-            rel="noopener noreferrer"
-            className="p-2 rounded-full hover:bg-black/5 dark:hover:bg-white/10 active:bg-black/10 dark:active:bg-white/15 transition-colors"
-            title="View GitHub Actions"
-          >
-            <GitHubIcon className="w-4 h-4" />
-          </a>
         </div>
       </div>
     </nav>

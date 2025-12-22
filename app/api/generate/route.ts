@@ -25,8 +25,18 @@ let currentAgentId: string | null = null;
 
 interface ConversationMessage {
   id: string;
-  type: "user_message" | "assistant_message";
-  text: string;
+  type: string;
+  text?: string;
+  // Tool call fields
+  name?: string;
+  input?: Record<string, unknown>;
+  // For nested content
+  content?: Array<{
+    type: string;
+    text?: string;
+    name?: string;
+    input?: Record<string, unknown>;
+  }>;
 }
 
 // Minimal fallback if live site fetch fails
@@ -143,6 +153,99 @@ function summarizeMessage(text: string): string {
   const firstLine = text.split("\n")[0].trim();
   if (firstLine.length <= 100) return firstLine;
   return firstLine.slice(0, 97) + "...";
+}
+
+// Extract steps from a conversation message (handles nested content)
+function extractStepsFromMessage(msg: ConversationMessage): Array<{ id: string; text: string; summary: string }> {
+  const steps: Array<{ id: string; text: string; summary: string }> = [];
+  
+  // Handle direct text messages - split into paragraphs for more granular steps
+  if (msg.text) {
+    const paragraphs = msg.text.split(/\n\n+/).filter(p => p.trim().length > 10);
+    
+    if (paragraphs.length > 1) {
+      // Multiple paragraphs - create a step for each meaningful one
+      paragraphs.forEach((para, i) => {
+        // Skip code blocks
+        if (para.trim().startsWith("```")) return;
+        // Skip numbered lists continuing
+        if (/^\d+\.\s/.test(para.trim()) && i > 0) return;
+        
+        steps.push({
+          id: `${msg.id}-p${i}`,
+          text: para.trim(),
+          summary: summarizeMessage(para.trim()),
+        });
+      });
+    } else {
+      // Single paragraph or short message
+      steps.push({
+        id: msg.id,
+        text: msg.text,
+        summary: summarizeMessage(msg.text),
+      });
+    }
+  }
+  
+  // Handle tool calls at message level
+  if (msg.type === "tool_use" || msg.type === "tool_call") {
+    const toolName = msg.name || "tool";
+    const input = msg.input || {};
+    const filePath = (input.file_path || input.path || input.target_file || "") as string;
+    const summary = filePath 
+      ? `${toolName}: ${filePath.split("/").pop()}`
+      : toolName;
+    steps.push({
+      id: `${msg.id}-tool`,
+      text: `Using ${toolName}`,
+      summary,
+    });
+  }
+  
+  // Handle nested content array (common in Claude/Anthropic API responses)
+  if (msg.content && Array.isArray(msg.content)) {
+    for (let i = 0; i < msg.content.length; i++) {
+      const item = msg.content[i];
+      
+      if (item.type === "text" && item.text) {
+        // Also split nested text content
+        const paragraphs = item.text.split(/\n\n+/).filter(p => p.trim().length > 10);
+        
+        if (paragraphs.length > 1) {
+          paragraphs.forEach((para, j) => {
+            if (para.trim().startsWith("```")) return;
+            steps.push({
+              id: `${msg.id}-${i}-p${j}`,
+              text: para.trim(),
+              summary: summarizeMessage(para.trim()),
+            });
+          });
+        } else {
+          steps.push({
+            id: `${msg.id}-${i}`,
+            text: item.text,
+            summary: summarizeMessage(item.text),
+          });
+        }
+      }
+      
+      if (item.type === "tool_use" || item.type === "tool_call") {
+        const toolName = item.name || "tool";
+        const input = item.input || {};
+        const filePath = (input.file_path || input.path || input.target_file || "") as string;
+        const summary = filePath 
+          ? `${toolName}: ${filePath.split("/").pop()}`
+          : toolName;
+        steps.push({
+          id: `${msg.id}-${i}-tool`,
+          text: `Using ${toolName}`,
+          summary,
+        });
+      }
+    }
+  }
+  
+  return steps;
 }
 
 export async function POST(request: NextRequest) {
@@ -272,21 +375,50 @@ export async function POST(request: NextRequest) {
               const convData = await convResponse.json();
               const messages = (convData.messages || []) as ConversationMessage[];
 
-              // Send new assistant messages as steps
+              // Debug: Log message structure on first few polls
+              if (pollCount <= 3) {
+                console.log(`[Cursor API] Poll ${pollCount}:`);
+                console.log(`  - Total messages: ${messages.length}`);
+                console.log(`  - Message types: ${messages.map(m => m.type).join(", ")}`);
+                if (messages.length > 0) {
+                  console.log(`  - Sample message keys: ${Object.keys(messages[0]).join(", ")}`);
+                }
+                // Log raw convData structure too
+                if (pollCount === 1) {
+                  console.log(`  - convData keys: ${Object.keys(convData).join(", ")}`);
+                  console.log(`  - Full sample:`, JSON.stringify(messages[0], null, 2));
+                }
+              }
+
+              // Process all messages (not just assistant_message)
               for (const msg of messages) {
-                if (msg.type === "assistant_message" && !seenMessageIds.has(msg.id)) {
-                  seenMessageIds.add(msg.id);
-                  send({
-                    type: "step",
-                    id: msg.id,
-                    text: msg.text,
-                    summary: summarizeMessage(msg.text),
-                  });
+                // Skip user messages
+                if (msg.type === "user_message" || msg.type === "human") continue;
+                
+                // Extract all steps from this message
+                const steps = extractStepsFromMessage(msg);
+                
+                // Debug: Log extracted steps
+                if (steps.length > 0 && !seenMessageIds.has(steps[0].id)) {
+                  console.log(`[Cursor API] Extracted ${steps.length} steps from message type: ${msg.type}`);
+                }
+                
+                for (const step of steps) {
+                  if (!seenMessageIds.has(step.id)) {
+                    seenMessageIds.add(step.id);
+                    send({
+                      type: "step",
+                      id: step.id,
+                      text: step.text,
+                      summary: step.summary,
+                    });
+                  }
                 }
               }
             }
-          } catch {
-            // Conversation fetch failed, continue with status polling
+          } catch (e) {
+            // Log conversation fetch errors for debugging
+            console.error("Conversation fetch error:", e);
           }
 
           // Send status update

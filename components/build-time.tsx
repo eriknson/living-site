@@ -283,10 +283,10 @@ export function BuildTime({ currentRoute, manifest, currentModel, currentDate, c
 
   if (!relativeTime) return null;
 
-  const triggerText = `Built ${relativeTime}`;
+  const triggerText = isHome ? `Updated ${relativeTime}` : `Built ${relativeTime}`;
   
   const TriggerButton = (
-    <button className="h-full px-2.5 rounded-full text-black/60 dark:text-white/60 hover:bg-black/5 dark:hover:bg-white/10 active:bg-black/10 dark:active:bg-white/15 outline-none flex items-center cursor-pointer">
+    <button className="h-full px-3 rounded-full text-black/60 dark:text-white/60 hover:bg-black/5 dark:hover:bg-white/10 active:bg-black/10 dark:active:bg-white/15 outline-none flex items-center cursor-pointer">
       {triggerText}
     </button>
   );

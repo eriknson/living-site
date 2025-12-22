@@ -34,26 +34,26 @@ export function GlobalMenuBar({
   const isNew = currentRoute === "/new";
 
   return (
-    <nav className="shrink-0 py-4 pt-[calc(1rem+env(safe-area-inset-top))] z-50 text-[13px] text-anysphere-text select-none">
+    <nav className="shrink-0 py-4 pt-[calc(1rem+env(safe-area-inset-top))] z-50 text-[length:var(--menu-bar-font-size)] text-anysphere-text select-none">
       <div className="max-w-[640px] mx-auto w-full h-full flex items-center justify-between px-6">
         <div className="flex items-center h-full">
           {/* Black circle on very small screens */}
           {isHome ? (
             <span className="h-full flex items-center min-[375px]:hidden">
-              <span className="w-3 h-3 bg-anysphere-text rounded-full" />
+              <span className="w-3.5 h-3.5 bg-anysphere-text rounded-full" />
             </span>
           ) : (
             <Link href="/" className="h-full flex items-center min-[375px]:hidden hover:opacity-70 transition-opacity">
-              <span className="w-3 h-3 bg-anysphere-text rounded-full" />
+              <span className="w-3.5 h-3.5 bg-anysphere-text rounded-full" />
             </Link>
           )}
           {/* Full text on larger screens */}
           {isHome ? (
-            <span className="h-full font-semibold hidden min-[375px]:flex items-center">
+            <span className="h-full font-semibold text-[length:var(--menu-bar-logo-size)] hidden min-[375px]:flex items-center">
               eriks.design
             </span>
           ) : (
-            <Link href="/" className="h-full font-semibold hidden min-[375px]:flex items-center hover:opacity-70 transition-opacity">
+            <Link href="/" className="h-full font-semibold text-[length:var(--menu-bar-logo-size)] hidden min-[375px]:flex items-center hover:opacity-70 transition-opacity">
               eriks.design
             </Link>
           )}

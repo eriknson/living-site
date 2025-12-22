@@ -65,8 +65,8 @@ export function ModelSelector({ manifest, currentModel, currentDate, currentTime
 
   if (!manifest || !currentModel) {
     return (
-      <div className="h-full px-2.5 text-black/40 dark:text-white/40 flex items-center gap-1.5">
-        <InfinityIcon className="h-4 w-4 opacity-40" />
+      <div className="h-full px-2.5 text-black/40 dark:text-white/40 flex items-center gap-2">
+        <InfinityIcon className="h-[1.15em] w-[1.15em] opacity-40" />
         Loading...
       </div>
     );
@@ -86,10 +86,10 @@ export function ModelSelector({ manifest, currentModel, currentDate, currentTime
 
   const isOpen = isMobile ? drawerOpen : dropdownOpen;
   const TriggerButton = (
-    <button className="h-full px-2.5 hover:bg-black/5 dark:hover:bg-white/10 active:bg-black/10 dark:active:bg-white/15 outline-none flex items-center gap-1.5 cursor-pointer">
-      <InfinityIcon className="h-4 w-4 opacity-50" />
+    <button className="h-full px-2.5 hover:bg-black/5 dark:hover:bg-white/10 active:bg-black/10 dark:active:bg-white/15 outline-none flex items-center gap-2 cursor-pointer">
+      <InfinityIcon className="h-[1.15em] w-[1.15em] opacity-50" />
       <span>{getModelDisplayName(currentModel)}</span>
-      <ChevronDown className={cn("h-3 w-3 opacity-60 transition-transform", isOpen && "rotate-180")} />
+      <ChevronDown className={cn("h-[0.9em] w-[0.9em] opacity-60 transition-transform", isOpen && "rotate-180")} />
     </button>
   );
 

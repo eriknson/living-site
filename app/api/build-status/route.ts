@@ -6,7 +6,15 @@
 import { redis } from "@/lib/redis";
 import { NextResponse } from "next/server";
 
+// Check if Redis is configured
+const isRedisConfigured = !!(process.env.KV_REST_API_URL && process.env.KV_REST_API_TOKEN);
+
 export async function GET() {
+  // Return null state if Redis isn't configured (local dev)
+  if (!isRedisConfigured) {
+    return NextResponse.json({ currentBuild: null, state: null });
+  }
+
   try {
     const currentBuildId = await redis.get<string>("build:current");
     

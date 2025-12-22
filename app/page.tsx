@@ -13,7 +13,7 @@ const PILL_CONFIG = {
   iconOpacity: 0.9,       // Default icon opacity (0-1)
   iconHoverOpacity: 1,  // Icon opacity on hover (0-1)
   // Label settings
-  fontSize: 21,           // Text size in px (was inherited ~24px)
+  fontSize: 18,           // Text size in px (was inherited ~24px)
   fontWeight: 450,        // Font weight (400 = normal, 500 = medium, 600 = semibold)
   labelOpacity: 0.9,      // Label opacity (0-1)
   labelHoverOpacity: 1, // Label opacity on hover (0-1)
@@ -31,7 +31,7 @@ const PILL_CONFIG = {
 
 function ExperimentalModes() {
   return (
-    <p className="text-[14px] text-black/35 dark:text-white/35 leading-[1.8] max-w-[640px] mx-auto px-6 pb-6">
+    <p className="text-[15px] text-black/35 dark:text-white/35 leading-[1.8] max-w-[640px] mx-auto px-6 pb-6">
       This site has two experimental modes to rebuild itself. Explore{" "}
       <Link
         href="/agent"

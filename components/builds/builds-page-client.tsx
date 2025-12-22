@@ -100,8 +100,8 @@ function ModelCard({
   if (isFailed) {
     return (
       <div className="bg-black/[0.03] dark:bg-white/[0.05] rounded-xl px-3 py-2.5 opacity-50">
-        <div className="text-sm font-medium text-black/40 dark:text-white/40">{name}</div>
-        <div className="text-xs text-red-400 mt-1">Build failed</div>
+        <div className="text-[15px] font-medium text-black/40 dark:text-white/40">{name}</div>
+        <div className="text-[13px] text-red-400 mt-1">Build failed</div>
       </div>
     );
   }
@@ -111,7 +111,7 @@ function ModelCard({
       {/* Desktop layout */}
       <div className="hidden sm:block px-3 py-2.5">
         <div className="flex items-center justify-between gap-2">
-          <span className="text-sm font-medium text-black/85 dark:text-white/85">{name}</span>
+          <span className="text-[15px] font-medium text-black/85 dark:text-white/85">{name}</span>
           <div className="flex items-center -mr-1">
             {hasLogs && (
               <button
@@ -132,7 +132,7 @@ function ModelCard({
             </Link>
           </div>
         </div>
-        <div className="flex items-center gap-2.5 mt-1 text-xs">
+        <div className="flex items-center gap-2.5 mt-1 text-[13px]">
           {duration && (
             <span className="text-black/40 dark:text-white/40">{formatDuration(duration)}</span>
           )}
@@ -145,8 +145,8 @@ function ModelCard({
       {/* Mobile layout */}
       <div className="flex sm:hidden overflow-hidden">
         <div className="flex-1 min-w-0 px-3 py-3">
-          <div className="text-sm font-medium text-black/85 dark:text-white/85 truncate">{name}</div>
-          <div className="flex items-center gap-2.5 mt-1 text-xs">
+          <div className="text-[15px] font-medium text-black/85 dark:text-white/85 truncate">{name}</div>
+          <div className="flex items-center gap-2.5 mt-1 text-[13px]">
             {duration && (
               <span className="text-black/40 dark:text-white/40">{formatDuration(duration)}</span>
             )}
@@ -236,13 +236,13 @@ export function BuildsPageClient({
         <BuildsMenuBar />
       </div>
       <div>
-        <div className="max-w-[640px] mx-auto px-6 pb-6">
+        <div className="max-w-[640px] mx-auto px-6 pt-6 pb-6">
           {/* Header */}
           <div className="mb-8">
             <h1 className="text-xl font-semibold text-black/85 dark:text-white/85">
               Build History
             </h1>
-            <p className="text-sm text-black/50 dark:text-white/50 mt-1">
+            <p className="text-[15px] text-black/50 dark:text-white/50 mt-1">
               Browse and compare model outputs
             </p>
           </div>
@@ -262,7 +262,7 @@ export function BuildsPageClient({
                 <section key={batchKey}>
                   {/* Session header with prompt and GitHub icons */}
                   <div className="flex items-center gap-2 mb-2.5 px-1">
-                    <h2 className="text-sm font-medium text-black/70 dark:text-white/70">
+                    <h2 className="text-[15px] font-medium text-black/70 dark:text-white/70">
                       {formatBuildTime(batch.timestamp)}
                     </h2>
                     {batch.system_prompt && (

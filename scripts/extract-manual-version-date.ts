@@ -13,6 +13,7 @@ import { join } from "path";
 
 const TARGET_FILE = "app/page.tsx";
 const OUTPUT_PATH = join(process.cwd(), "data", "manual-version.json");
+const PUBLIC_OUTPUT_PATH = join(process.cwd(), "public", "data", "manual-version.json");
 
 function extractManualVersionDate() {
   console.log(`Extracting last update date for ${TARGET_FILE}...`);
@@ -48,12 +49,19 @@ function extractManualVersionDate() {
 }
 
 function writeOutput(data: { lastUpdated: string; source: string }) {
-  // Ensure data directory exists
+  // Ensure data directories exist
   mkdirSync(join(process.cwd(), "data"), { recursive: true });
+  mkdirSync(join(process.cwd(), "public", "data"), { recursive: true });
 
-  writeFileSync(OUTPUT_PATH, JSON.stringify(data, null, 2) + "\n", "utf-8");
+  const jsonContent = JSON.stringify(data, null, 2) + "\n";
+  
+  writeFileSync(OUTPUT_PATH, jsonContent, "utf-8");
   console.log(`✓ Written to ${OUTPUT_PATH}`);
+  
+  writeFileSync(PUBLIC_OUTPUT_PATH, jsonContent, "utf-8");
+  console.log(`✓ Written to ${PUBLIC_OUTPUT_PATH}`);
 }
 
 extractManualVersionDate();
+
 
