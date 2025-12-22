@@ -9,19 +9,19 @@ export const viewport: Viewport = {
 };
 
 export const metadata: Metadata = {
-  title: "Erik's Website",
-  description: "A living personal website that regenerates daily with Cursor CLI",
+  title: "Erik Nilsson",
+  description: "Product Design",
   metadataBase: new URL("https://eriks.design"),
   openGraph: {
-    title: "Erik's Website",
-    description: "A living personal website that regenerates daily with Cursor CLI",
+    title: "Erik Nilsson",
+    description: "Product Design",
     type: "website",
     images: ["/og-image.png"],
   },
   twitter: {
     card: "summary_large_image",
-    title: "Erik's Website",
-    description: "A living personal website that regenerates daily with Cursor CLI",
+    title: "Erik Nilsson",
+    description: "Product Design",
     creator: "@flowstated",
     images: ["/og-image.png"],
   },
