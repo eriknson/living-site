@@ -1,1 +1,1 @@
-The reference site is an outline. Build an amazing personal website for Erik, the finished piece. Make it feel crafted.
+The reference site is just inspiration. Design and build a great and fun personal website for Erik. Make it feel crafted and themed. Like The New York Times
