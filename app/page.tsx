@@ -12,7 +12,7 @@ function ExperimentalModes() {
   if (isReference) return null;
 
   return (
-    <p className="text-[14px] text-black/50 dark:text-white/50 leading-relaxed max-w-[580px] mx-auto px-6 pb-4">
+    <p className="text-[14px] text-black/50 dark:text-white/50 leading-relaxed max-w-[580px] mx-auto px-6 pb-6">
       This site has two experimental modes:{" "}
       <Link
         href="/agent"
@@ -43,7 +43,7 @@ export default function HomePage() {
       {/* Main Content */}
       <main className="flex-1 max-w-[580px] mx-auto px-6 py-16 md:py-24 w-full">
         {/* Bio paragraphs - conversational style like leerob/anyblockers */}
-        <div className="space-y-5 text-[17px] leading-relaxed text-black/70 dark:text-white/70 mb-10">
+        <div className="space-y-5 text-[24px] leading-relaxed text-black/70 dark:text-white/70 mb-10">
           <p>
             Erik is building{" "}
             <a
