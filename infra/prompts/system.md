@@ -1,1 +1,1 @@
-Improve the site. Make the structure and UX really nice, clean, and structured. Use the core content and contact links.
+Make an improved version of Erik’s personal website. Use the same core content and contact links but add and remove stuff as you see fits to make it better. Make choices you think are good to create a nice website.
