@@ -12,24 +12,18 @@ function ExperimentalModes() {
   if (isReference) return null;
 
   return (
-    <p className="text-[14px] text-black/50 dark:text-white/50 leading-relaxed" style={{ fontFamily: "var(--font-ibm-plex-sans), sans-serif" }}>
+    <p className="text-[17px] text-black/50 dark:text-white/50 leading-relaxed">
       This site has two experimental modes:{" "}
       <Link
         href="/agent"
-        className="text-[12px] px-1.5 py-0.5 rounded bg-black/[0.04] dark:bg-white/[0.06] text-black/70 dark:text-white/70 hover:bg-black/[0.08] dark:hover:bg-white/[0.1] hover:text-black/90 dark:hover:text-white/90 transition-colors"
-        style={{
-          fontFamily: "var(--font-ibm-plex-mono), monospace",
-        }}
+        className="font-mono text-[17px] px-1.5 py-0.5 rounded bg-black/[0.04] dark:bg-white/[0.06] text-black/70 dark:text-white/70 hover:bg-black/[0.08] dark:hover:bg-white/[0.1] hover:text-black/90 dark:hover:text-white/90 transition-colors"
       >
         /agent
       </Link>{" "}
       shows daily versions built by Cursor CLI on GitHub Actions, and{" "}
       <Link
         href="/new"
-        className="text-[12px] px-1.5 py-0.5 rounded bg-black/[0.04] dark:bg-white/[0.06] text-black/70 dark:text-white/70 hover:bg-black/[0.08] dark:hover:bg-white/[0.1] hover:text-black/90 dark:hover:text-white/90 transition-colors"
-        style={{
-          fontFamily: "var(--font-ibm-plex-mono), monospace",
-        }}
+        className="font-mono text-[17px] px-1.5 py-0.5 rounded bg-black/[0.04] dark:bg-white/[0.06] text-black/70 dark:text-white/70 hover:bg-black/[0.08] dark:hover:bg-white/[0.1] hover:text-black/90 dark:hover:text-white/90 transition-colors"
       >
         /new
       </Link>{" "}
@@ -49,7 +43,7 @@ export default function HomePage() {
       {/* Main Content */}
       <main className="max-w-[580px] mx-auto px-6 py-16 md:py-24">
         {/* Bio paragraphs - conversational style like leerob/anyblockers */}
-        <div className="space-y-5 text-[28px] leading-relaxed text-black/70 dark:text-white/70 mb-10">
+        <div className="space-y-5 text-[17px] leading-relaxed text-black/70 dark:text-white/70 mb-10">
           <p>
             Erik is building{" "}
             <a
