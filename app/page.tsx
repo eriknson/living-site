@@ -12,7 +12,7 @@ function ExperimentalModes() {
   if (isReference) return null;
 
   return (
-    <p className="text-[17px] text-black/50 dark:text-white/50 leading-relaxed">
+    <p className="text-[14px] text-black/50 dark:text-white/50 leading-relaxed" style={{ fontFamily: "var(--font-ibm-plex-sans), sans-serif" }}>
       This site has two experimental modes:{" "}
       <Link
         href="/agent"
@@ -51,7 +51,7 @@ export default function HomePage() {
       {/* Main Content */}
       <main className="max-w-[580px] mx-auto px-6 py-16 md:py-24">
         {/* Bio paragraphs - conversational style like leerob/anyblockers */}
-        <div className="space-y-5 text-[17px] leading-relaxed text-black/70 dark:text-white/70 mb-10">
+        <div className="space-y-5 text-[28px] leading-relaxed text-black/70 dark:text-white/70 mb-10">
           <p>
             Erik is building{" "}
             <a
@@ -101,11 +101,6 @@ export default function HomePage() {
           <ExperimentalModes />
         </Suspense>
       </main>
-
-      {/* Footer */}
-      <footer className="max-w-[580px] mx-auto px-6 pb-12 text-[13px] text-black/30 dark:text-white/30">
-        <p>© 2025</p>
-      </footer>
     </div>
   );
 }
