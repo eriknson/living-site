@@ -12,7 +12,7 @@ function ExperimentalModes() {
   if (isReference) return null;
 
   return (
-    <p className="text-[14px] text-black/50 dark:text-white/50 leading-relaxed max-w-[580px] mx-auto px-6 pb-12">
+    <p className="text-[14px] text-black/50 dark:text-white/50 leading-relaxed max-w-[580px] mx-auto px-6 pb-4">
       This site has two experimental modes:{" "}
       <Link
         href="/agent"
