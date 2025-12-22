@@ -27,6 +27,9 @@ const PILL_CONFIG = {
   paddingX: 16,           // Horizontal padding in px
   paddingY: 7,            // Vertical padding in px
   borderRadius: 999,      // Full rounded
+  // Cursor pill inline settings (for fine-tuning position in headline)
+  cursorPillOffsetY: 0.20,  // Vertical offset in em (positive = down, negative = up)
+  cursorPillHeight: 1.5,    // Height in em (controls pill height relative to text)
 };
 
 function ExperimentalModes() {
@@ -70,7 +73,7 @@ function HomeContent() {
           {/* Bio paragraph */}
           <div 
             className="leading-snug text-black/85 dark:text-white/85"
-            style={{ fontSize: 'clamp(24px, 5vw, 34px)' }}
+            style={{ fontSize: 'clamp(21px, 5.2vw, 34px)' }}
           >
             <p>
               I'm a designer at{" "}
@@ -80,8 +83,9 @@ function HomeContent() {
               className="group inline-flex items-center pill-bg"
               style={{
                 padding: '0.15em 0.4em',
+                height: `${PILL_CONFIG.cursorPillHeight}em`,
                 borderRadius: PILL_CONFIG.borderRadius,
-                transform: "translateY(0.15em)",
+                transform: `translateY(${PILL_CONFIG.cursorPillOffsetY}em)`,
                 '--bg-opacity': PILL_CONFIG.bgOpacity,
                 '--bg-hover-opacity': PILL_CONFIG.bgHoverOpacity,
                 '--bg-opacity-dark': PILL_CONFIG.bgOpacityDark,
@@ -110,7 +114,7 @@ function HomeContent() {
                 <path fill="currentColor" d="M2238.7,214.5c0,29.96-17.28,53-40.33,62.99v.77c24.2,3.46,36.49,20.74,36.87,44.17l1.15,85.26h-56.07l-1.15-76.04c-.38-16.9-10.37-27.27-30.34-27.27h-93.33v103.31h-56.07V138.08h154.78c50.7,0,84.49,25.73,84.49,76.43h0ZM2182.24,222.19c0-23.04-12.29-35.72-35.33-35.72h-91.41v71.43h92.17c21.12,0,34.57-12.67,34.57-35.72h0Z"/>
               </svg>
             </a>
-            , making <br /> tools for the future of building software.
+            , making <br /> tools for building software with AI.
             </p>
           </div>
 
@@ -126,11 +130,10 @@ function HomeContent() {
             <li>
               <a
                 href="https://x.com/flowstated"
-                className="group inline-flex items-center pill-bg"
+                className="group inline-flex items-center pill-bg text-[15px] sm:text-[18px]"
                 style={{
                   gap: PILL_CONFIG.gap,
                   padding: `${PILL_CONFIG.paddingY}px ${PILL_CONFIG.paddingX}px`,
-                  fontSize: PILL_CONFIG.fontSize,
                   borderRadius: PILL_CONFIG.borderRadius,
                   '--bg-opacity': PILL_CONFIG.bgOpacity,
                   '--bg-hover-opacity': PILL_CONFIG.bgHoverOpacity,
@@ -154,11 +157,10 @@ function HomeContent() {
             <li>
               <a
                 href="mailto:contact@eriks.design"
-                className="group inline-flex items-center pill-bg"
+                className="group inline-flex items-center pill-bg text-[15px] sm:text-[18px]"
                 style={{
                   gap: PILL_CONFIG.gap,
                   padding: `${PILL_CONFIG.paddingY}px ${PILL_CONFIG.paddingX}px`,
-                  fontSize: PILL_CONFIG.fontSize,
                   borderRadius: PILL_CONFIG.borderRadius,
                   '--bg-opacity': PILL_CONFIG.bgOpacity,
                   '--bg-hover-opacity': PILL_CONFIG.bgHoverOpacity,
@@ -180,11 +182,10 @@ function HomeContent() {
             <li>
               <a
                 href="https://github.com/eriknson"
-                className="group inline-flex items-center pill-bg"
+                className="group inline-flex items-center pill-bg text-[15px] sm:text-[18px]"
                 style={{
                   gap: PILL_CONFIG.gap,
                   padding: `${PILL_CONFIG.paddingY}px ${PILL_CONFIG.paddingX}px`,
-                  fontSize: PILL_CONFIG.fontSize,
                   borderRadius: PILL_CONFIG.borderRadius,
                   '--bg-opacity': PILL_CONFIG.bgOpacity,
                   '--bg-hover-opacity': PILL_CONFIG.bgHoverOpacity,
@@ -207,11 +208,10 @@ function HomeContent() {
             {/* Read my thoughts - Coming Soon (muted pill style) */}
             <li>
               <span
-                className="inline-flex items-center bg-black/[0.02] dark:bg-white/[0.03]"
+                className="inline-flex items-center bg-black/[0.02] dark:bg-white/[0.03] text-[15px] sm:text-[18px]"
                 style={{
                   gap: PILL_CONFIG.gap,
                   padding: `${PILL_CONFIG.paddingY}px ${PILL_CONFIG.paddingX}px`,
-                  fontSize: PILL_CONFIG.fontSize,
                   borderRadius: PILL_CONFIG.borderRadius,
                   cursor: 'not-allowed',
                 }}
