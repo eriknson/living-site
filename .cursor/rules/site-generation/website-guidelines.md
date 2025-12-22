@@ -4,20 +4,11 @@ globs:
   - generated/*.html
 ---
 
-# Technical Requirements
+# Requirements
 
-- Single HTML file with inline CSS
-- Must work on mobile
-- Support both light and dark mode (prefers-color-scheme)
+- Single HTML file with all CSS inline (no external files)
+- Responsive (must work on mobile)
+- Support dark mode via @media (prefers-color-scheme: dark)
 - External links: `target="_blank" rel="noopener"`
 
-# Creative Freedom
-
-You have full creative license. Be opinionated about:
-- Typography (Google Fonts are fine)
-- Colors and palette
-- Layout and spacing
-- Animations and interactions
-- Overall aesthetic
-
-Make something you genuinely think is good design.
+Everything else is up to you. Be bold.
