@@ -2,8 +2,12 @@
 
 import { useCallback, useEffect, useState, useRef } from "react";
 import { track } from "@vercel/analytics";
+import { useRouter } from "next/navigation";
 import { GlobalMenuBar } from "@/components/global-menu-bar";
 import { SiteViewer } from "@/components/site-viewer";
+
+// Feature flag - set to true to enable the new generation feature
+const FEATURE_ENABLED = false;
 
 type GenerationStatus = "idle" | "connecting" | "generating" | "complete" | "error";
 
@@ -89,6 +93,7 @@ function parseStepLabel(text: string, summary?: string): string {
 }
 
 export default function NewBuildPage() {
+  const router = useRouter();
   const [status, setStatus] = useState<GenerationStatus>("idle");
   const [statusMessage, setStatusMessage] = useState<string>("");
   const [htmlContent, setHtmlContent] = useState<string>("");
@@ -101,6 +106,57 @@ export default function NewBuildPage() {
   const [agentUrl, setAgentUrl] = useState<string | null>(null);
   const textareaRef = useRef<HTMLTextAreaElement>(null);
   const stepsContainerRef = useRef<HTMLDivElement>(null);
+
+  // Coming soon state - show disabled chat interface
+  if (!FEATURE_ENABLED) {
+    return (
+      <div className="h-dvh flex flex-col bg-[#fafaf9] dark:bg-[#0a0a0a]">
+        <GlobalMenuBar currentRoute="/new" />
+        <main className="flex-1 flex flex-col min-h-0">
+          <div className="flex-1 flex flex-col items-center justify-center">
+            <div className="w-full max-w-[640px] px-6">
+              {/* Chat input card - disabled state */}
+              <div className="bg-white dark:bg-white/5 rounded-2xl border border-[#d8d6d1] dark:border-white/10 overflow-hidden opacity-50">
+                {/* Textarea */}
+                <div className="p-4 pb-2">
+                  <textarea
+                    placeholder="Coming soon: Remix Erik's website"
+                    className="w-full resize-none bg-transparent text-[15px] text-gray-900 dark:text-gray-100 placeholder:text-gray-400 dark:placeholder:text-gray-500 focus:outline-none leading-relaxed cursor-not-allowed"
+                    rows={1}
+                    disabled
+                  />
+                </div>
+
+                {/* Bottom bar */}
+                <div className="px-4 pb-3 flex items-center justify-end">
+                  {/* Submit button */}
+                  <button
+                    disabled
+                    className="w-8 h-8 rounded-full bg-gray-900 dark:bg-white text-white dark:text-gray-900 flex items-center justify-center opacity-30 cursor-not-allowed"
+                    aria-label="Generate"
+                  >
+                    <svg
+                      width="16"
+                      height="16"
+                      viewBox="0 0 24 24"
+                      fill="none"
+                      stroke="currentColor"
+                      strokeWidth="2"
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                    >
+                      <line x1="12" y1="19" x2="12" y2="5" />
+                      <polyline points="5 12 12 5 19 12" />
+                    </svg>
+                  </button>
+                </div>
+              </div>
+            </div>
+          </div>
+        </main>
+      </div>
+    );
+  }
 
   // Check availability on mount
   useEffect(() => {

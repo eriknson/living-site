@@ -192,33 +192,25 @@ export function VersionSelector({
         );
       })}
 
-      {/* New action */}
+      {/* New action - hidden for now
       <div className="h-px bg-black/10 dark:bg-white/10 my-1" />
       <button
-        onClick={() => onSelect("new")}
+        disabled
         className={cn(
-          "w-full flex items-center px-4 py-3.5 sm:px-2 sm:py-2.5 rounded-xl sm:rounded-sm text-left transition-colors",
-          "active:bg-black/5 dark:active:bg-white/10 sm:hover:bg-black/5 dark:sm:hover:bg-white/10 sm:active:bg-black/10 dark:sm:active:bg-white/15",
-          isNew && "bg-black/[0.04] dark:bg-white/[0.08]"
+          "w-full flex items-center px-4 py-3.5 sm:px-2 sm:py-2.5 rounded-xl sm:rounded-sm text-left transition-colors cursor-not-allowed opacity-50"
         )}
       >
         <span className="flex items-center gap-3 sm:gap-2">
-          {isNew ? (
-            <Check className="h-5 w-5 sm:h-4 sm:w-4 text-black/80 dark:text-white/80" />
-          ) : (
-            <Plus className="h-5 w-5 sm:h-4 sm:w-4 text-black/50 dark:text-white/50" />
-          )}
-          <span className={cn(
-            "text-[15px] sm:text-sm",
-            isNew ? "text-black/90 dark:text-white/90" : "text-black/70 dark:text-white/70"
-          )}>
+          <Plus className="h-5 w-5 sm:h-4 sm:w-4 text-black/50 dark:text-white/50" />
+          <span className="text-[15px] sm:text-sm text-black/70 dark:text-white/70">
             New
           </span>
-          <span className="text-[9px] font-medium tracking-wide text-black/40 dark:text-white/40 uppercase bg-black/[0.04] dark:bg-white/[0.05] px-1.5 py-px rounded">
-            Beta
+          <span className="text-[9px] font-medium tracking-wide text-black/40 dark:text-white/40 uppercase bg-black/[0.04] dark:bg-white/[0.05] px-1.5 py-px rounded-full">
+            Soon
           </span>
         </span>
       </button>
+      */}
     </>
   );
 
@@ -292,19 +284,16 @@ export function VersionSelector({
           );
         })}
 
-        {/* New action */}
+        {/* New action - hidden for now
         <DropdownMenuSeparator />
-        <DropdownMenuItem onClick={handleGenerateNew} className="flex items-center gap-2">
-          {isNew ? (
-            <Check className="h-4 w-4" />
-          ) : (
-            <Plus className="h-4 w-4 text-black/50 dark:text-white/50" />
-          )}
-          <span className={isNew ? "" : "text-black/70 dark:text-white/70"}>New</span>
-          <span className="text-[9px] font-medium tracking-wide text-black/40 dark:text-white/40 uppercase bg-black/[0.04] dark:bg-white/[0.05] px-1.5 py-px rounded">
-            Beta
+        <DropdownMenuItem disabled className="flex items-center gap-2 cursor-not-allowed opacity-50">
+          <Plus className="h-4 w-4 text-black/50 dark:text-white/50" />
+          <span className="text-black/70 dark:text-white/70">New</span>
+          <span className="text-[9px] font-medium tracking-wide text-black/40 dark:text-white/40 uppercase bg-black/[0.04] dark:bg-white/[0.05] px-1.5 py-px rounded-full">
+            Soon
           </span>
         </DropdownMenuItem>
+        */}
       </DropdownMenuContent>
     </DropdownMenu>
   );

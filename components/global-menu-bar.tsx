@@ -79,15 +79,17 @@ export function GlobalMenuBar({
             </span>
           )}
 
-          {/* Version selector */}
-          <VersionSelector
-            manifest={manifest}
-            currentRoute={currentRoute}
-            currentModel={currentModel}
-            currentDate={currentDate}
-            currentTimestamp={currentTimestamp}
-            onModelChange={onModelChange}
-          />
+          {/* Version selector - hidden on /new page */}
+          {!isNew && (
+            <VersionSelector
+              manifest={manifest}
+              currentRoute={currentRoute}
+              currentModel={currentModel}
+              currentDate={currentDate}
+              currentTimestamp={currentTimestamp}
+              onModelChange={onModelChange}
+            />
+          )}
         </div>
       </div>
     </nav>
