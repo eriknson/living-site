@@ -1,1 +1,1 @@
-The reference site is just inspiration. Design and build a great and fun personal website for Erik. Make it feel crafted and themed. Like The New York Times
+The reference site is just inspiration. Design and build a great and fun personal website for Erik. Make it feel crafted and themed. Like The New York Times. Make it look great on both mobile and desktop, and have a max width of 640px on desktop. Also support both light and dark mode.
