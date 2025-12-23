@@ -12,7 +12,7 @@ import {
   DrawerTitle,
   DrawerDescription,
 } from "@/components/ui/drawer";
-import { BuildsMenuBar } from "./builds-menu-bar";
+import { GlobalMenuBar } from "@/components/global-menu-bar";
 
 interface BuildEntry {
   id: string;
@@ -123,7 +123,7 @@ function ModelCard({
               </button>
             )}
             <Link
-              href={`/?model=${build.model}&date=${date}&t=${encodeURIComponent(batchTimestamp)}`}
+              href={`/agent?model=${build.model}&date=${date}&t=${encodeURIComponent(batchTimestamp)}`}
               onClick={onViewBuild}
               className="p-1.5 rounded-md text-black/25 dark:text-white/25 hover:text-black/50 dark:hover:text-white/50 hover:bg-black/5 dark:hover:bg-white/10 transition-colors"
               title="View this build"
@@ -166,7 +166,7 @@ function ModelCard({
             </button>
           )}
           <Link
-            href={`/?model=${build.model}&date=${date}&t=${encodeURIComponent(batchTimestamp)}`}
+            href={`/agent?model=${build.model}&date=${date}&t=${encodeURIComponent(batchTimestamp)}`}
             onClick={onViewBuild}
             className="w-11 h-11 flex items-center justify-center rounded-lg bg-black/[0.03] dark:bg-white/[0.05] text-black/40 dark:text-white/40 active:bg-black/[0.06] dark:active:bg-white/[0.1] transition-colors"
             title="View this build"
@@ -211,7 +211,7 @@ export function BuildsPageClient({
     return (
       <div className="min-h-dvh bg-[#fafaf9] dark:bg-[#0a0a0a] text-[#1a1a1a] dark:text-[#e5e5e5]">
         <div className="sticky top-0 z-50 bg-[#fafaf9] dark:bg-[#0a0a0a]">
-          <BuildsMenuBar />
+          <GlobalMenuBar currentRoute="/builds" />
         </div>
         <div className="p-6">
           <div className="text-center py-12 text-black/50 dark:text-white/50">
@@ -233,7 +233,7 @@ export function BuildsPageClient({
   return (
     <div className="min-h-dvh bg-[#fafaf9] dark:bg-[#0a0a0a] text-[#1a1a1a] dark:text-[#e5e5e5]">
       <div className="sticky top-0 z-50 bg-[#fafaf9] dark:bg-[#0a0a0a]">
-        <BuildsMenuBar />
+        <GlobalMenuBar currentRoute="/builds" />
       </div>
       <div>
         <div className="max-w-[640px] mx-auto px-6 pt-6 pb-6">

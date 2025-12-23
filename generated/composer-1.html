@@ -3,7 +3,10 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Erik Nilsson — Personal Dispatch</title>
+  <title>The Nilsson Times — Personal Edition</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,400;0,500;0,600;0,700;0,800;0,900;1,400;1,500;1,600&family=Libre+Baskerville:ital,wght@0,400;0,700;1,400&family=Cormorant+Garamond:ital,wght@0,400;0,500;0,600;0,700;1,400;1,500&family=Old+Standard+TT:ital,wght@0,400;0,700;1,400&display=swap" rel="stylesheet">
   <style>
     * {
       margin: 0;
@@ -12,274 +15,377 @@
     }
 
     :root {
-      --bg-primary: #fefefe;
-      --bg-secondary: #f8f8f8;
-      --text-primary: #1a1a1a;
-      --text-secondary: #4a4a4a;
-      --text-muted: #6a6a6a;
-      --border-color: #d0d0d0;
-      --accent: #1a1a1a;
-      --link-color: #1a1a1a;
-      --link-hover: #4a4a4a;
+      --bg-primary: #faf8f5;
+      --bg-secondary: #f5f3ef;
+      --text-primary: #121212;
+      --text-secondary: #333333;
+      --text-muted: #5a5a5a;
+      --border-color: #121212;
+      --border-light: #d4d4d4;
+      --accent: #121212;
+      --link-color: #326891;
+      --link-hover: #1a4a6e;
     }
 
     [data-theme="dark"] {
-      --bg-primary: #0a0a0a;
-      --bg-secondary: #141414;
-      --text-primary: #e8e8e8;
-      --text-secondary: #b8b8b8;
-      --text-muted: #888888;
-      --border-color: #2a2a2a;
-      --accent: #e8e8e8;
-      --link-color: #e8e8e8;
-      --link-hover: #b8b8b8;
+      --bg-primary: #121212;
+      --bg-secondary: #1a1a1a;
+      --text-primary: #f0ede8;
+      --text-secondary: #c7c4bf;
+      --text-muted: #8a8884;
+      --border-color: #f0ede8;
+      --border-light: #3a3a3a;
+      --accent: #f0ede8;
+      --link-color: #6ba3d0;
+      --link-hover: #8ec0e8;
     }
 
     body {
-      font-family: 'Georgia', 'Times New Roman', serif;
+      font-family: 'Old Standard TT', 'Georgia', serif;
       background-color: var(--bg-primary);
       color: var(--text-primary);
-      line-height: 1.6;
+      line-height: 1.65;
       transition: background-color 0.3s ease, color 0.3s ease;
       -webkit-font-smoothing: antialiased;
       -moz-osx-font-smoothing: grayscale;
     }
 
-    .container {
-      max-width: 640px;
+    .page-wrapper {
+      max-width: 720px;
       margin: 0 auto;
-      padding: 0 20px;
+      padding: 24px 20px 60px;
     }
 
-    /* Header / Masthead */
-    header {
-      border-bottom: 3px double var(--border-color);
-      padding: 24px 0 20px;
-      margin-bottom: 32px;
-      position: relative;
+    /* Top Bar */
+    .top-bar {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      font-family: 'Cormorant Garamond', serif;
+      font-size: 11px;
+      text-transform: uppercase;
+      letter-spacing: 1.5px;
+      padding-bottom: 8px;
+      border-bottom: 1px solid var(--border-light);
+      margin-bottom: 12px;
+      color: var(--text-muted);
     }
 
-    .masthead {
+    .top-bar-left, .top-bar-right {
+      max-width: 140px;
+      line-height: 1.4;
       text-align: center;
     }
 
-    .masthead-title {
-      font-size: 42px;
-      font-weight: 700;
-      letter-spacing: -0.5px;
-      margin-bottom: 8px;
-      font-family: 'Times New Roman', serif;
-      color: var(--text-primary);
-    }
-
-    .masthead-subtitle {
-      font-size: 12px;
-      text-transform: uppercase;
-      letter-spacing: 2px;
-      color: var(--text-muted);
-      font-weight: 400;
-      margin-bottom: 12px;
-    }
-
-    .masthead-date {
-      font-size: 11px;
-      color: var(--text-muted);
+    .top-bar-center {
       font-style: italic;
+      font-size: 10px;
+      letter-spacing: 0.5px;
+      text-transform: none;
     }
 
     .theme-toggle {
-      position: absolute;
-      top: 24px;
-      right: 0;
       background: none;
-      border: 1px solid var(--border-color);
-      padding: 6px 12px;
-      font-size: 11px;
-      font-family: 'Georgia', serif;
-      color: var(--text-secondary);
-      cursor: pointer;
-      transition: all 0.2s ease;
+      border: none;
+      font-family: 'Cormorant Garamond', serif;
+      font-size: 10px;
       text-transform: uppercase;
-      letter-spacing: 0.5px;
+      letter-spacing: 1px;
+      color: var(--text-muted);
+      cursor: pointer;
+      padding: 4px 8px;
+      transition: color 0.2s ease;
     }
 
     .theme-toggle:hover {
-      background-color: var(--bg-secondary);
       color: var(--text-primary);
     }
 
-    /* Main Content */
-    main {
-      padding-bottom: 48px;
+    /* Masthead */
+    .masthead {
+      text-align: center;
+      padding: 20px 0 24px;
+      border-bottom: 3px solid var(--border-color);
     }
 
-    .article {
-      margin-bottom: 48px;
-    }
-
-    .article-header {
-      border-bottom: 1px solid var(--border-color);
-      padding-bottom: 12px;
-      margin-bottom: 20px;
-    }
-
-    .article-title {
-      font-size: 32px;
+    .masthead-title {
+      font-family: 'Playfair Display', serif;
+      font-size: 58px;
       font-weight: 700;
-      line-height: 1.2;
-      margin-bottom: 8px;
-      font-family: 'Times New Roman', serif;
+      letter-spacing: -1px;
+      line-height: 1;
       color: var(--text-primary);
     }
 
-    .article-byline {
+    .masthead-edition {
+      font-family: 'Cormorant Garamond', serif;
       font-size: 12px;
-      color: var(--text-muted);
-      font-style: italic;
       text-transform: uppercase;
-      letter-spacing: 0.5px;
+      letter-spacing: 3px;
+      margin-top: 10px;
+      color: var(--text-muted);
+    }
+
+    /* Dateline Bar */
+    .dateline-bar {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      font-family: 'Cormorant Garamond', serif;
+      font-size: 11px;
+      text-transform: uppercase;
+      letter-spacing: 1px;
+      padding: 10px 0;
+      border-bottom: 1px solid var(--border-light);
+      margin-bottom: 28px;
+      color: var(--text-secondary);
+    }
+
+    .dateline-bar span {
+      flex: 1;
+    }
+
+    .dateline-bar span:nth-child(2) {
+      text-align: center;
+    }
+
+    .dateline-bar span:last-child {
+      text-align: right;
+    }
+
+    /* Headlines */
+    .main-headline {
+      font-family: 'Playfair Display', serif;
+      font-size: 42px;
+      font-weight: 700;
+      line-height: 1.1;
+      text-align: center;
+      margin-bottom: 12px;
+      color: var(--text-primary);
+      letter-spacing: -0.5px;
+    }
+
+    .sub-headline {
+      font-family: 'Libre Baskerville', serif;
+      font-size: 18px;
+      font-weight: 400;
+      font-style: italic;
+      text-align: center;
+      margin-bottom: 28px;
+      color: var(--text-secondary);
+      line-height: 1.5;
+    }
+
+    /* Article */
+    .article-lead {
+      font-size: 17px;
+      line-height: 1.75;
+      text-align: justify;
+      hyphens: auto;
+      margin-bottom: 24px;
+    }
+
+    .drop-cap {
+      float: left;
+      font-family: 'Playfair Display', serif;
+      font-size: 72px;
+      font-weight: 700;
+      line-height: 0.72;
+      padding-top: 8px;
+      padding-right: 12px;
+      color: var(--text-primary);
     }
 
     .article-body {
       font-size: 16px;
-      line-height: 1.8;
-      color: var(--text-primary);
-    }
-
-    .article-body p {
-      margin-bottom: 20px;
+      line-height: 1.75;
       text-align: justify;
       hyphens: auto;
     }
 
-    .article-body p:last-child {
-      margin-bottom: 0;
+    .article-body p {
+      margin-bottom: 18px;
+      text-indent: 1.5em;
     }
 
-    /* Columns */
-    .columns {
-      display: grid;
-      grid-template-columns: 1fr 1fr;
-      gap: 24px;
-      margin-top: 24px;
+    .article-body p:first-child {
+      text-indent: 0;
     }
 
-    @media (max-width: 480px) {
-      .columns {
-        grid-template-columns: 1fr;
-        gap: 20px;
-      }
+    /* Section Divider */
+    .section-divider {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      margin: 36px 0;
+      gap: 16px;
     }
 
-    .column {
-      border-left: 1px solid var(--border-color);
-      padding-left: 20px;
+    .section-divider::before,
+    .section-divider::after {
+      content: '';
+      flex: 1;
+      height: 1px;
+      background: var(--border-light);
     }
 
-    .column:first-child {
-      border-left: none;
-      padding-left: 0;
-    }
-
-    .column-title {
-      font-size: 14px;
-      font-weight: 700;
-      text-transform: uppercase;
-      letter-spacing: 1px;
-      margin-bottom: 12px;
-      color: var(--text-primary);
-      border-bottom: 1px solid var(--border-color);
-      padding-bottom: 6px;
-    }
-
-    .column-item {
-      margin-bottom: 16px;
-      font-size: 14px;
-      line-height: 1.6;
-    }
-
-    .column-item:last-child {
-      margin-bottom: 0;
-    }
-
-    .column-item strong {
-      font-weight: 700;
-      color: var(--text-primary);
-    }
-
-    .column-item a {
-      color: var(--link-color);
-      text-decoration: underline;
-      text-decoration-thickness: 1px;
-      text-underline-offset: 2px;
-      transition: color 0.2s ease;
-    }
-
-    .column-item a:hover {
-      color: var(--link-hover);
-    }
-
-    /* List Styles */
-    ul {
-      list-style: none;
-      padding: 0;
-    }
-
-    ul li {
-      margin-bottom: 12px;
-      padding-left: 20px;
-      position: relative;
-      font-size: 14px;
-      line-height: 1.6;
-    }
-
-    ul li::before {
-      content: "•";
-      position: absolute;
-      left: 0;
+    .section-divider-ornament {
+      font-family: 'Playfair Display', serif;
+      font-size: 18px;
       color: var(--text-muted);
     }
 
-    ul li a {
-      color: var(--link-color);
-      text-decoration: underline;
-      text-decoration-thickness: 1px;
-      text-underline-offset: 2px;
-      transition: color 0.2s ease;
+    /* Section Headers */
+    .section-header {
+      font-family: 'Cormorant Garamond', serif;
+      font-size: 13px;
+      font-weight: 600;
+      text-transform: uppercase;
+      letter-spacing: 2.5px;
+      margin-bottom: 18px;
+      padding-bottom: 8px;
+      border-bottom: 2px solid var(--border-color);
+      color: var(--text-primary);
     }
 
-    ul li a:hover {
-      color: var(--link-hover);
+    /* Two Column Layout */
+    .two-columns {
+      display: grid;
+      grid-template-columns: 1fr 1px 1fr;
+      gap: 28px;
+      margin-bottom: 36px;
+    }
+
+    .column-divider {
+      background: var(--border-light);
+    }
+
+    @media (max-width: 560px) {
+      .two-columns {
+        grid-template-columns: 1fr;
+        gap: 32px;
+      }
+      .column-divider {
+        display: none;
+      }
+    }
+
+    /* Project Items */
+    .project-item {
+      margin-bottom: 20px;
+    }
+
+    .project-item:last-child {
+      margin-bottom: 0;
+    }
+
+    .project-name {
+      font-family: 'Playfair Display', serif;
+      font-size: 20px;
+      font-weight: 600;
+      margin-bottom: 4px;
+      color: var(--text-primary);
+    }
+
+    .project-desc {
+      font-size: 15px;
+      color: var(--text-secondary);
+      line-height: 1.6;
+    }
+
+    /* Weather Box */
+    .weather-box {
+      background: var(--bg-secondary);
+      border: 1px solid var(--border-light);
+      padding: 18px 20px;
+      margin: 24px 0;
+    }
+
+    .weather-title {
+      font-family: 'Cormorant Garamond', serif;
+      font-size: 11px;
+      font-weight: 600;
+      text-transform: uppercase;
+      letter-spacing: 2px;
+      margin-bottom: 10px;
+      color: var(--text-muted);
+    }
+
+    .weather-reading {
+      font-family: 'Playfair Display', serif;
+      font-size: 32px;
+      font-weight: 700;
+      color: var(--text-primary);
+      margin-bottom: 4px;
+    }
+
+    .weather-condition {
+      font-size: 14px;
+      color: var(--text-secondary);
+      font-style: italic;
+    }
+
+    /* Cultural Notes */
+    .cultural-list {
+      list-style: none;
+    }
+
+    .cultural-list li {
+      padding: 12px 0;
+      border-bottom: 1px solid var(--border-light);
+      font-size: 15px;
+    }
+
+    .cultural-list li:last-child {
+      border-bottom: none;
+    }
+
+    .cultural-label {
+      font-family: 'Cormorant Garamond', serif;
+      font-size: 10px;
+      font-weight: 600;
+      text-transform: uppercase;
+      letter-spacing: 1.5px;
+      color: var(--text-muted);
+      display: block;
+      margin-bottom: 3px;
+    }
+
+    /* Links */
+    a {
+      color: var(--link-color);
+      text-decoration: none;
+      border-bottom: 1px solid transparent;
+      transition: border-color 0.2s ease, color 0.2s ease;
+    }
+
+    a:hover {
+      border-bottom-color: var(--link-color);
     }
 
     /* Footer */
     footer {
-      border-top: 3px double var(--border-color);
-      padding-top: 24px;
+      border-top: 3px solid var(--border-color);
       margin-top: 48px;
+      padding-top: 24px;
       text-align: center;
-    }
-
-    .footer-signature {
-      font-size: 16px;
-      font-style: italic;
-      color: var(--text-secondary);
-      margin-bottom: 20px;
     }
 
     .footer-links {
       display: flex;
       justify-content: center;
-      gap: 24px;
+      gap: 28px;
       flex-wrap: wrap;
-      font-size: 12px;
+      margin-bottom: 20px;
     }
 
     .footer-links a {
-      color: var(--text-muted);
-      text-decoration: none;
+      font-family: 'Cormorant Garamond', serif;
+      font-size: 12px;
       text-transform: uppercase;
-      letter-spacing: 1px;
+      letter-spacing: 1.5px;
+      color: var(--text-secondary);
+      border-bottom: none;
       transition: color 0.2s ease;
     }
 
@@ -287,49 +393,58 @@
       color: var(--text-primary);
     }
 
-    /* Decorative Elements */
-    .divider {
-      border-top: 1px solid var(--border-color);
-      margin: 32px 0;
+    .footer-signature {
+      font-family: 'Playfair Display', serif;
+      font-size: 24px;
+      font-style: italic;
+      color: var(--text-secondary);
+      margin-top: 16px;
     }
 
-    .weather-box {
-      background-color: var(--bg-secondary);
-      border: 1px solid var(--border-color);
-      padding: 16px;
-      margin: 20px 0;
-      font-size: 13px;
-      line-height: 1.6;
+    .colophon {
+      font-family: 'Cormorant Garamond', serif;
+      font-size: 10px;
+      text-transform: uppercase;
+      letter-spacing: 1px;
+      color: var(--text-muted);
+      margin-top: 20px;
     }
 
-    .weather-box strong {
-      font-weight: 700;
-      color: var(--text-primary);
-    }
-
-    /* Responsive Typography */
-    @media (max-width: 480px) {
+    /* Responsive */
+    @media (max-width: 560px) {
       .masthead-title {
-        font-size: 32px;
+        font-size: 38px;
       }
 
-      .article-title {
-        font-size: 24px;
+      .main-headline {
+        font-size: 30px;
       }
 
-      .article-body {
-        font-size: 15px;
+      .sub-headline {
+        font-size: 16px;
       }
 
-      .theme-toggle {
-        position: static;
-        display: block;
-        margin: 16px auto 0;
-        width: fit-content;
+      .top-bar {
+        flex-direction: column;
+        gap: 8px;
+      }
+
+      .top-bar-left, .top-bar-right, .top-bar-center {
+        max-width: 100%;
+      }
+
+      .dateline-bar {
+        flex-direction: column;
+        gap: 4px;
+        text-align: center;
+      }
+
+      .dateline-bar span {
+        text-align: center !important;
       }
     }
 
-    /* Print Styles */
+    /* Print */
     @media print {
       .theme-toggle {
         display: none;
@@ -338,134 +453,108 @@
   </style>
 </head>
 <body>
-  <div class="container">
-    <header>
-      <div class="masthead">
-        <h1 class="masthead-title">ERIK NILSSON</h1>
-        <div class="masthead-subtitle">Personal Dispatch</div>
-        <div class="masthead-date">Monday, December 23, 2025 • Stockholm, Sweden</div>
+  <div class="page-wrapper">
+    <div class="top-bar">
+      <div class="top-bar-left">Stockholm, Sweden</div>
+      <div class="top-bar-center">"All the Code That's Fit to Ship"</div>
+      <div class="top-bar-right">
+        <button class="theme-toggle" id="themeToggle" aria-label="Toggle dark mode">Evening Edition</button>
       </div>
-      <button class="theme-toggle" id="themeToggle" aria-label="Toggle dark mode">Dark</button>
+    </div>
+
+    <header class="masthead">
+      <h1 class="masthead-title">The Nilsson Times</h1>
+      <div class="masthead-edition">Personal Edition • Vol. I • Monday, December 23, 2025</div>
     </header>
 
+    <div class="dateline-bar">
+      <span>Late Edition</span>
+      <span>0°C Partly Cloudy</span>
+      <span>Free · Priceless</span>
+    </div>
+
     <main>
-      <article class="article">
-        <div class="article-header">
-          <h2 class="article-title">Designer Builds Tools for the Future of Software Development</h2>
-          <div class="article-byline">Special to The Personal Dispatch</div>
+      <article>
+        <h2 class="main-headline">Product Designer Pioneers New Tools for the Future of Software</h2>
+        <p class="sub-headline">At Cursor, Erik Nilsson explores the frontier of AI-assisted development, building Shipflow and investigating mobile agent deployment.</p>
+
+        <div class="article-lead">
+          <span class="drop-cap">B</span>uilding shipflow and cursor-commands. Exploring ways to spin up agents from my phone. These are the projects consuming the winter days in Stockholm, where the cold sharpens focus and the abbreviated daylight creates natural rhythms for deep work.
         </div>
+
         <div class="article-body">
-          <p>
-            Building shipflow and cursor-commands. Exploring ways to spin up agents from my phone.
-          </p>
-          <p>
-            I'm building Cursor, the best way to design software with AI. Product Designer at Anysphere. 
-            Believing in simplicity and iterating until every detail feels great. Designed apps, websites, 
-            and identities for startups and global brands reaching millions of users.
-          </p>
+          <p>As a Product Designer at Anysphere, the work centers on Cursor—described as the best way to design software with AI. The philosophy is one of simplicity and relentless iteration, refining every detail until the experience feels effortless.</p>
+          <p>The portfolio spans apps, websites, and brand identities for startups and global enterprises, reaching millions of users. Each project reflects a commitment to craft that transcends the purely functional, seeking the intersection where utility meets delight.</p>
         </div>
       </article>
 
-      <div class="divider"></div>
+      <div class="section-divider">
+        <span class="section-divider-ornament">✦</span>
+      </div>
 
-      <article class="article">
-        <div class="article-header">
-          <h2 class="article-title">Current Projects</h2>
-          <div class="article-byline">In Development</div>
-        </div>
-        <div class="article-body">
-          <div class="columns">
-            <div class="column">
-              <div class="column-title">shipflow</div>
-              <div class="column-item">
-                Point-and-click editing for Next.js, powered by Cursor Agent.
-              </div>
-            </div>
-            <div class="column">
-              <div class="column-title">cursor-commands</div>
-              <div class="column-item">
-                Add in one click via cursor commands.
-              </div>
-            </div>
+      <div class="two-columns">
+        <div class="column">
+          <h3 class="section-header">Current Projects</h3>
+          <div class="project-item">
+            <div class="project-name">Shipflow</div>
+            <div class="project-desc">Point-and-click editing for Next.js, powered by Cursor Agent. Reimagining the development workflow.</div>
+          </div>
+          <div class="project-item">
+            <div class="project-name">Cursor Commands</div>
+            <div class="project-desc">One-click functionality additions via intelligent cursor commands.</div>
           </div>
         </div>
-      </article>
 
-      <div class="divider"></div>
+        <div class="column-divider"></div>
 
-      <article class="article">
-        <div class="article-header">
-          <h2 class="article-title">Cultural Notes</h2>
-          <div class="article-byline">What's Playing</div>
-        </div>
-        <div class="article-body">
-          <p>
-            <strong>Listening:</strong> Tame Impala, Taylor Swift, Beach House, dream pop, rap, indie.
-          </p>
-          <p>
-            The soundtrack of late nights and focused work sessions. A mix that spans from the 
-            ethereal landscapes of dream pop to the sharp edges of contemporary rap, reflecting 
-            the varied rhythms of building software.
-          </p>
-        </div>
-      </article>
-
-      <div class="divider"></div>
-
-      <article class="article">
-        <div class="article-header">
-          <h2 class="article-title">Local Conditions</h2>
-          <div class="article-byline">Stockholm Weather Report</div>
-        </div>
-        <div class="article-body">
+        <div class="column">
+          <h3 class="section-header">Weather Report</h3>
           <div class="weather-box">
-            <strong>Temperature:</strong> 0°C (32°F)<br>
-            <strong>Conditions:</strong> Partly cloudy<br>
-            <strong>Season:</strong> Winter<br>
-            <strong>Mood:</strong> Stockholm winter focus
+            <div class="weather-title">Stockholm Conditions</div>
+            <div class="weather-reading">0°C</div>
+            <div class="weather-condition">Partly cloudy · Winter focus mode</div>
           </div>
-          <p>
-            The short days of Swedish winter provide a focused backdrop for deep work. 
-            The cold sharpens the mind, and the limited daylight creates natural boundaries 
-            for productivity.
-          </p>
+          <p style="font-size: 14px; color: var(--text-secondary); line-height: 1.6; margin-top: 12px;">The Swedish winter provides ideal conditions for concentrated work—short days, crisp air, and the quiet that comes with snow.</p>
         </div>
-      </article>
+      </div>
 
-      <div class="divider"></div>
+      <div class="section-divider">
+        <span class="section-divider-ornament">✦</span>
+      </div>
 
-      <article class="article">
-        <div class="article-header">
-          <h2 class="article-title">Connect</h2>
-          <div class="article-byline">Correspondence</div>
-        </div>
-        <div class="article-body">
-          <ul>
-            <li><a href="https://x.com/flowstated">Follow on X</a></li>
-            <li><a href="mailto:contact@eriks.design">Send an email</a></li>
-            <li><a href="https://github.com/eriknson">Checkout my GitHub</a></li>
-            <li><a href="https://cursor.com/home">Cursor</a> — Making tools for building software with AI</li>
-          </ul>
-        </div>
-      </article>
+      <h3 class="section-header">Cultural Notes</h3>
+      <ul class="cultural-list">
+        <li>
+          <span class="cultural-label">Currently Listening</span>
+          Tame Impala, Taylor Swift, Beach House
+        </li>
+        <li>
+          <span class="cultural-label">Genres</span>
+          Dream pop, rap, indie, neo-psychedelic
+        </li>
+        <li>
+          <span class="cultural-label">Mood</span>
+          Late nights and focused work sessions
+        </li>
+      </ul>
     </main>
 
     <footer>
-      <div class="footer-signature">— Erik</div>
-      <div class="footer-links">
-        <a href="https://x.com/flowstated">X</a>
-        <a href="mailto:contact@eriks.design">Email</a>
+      <nav class="footer-links">
+        <a href="https://x.com/flowstated">X / Twitter</a>
         <a href="https://github.com/eriknson">GitHub</a>
-      </div>
+        <a href="mailto:contact@eriks.design">Email</a>
+        <a href="https://cursor.com/home">Cursor</a>
+      </nav>
+      <div class="footer-signature">— Erik</div>
+      <div class="colophon">Published in Stockholm · Updated with care</div>
     </footer>
   </div>
 
   <script>
-    // Theme toggle functionality
     const themeToggle = document.getElementById('themeToggle');
     const html = document.documentElement;
 
-    // Check for saved theme preference or default to light mode
     const currentTheme = localStorage.getItem('theme') || 'light';
     html.setAttribute('data-theme', currentTheme);
     updateToggleText(currentTheme);
@@ -479,10 +568,9 @@
     });
 
     function updateToggleText(theme) {
-      themeToggle.textContent = theme === 'dark' ? 'Light' : 'Dark';
+      themeToggle.textContent = theme === 'dark' ? 'Morning Edition' : 'Evening Edition';
     }
 
-    // Respect system preference on first load if no saved preference
     if (!localStorage.getItem('theme')) {
       const prefersDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
       if (prefersDark) {
