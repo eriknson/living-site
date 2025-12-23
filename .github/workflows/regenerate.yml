@@ -592,7 +592,26 @@ jobs:
             # Pull latest changes and rebase before pushing
             # This handles the case where another push happened during the workflow
             git pull --rebase origin main
-            git push
+            
+            # Push with retry logic for transient network failures (SSL timeouts, etc.)
+            MAX_RETRIES=3
+            RETRY_DELAY=10
+            for i in $(seq 1 $MAX_RETRIES); do
+              echo "Push attempt $i of $MAX_RETRIES..."
+              if git push; then
+                echo "Push succeeded on attempt $i"
+                break
+              else
+                if [ $i -lt $MAX_RETRIES ]; then
+                  echo "Push failed, retrying in ${RETRY_DELAY}s..."
+                  sleep $RETRY_DELAY
+                  RETRY_DELAY=$((RETRY_DELAY * 2))
+                else
+                  echo "Push failed after $MAX_RETRIES attempts"
+                  exit 1
+                fi
+              fi
+            done
           fi
 
       - name: Notify commit complete
