@@ -56,8 +56,7 @@ export function ManifestProvider({ children }: { children: ReactNode }) {
         setManifest(data);
         setIsLoading(false);
       })
-      .catch((err) => {
-        console.error("Failed to fetch manifest:", err);
+      .catch(() => {
         setIsLoading(false);
       });
   }, []);

@@ -106,50 +106,70 @@ export default function NewBuildPage() {
   const [agentUrl, setAgentUrl] = useState<string | null>(null);
   const textareaRef = useRef<HTMLTextAreaElement>(null);
   const stepsContainerRef = useRef<HTMLDivElement>(null);
+  const startTimeRef = useRef<number | null>(null);
+  const statusRef = useRef<GenerationStatus>("idle");
 
   // Coming soon state - show disabled chat interface
   if (!FEATURE_ENABLED) {
+    const suggestions = [
+      "90s homepage",
+      "Brutalist layout",
+      "Festive holiday",
+      "Neon cyberpunk",
+    ];
+
     return (
       <div className="h-dvh flex flex-col bg-[#fafaf9] dark:bg-[#0a0a0a]">
         <GlobalMenuBar currentRoute="/new" />
-        <main className="flex-1 flex flex-col min-h-0">
-          <div className="flex-1 flex flex-col items-center justify-center">
-            <div className="w-full max-w-[640px] px-6">
-              {/* Chat input card - disabled state */}
-              <div className="bg-white dark:bg-white/5 rounded-2xl border border-[#d8d6d1] dark:border-white/10 overflow-hidden opacity-50">
-                {/* Textarea */}
-                <div className="p-4 pb-2">
-                  <textarea
-                    placeholder="Coming soon: Remix Erik's website"
-                    className="w-full resize-none bg-transparent text-[15px] text-gray-900 dark:text-gray-100 placeholder:text-gray-400 dark:placeholder:text-gray-500 focus:outline-none leading-relaxed cursor-not-allowed"
-                    rows={1}
-                    disabled
-                  />
-                </div>
+        <main className="flex-1 flex flex-col items-center justify-center min-h-0 px-4">
+          <div className="w-full max-w-[400px]">
+            {/* Suggestions grid */}
+            <div className="grid grid-cols-2 gap-2 mb-4">
+              {suggestions.map((suggestion) => (
+                <button
+                  key={suggestion}
+                  disabled
+                  className="px-3 py-2.5 text-[13px] text-black/25 dark:text-white/20 bg-black/[0.03] dark:bg-white/[0.04] rounded-lg cursor-not-allowed"
+                >
+                  {suggestion}
+                </button>
+              ))}
+            </div>
 
-                {/* Bottom bar */}
-                <div className="px-4 pb-3 flex items-center justify-end">
-                  {/* Submit button */}
-                  <button
-                    disabled
-                    className="w-8 h-8 rounded-full bg-gray-900 dark:bg-white text-white dark:text-gray-900 flex items-center justify-center opacity-30 cursor-not-allowed"
-                    aria-label="Generate"
+            {/* Chat input card - disabled state */}
+            <div className="bg-white dark:bg-white/5 rounded-2xl border border-[#d8d6d1] dark:border-white/10 overflow-hidden opacity-50">
+              {/* Textarea */}
+              <div className="p-4 pb-2">
+                <textarea
+                  placeholder="Coming soon: Remix Erik's website"
+                  className="w-full resize-none bg-transparent text-[15px] text-gray-900 dark:text-gray-100 placeholder:text-gray-400 dark:placeholder:text-gray-500 focus:outline-none leading-relaxed cursor-not-allowed"
+                  rows={1}
+                  disabled
+                />
+              </div>
+
+              {/* Bottom bar */}
+              <div className="px-4 pb-3 flex items-center justify-end">
+                {/* Submit button */}
+                <button
+                  disabled
+                  className="w-8 h-8 rounded-full bg-gray-900 dark:bg-white text-white dark:text-gray-900 flex items-center justify-center opacity-30 cursor-not-allowed"
+                  aria-label="Generate"
+                >
+                  <svg
+                    width="16"
+                    height="16"
+                    viewBox="0 0 24 24"
+                    fill="none"
+                    stroke="currentColor"
+                    strokeWidth="2"
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
                   >
-                    <svg
-                      width="16"
-                      height="16"
-                      viewBox="0 0 24 24"
-                      fill="none"
-                      stroke="currentColor"
-                      strokeWidth="2"
-                      strokeLinecap="round"
-                      strokeLinejoin="round"
-                    >
-                      <line x1="12" y1="19" x2="12" y2="5" />
-                      <polyline points="5 12 12 5 19 12" />
-                    </svg>
-                  </button>
-                </div>
+                    <line x1="12" y1="19" x2="12" y2="5" />
+                    <polyline points="5 12 12 5 19 12" />
+                  </svg>
+                </button>
               </div>
             </div>
           </div>
@@ -211,12 +231,15 @@ export default function NewBuildPage() {
   }, [steps]);
 
   const handleGenerate = useCallback(async () => {
+    const now = Date.now();
     setStatus("connecting");
+    statusRef.current = "connecting";
     setStatusMessage("Connecting to Cursor Cloud...");
     setError(null);
     setHtmlContent("");
     setSteps([]);
-    setStartTime(Date.now());
+    setStartTime(now);
+    startTimeRef.current = now;
     setElapsedTime(0);
     setAgentUrl(null);
 
@@ -271,9 +294,10 @@ export default function NewBuildPage() {
                 setHtmlContent(html);
               }
               setStatus("complete");
+              statusRef.current = "complete";
               track("live_generation_complete", {
                 duration: Math.floor(
-                  (Date.now() - (startTime || Date.now())) / 1000
+                  (Date.now() - (startTimeRef.current || Date.now())) / 1000
                 ),
               });
             } else if (event.type === "error") {
@@ -311,8 +335,9 @@ export default function NewBuildPage() {
                               });
                             } else if (event.type === "status") {
                               // Transition to generating once we get first status update
-                              if (status === "connecting") {
+                              if (statusRef.current === "connecting") {
                                 setStatus("generating");
+                                statusRef.current = "generating";
                               }
 
                               // Update status message
@@ -328,12 +353,12 @@ export default function NewBuildPage() {
         }
       }
     } catch (e) {
-      console.error("Generation error:", e);
       setError(e instanceof Error ? e.message : "Generation failed");
       setStatus("error");
+      statusRef.current = "error";
       track("live_generation_error");
     }
-  }, [prompt, startTime, status]);
+  }, [prompt]);
 
   const handleKeyDown = (e: React.KeyboardEvent) => {
     if (e.key === "Enter" && !e.shiftKey) {

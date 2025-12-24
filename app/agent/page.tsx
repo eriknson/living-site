@@ -4,6 +4,7 @@ import { Suspense, useCallback, useEffect, useMemo, useState } from "react";
 import { ManifestProvider, useManifest } from "@/lib/manifest-context";
 import { GlobalMenuBar } from "@/components/global-menu-bar";
 import { SiteViewer } from "@/components/site-viewer";
+import { AnimatedContent } from "@/components/animated-content";
 import { getBatch, type Manifest } from "@/lib/manifest";
 
 function getBatchInfo(
@@ -87,7 +88,10 @@ function AgentContent() {
       {/* Content area - fills remaining space */}
       <div className="flex-1 flex flex-col min-h-0 bg-neutral-100 dark:bg-[#0a0a0a] pb-[env(safe-area-inset-bottom)]">
         {activePath ? (
-          <>
+          <AnimatedContent 
+            contentKey={activePath} 
+            className="flex-1 flex flex-col min-h-0"
+          >
             <SiteViewer
               key={activePath}
               src={`/${activePath}`}
@@ -97,7 +101,7 @@ function AgentContent() {
             {!contentReady && (
               <div className="absolute inset-0 top-[var(--menu-bar-height)] bg-neutral-100 dark:bg-[#0a0a0a] pointer-events-none" />
             )}
-          </>
+          </AnimatedContent>
         ) : (
           <div className="flex-1 flex items-center justify-center text-black/60 dark:text-white/60">
             <p>{isLoading ? "Loading..." : "No build available"}</p>

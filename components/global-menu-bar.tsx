@@ -341,15 +341,6 @@ function BuildStatus() {
                 <span>View Latest</span>
                 <Home className="h-3.5 w-3.5 text-black/40 dark:text-white/40" />
               </Link>
-              <a
-                href="https://github.com/eriknson/living-site"
-                target="_blank"
-                rel="noopener noreferrer"
-                className="flex items-center justify-between px-2 py-2 rounded-sm text-[13px] text-black/80 dark:text-white/80 hover:bg-black/5 dark:hover:bg-white/10 active:bg-black/10 dark:active:bg-white/15 transition-colors"
-              >
-                <span>Source Code</span>
-                <ArrowUpRight className="h-3.5 w-3.5 text-black/40 dark:text-white/40" />
-              </a>
             </div>
           </>
         )}
@@ -385,34 +376,24 @@ export function GlobalMenuBar({
   const isBuilds = currentRoute === "/builds";
 
   return (
-    <nav className="shrink-0 py-4 pt-[calc(1rem+env(safe-area-inset-top))] z-50 text-[length:var(--menu-bar-font-size)] text-anysphere-text select-none">
+    <nav className="shrink-0 py-4 pt-[calc(1rem+env(safe-area-inset-top))] z-50 text-[length:var(--menu-bar-font-size)] text-anysphere-text select-none border-b border-black/[0.06] dark:border-white/[0.06]">
       <div className="max-w-[640px] mx-auto w-full h-full flex items-center justify-between px-6">
         <div className="flex items-center h-full gap-1">
-          {/* Version selector - hidden on /new and /builds pages */}
-          {!isNew && !isBuilds && (
-            <VersionSelector
-              manifest={manifest}
-              currentRoute={currentRoute}
-              currentModel={currentModel}
-              currentDate={currentDate}
-              currentTimestamp={currentTimestamp}
-              onModelChange={onModelChange}
-            />
-          )}
+          {/* Version selector - shown on all pages */}
+          <VersionSelector
+            manifest={manifest}
+            currentRoute={currentRoute}
+            currentModel={currentModel}
+            currentDate={currentDate}
+            currentTimestamp={currentTimestamp}
+            onModelChange={onModelChange}
+          />
 
-          {/* For /builds page: show back button and build status */}
+          {/* For /builds page: show build status after version selector */}
           {isBuilds && (
-            <>
-              <Link
-                href="/"
-                className="flex items-center gap-1 text-black/40 dark:text-white/40 hover:text-black/70 dark:hover:text-white/70 transition-colors"
-              >
-                <ArrowLeft className="h-4 w-4" />
-                <span>Back</span>
-              </Link>
-              <span className="text-black/20 dark:text-white/20 mx-1">·</span>
+            <span className="px-2">
               <BuildStatus />
-            </>
+            </span>
           )}
 
           {/* For other pages: show build time info */}

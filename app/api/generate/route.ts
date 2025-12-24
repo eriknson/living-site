@@ -375,21 +375,6 @@ export async function POST(request: NextRequest) {
               const convData = await convResponse.json();
               const messages = (convData.messages || []) as ConversationMessage[];
 
-              // Debug: Log message structure on first few polls
-              if (pollCount <= 3) {
-                console.log(`[Cursor API] Poll ${pollCount}:`);
-                console.log(`  - Total messages: ${messages.length}`);
-                console.log(`  - Message types: ${messages.map(m => m.type).join(", ")}`);
-                if (messages.length > 0) {
-                  console.log(`  - Sample message keys: ${Object.keys(messages[0]).join(", ")}`);
-                }
-                // Log raw convData structure too
-                if (pollCount === 1) {
-                  console.log(`  - convData keys: ${Object.keys(convData).join(", ")}`);
-                  console.log(`  - Full sample:`, JSON.stringify(messages[0], null, 2));
-                }
-              }
-
               // Process all messages (not just assistant_message)
               for (const msg of messages) {
                 // Skip user messages
@@ -397,11 +382,6 @@ export async function POST(request: NextRequest) {
                 
                 // Extract all steps from this message
                 const steps = extractStepsFromMessage(msg);
-                
-                // Debug: Log extracted steps
-                if (steps.length > 0 && !seenMessageIds.has(steps[0].id)) {
-                  console.log(`[Cursor API] Extracted ${steps.length} steps from message type: ${msg.type}`);
-                }
                 
                 for (const step of steps) {
                   if (!seenMessageIds.has(step.id)) {
@@ -416,9 +396,8 @@ export async function POST(request: NextRequest) {
                 }
               }
             }
-          } catch (e) {
-            // Log conversation fetch errors for debugging
-            console.error("Conversation fetch error:", e);
+          } catch {
+            // Ignore conversation fetch errors - non-critical
           }
 
           // Send status update
@@ -468,7 +447,6 @@ export async function POST(request: NextRequest) {
         send({ type: "complete", html, message: "Generation complete!" });
 
       } catch (error) {
-        console.error("Generation error:", error);
         send({
           type: "error",
           message: error instanceof Error ? error.message : "Generation failed",

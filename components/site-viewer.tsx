@@ -123,6 +123,11 @@ export function SiteViewer({ src, htmlContent, onLoad }: SiteViewerProps) {
         }
         .shadow-root {
           min-height: 100%;
+          max-width: 640px;
+          margin-left: auto;
+          margin-right: auto;
+          padding-left: 24px;
+          padding-right: 24px;
         }
       </style>
       <div class="shadow-root ${htmlClass} ${bodyClass}" style="${bodyStyle}" data-theme="${prefersDark ? 'dark' : 'light'}">
