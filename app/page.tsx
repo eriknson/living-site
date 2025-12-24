@@ -33,19 +33,19 @@ function ExperimentalModes() {
   
   return (
     <p className="text-[13px] sm:text-[15px] text-black/35 dark:text-white/35 leading-[1.8]">
-      This site rebuilds itself daily. Explore{" "}
+      This site rebuilds itself with Cursor CLI. {" "}
       <NextLink href="/agent" className={pillClass}>
         /agent
       </NextLink>{" "}
-      for today's versions made by Cursor CLI on GitHub Actions,{" "}
+      for today's versions,{" "}
       <NextLink href="/builds" className={pillClass}>
         /builds
       </NextLink>{" "}
-      for history, and{" "}
+      for history, {" "}
       <NextLink href="/new" className={pillClass}>
         /new
       </NextLink>{" "}
-      to generate fresh.
+      to generate ad-hoc.
     </p>
   );
 }
@@ -86,7 +86,7 @@ export default function HomePage() {
             <p>
               Follow my work on{" "}
               <Link href="https://x.com/flowstated" external>X</Link>,{" "}checkout my{" "}
-              <Link href="https://github.com/eriknson" external>GitHub</Link>, or reach me via{" "}
+              <Link href="https://github.com/eriknson" external>GitHub</Link>, or send me an{" "}
               <Link href="mailto:contact@eriks.design">email</Link>.
             </p>
           </article>
