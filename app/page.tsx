@@ -26,8 +26,8 @@ const PILL_CONFIG = {
   paddingY: 7,            // Vertical padding in px
   borderRadius: 999,      // Full rounded
   // Cursor pill inline settings (for fine-tuning position in headline)
-  cursorPillOffsetY: 0.20,  // Vertical offset in em (positive = down, negative = up)
-  cursorPillHeight: 1.5,    // Height in em (controls pill height relative to text)
+  cursorPillOffsetY: 0.19,  // Vertical offset in em (positive = down, negative = up)
+  cursorPillHeight: 1.6,    // Height in em (controls pill height relative to text)
 };
 
 function ExperimentalModes() {
@@ -62,11 +62,11 @@ function HomeContent() {
 
       {/* Main Content */}
       <div className="flex-1 flex flex-col">
-        <main className="max-w-[640px] mx-auto px-6 pt-16 md:pt-24 w-full">
+        <main className="max-w-[640px] mx-auto px-6 pt-36 md:pt-24 w-full">
           {/* Bio paragraph */}
           <div 
-            className="leading-snug text-black/85 dark:text-white/85"
-            style={{ fontSize: 'clamp(21px, 5.2vw, 34px)' }}
+            className="leading-relaxed text-black/85 dark:text-white/85"
+            style={{ fontSize: 'clamp(20px, 5.4vw, 28px)' }}
           >
             <p>
               I'm a designer at{" "}

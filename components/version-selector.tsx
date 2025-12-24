@@ -90,7 +90,7 @@ export function VersionSelector({
 
   // Determine what to show as the current selection
   const getDisplayName = () => {
-    if (isHome) return "Me";
+    if (isHome) return "Erik";
     if (isNew) return "New";
     if (isAgent && currentModel) return getModelDisplayName(currentModel);
     return "Select version";
@@ -156,7 +156,7 @@ export function VersionSelector({
           ) : (
             <span className="w-5 sm:w-4" />
           )}
-          <span className="text-[15px] sm:text-sm text-black/90 dark:text-white/90">Me</span>
+          <span className="text-[15px] sm:text-sm text-black/90 dark:text-white/90">Erik</span>
         </span>
       </button>
 
@@ -258,7 +258,7 @@ export function VersionSelector({
         <DropdownMenuItem onClick={handleSelectErik} className="flex items-center justify-between">
           <span className="flex items-center gap-2">
             {isHome ? <Check className="h-4 w-4" /> : <span className="w-4" />}
-            Me
+            Erik
           </span>
         </DropdownMenuItem>
 
