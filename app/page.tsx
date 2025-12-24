@@ -79,6 +79,7 @@ function HomeContent() {
                 height: `${PILL_CONFIG.cursorPillHeight}em`,
                 borderRadius: PILL_CONFIG.borderRadius,
                 transform: `translateY(${PILL_CONFIG.cursorPillOffsetY}em)`,
+                overflow: 'visible', // Fix iOS Safari clipping
                 '--bg-opacity': PILL_CONFIG.bgOpacity,
                 '--bg-hover-opacity': PILL_CONFIG.bgHoverOpacity,
                 '--bg-opacity-dark': PILL_CONFIG.bgOpacityDark,
