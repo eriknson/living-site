@@ -62,7 +62,7 @@ function HomeContent() {
 
       {/* Main Content */}
       <div className="flex-1 flex flex-col">
-        <main className="max-w-[640px] mx-auto px-6 pt-36 md:pt-24 w-full">
+        <main className="max-w-[640px] mx-auto px-6 pt-24 md:pt-24 w-full">
           {/* Bio paragraph */}
           <div 
             className="leading-relaxed text-black/85 dark:text-white/85"
