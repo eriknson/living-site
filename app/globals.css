@@ -64,6 +64,26 @@ html {
   color: var(--color-text);
 }
 
+/* Touch-optimized interactive targets */
+.touch-target {
+  touch-action: manipulation; /* Removes 300ms tap delay */
+  -webkit-tap-highlight-color: transparent; /* Remove iOS tap highlight */
+  user-select: none;
+}
+
+/* Only apply hover effects on devices that support hover */
+@media (hover: hover) {
+  .touch-target:hover {
+    background-color: rgba(0, 0, 0, 0.06);
+  }
+}
+
+@media (hover: hover) and (prefers-color-scheme: dark) {
+  .touch-target:hover {
+    background-color: rgba(255, 255, 255, 0.1);
+  }
+}
+
 /* Text selection - Warm champagne beige in P3, classy and subtle */
 ::selection {
   background: color(display-p3 0.94 0.87 0.74);
@@ -83,6 +103,7 @@ html {
 .animate-shimmer {
   animation: shimmer 3s linear infinite;
 }
+
 
 /* Pill icon hover effect - uses CSS custom properties for configurable opacity */
 .pill-icon {
@@ -110,10 +131,20 @@ html {
   background-color: rgb(0 0 0 / var(--bg-opacity, 0.05));
   transition: background-color 0.15s ease;
   cursor: pointer;
+  touch-action: manipulation;
+  -webkit-tap-highlight-color: transparent;
 }
 
-.pill-bg:hover {
-  background-color: rgb(0 0 0 / var(--bg-hover-opacity, 0.08));
+/* Only apply hover on devices that support it */
+@media (hover: hover) {
+  .pill-bg:hover {
+    background-color: rgb(0 0 0 / var(--bg-hover-opacity, 0.08));
+  }
+}
+
+/* Active state for touch - immediate feedback */
+.pill-bg:active {
+  background-color: rgb(0 0 0 / 0.12);
 }
 
 @media (prefers-color-scheme: dark) {
@@ -121,6 +152,12 @@ html {
     background-color: rgb(255 255 255 / var(--bg-opacity-dark, 0.06)) !important;
   }
 
+  .pill-bg:active {
+    background-color: rgb(255 255 255 / 0.15) !important;
+  }
+}
+
+@media (hover: hover) and (prefers-color-scheme: dark) {
   .pill-bg:hover {
     background-color: rgb(255 255 255 / var(--bg-hover-opacity-dark, 0.1)) !important;
   }

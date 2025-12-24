@@ -3,7 +3,7 @@
 import { useEffect, useState } from "react";
 import Link from "next/link";
 import { formatDuration, formatRelativeTime, getBuiltAt, getBuildForModel, type Manifest } from "@/lib/manifest";
-import { TypewriterText } from "./typewriter-text";
+import { FadeShimmerText } from "./fade-shimmer-text";
 
 type RouteType = "/" | "/agent" | "/new";
 
@@ -83,29 +83,27 @@ export function BuildTime({ currentRoute, manifest, currentModel, currentDate, c
 
   const durationStr = currentBuild?.duration_ms ? ` in ${formatDuration(currentBuild.duration_ms)}` : "";
 
-  // Home page: just informational text, no link, with typewriter animation
+  // Home page: just informational text, no link, with fade-shimmer animation
   if (isHome) {
     return (
       <span className="h-full px-2 text-black/35 dark:text-white/35 flex items-center select-text">
-        <TypewriterText 
+        <FadeShimmerText 
           text={`Updated ${relativeTime}`} 
           delay={150} 
-          duration={250} 
         />
       </span>
     );
   }
 
-  // Agent page: link to builds with typewriter animation
+  // Agent page: link to builds with fade-shimmer animation
   return (
     <Link 
       href="/builds"
       className="h-full px-2 text-black/35 dark:text-white/35 hover:text-black/60 dark:hover:text-white/60 flex items-center transition-colors"
     >
-      <TypewriterText 
+      <FadeShimmerText 
         text={`Built ${relativeTime}${durationStr}`} 
         delay={150} 
-        duration={300} 
       />
     </Link>
   );

@@ -102,7 +102,7 @@ export function VersionSelector({
   };
 
   return (
-    <label className="relative flex items-center cursor-pointer px-3 py-1.5 rounded-full bg-black/[0.03] dark:bg-white/[0.06] hover:bg-black/[0.06] dark:hover:bg-white/[0.1] active:bg-black/[0.08] dark:active:bg-white/[0.12] transition-colors">
+    <label className="touch-target relative flex items-center cursor-pointer px-3 py-1.5 rounded-full bg-black/[0.03] dark:bg-white/[0.06] active:bg-black/[0.12] dark:active:bg-white/[0.15] active:scale-[0.97] transition-all duration-75">
       {/* Visual display (non-interactive) */}
       <span className="flex items-center gap-1.5 pointer-events-none">
         {isNew || isBuilds ? (

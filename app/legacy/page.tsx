@@ -28,23 +28,23 @@ const PILL_CONFIG = {
 };
 
 function ExperimentalModes() {
+  const pillClass = "font-mono px-1.5 py-0.5 rounded-full bg-black/[0.04] dark:bg-white/[0.06] text-black/35 dark:text-white/35 hover:bg-black/[0.08] dark:hover:bg-white/[0.1] hover:text-black/50 dark:hover:text-white/50 transition-colors";
+  
   return (
     <p className="text-[13px] sm:text-[15px] text-black/35 dark:text-white/35 leading-[1.8] max-w-[640px] mx-auto px-6 pb-6">
-      This site has two experimental modes to rebuild itself. Explore{" "}
-      <Link
-        href="/agent"
-        className="font-mono px-1.5 py-0.5 rounded-full bg-black/[0.04] dark:bg-white/[0.06] text-black/35 dark:text-white/35 hover:bg-black/[0.08] dark:hover:bg-white/[0.1] hover:text-black/50 dark:hover:text-white/50 transition-colors"
-      >
+      This site rebuilds itself daily.{" "}
+      <Link href="/agent" className={pillClass}>
         /agent
       </Link>{" "}
-      for the daily updates, or{" "}
-      <Link
-        href="/new"
-        className="font-mono px-1.5 py-0.5 rounded-full bg-black/[0.04] dark:bg-white/[0.06] text-black/35 dark:text-white/35 hover:bg-black/[0.08] dark:hover:bg-white/[0.1] hover:text-black/50 dark:hover:text-white/50 transition-colors"
-      >
+      for today's build,{" "}
+      <Link href="/builds" className={pillClass}>
+        /builds
+      </Link>{" "}
+      for history,{" "}
+      <Link href="/new" className={pillClass}>
         /new
       </Link>{" "}
-      to generate a fresh build on demand.
+      to generate fresh.
     </p>
   );
 }
@@ -53,7 +53,7 @@ function HomeContent() {
   return (
     <div className="min-h-dvh bg-[#fafaf9] dark:bg-[#0a0a0a] text-[#1a1a1a] dark:text-[#e5e5e5] flex flex-col">
       {/* Menu Bar */}
-      <div className="sticky top-0 z-50 bg-[#fafaf9] dark:bg-[#0a0a0a]">
+      <div className="sticky top-0 z-50">
         <GlobalMenuBar currentRoute="/" />
       </div>
 
