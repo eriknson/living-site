@@ -28,9 +28,9 @@ const PAGES = [
   },
   {
     path: "/builds",
-    label: "Builds",
+    label: "Build History",
     icon: History,
-    keywords: ["history", "past", "archive"],
+    keywords: ["builds", "history", "past", "archive"],
   },
 ];
 
