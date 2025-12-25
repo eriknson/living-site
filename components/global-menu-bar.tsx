@@ -5,6 +5,7 @@ import Link from "next/link";
 import { ArrowLeft, ArrowUpRight, Clock, Home, Zap } from "lucide-react";
 import { VersionSelector } from "./version-selector";
 import { BuildTime } from "./build-time";
+import { CommandMenu } from "./command-menu";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -225,14 +226,14 @@ function BuildStatus() {
   const isBuilding = buildState?.status === "running";
 
   const TriggerButton = (
-    <button className="outline-none flex items-center gap-1.5 cursor-pointer text-black/40 dark:text-white/40 hover:text-black/70 dark:hover:text-white/70 transition-colors">
+    <button className="outline-none flex items-center gap-1.5 cursor-pointer text-black/40 dark:text-white/40 hover:text-black/70 dark:hover:text-white/70 transition-colors whitespace-nowrap">
       {isBuilding ? (
         <>
           <span className="w-2 h-2 bg-blue-500 rounded-full animate-pulse" />
           <span>Building · {elapsed}</span>
         </>
       ) : (
-        <span>Next build in {countdown}</span>
+        <span>Building in {countdown}</span>
       )}
     </button>
   );
@@ -408,13 +409,16 @@ export function GlobalMenuBar({
           )}
         </div>
 
-        <div className="flex items-center h-full">
+        <div className="flex items-center h-full gap-2">
           {/* Built in Xs - shown on /new when complete */}
           {isNew && buildComplete && buildTotalTime > 0 && (
             <span className="h-full px-2 text-anysphere-muted flex items-center">
               Built in {buildTotalTime}s
             </span>
           )}
+          
+          {/* Command menu trigger */}
+          <CommandMenu />
         </div>
       </div>
     </nav>

@@ -26,12 +26,12 @@ export interface Manifest {
   dates: DateEntry[];
 }
 
-// Model display names
+// Model display names (shortened - no "Codex" or "Pro" suffixes)
 export const modelDisplayNames: Record<string, string> = {
   "composer-1": "Composer 1",
   "claude-4.5-opus-high-thinking": "Opus 4.5",
-  "gpt-5.1-codex": "GPT-5.1 Codex",
-  "gemini-3-pro": "Gemini 3 Pro",
+  "gpt-5.1-codex": "GPT-5.1",
+  "gemini-3-pro": "Gemini 3",
 };
 
 // URL-friendly slugs

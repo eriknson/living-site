@@ -10,6 +10,30 @@ import {
   getModelDisplayName,
 } from "@/lib/manifest";
 
+// Simple back button component for /new and /builds pages
+function BackButton() {
+  const router = useRouter();
+  
+  const handleBack = () => {
+    track("back_button_clicked");
+    router.back();
+  };
+
+  return (
+    <button
+      onClick={handleBack}
+      className="flex items-center cursor-pointer h-8 px-3 rounded-full bg-black/[0.03] dark:bg-white/[0.06] active:bg-black/[0.08] dark:active:bg-white/[0.12] transition-colors select-none"
+      style={{ touchAction: 'manipulation', WebkitTapHighlightColor: 'transparent' }}
+      aria-label="Go back"
+    >
+      <span className="flex items-center gap-1.5">
+        <ArrowLeft className="h-[1em] w-[1em] opacity-50" strokeWidth={2} />
+        <span>Back</span>
+      </span>
+    </button>
+  );
+}
+
 type RouteType = "/" | "/agent" | "/new" | "/builds";
 
 interface VersionSelectorProps {
@@ -63,10 +87,14 @@ export function VersionSelector({
   const isNew = currentRoute === "/new";
   const isBuilds = currentRoute === "/builds";
 
+  // For /new and /builds pages, show a simple back button
+  if (isNew || isBuilds) {
+    return <BackButton />;
+  }
+
   // Determine what to show as the current selection
   const getDisplayName = () => {
     if (isHome) return "Erik";
-    if (isNew || isBuilds) return "Go back";
     if (isAgent && currentModel) return getModelDisplayName(currentModel);
     return "Select version";
   };
@@ -74,7 +102,6 @@ export function VersionSelector({
   // Determine current value for the select
   const getCurrentValue = () => {
     if (isHome) return "erik";
-    if (isNew || isBuilds) return ""; // Empty so no option is selected
     if (isAgent && currentModel) return currentModel;
     return "erik";
   };
@@ -103,18 +130,14 @@ export function VersionSelector({
 
   return (
     <label 
-      className="relative flex items-center cursor-pointer px-3 py-1.5 rounded-full bg-black/[0.03] dark:bg-white/[0.06] active:bg-black/[0.08] dark:active:bg-white/[0.12] transition-colors select-none"
+      className="relative flex items-center cursor-pointer h-8 px-3 rounded-full bg-black/[0.03] dark:bg-white/[0.06] active:bg-black/[0.08] dark:active:bg-white/[0.12] transition-colors select-none"
       style={{ touchAction: 'manipulation', WebkitTapHighlightColor: 'transparent' }}
     >
       {/* Visual display (non-interactive) */}
       <span className="flex items-center gap-1.5 pointer-events-none">
-        {isNew || isBuilds ? (
-          <ArrowLeft className="h-[1em] w-[1em] opacity-50" strokeWidth={2} />
-        ) : (
-          <Infinity className="h-[1.15em] w-[1.15em] opacity-35" strokeWidth={2.5} />
-        )}
+        <Infinity className="h-[1.15em] w-[1.15em] opacity-35" strokeWidth={2.5} />
         <span>{getDisplayName()}</span>
-        <ChevronDown className="h-3 w-3 opacity-50" />
+        <ChevronDown className="h-3.5 w-3.5 opacity-50" />
       </span>
       
       {/* Native select overlay */}
@@ -124,7 +147,6 @@ export function VersionSelector({
         className="absolute inset-0 w-full h-full opacity-0 cursor-pointer"
         aria-label="Select version"
       >
-        {(isNew || isBuilds) && <option value="" disabled>Go back</option>}
         <option value="erik">Erik</option>
         {sameBatchModels.map((build) => (
           <option key={build.model} value={build.model}>

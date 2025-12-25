@@ -4,6 +4,7 @@ import { useEffect, useState } from "react";
 import Link from "next/link";
 import { formatDuration, formatRelativeTime, getBuiltAt, getBuildForModel, type Manifest } from "@/lib/manifest";
 import { FadeShimmerText } from "./fade-shimmer-text";
+import { useIsMobile } from "@/lib/use-media-query";
 
 type RouteType = "/" | "/agent" | "/new";
 
@@ -22,6 +23,7 @@ interface BuildTimeProps {
 export function BuildTime({ currentRoute, manifest, currentModel, currentDate, currentTimestamp }: BuildTimeProps) {
   const [relativeTime, setRelativeTime] = useState<string>("");
   const [manualVersionDate, setManualVersionDate] = useState<string | null>(null);
+  const isMobile = useIsMobile();
 
   const isHome = currentRoute === "/";
   const isAgent = currentRoute === "/agent";
@@ -81,12 +83,12 @@ export function BuildTime({ currentRoute, manifest, currentModel, currentDate, c
     ? getBuildForModel(manifest, displayModel, displayDate, currentTimestamp ?? undefined)
     : null;
 
-  const durationStr = currentBuild?.duration_ms ? ` in ${formatDuration(currentBuild.duration_ms)}` : "";
+  const durationStr = currentBuild?.duration_ms ? formatDuration(currentBuild.duration_ms) : "";
 
   // Home page: just informational text, no link, with fade-shimmer animation
   if (isHome) {
     return (
-      <span className="h-full px-2 text-black/35 dark:text-white/35 flex items-center select-text">
+      <span className="h-full px-2 text-black/35 dark:text-white/35 flex items-center select-text whitespace-nowrap">
         <FadeShimmerText 
           text={`Updated ${relativeTime}`} 
           delay={150} 
@@ -96,13 +98,18 @@ export function BuildTime({ currentRoute, manifest, currentModel, currentDate, c
   }
 
   // Agent page: link to builds with fade-shimmer animation
+  // Mobile: just show build duration; Desktop: show relative time + duration
+  const agentDisplayText = isMobile
+    ? (durationStr ? `Built in ${durationStr}` : `Built ${relativeTime}`)
+    : (durationStr ? `Built ${relativeTime} in ${durationStr}` : `Built ${relativeTime}`);
+
   return (
     <Link 
       href="/builds"
-      className="h-full px-2 text-black/35 dark:text-white/35 hover:text-black/60 dark:hover:text-white/60 flex items-center transition-colors"
+      className="h-full px-2 text-black/35 dark:text-white/35 hover:text-black/60 dark:hover:text-white/60 flex items-center transition-colors whitespace-nowrap"
     >
       <FadeShimmerText 
-        text={`Built ${relativeTime}${durationStr}`} 
+        text={agentDisplayText} 
         delay={150} 
       />
     </Link>
