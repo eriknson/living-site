@@ -176,7 +176,7 @@ export function CommandMenu() {
 
         {/* Agents Group */}
         <Command.Group
-          heading="Agents"
+          heading="Made by agents"
           className="[&_[cmdk-group-heading]]:px-2 [&_[cmdk-group-heading]]:py-1.5 [&_[cmdk-group-heading]]:text-[12px] [&_[cmdk-group-heading]]:font-medium [&_[cmdk-group-heading]]:text-black/40 [&_[cmdk-group-heading]]:dark:text-white/40 [&_[cmdk-group-heading]]:uppercase [&_[cmdk-group-heading]]:tracking-wide [&_[cmdk-group-heading]]:mt-2"
         >
           {AGENTS.map((agent) => (
