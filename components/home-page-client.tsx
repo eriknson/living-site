@@ -102,7 +102,7 @@ function ExperimentalModes() {
     "font-mono px-1.5 py-0.5 rounded-full bg-black/[0.04] dark:bg-white/[0.06] text-black/35 dark:text-white/35 hover:bg-black/[0.08] dark:hover:bg-white/[0.1] hover:text-black/50 dark:hover:text-white/50 transition-colors";
 
   return (
-    <p className="text-[13px] sm:text-[15px] text-black/35 dark:text-white/35 leading-[1.8]">
+    <p className="text-[15px] text-black/35 dark:text-white/35 leading-[1.8]">
       This site rebuilds itself with Cursor CLI.{" "}
       <NextLink href="/agent" className={pillClass}>
         /agent
