@@ -27,6 +27,7 @@ permissions:
 
 env:
   NODE_VERSION: '20'
+  PNPM_VERSION: '9'
   BUILD_ID: ${{ inputs.build_id || github.run_id }}
   BUILD_WEBHOOK_URL: ${{ secrets.BUILD_WEBHOOK_URL }}
   BUILD_WEBHOOK_SECRET: ${{ secrets.BUILD_WEBHOOK_SECRET }}
@@ -42,14 +43,19 @@ jobs:
       - name: Checkout repository
         uses: actions/checkout@v4
 
+      - name: Setup pnpm
+        uses: pnpm/action-setup@v4
+        with:
+          version: ${{ env.PNPM_VERSION }}
+
       - name: Setup Node.js
         uses: actions/setup-node@v4
         with:
           node-version: ${{ env.NODE_VERSION }}
-          cache: 'npm'
+          cache: 'pnpm'
 
       - name: Install dependencies
-        run: npm ci
+        run: pnpm install --frozen-lockfile
 
       - name: Get date
         id: date
@@ -64,7 +70,7 @@ jobs:
             -d '{"buildId":"'"$BUILD_ID"'","event":"aggregate.started","timestamp":"'"$(date -u +%Y-%m-%dT%H:%M:%S.000Z)"'"}' || true
 
       - name: Run smoke test
-        run: npm run smoke
+        run: pnpm run smoke
 
       - name: Fetch live site for curator
         run: |
@@ -80,7 +86,7 @@ jobs:
           SPOTIFY_REFRESH_TOKEN: ${{ secrets.SPOTIFY_REFRESH_TOKEN }}
           TYPEFULLY_API_KEY: ${{ secrets.TYPEFULLY_API_KEY }}
         run: |
-          npm run aggregate 2>&1 | while IFS= read -r line; do
+          pnpm run aggregate 2>&1 | while IFS= read -r line; do
             echo "$line"
             # Send log lines to webhook (limit to avoid spam)
             if [ -n "$BUILD_WEBHOOK_URL" ] && [[ "$line" == *"✓"* ]] || [[ "$line" == *"fetched"* ]] || [[ "$line" == *"Fetching"* ]]; then
@@ -127,14 +133,19 @@ jobs:
       - name: Checkout repository
         uses: actions/checkout@v4
 
+      - name: Setup pnpm
+        uses: pnpm/action-setup@v4
+        with:
+          version: ${{ env.PNPM_VERSION }}
+
       - name: Setup Node.js
         uses: actions/setup-node@v4
         with:
           node-version: ${{ env.NODE_VERSION }}
-          cache: 'npm'
+          cache: 'pnpm'
 
       - name: Install dependencies
-        run: npm ci
+        run: pnpm install --frozen-lockfile
 
       - name: Download data artifact
         uses: actions/download-artifact@v4
@@ -257,14 +268,19 @@ jobs:
       - name: Checkout repository
         uses: actions/checkout@v4
 
+      - name: Setup pnpm
+        uses: pnpm/action-setup@v4
+        with:
+          version: ${{ env.PNPM_VERSION }}
+
       - name: Setup Node.js
         uses: actions/setup-node@v4
         with:
           node-version: ${{ env.NODE_VERSION }}
-          cache: 'npm'
+          cache: 'pnpm'
 
       - name: Install dependencies
-        run: npm ci
+        run: pnpm install --frozen-lockfile
 
       - name: Download data artifact
         uses: actions/download-artifact@v4
@@ -463,14 +479,19 @@ jobs:
       - name: Checkout repository
         uses: actions/checkout@v4
 
+      - name: Setup pnpm
+        uses: pnpm/action-setup@v4
+        with:
+          version: ${{ env.PNPM_VERSION }}
+
       - name: Setup Node.js
         uses: actions/setup-node@v4
         with:
           node-version: ${{ env.NODE_VERSION }}
-          cache: 'npm'
+          cache: 'pnpm'
 
       - name: Install dependencies
-        run: npm ci
+        run: pnpm install --frozen-lockfile
 
       - name: Notify commit started
         if: env.BUILD_WEBHOOK_URL != ''
@@ -555,7 +576,7 @@ jobs:
             output_file="public/builds/${DATE}/${model}-output.json"
             if [ -f "$output_file" ]; then
               echo "Processing build log for ${model}..."
-              npm run save-build-log -- "$output_file" --model "$model" --date "$DATE" --batch-timestamp "$BATCH_TIMESTAMP" --github-run-url "$GITHUB_RUN_URL"
+              pnpm run save-build-log -- "$output_file" --model "$model" --date "$DATE" --batch-timestamp "$BATCH_TIMESTAMP" --github-run-url "$GITHUB_RUN_URL"
             fi
           done
 
