@@ -12,7 +12,7 @@ export function PostsPageClient({ posts }: { posts: PostMeta[] }) {
   return (
     <div className="min-h-dvh flex flex-col bg-[#fafaf9] dark:bg-[#0a0a0a] text-[#1a1a1a] dark:text-[#e5e5e5]">
       {/* Menu Bar */}
-      <GlobalMenuBar currentRoute="/posts" />
+      <GlobalMenuBar currentRoute="/" />
 
       {/* Animated content */}
       <motion.div

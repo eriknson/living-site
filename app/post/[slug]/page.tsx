@@ -45,7 +45,7 @@ export default async function PostPage({
 
   return (
     <div className="min-h-dvh bg-[#fafaf9] dark:bg-[#0a0a0a] text-[#1a1a1a] dark:text-[#e5e5e5]">
-      <GlobalMenuBar currentRoute="/post" />
+      <GlobalMenuBar currentRoute="/" />
 
       <main className="max-w-[640px] mx-auto px-6 pt-16 pb-16">
         {/* Back link */}
