@@ -10,7 +10,6 @@ import {
   Zap,
   Sparkles,
   History,
-  FileText,
   ExternalLink,
   Mail,
 } from "lucide-react";
@@ -18,15 +17,6 @@ import { SearchIcon } from "@/components/icons/search-icon";
 import { useIsMobile } from "@/lib/use-media-query";
 import { Drawer, DrawerContent, DrawerTitle } from "@/components/ui/drawer";
 import { modelDisplayNames, modelSlugs } from "@/lib/manifest";
-
-// Posts data - could be fetched dynamically but hardcoded for simplicity
-const POSTS = [
-  { slug: "familiar-differentiation", title: "Familiar differentiation" },
-  {
-    slug: "shower-thought-principles-for-designing-in-web3",
-    title: "Shower-thought principles for designing in web3",
-  },
-];
 
 const PAGES = [
   { path: "/", label: "Home", icon: Home, keywords: ["start", "main", "erik"] },
@@ -41,12 +31,6 @@ const PAGES = [
     label: "Builds",
     icon: History,
     keywords: ["history", "past", "archive"],
-  },
-  {
-    path: "/posts",
-    label: "Posts",
-    icon: FileText,
-    keywords: ["blog", "articles", "writing"],
   },
 ];
 
@@ -168,7 +152,7 @@ export function CommandMenu() {
       {/* Results */}
       <Command.List className={`overflow-y-auto p-2 scroll-smooth ${isMobile ? "max-h-[50vh]" : "max-h-[min(60vh,400px)]"}`}>
         <Command.Empty className="py-6 text-center text-[14px] text-black/50 dark:text-white/50">
-          No results found.
+          Search
         </Command.Empty>
 
         {/* Pages Group */}
@@ -205,25 +189,6 @@ export function CommandMenu() {
             >
               <Zap className="h-4 w-4 opacity-60" />
               <span>{agent.label}</span>
-            </Command.Item>
-          ))}
-        </Command.Group>
-
-        {/* Posts Group */}
-        <Command.Group
-          heading="Posts"
-          className="[&_[cmdk-group-heading]]:px-2 [&_[cmdk-group-heading]]:py-1.5 [&_[cmdk-group-heading]]:text-[12px] [&_[cmdk-group-heading]]:font-medium [&_[cmdk-group-heading]]:text-black/40 [&_[cmdk-group-heading]]:dark:text-white/40 [&_[cmdk-group-heading]]:uppercase [&_[cmdk-group-heading]]:tracking-wide [&_[cmdk-group-heading]]:mt-2"
-        >
-          {POSTS.map((post) => (
-            <Command.Item
-              key={post.slug}
-              value={post.title}
-              keywords={["blog", "article", "post"]}
-              onSelect={() => navigateTo(`/post/${post.slug}`)}
-              className={`flex items-center gap-3 px-3 rounded-lg cursor-pointer text-[14px] text-[#1a1a1a] dark:text-[#e5e5e5] data-[selected=true]:bg-black/[0.05] dark:data-[selected=true]:bg-white/[0.08] outline-none transition-colors active:bg-black/[0.08] dark:active:bg-white/[0.12] ${isMobile ? "py-3.5" : "py-2.5"}`}
-            >
-              <FileText className="h-4 w-4 opacity-60" />
-              <span className="truncate">{post.title}</span>
             </Command.Item>
           ))}
         </Command.Group>
