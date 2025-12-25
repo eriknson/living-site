@@ -16,6 +16,7 @@ import {
 } from "lucide-react";
 import { SearchIcon } from "@/components/icons/search-icon";
 import { useIsMobile } from "@/lib/use-media-query";
+import { Drawer, DrawerContent, DrawerTitle } from "@/components/ui/drawer";
 
 // Posts data - could be fetched dynamically but hardcoded for simplicity
 const POSTS = [
@@ -112,27 +113,141 @@ export function CommandMenu() {
     [runCommand]
   );
 
+  // Shared trigger button
+  const triggerButton = (
+    <button
+      onClick={() => setOpen(true)}
+      className="flex items-center gap-1.5 h-8 px-3 rounded-full bg-black/[0.03] dark:bg-white/[0.06] active:bg-black/[0.08] dark:active:bg-white/[0.12] transition-colors select-none cursor-pointer"
+      style={{
+        touchAction: "manipulation",
+        WebkitTapHighlightColor: "transparent",
+      }}
+      aria-label="Open command menu"
+    >
+      <SearchIcon className="h-[1em] w-[1em] opacity-50" />
+      {!isMobile && (
+        <span className="text-black/40 dark:text-white/40 text-[0.85em]">
+          ⌘K
+        </span>
+      )}
+    </button>
+  );
+
+  // Shared Command content (search + results)
+  const commandContent = (
+    <Command className="flex flex-col" label="Global Command Menu">
+      {/* Search Input */}
+      <div className="flex items-center gap-3 px-4 border-b border-black/[0.06] dark:border-white/[0.06]">
+        <SearchIcon className="h-4 w-4 text-black/40 dark:text-white/40 shrink-0" />
+        <Command.Input
+          autoFocus={!isMobile}
+          placeholder="Type to search..."
+          className="flex-1 h-12 bg-transparent text-[15px] text-[#1a1a1a] dark:text-[#e5e5e5] placeholder:text-black/40 dark:placeholder:text-white/40 outline-none"
+        />
+      </div>
+
+      {/* Results */}
+      <Command.List className={`overflow-y-auto p-2 scroll-smooth ${isMobile ? "max-h-[50vh]" : "max-h-[min(60vh,400px)]"}`}>
+        <Command.Empty className="py-6 text-center text-[14px] text-black/50 dark:text-white/50">
+          No results found.
+        </Command.Empty>
+
+        {/* Pages Group */}
+        <Command.Group
+          heading="Pages"
+          className="[&_[cmdk-group-heading]]:px-2 [&_[cmdk-group-heading]]:py-1.5 [&_[cmdk-group-heading]]:text-[12px] [&_[cmdk-group-heading]]:font-medium [&_[cmdk-group-heading]]:text-black/40 [&_[cmdk-group-heading]]:dark:text-white/40 [&_[cmdk-group-heading]]:uppercase [&_[cmdk-group-heading]]:tracking-wide"
+        >
+          {PAGES.map((page) => (
+            <Command.Item
+              key={page.path}
+              value={page.label}
+              keywords={page.keywords}
+              onSelect={() => navigateTo(page.path)}
+              className={`flex items-center gap-3 px-3 rounded-lg cursor-pointer text-[14px] text-[#1a1a1a] dark:text-[#e5e5e5] data-[selected=true]:bg-black/[0.05] dark:data-[selected=true]:bg-white/[0.08] outline-none transition-colors active:bg-black/[0.08] dark:active:bg-white/[0.12] ${isMobile ? "py-3.5" : "py-2.5"}`}
+            >
+              <page.icon className="h-4 w-4 opacity-60" />
+              <span>{page.label}</span>
+            </Command.Item>
+          ))}
+        </Command.Group>
+
+        {/* Posts Group */}
+        <Command.Group
+          heading="Posts"
+          className="[&_[cmdk-group-heading]]:px-2 [&_[cmdk-group-heading]]:py-1.5 [&_[cmdk-group-heading]]:text-[12px] [&_[cmdk-group-heading]]:font-medium [&_[cmdk-group-heading]]:text-black/40 [&_[cmdk-group-heading]]:dark:text-white/40 [&_[cmdk-group-heading]]:uppercase [&_[cmdk-group-heading]]:tracking-wide [&_[cmdk-group-heading]]:mt-2"
+        >
+          {POSTS.map((post) => (
+            <Command.Item
+              key={post.slug}
+              value={post.title}
+              keywords={["blog", "article", "post"]}
+              onSelect={() => navigateTo(`/post/${post.slug}`)}
+              className={`flex items-center gap-3 px-3 rounded-lg cursor-pointer text-[14px] text-[#1a1a1a] dark:text-[#e5e5e5] data-[selected=true]:bg-black/[0.05] dark:data-[selected=true]:bg-white/[0.08] outline-none transition-colors active:bg-black/[0.08] dark:active:bg-white/[0.12] ${isMobile ? "py-3.5" : "py-2.5"}`}
+            >
+              <FileText className="h-4 w-4 opacity-60" />
+              <span className="truncate">{post.title}</span>
+            </Command.Item>
+          ))}
+        </Command.Group>
+
+        {/* External Links Group */}
+        <Command.Group
+          heading="Links"
+          className="[&_[cmdk-group-heading]]:px-2 [&_[cmdk-group-heading]]:py-1.5 [&_[cmdk-group-heading]]:text-[12px] [&_[cmdk-group-heading]]:font-medium [&_[cmdk-group-heading]]:text-black/40 [&_[cmdk-group-heading]]:dark:text-white/40 [&_[cmdk-group-heading]]:uppercase [&_[cmdk-group-heading]]:tracking-wide [&_[cmdk-group-heading]]:mt-2"
+        >
+          {EXTERNAL_LINKS.map((link) => (
+            <Command.Item
+              key={link.href}
+              value={link.label}
+              keywords={link.keywords}
+              onSelect={() => openExternal(link.href)}
+              className={`flex items-center gap-3 px-3 rounded-lg cursor-pointer text-[14px] text-[#1a1a1a] dark:text-[#e5e5e5] data-[selected=true]:bg-black/[0.05] dark:data-[selected=true]:bg-white/[0.08] outline-none transition-colors active:bg-black/[0.08] dark:active:bg-white/[0.12] ${isMobile ? "py-3.5" : "py-2.5"}`}
+            >
+              {link.href.startsWith("mailto:") ? (
+                <Mail className="h-4 w-4 opacity-60" />
+              ) : (
+                <ExternalLink className="h-4 w-4 opacity-60" />
+              )}
+              <span>{link.label}</span>
+            </Command.Item>
+          ))}
+        </Command.Group>
+      </Command.List>
+
+      {/* Footer hint - only on desktop */}
+      {!isMobile && (
+        <div className="px-4 py-2.5 border-t border-black/[0.06] dark:border-white/[0.06] flex items-center justify-between text-[12px] text-black/40 dark:text-white/40">
+          <span>Navigate with ↑↓ · Select with ↵</span>
+          <span>ESC to close</span>
+        </div>
+      )}
+    </Command>
+  );
+
+  // Mobile: Use Vaul Drawer (bottom sheet)
+  if (isMobile) {
+    return (
+      <>
+        {triggerButton}
+        <Drawer open={open} onOpenChange={setOpen}>
+          <DrawerContent aria-label="Command Menu">
+            {/* Override the default visually hidden title with our own */}
+            <VisuallyHidden.Root asChild>
+              <DrawerTitle>Command Menu</DrawerTitle>
+            </VisuallyHidden.Root>
+            {commandContent}
+            {/* Safe area padding for devices with home indicator */}
+            <div className="h-[env(safe-area-inset-bottom,0px)]" />
+          </DrawerContent>
+        </Drawer>
+      </>
+    );
+  }
+
+  // Desktop: Use Command.Dialog (centered modal)
   return (
     <>
-      {/* Trigger Button */}
-      <button
-        onClick={() => setOpen(true)}
-        className="flex items-center gap-1.5 h-8 px-3 rounded-full bg-black/[0.03] dark:bg-white/[0.06] active:bg-black/[0.08] dark:active:bg-white/[0.12] transition-colors select-none cursor-pointer"
-        style={{
-          touchAction: "manipulation",
-          WebkitTapHighlightColor: "transparent",
-        }}
-        aria-label="Open command menu"
-      >
-        <SearchIcon className="h-[1em] w-[1em] opacity-50" />
-        {!isMobile && (
-          <span className="text-black/40 dark:text-white/40 text-[0.85em]">
-            ⌘K
-          </span>
-        )}
-      </button>
-
-      {/* Command Dialog */}
+      {triggerButton}
       <Command.Dialog
         open={open}
         onOpenChange={setOpen}
@@ -157,89 +272,7 @@ export function CommandMenu() {
 
         {/* Panel */}
         <div className="fixed left-1/2 top-[20%] -translate-x-1/2 w-[calc(100%-2rem)] max-w-[480px] bg-[#fafaf9] dark:bg-[#0a0a0a] rounded-xl shadow-2xl border border-black/[0.08] dark:border-white/[0.08] overflow-hidden">
-          {/* Search Input */}
-          <div className="flex items-center gap-3 px-4 border-b border-black/[0.06] dark:border-white/[0.06]">
-            <SearchIcon className="h-4 w-4 text-black/40 dark:text-white/40 shrink-0" />
-            <Command.Input
-              autoFocus
-              placeholder="Type to search..."
-              className="flex-1 h-12 bg-transparent text-[15px] text-[#1a1a1a] dark:text-[#e5e5e5] placeholder:text-black/40 dark:placeholder:text-white/40 outline-none"
-            />
-          </div>
-
-          {/* Results */}
-          <Command.List className="max-h-[min(60vh,400px)] overflow-y-auto p-2 scroll-smooth">
-            <Command.Empty className="py-6 text-center text-[14px] text-black/50 dark:text-white/50">
-              No results found.
-            </Command.Empty>
-
-            {/* Pages Group */}
-            <Command.Group
-              heading="Pages"
-              className="[&_[cmdk-group-heading]]:px-2 [&_[cmdk-group-heading]]:py-1.5 [&_[cmdk-group-heading]]:text-[12px] [&_[cmdk-group-heading]]:font-medium [&_[cmdk-group-heading]]:text-black/40 [&_[cmdk-group-heading]]:dark:text-white/40 [&_[cmdk-group-heading]]:uppercase [&_[cmdk-group-heading]]:tracking-wide"
-            >
-              {PAGES.map((page) => (
-                <Command.Item
-                  key={page.path}
-                  value={page.label}
-                  keywords={page.keywords}
-                  onSelect={() => navigateTo(page.path)}
-                  className="flex items-center gap-3 px-3 py-2.5 rounded-lg cursor-pointer text-[14px] text-[#1a1a1a] dark:text-[#e5e5e5] data-[selected=true]:bg-black/[0.05] dark:data-[selected=true]:bg-white/[0.08] outline-none transition-colors"
-                >
-                  <page.icon className="h-4 w-4 opacity-60" />
-                  <span>{page.label}</span>
-                </Command.Item>
-              ))}
-            </Command.Group>
-
-            {/* Posts Group */}
-            <Command.Group
-              heading="Posts"
-              className="[&_[cmdk-group-heading]]:px-2 [&_[cmdk-group-heading]]:py-1.5 [&_[cmdk-group-heading]]:text-[12px] [&_[cmdk-group-heading]]:font-medium [&_[cmdk-group-heading]]:text-black/40 [&_[cmdk-group-heading]]:dark:text-white/40 [&_[cmdk-group-heading]]:uppercase [&_[cmdk-group-heading]]:tracking-wide [&_[cmdk-group-heading]]:mt-2"
-            >
-              {POSTS.map((post) => (
-                <Command.Item
-                  key={post.slug}
-                  value={post.title}
-                  keywords={["blog", "article", "post"]}
-                  onSelect={() => navigateTo(`/post/${post.slug}`)}
-                  className="flex items-center gap-3 px-3 py-2.5 rounded-lg cursor-pointer text-[14px] text-[#1a1a1a] dark:text-[#e5e5e5] data-[selected=true]:bg-black/[0.05] dark:data-[selected=true]:bg-white/[0.08] outline-none transition-colors"
-                >
-                  <FileText className="h-4 w-4 opacity-60" />
-                  <span className="truncate">{post.title}</span>
-                </Command.Item>
-              ))}
-            </Command.Group>
-
-            {/* External Links Group */}
-            <Command.Group
-              heading="Links"
-              className="[&_[cmdk-group-heading]]:px-2 [&_[cmdk-group-heading]]:py-1.5 [&_[cmdk-group-heading]]:text-[12px] [&_[cmdk-group-heading]]:font-medium [&_[cmdk-group-heading]]:text-black/40 [&_[cmdk-group-heading]]:dark:text-white/40 [&_[cmdk-group-heading]]:uppercase [&_[cmdk-group-heading]]:tracking-wide [&_[cmdk-group-heading]]:mt-2"
-            >
-              {EXTERNAL_LINKS.map((link) => (
-                <Command.Item
-                  key={link.href}
-                  value={link.label}
-                  keywords={link.keywords}
-                  onSelect={() => openExternal(link.href)}
-                  className="flex items-center gap-3 px-3 py-2.5 rounded-lg cursor-pointer text-[14px] text-[#1a1a1a] dark:text-[#e5e5e5] data-[selected=true]:bg-black/[0.05] dark:data-[selected=true]:bg-white/[0.08] outline-none transition-colors"
-                >
-                  {link.href.startsWith("mailto:") ? (
-                    <Mail className="h-4 w-4 opacity-60" />
-                  ) : (
-                    <ExternalLink className="h-4 w-4 opacity-60" />
-                  )}
-                  <span>{link.label}</span>
-                </Command.Item>
-              ))}
-            </Command.Group>
-          </Command.List>
-
-          {/* Footer hint */}
-          <div className="px-4 py-2.5 border-t border-black/[0.06] dark:border-white/[0.06] flex items-center justify-between text-[12px] text-black/40 dark:text-white/40">
-            <span>Navigate with ↑↓ · Select with ↵</span>
-            <span>ESC to close</span>
-          </div>
+          {commandContent}
         </div>
       </Command.Dialog>
     </>
