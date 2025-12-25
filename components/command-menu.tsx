@@ -17,6 +17,7 @@ import {
 import { SearchIcon } from "@/components/icons/search-icon";
 import { useIsMobile } from "@/lib/use-media-query";
 import { Drawer, DrawerContent, DrawerTitle } from "@/components/ui/drawer";
+import { modelDisplayNames, modelSlugs } from "@/lib/manifest";
 
 // Posts data - could be fetched dynamically but hardcoded for simplicity
 const POSTS = [
@@ -29,12 +30,6 @@ const POSTS = [
 
 const PAGES = [
   { path: "/", label: "Home", icon: Home, keywords: ["start", "main", "erik"] },
-  {
-    path: "/agent",
-    label: "Agent",
-    icon: Zap,
-    keywords: ["ai", "model", "cursor", "versions"],
-  },
   {
     path: "/new",
     label: "Generate",
@@ -54,6 +49,30 @@ const PAGES = [
     keywords: ["blog", "articles", "writing"],
   },
 ];
+
+// Agent models - each links to /agent?model=<slug>
+const AGENTS = [
+  {
+    modelId: "claude-4.5-opus-high-thinking",
+    keywords: ["claude", "anthropic", "opus", "ai"],
+  },
+  {
+    modelId: "composer-1",
+    keywords: ["cursor", "composer", "ai"],
+  },
+  {
+    modelId: "gemini-3-pro",
+    keywords: ["google", "gemini", "ai"],
+  },
+  {
+    modelId: "gpt-5.1-codex",
+    keywords: ["openai", "gpt", "codex", "ai"],
+  },
+].map((agent) => ({
+  ...agent,
+  label: modelDisplayNames[agent.modelId] || agent.modelId,
+  path: `/agent?model=${modelSlugs[agent.modelId] || agent.modelId}`,
+}));
 
 const EXTERNAL_LINKS = [
   {
@@ -167,6 +186,25 @@ export function CommandMenu() {
             >
               <page.icon className="h-4 w-4 opacity-60" />
               <span>{page.label}</span>
+            </Command.Item>
+          ))}
+        </Command.Group>
+
+        {/* Agents Group */}
+        <Command.Group
+          heading="Agents"
+          className="[&_[cmdk-group-heading]]:px-2 [&_[cmdk-group-heading]]:py-1.5 [&_[cmdk-group-heading]]:text-[12px] [&_[cmdk-group-heading]]:font-medium [&_[cmdk-group-heading]]:text-black/40 [&_[cmdk-group-heading]]:dark:text-white/40 [&_[cmdk-group-heading]]:uppercase [&_[cmdk-group-heading]]:tracking-wide [&_[cmdk-group-heading]]:mt-2"
+        >
+          {AGENTS.map((agent) => (
+            <Command.Item
+              key={agent.modelId}
+              value={agent.label}
+              keywords={agent.keywords}
+              onSelect={() => navigateTo(agent.path)}
+              className={`flex items-center gap-3 px-3 rounded-lg cursor-pointer text-[14px] text-[#1a1a1a] dark:text-[#e5e5e5] data-[selected=true]:bg-black/[0.05] dark:data-[selected=true]:bg-white/[0.08] outline-none transition-colors active:bg-black/[0.08] dark:active:bg-white/[0.12] ${isMobile ? "py-3.5" : "py-2.5"}`}
+            >
+              <Zap className="h-4 w-4 opacity-60" />
+              <span>{agent.label}</span>
             </Command.Item>
           ))}
         </Command.Group>
