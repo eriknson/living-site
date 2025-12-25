@@ -12,6 +12,9 @@ import { useRouter, useSearchParams } from "next/navigation";
 import type { Manifest } from "./manifest";
 import { getModelSlug, getModelIdFromSlug, getBuildForModel, getBatch } from "./manifest";
 
+// Default model when none specified - Opus 4.5
+const DEFAULT_MODEL_ID = "claude-4.5-opus-high-thinking";
+
 interface ManifestContextValue {
   manifest: Manifest | null;
   currentModel: string | null;
@@ -38,10 +41,20 @@ export function ManifestProvider({ children }: { children: ReactNode }) {
   const timestampFromUrl = searchParams.get("t");
   const modelIdFromUrl = modelSlug ? getModelIdFromSlug(modelSlug) : null;
 
-  // Current values: from URL if valid, otherwise defaults from manifest
-  const currentModel = modelIdFromUrl || manifest?.default_model || null;
+  // Current values: from URL if valid, otherwise defaults
+  const currentModel = modelIdFromUrl || DEFAULT_MODEL_ID;
   const currentDate = dateFromUrl || manifest?.latest_date || null;
   const currentTimestamp = timestampFromUrl || manifest?.latest_timestamp || null;
+
+  // Redirect to show model param if none specified
+  useEffect(() => {
+    if (manifest && !modelSlug) {
+      const defaultSlug = getModelSlug(DEFAULT_MODEL_ID);
+      const params = new URLSearchParams(searchParams.toString());
+      params.set("model", defaultSlug);
+      router.replace(`/agent?${params.toString()}`, { scroll: false });
+    }
+  }, [manifest, modelSlug, router, searchParams]);
 
   // Get current build path using model, date, and timestamp
   const currentBuildPath = manifest && currentModel && currentDate
@@ -85,8 +98,9 @@ export function ManifestProvider({ children }: { children: ReactNode }) {
     (modelId: string) => {
       if (!manifest) return;
 
+      // Always show model in URL
       updateParams({
-        model: modelId === manifest.default_model ? null : getModelSlug(modelId),
+        model: getModelSlug(modelId),
       });
     },
     [manifest, updateParams]
