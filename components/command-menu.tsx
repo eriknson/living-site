@@ -144,7 +144,7 @@ export function CommandMenu() {
         <SearchIcon className="h-4 w-4 text-black/40 dark:text-white/40 shrink-0" />
         <Command.Input
           autoFocus={!isMobile}
-          placeholder="Type to search..."
+          placeholder="Search"
           className="flex-1 h-12 bg-transparent text-[15px] text-[#1a1a1a] dark:text-[#e5e5e5] placeholder:text-black/40 dark:placeholder:text-white/40 outline-none"
         />
       </div>
@@ -152,7 +152,7 @@ export function CommandMenu() {
       {/* Results */}
       <Command.List className={`overflow-y-auto p-2 scroll-smooth ${isMobile ? "max-h-[50vh]" : "max-h-[min(60vh,400px)]"}`}>
         <Command.Empty className="py-6 text-center text-[14px] text-black/50 dark:text-white/50">
-          Search
+          No results found.
         </Command.Empty>
 
         {/* Pages Group */}
