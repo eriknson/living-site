@@ -63,7 +63,7 @@ function LinkTooltipProvider({ children }: { children: React.ReactNode }) {
       {children}
       {tooltip && (
         <div
-          className="fixed pointer-events-none z-50 px-2 py-1 text-[11px] bg-black/80 dark:bg-white/90 text-white dark:text-black rounded-md shadow-lg backdrop-blur-sm -translate-x-1/2"
+          className="fixed pointer-events-none z-50 px-2.5 py-1.5 text-[15px] bg-black/80 dark:bg-white/90 text-white dark:text-black rounded-md shadow-lg backdrop-blur-sm -translate-x-1/2"
           style={{
             left: tooltip.x,
             top: tooltip.y + 20,
