@@ -253,7 +253,7 @@ export function CommandMenu() {
                   {isCurrent ? (
                     <span className="text-[11px] text-black/40 dark:text-white/40 font-normal shrink-0">Current</span>
                   ) : post.readTime ? (
-                    <span className="text-[11px] text-black/30 dark:text-white/30 font-normal shrink-0">{post.readTime} min</span>
+                    <span className="text-[11px] text-black/30 dark:text-white/30 font-normal shrink-0">{post.readTime} min read</span>
                   ) : null}
                 </Command.Item>
               );
@@ -282,7 +282,7 @@ export function CommandMenu() {
                 {isCurrent ? (
                   <span className="text-[11px] text-black/40 dark:text-white/40 font-normal">Current</span>
                 ) : buildDuration ? (
-                  <span className="text-[11px] text-black/30 dark:text-white/30 font-normal">{formatDuration(buildDuration)}</span>
+                  <span className="text-[11px] text-black/30 dark:text-white/30 font-normal">Built in {formatDuration(buildDuration)}</span>
                 ) : null}
               </Command.Item>
             );
