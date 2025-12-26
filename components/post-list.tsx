@@ -39,19 +39,19 @@ export function PostList({ posts }: { posts: PostMeta[] }) {
               </a>
             ) : (
               <Link
-                href={`/post/${post.slug}`}
+                href={`/posts/${post.slug}`}
                 className="underline underline-offset-2 decoration-black/20 dark:decoration-white/20 hover:decoration-black/40 dark:hover:decoration-white/40 transition-colors"
               >
                 {post.title}
               </Link>
             )}
             {post.readTime && (
-              <span className="text-black/35 dark:text-white/35 text-sm whitespace-nowrap hidden sm:inline">
+              <span className="text-black/35 dark:text-white/35 whitespace-nowrap hidden sm:inline">
                 {post.readTime} min read
               </span>
             )}
           </div>
-          <span className="text-black/35 dark:text-white/35 text-sm whitespace-nowrap">
+          <span className="text-black/35 dark:text-white/35 whitespace-nowrap">
             {formatDate(post.publishedAt)}
             {post.readTime && (
               <span className="sm:hidden"> · {post.readTime} min read</span>
