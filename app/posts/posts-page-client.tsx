@@ -1,5 +1,6 @@
 "use client";
 
+import Link from "next/link";
 import { motion } from "motion/react";
 import { GlobalMenuBar } from "@/components/global-menu-bar";
 import { PostList } from "@/components/post-list";
@@ -23,6 +24,13 @@ export function PostsPageClient({ posts }: { posts: PostMeta[] }) {
       >
         {/* Main Content */}
         <main className="max-w-[640px] mx-auto px-6 pt-16 w-full">
+          <Link
+            href="/"
+            className="inline-flex items-center gap-1.5 text-sm text-black/50 dark:text-white/50 hover:text-black/70 dark:hover:text-white/70 transition-colors mb-6"
+          >
+            <span>←</span>
+            <span>Home</span>
+          </Link>
           <h1 className="text-2xl font-medium mb-8">Writing</h1>
           
           {posts.length > 0 ? (

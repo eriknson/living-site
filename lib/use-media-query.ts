@@ -3,19 +3,12 @@
 import { useState, useEffect } from "react";
 
 export function useMediaQuery(query: string): boolean {
-  // Initialize with the actual value if available (client-side)
-  const getInitialValue = () => {
-    if (typeof window !== "undefined") {
-      return window.matchMedia(query).matches;
-    }
-    return false;
-  };
-
-  const [matches, setMatches] = useState(getInitialValue);
+  // Always initialize with false to match server render and avoid hydration mismatch
+  const [matches, setMatches] = useState(false);
 
   useEffect(() => {
     const mediaQuery = window.matchMedia(query);
-    // Update immediately in case SSR value differs
+    // Set the actual value after hydration
     setMatches(mediaQuery.matches);
 
     const handler = (event: MediaQueryListEvent) => {
