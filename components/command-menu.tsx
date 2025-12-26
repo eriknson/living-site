@@ -105,15 +105,13 @@ export function CommandMenu() {
     return () => document.removeEventListener("keydown", down);
   }, []);
 
-  // Fetch posts when menu opens
+  // Prefetch posts on mount so they're ready when menu opens
   useEffect(() => {
-    if (open && posts.length === 0) {
-      fetch("/api/posts")
-        .then((res) => res.json())
-        .then((data) => setPosts(data.posts || []))
-        .catch(() => {});
-    }
-  }, [open, posts.length]);
+    fetch("/api/posts")
+      .then((res) => res.json())
+      .then((data) => setPosts(data.posts || []))
+      .catch(() => {});
+  }, []);
 
   // Helper to check if a path matches the current pathname
   const isCurrentPath = useCallback(
