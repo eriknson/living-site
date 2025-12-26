@@ -11,12 +11,27 @@ import {
 } from "@/lib/manifest";
 
 // Simple back button component for /new and /builds pages
+// Falls back to home if there's no history (direct entry to subpage)
 function BackButton() {
   const router = useRouter();
   
   const handleBack = () => {
     track("back_button_clicked");
-    router.back();
+    
+    // Check if we have meaningful history to go back to
+    // history.length > 1 means there's at least one previous entry
+    // Also check if referrer is from our own site (same origin)
+    const hasHistory = typeof window !== "undefined" && window.history.length > 1;
+    const referrerIsInternal = typeof document !== "undefined" && 
+      document.referrer && 
+      document.referrer.startsWith(window.location.origin);
+    
+    if (hasHistory && referrerIsInternal) {
+      router.back();
+    } else {
+      // No history or came from external site - go home
+      router.push("/");
+    }
   };
 
   return (
