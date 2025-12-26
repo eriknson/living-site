@@ -1,5 +1,4 @@
 import { notFound } from "next/navigation";
-import Link from "next/link";
 import { getPost, getAllPostSlugs } from "@/lib/posts";
 import { GlobalMenuBar } from "@/components/global-menu-bar";
 import { TwitterEmbedLoader } from "@/app/post/[slug]/twitter-embed-loader";
@@ -72,15 +71,6 @@ export default async function PostPage({
       <TwitterEmbedLoader hasTwitterEmbed={hasTwitterEmbed} />
 
       <main className="max-w-[640px] mx-auto px-6 pt-16 pb-16">
-        {/* Back link */}
-        <Link
-          href="/posts"
-          className="inline-flex items-center gap-1.5 text-sm text-black/50 dark:text-white/50 hover:text-black/70 dark:hover:text-white/70 transition-colors mb-8"
-        >
-          <span>←</span>
-          <span>Back</span>
-        </Link>
-
         {/* Header */}
         <header className="mb-10">
           <h1 className="text-2xl font-medium mb-3 leading-tight">
