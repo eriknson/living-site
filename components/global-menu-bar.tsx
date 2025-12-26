@@ -21,7 +21,7 @@ import { useIsMobile } from "@/lib/use-media-query";
 import type { Manifest } from "@/lib/manifest";
 import type { BuildState } from "@/lib/build-types";
 
-type RouteType = "/" | "/agent" | "/new" | "/builds";
+type RouteType = "/" | "/agent" | "/new" | "/builds" | "/posts";
 
 // Build status helpers for /builds page
 function getNextBuildTime(): Date {

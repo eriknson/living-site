@@ -34,7 +34,7 @@ function BackButton() {
   );
 }
 
-type RouteType = "/" | "/agent" | "/new" | "/builds";
+type RouteType = "/" | "/agent" | "/new" | "/builds" | "/posts";
 
 interface VersionSelectorProps {
   manifest?: Manifest | null;
@@ -87,8 +87,8 @@ export function VersionSelector({
   const isNew = currentRoute === "/new";
   const isBuilds = currentRoute === "/builds";
 
-  // For /new and /builds pages, show a simple back button
-  if (isNew || isBuilds) {
+  // For /new, /builds, and /posts pages, show a simple back button
+  if (isNew || isBuilds || currentRoute === "/posts") {
     return <BackButton />;
   }
 
