@@ -249,12 +249,15 @@ export function CommandMenu() {
                   ) : (
                     <FileText className={`h-4 w-4 ${isCurrent ? "opacity-100" : "opacity-60"}`} />
                   )}
-                  <span className="flex-1 truncate">{post.title}</span>
-                  {isCurrent ? (
+                  <span className="flex-1 truncate">
+                    {post.title}
+                    {post.readTime && (
+                      <span className="text-[11px] text-black/30 dark:text-white/30 font-normal ml-1.5">{post.readTime} min read</span>
+                    )}
+                  </span>
+                  {isCurrent && (
                     <span className="text-[11px] text-black/40 dark:text-white/40 font-normal shrink-0">Current</span>
-                  ) : post.readTime ? (
-                    <span className="text-[11px] text-black/30 dark:text-white/30 font-normal shrink-0">{post.readTime} min read</span>
-                  ) : null}
+                  )}
                 </Command.Item>
               );
             })}
@@ -278,12 +281,15 @@ export function CommandMenu() {
                 className={`flex items-center gap-3 px-3 rounded-lg cursor-pointer text-[14px] data-[selected=true]:bg-black/[0.05] dark:data-[selected=true]:bg-white/[0.08] outline-none transition-colors active:bg-black/[0.08] dark:active:bg-white/[0.12] ${isMobile ? "py-3.5" : "py-2.5"} ${isCurrent ? "text-black dark:text-white font-medium" : "text-[#1a1a1a] dark:text-[#e5e5e5]"}`}
               >
                 <Zap className={`h-4 w-4 ${isCurrent ? "opacity-100" : "opacity-60"}`} />
-                <span className="flex-1">{agent.label}</span>
-                {isCurrent ? (
-                  <span className="text-[11px] text-black/40 dark:text-white/40 font-normal">Current</span>
-                ) : buildDuration ? (
-                  <span className="text-[11px] text-black/30 dark:text-white/30 font-normal">Built in {formatDuration(buildDuration)}</span>
-                ) : null}
+                <span className="flex-1">
+                  {agent.label}
+                  {buildDuration && (
+                    <span className="text-[11px] text-black/30 dark:text-white/30 font-normal ml-1.5">Built in {formatDuration(buildDuration)}</span>
+                  )}
+                </span>
+                {isCurrent && (
+                  <span className="text-[11px] text-black/40 dark:text-white/40 font-normal shrink-0">Current</span>
+                )}
               </Command.Item>
             );
           })}
