@@ -137,14 +137,8 @@ export function HomePageClient() {
           {/* Main Content */}
           <main className="max-w-[640px] mx-auto px-6 pt-16 w-full">
             <article className="text-[15px] leading-[1.5] text-black/85 dark:text-white/85 space-y-4">
-              <p>Hello, I'm Erik.</p>
-
               <p>
-                I am a product designer from Sweden. This site is my playground to try things and write about what I learn (coming soon)
-              </p>
-
-              <p>
-                Follow me on{" "}
+                Hello, I'm Erik. Follow me on{" "}
                 <Link href="https://x.com/flowstated" external>
                   X
                 </Link>
