@@ -38,9 +38,9 @@ export function PostList({ posts, limit, showSeeAll = false }: PostListProps) {
           {hasMore && (
             <Link
               href="/posts"
-              className="text-[14px] text-black/40 dark:text-white/40 hover:text-black/60 dark:hover:text-white/60 transition-colors"
+              className="text-[14px] underline underline-offset-2 decoration-black/20 dark:decoration-white/20 hover:decoration-black/40 dark:hover:decoration-white/40 transition-colors"
             >
-              See all →
+              See all
             </Link>
           )}
         </div>
