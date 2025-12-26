@@ -18,7 +18,7 @@ import {
 import { SearchIcon } from "@/components/icons/search-icon";
 import { useIsMobile } from "@/lib/use-media-query";
 import { Drawer, DrawerContent, DrawerTitle } from "@/components/ui/drawer";
-import { modelDisplayNames, modelSlugs } from "@/lib/manifest";
+import { modelDisplayNames, modelSlugs, formatDuration, type Manifest } from "@/lib/manifest";
 import type { PostMeta } from "@/lib/posts";
 
 const PAGES = [
@@ -88,6 +88,7 @@ const EXTERNAL_LINKS = [
 export function CommandMenu() {
   const [open, setOpen] = useState(false);
   const [posts, setPosts] = useState<PostMeta[]>([]);
+  const [manifest, setManifest] = useState<Manifest | null>(null);
   const router = useRouter();
   const pathname = usePathname();
   const isMobile = useIsMobile();
@@ -105,13 +106,28 @@ export function CommandMenu() {
     return () => document.removeEventListener("keydown", down);
   }, []);
 
-  // Prefetch posts on mount so they're ready when menu opens
+  // Prefetch posts and manifest on mount so they're ready when menu opens
   useEffect(() => {
     fetch("/api/posts")
       .then((res) => res.json())
       .then((data) => setPosts(data.posts || []))
       .catch(() => {});
+
+    fetch("/builds/manifest.json")
+      .then((res) => res.json())
+      .then((data) => setManifest(data))
+      .catch(() => {});
   }, []);
+
+  // Get build duration for a model from the latest batch
+  const getBuildDuration = useCallback((modelId: string): number | undefined => {
+    if (!manifest?.dates?.length) return undefined;
+    const latestDate = manifest.dates[0];
+    if (!latestDate?.batches?.length) return undefined;
+    const latestBatch = latestDate.batches[0];
+    const build = latestBatch.builds.find(b => b.model === modelId && b.status === "success");
+    return build?.duration_ms;
+  }, [manifest]);
 
   // Helper to check if a path matches the current pathname
   const isCurrentPath = useCallback(
@@ -234,9 +250,11 @@ export function CommandMenu() {
                     <FileText className={`h-4 w-4 ${isCurrent ? "opacity-100" : "opacity-60"}`} />
                   )}
                   <span className="flex-1 truncate">{post.title}</span>
-                  {isCurrent && (
+                  {isCurrent ? (
                     <span className="text-[11px] text-black/40 dark:text-white/40 font-normal shrink-0">Current</span>
-                  )}
+                  ) : post.readTime ? (
+                    <span className="text-[11px] text-black/30 dark:text-white/30 font-normal shrink-0">{post.readTime} min</span>
+                  ) : null}
                 </Command.Item>
               );
             })}
@@ -250,6 +268,7 @@ export function CommandMenu() {
         >
           {AGENTS.map((agent) => {
             const isCurrent = isCurrentPath(agent.path);
+            const buildDuration = getBuildDuration(agent.modelId);
             return (
               <Command.Item
                 key={agent.modelId}
@@ -260,9 +279,11 @@ export function CommandMenu() {
               >
                 <Zap className={`h-4 w-4 ${isCurrent ? "opacity-100" : "opacity-60"}`} />
                 <span className="flex-1">{agent.label}</span>
-                {isCurrent && (
+                {isCurrent ? (
                   <span className="text-[11px] text-black/40 dark:text-white/40 font-normal">Current</span>
-                )}
+                ) : buildDuration ? (
+                  <span className="text-[11px] text-black/30 dark:text-white/30 font-normal">{formatDuration(buildDuration)}</span>
+                ) : null}
               </Command.Item>
             );
           })}
