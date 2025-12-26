@@ -46,12 +46,12 @@ export function PostList({ posts }: { posts: PostMeta[] }) {
               </Link>
             )}
             {post.readTime && (
-              <span className="text-black/35 dark:text-white/35 whitespace-nowrap hidden sm:inline">
+              <span className="text-[14px] text-black/35 dark:text-white/35 whitespace-nowrap hidden sm:inline">
                 {post.readTime} min read
               </span>
             )}
           </div>
-          <span className="text-black/35 dark:text-white/35 whitespace-nowrap">
+          <span className="text-[14px] text-black/35 dark:text-white/35 whitespace-nowrap">
             {formatDate(post.publishedAt)}
             {post.readTime && (
               <span className="sm:hidden"> · {post.readTime} min read</span>

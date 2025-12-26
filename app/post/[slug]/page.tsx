@@ -2,6 +2,7 @@ import { notFound } from "next/navigation";
 import Link from "next/link";
 import { getPost, getAllPostSlugs } from "@/lib/posts";
 import { GlobalMenuBar } from "@/components/global-menu-bar";
+import { TwitterEmbedLoader } from "./twitter-embed-loader";
 
 // Generate static params for all posts
 export function generateStaticParams() {
@@ -63,9 +64,12 @@ export default async function PostPage({
     day: "numeric",
   });
 
+  const hasTwitterEmbed = post.contentHtml.includes("twitter-tweet");
+
   return (
     <div className="min-h-dvh bg-[#fafaf9] dark:bg-[#0a0a0a] text-[#1a1a1a] dark:text-[#e5e5e5]">
       <GlobalMenuBar currentRoute="/" />
+      <TwitterEmbedLoader hasTwitterEmbed={hasTwitterEmbed} />
 
       <main className="max-w-[640px] mx-auto px-6 pt-16 pb-16">
         {/* Back link */}

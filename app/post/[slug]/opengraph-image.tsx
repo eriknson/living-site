@@ -8,6 +8,15 @@ export const size = {
 };
 export const contentType = "image/png";
 
+function formatDate(dateStr: string): string {
+  const date = new Date(dateStr);
+  return date.toLocaleDateString("en-US", {
+    day: "numeric",
+    month: "long",
+    year: "numeric",
+  });
+}
+
 export default async function Image({
   params,
 }: {
@@ -26,11 +35,11 @@ export default async function Image({
             display: "flex",
             alignItems: "center",
             justifyContent: "center",
-            backgroundColor: "#0a0a0a",
+            backgroundColor: "#fafaf9",
             fontFamily: "system-ui, -apple-system, sans-serif",
           }}
         >
-          <span style={{ fontSize: 48, color: "#e5e5e5" }}>Post not found</span>
+          <span style={{ fontSize: 48, color: "#1a1a1a" }}>Post not found</span>
         </div>
       ),
       { ...size }
@@ -45,38 +54,39 @@ export default async function Image({
           height: "100%",
           display: "flex",
           flexDirection: "column",
-          alignItems: "center",
-          justifyContent: "center",
+          justifyContent: "flex-end",
           padding: 80,
-          backgroundColor: "#0a0a0a",
+          backgroundColor: "#fafaf9",
           fontFamily: "system-ui, -apple-system, sans-serif",
         }}
       >
         {/* Title */}
         <div
           style={{
-            display: "flex",
             fontSize: 72,
             fontWeight: 500,
-            color: "#e5e5e5",
-            lineHeight: 1.2,
+            color: "#1a1a1a",
+            lineHeight: 1.15,
             marginBottom: 32,
-            textAlign: "center",
-            maxWidth: "90%",
+            maxWidth: "100%",
           }}
         >
           {post.title}
         </div>
 
-        {/* Reading time */}
+        {/* Meta line */}
         <div
           style={{
             display: "flex",
-            fontSize: 36,
-            color: "rgba(255, 255, 255, 0.5)",
+            alignItems: "center",
+            gap: 16,
+            fontSize: 28,
+            color: "rgba(0, 0, 0, 0.5)",
           }}
         >
-          {post.readTime} min read
+          <span>{formatDate(post.publishedAt)}</span>
+          <span style={{ opacity: 0.5 }}>·</span>
+          <span>{post.readTime} min read</span>
         </div>
       </div>
     ),

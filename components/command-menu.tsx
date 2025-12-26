@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useEffect, useCallback } from "react";
-import { useRouter } from "next/navigation";
+import { useRouter, usePathname } from "next/navigation";
 import { Command } from "cmdk";
 import * as Dialog from "@radix-ui/react-dialog";
 import * as VisuallyHidden from "@radix-ui/react-visually-hidden";
@@ -12,14 +12,23 @@ import {
   History,
   ExternalLink,
   Mail,
+  FileText,
+  BookOpen,
 } from "lucide-react";
 import { SearchIcon } from "@/components/icons/search-icon";
 import { useIsMobile } from "@/lib/use-media-query";
 import { Drawer, DrawerContent, DrawerTitle } from "@/components/ui/drawer";
 import { modelDisplayNames, modelSlugs } from "@/lib/manifest";
+import type { PostMeta } from "@/lib/posts";
 
 const PAGES = [
   { path: "/", label: "Home", icon: Home, keywords: ["start", "main", "erik"] },
+  {
+    path: "/posts",
+    label: "Posts",
+    icon: BookOpen,
+    keywords: ["articles", "blog", "writing", "essays"],
+  },
   {
     path: "/new",
     label: "Generate",
@@ -78,7 +87,9 @@ const EXTERNAL_LINKS = [
 
 export function CommandMenu() {
   const [open, setOpen] = useState(false);
+  const [posts, setPosts] = useState<PostMeta[]>([]);
   const router = useRouter();
+  const pathname = usePathname();
   const isMobile = useIsMobile();
 
   // Global keyboard listener for ⌘K / Ctrl+K
@@ -93,6 +104,27 @@ export function CommandMenu() {
     document.addEventListener("keydown", down);
     return () => document.removeEventListener("keydown", down);
   }, []);
+
+  // Fetch posts when menu opens
+  useEffect(() => {
+    if (open && posts.length === 0) {
+      fetch("/api/posts")
+        .then((res) => res.json())
+        .then((data) => setPosts(data.posts || []))
+        .catch(() => {});
+    }
+  }, [open, posts.length]);
+
+  // Helper to check if a path matches the current pathname
+  const isCurrentPath = useCallback(
+    (path: string) => {
+      if (path === "/") return pathname === "/";
+      // Handle query params in path (e.g., /agent?model=xxx)
+      const [pathWithoutQuery] = path.split("?");
+      return pathname === pathWithoutQuery || pathname.startsWith(pathWithoutQuery + "/");
+    },
+    [pathname]
+  );
 
   const runCommand = useCallback(
     (command: () => void) => {
@@ -160,37 +192,82 @@ export function CommandMenu() {
           heading="Pages"
           className="[&_[cmdk-group-heading]]:px-2 [&_[cmdk-group-heading]]:py-1.5 [&_[cmdk-group-heading]]:text-[12px] [&_[cmdk-group-heading]]:font-medium [&_[cmdk-group-heading]]:text-black/40 [&_[cmdk-group-heading]]:dark:text-white/40 [&_[cmdk-group-heading]]:uppercase [&_[cmdk-group-heading]]:tracking-wide"
         >
-          {PAGES.map((page) => (
-            <Command.Item
-              key={page.path}
-              value={page.label}
-              keywords={page.keywords}
-              onSelect={() => navigateTo(page.path)}
-              className={`flex items-center gap-3 px-3 rounded-lg cursor-pointer text-[14px] text-[#1a1a1a] dark:text-[#e5e5e5] data-[selected=true]:bg-black/[0.05] dark:data-[selected=true]:bg-white/[0.08] outline-none transition-colors active:bg-black/[0.08] dark:active:bg-white/[0.12] ${isMobile ? "py-3.5" : "py-2.5"}`}
-            >
-              <page.icon className="h-4 w-4 opacity-60" />
-              <span>{page.label}</span>
-            </Command.Item>
-          ))}
+          {PAGES.map((page) => {
+            const isCurrent = isCurrentPath(page.path);
+            return (
+              <Command.Item
+                key={page.path}
+                value={page.label}
+                keywords={page.keywords}
+                onSelect={() => navigateTo(page.path)}
+                className={`flex items-center gap-3 px-3 rounded-lg cursor-pointer text-[14px] data-[selected=true]:bg-black/[0.05] dark:data-[selected=true]:bg-white/[0.08] outline-none transition-colors active:bg-black/[0.08] dark:active:bg-white/[0.12] ${isMobile ? "py-3.5" : "py-2.5"} ${isCurrent ? "text-black dark:text-white font-medium" : "text-[#1a1a1a] dark:text-[#e5e5e5]"}`}
+              >
+                <page.icon className={`h-4 w-4 ${isCurrent ? "opacity-100" : "opacity-60"}`} />
+                <span className="flex-1">{page.label}</span>
+                {isCurrent && (
+                  <span className="text-[11px] text-black/40 dark:text-white/40 font-normal">Current</span>
+                )}
+              </Command.Item>
+            );
+          })}
         </Command.Group>
+
+        {/* Articles Group */}
+        {posts.length > 0 && (
+          <Command.Group
+            heading="Articles"
+            className="[&_[cmdk-group-heading]]:px-2 [&_[cmdk-group-heading]]:py-1.5 [&_[cmdk-group-heading]]:text-[12px] [&_[cmdk-group-heading]]:font-medium [&_[cmdk-group-heading]]:text-black/40 [&_[cmdk-group-heading]]:dark:text-white/40 [&_[cmdk-group-heading]]:uppercase [&_[cmdk-group-heading]]:tracking-wide [&_[cmdk-group-heading]]:mt-2"
+          >
+            {posts.map((post) => {
+              const postPath = post.externalUrl ? post.externalUrl : `/posts/${post.slug}`;
+              const isCurrent = !post.externalUrl && pathname === `/posts/${post.slug}`;
+              const isExternal = !!post.externalUrl;
+              return (
+                <Command.Item
+                  key={post.slug}
+                  value={post.title}
+                  keywords={[post.slug, "article", "post", "blog"]}
+                  onSelect={() => isExternal ? openExternal(postPath) : navigateTo(postPath)}
+                  className={`flex items-center gap-3 px-3 rounded-lg cursor-pointer text-[14px] data-[selected=true]:bg-black/[0.05] dark:data-[selected=true]:bg-white/[0.08] outline-none transition-colors active:bg-black/[0.08] dark:active:bg-white/[0.12] ${isMobile ? "py-3.5" : "py-2.5"} ${isCurrent ? "text-black dark:text-white font-medium" : "text-[#1a1a1a] dark:text-[#e5e5e5]"}`}
+                >
+                  {isExternal ? (
+                    <ExternalLink className={`h-4 w-4 ${isCurrent ? "opacity-100" : "opacity-60"}`} />
+                  ) : (
+                    <FileText className={`h-4 w-4 ${isCurrent ? "opacity-100" : "opacity-60"}`} />
+                  )}
+                  <span className="flex-1 truncate">{post.title}</span>
+                  {isCurrent && (
+                    <span className="text-[11px] text-black/40 dark:text-white/40 font-normal shrink-0">Current</span>
+                  )}
+                </Command.Item>
+              );
+            })}
+          </Command.Group>
+        )}
 
         {/* Agents Group */}
         <Command.Group
           heading="Made by agents"
           className="[&_[cmdk-group-heading]]:px-2 [&_[cmdk-group-heading]]:py-1.5 [&_[cmdk-group-heading]]:text-[12px] [&_[cmdk-group-heading]]:font-medium [&_[cmdk-group-heading]]:text-black/40 [&_[cmdk-group-heading]]:dark:text-white/40 [&_[cmdk-group-heading]]:uppercase [&_[cmdk-group-heading]]:tracking-wide [&_[cmdk-group-heading]]:mt-2"
         >
-          {AGENTS.map((agent) => (
-            <Command.Item
-              key={agent.modelId}
-              value={agent.label}
-              keywords={agent.keywords}
-              onSelect={() => navigateTo(agent.path)}
-              className={`flex items-center gap-3 px-3 rounded-lg cursor-pointer text-[14px] text-[#1a1a1a] dark:text-[#e5e5e5] data-[selected=true]:bg-black/[0.05] dark:data-[selected=true]:bg-white/[0.08] outline-none transition-colors active:bg-black/[0.08] dark:active:bg-white/[0.12] ${isMobile ? "py-3.5" : "py-2.5"}`}
-            >
-              <Zap className="h-4 w-4 opacity-60" />
-              <span>{agent.label}</span>
-            </Command.Item>
-          ))}
+          {AGENTS.map((agent) => {
+            const isCurrent = isCurrentPath(agent.path);
+            return (
+              <Command.Item
+                key={agent.modelId}
+                value={agent.label}
+                keywords={agent.keywords}
+                onSelect={() => navigateTo(agent.path)}
+                className={`flex items-center gap-3 px-3 rounded-lg cursor-pointer text-[14px] data-[selected=true]:bg-black/[0.05] dark:data-[selected=true]:bg-white/[0.08] outline-none transition-colors active:bg-black/[0.08] dark:active:bg-white/[0.12] ${isMobile ? "py-3.5" : "py-2.5"} ${isCurrent ? "text-black dark:text-white font-medium" : "text-[#1a1a1a] dark:text-[#e5e5e5]"}`}
+              >
+                <Zap className={`h-4 w-4 ${isCurrent ? "opacity-100" : "opacity-60"}`} />
+                <span className="flex-1">{agent.label}</span>
+                {isCurrent && (
+                  <span className="text-[11px] text-black/40 dark:text-white/40 font-normal">Current</span>
+                )}
+              </Command.Item>
+            );
+          })}
         </Command.Group>
 
         {/* External Links Group */}
