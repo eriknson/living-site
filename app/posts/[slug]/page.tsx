@@ -26,21 +26,34 @@ export async function generateMetadata({
     day: "numeric",
   });
 
+  const siteUrl = "https://eriks.design";
+
   return {
     title: post.title,
     description,
+    metadataBase: new URL(siteUrl),
     openGraph: {
       title: post.title,
       description,
       type: "article",
       publishedTime: post.publishedAt,
       authors: ["Erik Nilsson"],
+      url: `${siteUrl}/posts/${slug}`,
+      images: [
+        {
+          url: `/posts/${slug}/opengraph-image`,
+          width: 1200,
+          height: 630,
+          alt: post.title,
+        },
+      ],
     },
     twitter: {
       card: "summary_large_image",
       title: post.title,
       description: `${formattedDate} · ${post.readTime} min read`,
       creator: "@flowstated",
+      images: [`/posts/${slug}/opengraph-image`],
     },
   };
 }
