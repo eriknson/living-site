@@ -1,12 +1,9 @@
-import { ImageResponse } from "next/og";
+import { createOgImage, ogSize, ogContentType } from "@/lib/og";
 import { getPost } from "@/lib/posts";
 
 export const alt = "Post thumbnail";
-export const size = {
-  width: 1200,
-  height: 630,
-};
-export const contentType = "image/png";
+export const size = ogSize;
+export const contentType = ogContentType;
 
 function formatDate(dateStr: string): string {
   const date = new Date(dateStr);
@@ -26,70 +23,9 @@ export default async function Image({
   const post = getPost(slug);
 
   if (!post) {
-    return new ImageResponse(
-      (
-        <div
-          style={{
-            width: "100%",
-            height: "100%",
-            display: "flex",
-            alignItems: "center",
-            justifyContent: "center",
-            backgroundColor: "#0a0a0a",
-            fontFamily: "system-ui, -apple-system, sans-serif",
-          }}
-        >
-          <span style={{ fontSize: 48, color: "#e5e5e5" }}>Post not found</span>
-        </div>
-      ),
-      { ...size }
-    );
+    return createOgImage("Post not found");
   }
 
-  return new ImageResponse(
-    (
-      <div
-        style={{
-          width: "100%",
-          height: "100%",
-          display: "flex",
-          flexDirection: "column",
-          justifyContent: "flex-end",
-          padding: 80,
-          backgroundColor: "#0a0a0a",
-          fontFamily: "system-ui, -apple-system, sans-serif",
-        }}
-      >
-        {/* Title */}
-        <div
-          style={{
-            fontSize: 72,
-            fontWeight: 500,
-            color: "#e5e5e5",
-            lineHeight: 1.15,
-            marginBottom: 32,
-            maxWidth: "100%",
-          }}
-        >
-          {post.title}
-        </div>
-
-        {/* Meta line */}
-        <div
-          style={{
-            display: "flex",
-            alignItems: "center",
-            gap: 16,
-            fontSize: 28,
-            color: "rgba(255, 255, 255, 0.5)",
-          }}
-        >
-          <span>{formatDate(post.publishedAt)}</span>
-          <span style={{ opacity: 0.5 }}>·</span>
-          <span>{post.readTime} min read</span>
-        </div>
-      </div>
-    ),
-    { ...size }
-  );
+  const subtitle = `${formatDate(post.publishedAt)} · ${post.readTime} min read`;
+  return createOgImage(post.title, subtitle);
 }

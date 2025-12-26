@@ -16,14 +16,12 @@ export const metadata: Metadata = {
     title: "Erik Nilsson",
     description: "Product Design",
     type: "website",
-    images: ["/og-image.png"],
   },
   twitter: {
     card: "summary_large_image",
     title: "Erik Nilsson",
     description: "Product Design",
     creator: "@flowstated",
-    images: ["/og-image.png"],
   },
   icons: {
     icon: [
