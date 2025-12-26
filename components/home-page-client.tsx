@@ -4,6 +4,8 @@ import { useState, useCallback, useEffect } from "react";
 import NextLink from "next/link";
 import { motion } from "motion/react";
 import { GlobalMenuBar } from "@/components/global-menu-bar";
+import { PostList } from "@/components/post-list";
+import type { PostMeta } from "@/lib/posts";
 
 // Smooth ease for classy feel
 const smoothEase = [0.25, 0.1, 0.25, 1] as const;
@@ -120,7 +122,7 @@ function ExperimentalModes() {
   );
 }
 
-export function HomePageClient() {
+export function HomePageClient({ posts }: { posts: PostMeta[] }) {
   return (
     <LinkTooltipProvider>
       <div className="min-h-dvh flex flex-col bg-[#fafaf9] dark:bg-[#0a0a0a] text-[#1a1a1a] dark:text-[#e5e5e5]">
@@ -152,6 +154,12 @@ export function HomePageClient() {
                 <Link href="mailto:contact@eriks.design?subject=Hej">email</Link>.
               </p>
             </article>
+
+            {posts.length > 0 && (
+              <div className="mt-12">
+                <PostList posts={posts} />
+              </div>
+            )}
           </main>
 
           {/* Spacer: pushes experimental to bottom on mobile, collapses on desktop */}
