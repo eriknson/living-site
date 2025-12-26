@@ -19,9 +19,29 @@ export async function generateMetadata({
   const post = getPost(slug);
   if (!post) return { title: "Post not found" };
 
+  const description = post.content.replace(/<[^>]*>/g, "").slice(0, 160);
+  const formattedDate = new Date(post.publishedAt).toLocaleDateString("en-US", {
+    year: "numeric",
+    month: "long",
+    day: "numeric",
+  });
+
   return {
     title: post.title,
-    description: post.content.slice(0, 160),
+    description,
+    openGraph: {
+      title: post.title,
+      description,
+      type: "article",
+      publishedTime: post.publishedAt,
+      authors: ["Erik Nilsson"],
+    },
+    twitter: {
+      card: "summary_large_image",
+      title: post.title,
+      description: `${formattedDate} · ${post.readTime} min read`,
+      creator: "@flowstated",
+    },
   };
 }
 
