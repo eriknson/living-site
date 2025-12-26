@@ -1,7 +1,7 @@
 import { notFound } from "next/navigation";
 import { getPost, getAllPostSlugs } from "@/lib/posts";
 import { GlobalMenuBar } from "@/components/global-menu-bar";
-import { TwitterEmbedLoader } from "@/app/post/[slug]/twitter-embed-loader";
+import { PostContent } from "@/components/post-content";
 
 // Generate static params for all posts
 export function generateStaticParams() {
@@ -63,12 +63,9 @@ export default async function PostPage({
     day: "numeric",
   });
 
-  const hasTwitterEmbed = post.contentHtml.includes("twitter-tweet");
-
   return (
     <div className="min-h-dvh bg-[#fafaf9] dark:bg-[#0a0a0a] text-[#1a1a1a] dark:text-[#e5e5e5]">
       <GlobalMenuBar currentRoute="/posts" />
-      <TwitterEmbedLoader hasTwitterEmbed={hasTwitterEmbed} />
 
       <main className="max-w-[640px] mx-auto px-6 pt-16 pb-16">
         {/* Header */}
@@ -93,8 +90,9 @@ export default async function PostPage({
             prose-a:underline-offset-2 hover:prose-a:decoration-black/40 dark:hover:prose-a:decoration-white/40
             max-w-none
           "
-          dangerouslySetInnerHTML={{ __html: post.contentHtml }}
-        />
+        >
+          <PostContent html={post.contentHtml} />
+        </article>
       </main>
     </div>
   );
