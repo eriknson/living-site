@@ -65,6 +65,13 @@ export default async function PostPage({
   });
 
   const hasTwitterEmbed = post.contentHtml.includes("twitter-tweet");
+  
+  // Strip inline Twitter scripts - they don't execute via dangerouslySetInnerHTML
+  // The TwitterEmbedLoader component handles loading the script properly
+  const cleanedHtml = post.contentHtml.replace(
+    /<script[^>]*src="[^"]*platform\.twitter\.com\/widgets\.js"[^>]*><\/script>/gi,
+    ""
+  );
 
   return (
     <div className="min-h-dvh bg-[#fafaf9] dark:bg-[#0a0a0a] text-[#1a1a1a] dark:text-[#e5e5e5]">
@@ -103,7 +110,7 @@ export default async function PostPage({
             prose-a:underline-offset-2 hover:prose-a:decoration-black/40 dark:hover:prose-a:decoration-white/40
             max-w-none
           "
-          dangerouslySetInnerHTML={{ __html: post.contentHtml }}
+          dangerouslySetInnerHTML={{ __html: cleanedHtml }}
         />
       </main>
     </div>

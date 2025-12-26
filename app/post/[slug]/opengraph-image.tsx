@@ -35,11 +35,11 @@ export default async function Image({
             display: "flex",
             alignItems: "center",
             justifyContent: "center",
-            backgroundColor: "#fafaf9",
+            backgroundColor: "#0a0a0a",
             fontFamily: "system-ui, -apple-system, sans-serif",
           }}
         >
-          <span style={{ fontSize: 48, color: "#1a1a1a" }}>Post not found</span>
+          <span style={{ fontSize: 48, color: "#e5e5e5" }}>Post not found</span>
         </div>
       ),
       { ...size }
@@ -56,7 +56,7 @@ export default async function Image({
           flexDirection: "column",
           justifyContent: "flex-end",
           padding: 80,
-          backgroundColor: "#fafaf9",
+          backgroundColor: "#0a0a0a",
           fontFamily: "system-ui, -apple-system, sans-serif",
         }}
       >
@@ -65,7 +65,7 @@ export default async function Image({
           style={{
             fontSize: 72,
             fontWeight: 500,
-            color: "#1a1a1a",
+            color: "#e5e5e5",
             lineHeight: 1.15,
             marginBottom: 32,
             maxWidth: "100%",
@@ -81,7 +81,7 @@ export default async function Image({
             alignItems: "center",
             gap: 16,
             fontSize: 28,
-            color: "rgba(0, 0, 0, 0.5)",
+            color: "rgba(255, 255, 255, 0.5)",
           }}
         >
           <span>{formatDate(post.publishedAt)}</span>
