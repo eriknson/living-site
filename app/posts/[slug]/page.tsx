@@ -3,7 +3,6 @@
 import { useEffect, useState } from "react";
 import { useParams } from "next/navigation";
 import { motion } from "motion/react";
-import { ArrowLeft } from "lucide-react";
 import Link from "next/link";
 import { GlobalMenuBar } from "@/components/global-menu-bar";
 
@@ -48,10 +47,50 @@ export default function PostPage() {
       .catch(() => setLoading(false));
   }, [slug]);
 
+  // Load Twitter widgets after content is rendered, with dark/light mode support
+  useEffect(() => {
+    if (!post?.contentHtml) return;
+    
+    // Check if there are Twitter embeds in the content
+    if (!post.contentHtml.includes('twitter-tweet')) return;
+
+    // Get current theme based on system preference
+    const isDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
+    const theme = isDark ? 'dark' : 'light';
+
+    // Update data-theme on all Twitter blockquotes before the widget loads
+    const blockquotes = document.querySelectorAll('blockquote.twitter-tweet');
+    blockquotes.forEach((bq) => {
+      bq.setAttribute('data-theme', theme);
+    });
+
+    // Load Twitter widget script
+    const loadTwitterWidgets = () => {
+      const twttr = (window as unknown as { twttr?: { widgets?: { load?: () => void } } }).twttr;
+      
+      // If Twitter widgets are already loaded, just refresh
+      if (twttr?.widgets?.load) {
+        twttr.widgets.load();
+        return;
+      }
+
+      // Load the script
+      const script = document.createElement('script');
+      script.src = 'https://platform.twitter.com/widgets.js';
+      script.async = true;
+      script.charset = 'utf-8';
+      document.body.appendChild(script);
+    };
+
+    // Small delay to ensure DOM is ready
+    const timer = setTimeout(loadTwitterWidgets, 100);
+    return () => clearTimeout(timer);
+  }, [post?.contentHtml]);
+
   if (loading) {
     return (
       <div className="min-h-dvh flex flex-col bg-[#fafaf9] dark:bg-[#0a0a0a] text-[#1a1a1a] dark:text-[#e5e5e5]">
-        <GlobalMenuBar currentRoute="/" />
+        <GlobalMenuBar currentRoute="/posts" />
         <div className="flex-1 flex items-center justify-center">
           <span className="text-black/50 dark:text-white/50">Loading...</span>
         </div>
@@ -62,7 +101,7 @@ export default function PostPage() {
   if (!post) {
     return (
       <div className="min-h-dvh flex flex-col bg-[#fafaf9] dark:bg-[#0a0a0a] text-[#1a1a1a] dark:text-[#e5e5e5]">
-        <GlobalMenuBar currentRoute="/" />
+        <GlobalMenuBar currentRoute="/posts" />
         <div className="flex-1 flex items-center justify-center flex-col gap-4">
           <span className="text-black/50 dark:text-white/50">Post not found</span>
           <Link href="/posts" className="text-blue-600 dark:text-blue-400 underline">
@@ -75,7 +114,7 @@ export default function PostPage() {
 
   return (
     <div className="min-h-dvh flex flex-col bg-[#fafaf9] dark:bg-[#0a0a0a] text-[#1a1a1a] dark:text-[#e5e5e5]">
-      <GlobalMenuBar currentRoute="/" />
+      <GlobalMenuBar currentRoute="/posts" />
 
       <motion.div
         initial={{ opacity: 0 }}
@@ -83,17 +122,6 @@ export default function PostPage() {
         transition={{ duration: 0.4, ease: smoothEase }}
         className="flex-1"
       >
-        {/* Back link */}
-        <div className="max-w-[640px] mx-auto px-6 pt-8">
-          <Link
-            href="/posts"
-            className="inline-flex items-center gap-1.5 text-[15px] text-black/50 dark:text-white/50 hover:text-black/80 dark:hover:text-white/80 transition-colors"
-          >
-            <ArrowLeft className="w-4 h-4" />
-            Back to posts
-          </Link>
-        </div>
-
         {/* Article */}
         <article className="max-w-[640px] mx-auto px-6 pt-12 pb-24">
           {/* Header */}
@@ -119,8 +147,8 @@ export default function PostPage() {
               prose-p:text-[17px] prose-p:leading-[1.8] prose-p:text-black/85 dark:prose-p:text-white/85
               prose-a:text-current prose-a:underline prose-a:decoration-black/20 dark:prose-a:decoration-white/20 prose-a:underline-offset-2 hover:prose-a:decoration-black/40 dark:hover:prose-a:decoration-white/40
               prose-strong:font-semibold
-              prose-code:font-mono prose-code:text-[15px] prose-code:bg-black/5 dark:prose-code:bg-white/10 prose-code:px-1.5 prose-code:py-0.5 prose-code:rounded
-              prose-pre:bg-[#1a1a1a] dark:prose-pre:bg-black/50 prose-pre:border prose-pre:border-black/10 dark:prose-pre:border-white/10 prose-pre:rounded-lg
+              prose-code:font-mono prose-code:font-normal prose-code:text-[15px] prose-code:bg-black/5 dark:prose-code:bg-white/10 prose-code:px-1.5 prose-code:py-0.5 prose-code:rounded
+              prose-pre:rounded-lg prose-pre:p-0 prose-pre:bg-transparent
               prose-img:rounded-lg prose-img:my-8
               prose-figure:my-8
               prose-blockquote:border-l-2 prose-blockquote:border-black/20 dark:prose-blockquote:border-white/20 prose-blockquote:pl-4 prose-blockquote:italic prose-blockquote:text-black/70 dark:prose-blockquote:text-white/70
