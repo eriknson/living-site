@@ -1,0 +1,404 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Erik Nilsson · Winter Dispatch</title>
+    <link
+      href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@500;700&family=Libre+Baskerville:wght@400;700&family=IBM+Plex+Sans:wght@400;500&display=swap"
+      rel="stylesheet"
+    />
+    <style>
+      :root {
+        color-scheme: light dark;
+        --paper: #fdfbf7;
+        --ink: #1f1b16;
+        --muted: #5a4f44;
+        --accent: #7c1f1f;
+        --frost: #bdc6d3;
+        --line: rgba(31, 27, 22, 0.15);
+      }
+
+      @media (prefers-color-scheme: dark) {
+        :root {
+          --paper: #101112;
+          --ink: #f1ede4;
+          --muted: #a9a19b;
+          --accent: #f4c38d;
+          --frost: #3a4a5f;
+          --line: rgba(241, 237, 228, 0.2);
+        }
+      }
+
+      * {
+        box-sizing: border-box;
+      }
+
+      body {
+        margin: 0;
+        font-family: "Libre Baskerville", "Georgia", serif;
+        background: radial-gradient(circle at top, rgba(189, 198, 211, 0.35), transparent 60%),
+          var(--paper);
+        color: var(--ink);
+        min-height: 100vh;
+        padding: 32px 16px 48px;
+        display: flex;
+        justify-content: center;
+      }
+
+      main {
+        width: 100%;
+        max-width: 640px;
+        background: color-mix(in lab, var(--paper) 95%, transparent);
+        border: 1px solid var(--line);
+        box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.2);
+        position: relative;
+        padding: 32px 28px 40px;
+        overflow: hidden;
+      }
+
+      main::before,
+      main::after {
+        content: "";
+        position: absolute;
+        top: 0;
+        bottom: 0;
+        width: 1px;
+        background: var(--line);
+        opacity: 0.6;
+      }
+
+      main::before {
+        left: 24px;
+      }
+
+      main::after {
+        right: 24px;
+      }
+
+      header {
+        text-align: center;
+        padding-bottom: 20px;
+        border-bottom: 2px solid var(--ink);
+        margin-bottom: 28px;
+      }
+
+      .masthead {
+        font-family: "Playfair Display", "Times New Roman", serif;
+        font-size: clamp(28px, 8vw, 48px);
+        letter-spacing: 0.08em;
+        text-transform: uppercase;
+        margin: 0;
+      }
+
+      .kicker {
+        display: inline-flex;
+        gap: 8px;
+        font-size: 12px;
+        letter-spacing: 0.2em;
+        text-transform: uppercase;
+        font-family: "IBM Plex Sans", "Helvetica Neue", sans-serif;
+        color: var(--muted);
+      }
+
+      .kicker span {
+        display: inline-block;
+      }
+
+      .dateline {
+        margin-top: 10px;
+        font-size: 14px;
+        letter-spacing: 0.08em;
+        text-transform: uppercase;
+        color: var(--muted);
+      }
+
+      section {
+        margin-bottom: 32px;
+      }
+
+      h1,
+      h2,
+      h3 {
+        font-family: "Playfair Display", "Times New Roman", serif;
+        margin: 0 0 12px;
+        color: var(--ink);
+      }
+
+      h1 {
+        font-size: 32px;
+        line-height: 1.2;
+      }
+
+      h2 {
+        font-size: 20px;
+        letter-spacing: 0.08em;
+        text-transform: uppercase;
+        border-top: 1px solid var(--line);
+        border-bottom: 1px solid var(--line);
+        padding: 10px 0;
+      }
+
+      h3 {
+        font-size: 16px;
+        text-transform: uppercase;
+        letter-spacing: 0.12em;
+      }
+
+      p {
+        margin: 0 0 14px;
+        line-height: 1.7;
+        font-size: 16px;
+      }
+
+      .lead p:first-of-type::first-letter {
+        float: left;
+        font-size: 64px;
+        line-height: 0.8;
+        padding-right: 8px;
+        margin-top: 6px;
+        font-family: "Playfair Display", serif;
+      }
+
+      .snowline {
+        text-transform: uppercase;
+        font-size: 13px;
+        letter-spacing: 0.24em;
+        color: var(--muted);
+        text-align: center;
+        margin: -6px 0 24px;
+      }
+
+      .currently-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+        gap: 16px;
+      }
+
+      .card {
+        border: 1px solid var(--line);
+        padding: 16px;
+        background: color-mix(in lab, var(--paper) 90%, transparent);
+      }
+
+      .card small {
+        display: block;
+        font-family: "IBM Plex Sans", sans-serif;
+        font-size: 11px;
+        letter-spacing: 0.2em;
+        text-transform: uppercase;
+        color: var(--muted);
+        margin-bottom: 6px;
+      }
+
+      .card p {
+        margin: 0;
+      }
+
+      .ledger {
+        border-top: 1px solid var(--line);
+        border-bottom: 1px solid var(--line);
+        padding: 18px 0;
+        display: grid;
+        gap: 18px;
+      }
+
+      .ledger-item {
+        display: flex;
+        flex-direction: column;
+        gap: 4px;
+      }
+
+      .ledger-label {
+        font-family: "IBM Plex Sans", sans-serif;
+        font-size: 12px;
+        letter-spacing: 0.2em;
+        text-transform: uppercase;
+        color: var(--muted);
+      }
+
+      .ledger-value {
+        font-size: 18px;
+      }
+
+      .listening {
+        border: 1px dashed var(--line);
+        padding: 16px;
+        font-size: 15px;
+        background: color-mix(in lab, var(--paper) 85%, transparent);
+      }
+
+      .listening strong {
+        font-family: "Playfair Display", serif;
+      }
+
+      .contact {
+        font-family: "IBM Plex Sans", sans-serif;
+        font-size: 13px;
+        letter-spacing: 0.16em;
+        text-transform: uppercase;
+        border-top: 1px solid var(--line);
+        padding-top: 16px;
+        display: flex;
+        flex-wrap: wrap;
+        gap: 12px;
+        justify-content: center;
+      }
+
+      a {
+        color: var(--accent);
+        text-decoration: none;
+      }
+
+      a:hover {
+        text-decoration: underline;
+      }
+
+      footer {
+        margin-top: 20px;
+        text-align: center;
+        font-style: italic;
+        font-size: 16px;
+      }
+
+      @media (max-width: 600px) {
+        body {
+          padding: 16px;
+        }
+
+        main {
+          padding: 24px 18px 32px;
+        }
+
+        main::before,
+        main::after {
+          display: none;
+        }
+
+        .kicker {
+          flex-direction: column;
+          letter-spacing: 0.18em;
+        }
+      }
+    </style>
+  
+<style id="__living_site_scroll_guard">
+  /* Scroll guard injected at build time to ensure generated pages remain scrollable in iframes. */
+  html, body {
+    height: auto !important;
+    min-height: 100% !important;
+    max-height: none !important;
+    overflow-y: auto !important;
+    overflow-x: hidden !important;
+    position: static !important;
+    -webkit-overflow-scrolling: touch !important;
+    touch-action: pan-y !important;
+    overscroll-behavior-y: contain !important;
+  }
+  /* Avoid accidental fixed full-screen traps that break scrolling on mobile. */
+  body {
+    inset: auto !important;
+  }
+</style>
+</head>
+  <body>
+    <main>
+      <header>
+        <div class="kicker"><span>Erik Nilsson</span><span>Special Winter Edition</span></div>
+        <h1 class="masthead">The Stockholm Dispatch</h1>
+        <p class="dateline">Stockholm · Friday, December 26, 2025 · Clear skies, 3 °C</p>
+      </header>
+
+      <section class="lead">
+        <p>
+          Building shipflow, point-and-click editing for Next.js, has turned into a quiet winter ritual.
+          Most days I adjust one thoughtful detail, test it in Cursor, and learn what to keep. Cursor commands
+          are getting the same treatment—simple, steady notes that hopefully help other builders move faster
+          without fanfare.
+        </p>
+        <p>
+          Everything here is handmade and revisited often. The goal is a dependable workflow, not a headline.
+          Thanks for reading along while I keep tuning the instruments.
+        </p>
+      </section>
+
+      <p class="snowline">❄︎ ✦ ❄︎</p>
+
+      <section>
+        <h2>Currently On The Workbench</h2>
+        <div class="currently-grid">
+          <article class="card">
+            <small>shipflow</small>
+            <p>Point-and-click editing for Next.js, powered by Cursor Agent.</p>
+          </article>
+          <article class="card">
+            <small>cursor-commands</small>
+            <p>Lightweight GitHub repo for sharing Cursor command recipes.</p>
+          </article>
+        </div>
+      </section>
+
+      <section class="ledger">
+        <div class="ledger-item">
+          <span class="ledger-label">Seasonal note</span>
+          <span class="ledger-value">Winter Stockholm focus</span>
+        </div>
+        <div class="ledger-item">
+          <span class="ledger-label">Commits this week</span>
+          <span class="ledger-value">21 steady pushes</span>
+        </div>
+        <div class="ledger-item">
+          <span class="ledger-label">Active repos</span>
+          <span class="ledger-value">cursor-commands · shipflow</span>
+        </div>
+      </section>
+
+      <section>
+        <h2>Listening Desk</h2>
+        <div class="listening">
+          <p>
+            <strong>Rotation:</strong> Taylor Swift, Tame Impala, Kanye West, Endel, Fred again.., Beach
+            House.
+          </p>
+          <p>
+            <strong>Textures:</strong> rap, dream pop, neo-psychedelic, indie, stutter house, house. These
+            keep the studio warm while the city stays quiet.
+          </p>
+        </div>
+      </section>
+
+      <section>
+        <h2>Weather & Field Notes</h2>
+        <div class="card">
+          <p>
+            3 °C and clear tonight. Enough chill to stay indoors, enough clarity to keep perspective. Most of
+            the design work happens late, when Stockholm sounds like still water and the cursor glow feels like
+            a hearth.
+          </p>
+        </div>
+      </section>
+
+      <section>
+        <h2>Open Line</h2>
+        <div class="card">
+          <p>
+            Happy to share more about shipflow, Cursor experiments, or anything you’re building. No splashy
+            launch, just ongoing craft.
+          </p>
+        </div>
+      </section>
+
+      <div class="contact">
+        <a href="https://x.com/flowstated">X</a>
+        <a href="https://github.com/eriknson">GitHub</a>
+        <a href="mailto:contact@eriks.design">Email</a>
+        <a href="/agent">Agent Log</a>
+        <a href="/builds">Build Archive</a>
+        <a href="/new">Generate New</a>
+      </div>
+
+      <footer>— Erik</footer>
+    </main>
+  </body>
+</html>
+
