@@ -6,7 +6,7 @@ import { formatDuration, formatRelativeTime, getBuiltAt, getBuildForModel, type 
 import { FadeShimmerText } from "./fade-shimmer-text";
 import { useIsMobile } from "@/lib/use-media-query";
 
-type RouteType = "/" | "/agent" | "/new";
+type RouteType = "/" | "/agent" | "/new" | "/builds" | "/posts";
 
 interface ManualVersionData {
   lastUpdated: string;
