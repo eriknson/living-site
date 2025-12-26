@@ -56,7 +56,7 @@ Example output:
     <p>I'm a designer at <a href="https://cursor.com">Cursor</a>, making tools for building software with AI.</p>
     <ul>
       <li><a href="https://x.com/flowstated">Follow on X</a></li>
-      <li><a href="mailto:contact@eriks.design">Send an email</a></li>
+      <li><a href="mailto:contact@eriks.design?subject=Hej">Send an email</a></li>
       <li><a href="https://github.com/eriknson">GitHub</a></li>
     </ul>
   </main>
@@ -66,10 +66,17 @@ Example output:
 
 This gives generators the content structure without any visual bias.
 
+## Context rules
+
+- My main job is Product Designer at Cursor — always lead with that
+- GitHub activity represents personal side projects and experiments, not my day job
+- Frame GitHub repos as "tinkering with", "side project", "playing with" — not "building" or "focused on" which implies main work
+- Keep GitHub mentions brief and secondary to the Cursor work
+
 ## Voice rules (for brief)
 
 - Write like i'm telling a friend, not pitching
-- Be specific: "building shipflow" not "exploring agent workflows"
+- Be specific: "tinkering with shipflow" not "exploring agent workflows"
 - No buzzwords: avoid "flow state", "surgical iterations", "the agent era"
 - No beliefs section, no manifestos
 - If you can cut a word, cut it

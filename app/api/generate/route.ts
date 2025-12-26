@@ -46,7 +46,7 @@ const FALLBACK_HTML = `<!DOCTYPE html>
 <body>
   <h1>Erik</h1>
   <p>Product designer building with AI. Based in Stockholm, Sweden.</p>
-  <p>Links: <a href="https://x.com/flowstated">X</a>, <a href="https://github.com/eriknson">GitHub</a>, <a href="mailto:contact@eriks.design">Email</a></p>
+  <p>Links: <a href="https://x.com/flowstated">X</a>, <a href="https://github.com/eriknson">GitHub</a>, <a href="mailto:contact@eriks.design?subject=Hej">Email</a></p>
 </body>
 </html>`;
 

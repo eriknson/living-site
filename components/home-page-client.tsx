@@ -153,7 +153,7 @@ export function HomePageClient() {
                   GitHub
                 </Link>
                 , or send me an{" "}
-                <Link href="mailto:contact@eriks.design">email</Link>.
+                <Link href="mailto:contact@eriks.design?subject=Hej">email</Link>.
               </p>
             </article>
           </main>

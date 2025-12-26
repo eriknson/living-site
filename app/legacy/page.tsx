@@ -147,7 +147,7 @@ function HomeContent() {
             {/* Email */}
             <li>
               <a
-                href="mailto:contact@eriks.design"
+                href="mailto:contact@eriks.design?subject=Hej"
                 className="group inline-flex items-center pill-bg text-[15px] sm:text-[18px]"
                 style={{
                   gap: PILL_CONFIG.gap,

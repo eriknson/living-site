@@ -70,7 +70,7 @@ const EXTERNAL_LINKS = [
     keywords: ["code", "repos", "source"],
   },
   {
-    href: "mailto:contact@eriks.design",
+    href: "mailto:contact@eriks.design?subject=Hej",
     label: "Email",
     keywords: ["contact", "mail", "message"],
   },
