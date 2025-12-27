@@ -1,11 +1,12 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import dynamic from "next/dynamic";
 import Link from "next/link";
 import { ArrowLeft, ArrowUpRight, Clock, Home, Zap } from "lucide-react";
 import { VersionSelector } from "./version-selector";
 import { BuildTime } from "./build-time";
-import { CommandMenu } from "./command-menu";
+import { SearchIcon } from "@/components/icons/search-icon";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -20,6 +21,11 @@ import {
 import { useIsMobile } from "@/lib/use-media-query";
 import type { Manifest } from "@/lib/manifest";
 import type { BuildState } from "@/lib/build-types";
+
+// Lazy load the command menu dialog - chunk loads after initial paint
+const CommandMenuDialog = dynamic(() => import("./command-menu"), {
+  ssr: false,
+});
 
 type RouteType = "/" | "/agent" | "/new" | "/builds" | "/posts";
 
@@ -375,6 +381,32 @@ export function GlobalMenuBar({
 }: GlobalMenuBarProps) {
   const isNew = currentRoute === "/new";
   const isBuilds = currentRoute === "/builds";
+  const isMobile = useIsMobile();
+  
+  // Command menu state - controlled from here, dialog is lazy loaded
+  const [commandOpen, setCommandOpen] = useState(false);
+  const [commandLoaded, setCommandLoaded] = useState(false);
+
+  // Preload command menu chunk shortly after mount (not blocking initial paint)
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      import("./command-menu").then(() => setCommandLoaded(true));
+    }, 100);
+    return () => clearTimeout(timer);
+  }, []);
+
+  // Global keyboard listener for ⌘K / Ctrl+K - always active
+  useEffect(() => {
+    const down = (e: KeyboardEvent) => {
+      if (e.key === "k" && (e.metaKey || e.ctrlKey)) {
+        e.preventDefault();
+        setCommandOpen((prev) => !prev);
+      }
+    };
+
+    document.addEventListener("keydown", down);
+    return () => document.removeEventListener("keydown", down);
+  }, []);
 
   return (
     <nav className="shrink-0 py-4 pt-[calc(1rem+env(safe-area-inset-top))] z-50 text-[length:var(--menu-bar-font-size)] text-anysphere-text select-none border-b border-black/[0.06] dark:border-white/[0.06] bg-[#fafaf9] dark:bg-[#0a0a0a]">
@@ -417,8 +449,28 @@ export function GlobalMenuBar({
             </span>
           )}
           
-          {/* Command menu trigger */}
-          <CommandMenu />
+          {/* Command menu trigger button - always rendered */}
+          <button
+            onClick={() => setCommandOpen(true)}
+            className="flex items-center gap-1.5 h-8 px-3 rounded-full bg-black/[0.03] dark:bg-white/[0.06] active:bg-black/[0.08] dark:active:bg-white/[0.12] transition-colors select-none cursor-pointer"
+            style={{
+              touchAction: "manipulation",
+              WebkitTapHighlightColor: "transparent",
+            }}
+            aria-label="Open command menu"
+          >
+            <SearchIcon className="h-[1em] w-[1em] opacity-50" />
+            {!isMobile && (
+              <span className="text-black/40 dark:text-white/40 text-[0.85em]">
+                ⌘K
+              </span>
+            )}
+          </button>
+          
+          {/* Command menu dialog - lazy loaded, renders when open or preloaded */}
+          {(commandOpen || commandLoaded) && (
+            <CommandMenuDialog open={commandOpen} onOpenChange={setCommandOpen} />
+          )}
         </div>
       </div>
     </nav>

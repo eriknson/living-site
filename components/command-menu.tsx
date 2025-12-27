@@ -85,28 +85,20 @@ const EXTERNAL_LINKS = [
   },
 ];
 
-export function CommandMenu() {
-  const [open, setOpen] = useState(false);
+interface CommandMenuDialogProps {
+  open: boolean;
+  onOpenChange: (open: boolean) => void;
+}
+
+// The dialog/drawer content - lazy loaded
+export default function CommandMenuDialog({ open, onOpenChange }: CommandMenuDialogProps) {
   const [posts, setPosts] = useState<PostMeta[]>([]);
   const [manifest, setManifest] = useState<Manifest | null>(null);
   const router = useRouter();
   const pathname = usePathname();
   const isMobile = useIsMobile();
 
-  // Global keyboard listener for ⌘K / Ctrl+K
-  useEffect(() => {
-    const down = (e: KeyboardEvent) => {
-      if (e.key === "k" && (e.metaKey || e.ctrlKey)) {
-        e.preventDefault();
-        setOpen((prev) => !prev);
-      }
-    };
-
-    document.addEventListener("keydown", down);
-    return () => document.removeEventListener("keydown", down);
-  }, []);
-
-  // Prefetch posts and manifest on mount so they're ready when menu opens
+  // Fetch posts and manifest when component mounts (after lazy load)
   useEffect(() => {
     fetch("/api/posts")
       .then((res) => res.json())
@@ -142,10 +134,10 @@ export function CommandMenu() {
 
   const runCommand = useCallback(
     (command: () => void) => {
-      setOpen(false);
+      onOpenChange(false);
       command();
     },
-    []
+    [onOpenChange]
   );
 
   const navigateTo = useCallback(
@@ -160,26 +152,6 @@ export function CommandMenu() {
       runCommand(() => window.open(href, "_blank", "noopener,noreferrer"));
     },
     [runCommand]
-  );
-
-  // Shared trigger button
-  const triggerButton = (
-    <button
-      onClick={() => setOpen(true)}
-      className="flex items-center gap-1.5 h-8 px-3 rounded-full bg-black/[0.03] dark:bg-white/[0.06] active:bg-black/[0.08] dark:active:bg-white/[0.12] transition-colors select-none cursor-pointer"
-      style={{
-        touchAction: "manipulation",
-        WebkitTapHighlightColor: "transparent",
-      }}
-      aria-label="Open command menu"
-    >
-      <SearchIcon className="h-[1em] w-[1em] opacity-50" />
-      {!isMobile && (
-        <span className="text-black/40 dark:text-white/40 text-[0.85em]">
-          ⌘K
-        </span>
-      )}
-    </button>
   );
 
   // Shared Command content (search + results)
@@ -332,54 +304,48 @@ export function CommandMenu() {
   // Mobile: Use Vaul Drawer (bottom sheet)
   if (isMobile) {
     return (
-      <>
-        {triggerButton}
-        <Drawer open={open} onOpenChange={setOpen}>
-          <DrawerContent aria-label="Command Menu">
-            {/* Override the default visually hidden title with our own */}
-            <VisuallyHidden.Root asChild>
-              <DrawerTitle>Command Menu</DrawerTitle>
-            </VisuallyHidden.Root>
-            {commandContent}
-            {/* Safe area padding for devices with home indicator */}
-            <div className="h-[env(safe-area-inset-bottom,0px)]" />
-          </DrawerContent>
-        </Drawer>
-      </>
+      <Drawer open={open} onOpenChange={onOpenChange}>
+        <DrawerContent aria-label="Command Menu">
+          {/* Override the default visually hidden title with our own */}
+          <VisuallyHidden.Root asChild>
+            <DrawerTitle>Command Menu</DrawerTitle>
+          </VisuallyHidden.Root>
+          {commandContent}
+          {/* Safe area padding for devices with home indicator */}
+          <div className="h-[env(safe-area-inset-bottom,0px)]" />
+        </DrawerContent>
+      </Drawer>
     );
   }
 
   // Desktop: Use Command.Dialog (centered modal)
   return (
-    <>
-      {triggerButton}
-      <Command.Dialog
-        open={open}
-        onOpenChange={setOpen}
-        label="Global Command Menu"
-        className="fixed inset-0 z-[100]"
-      >
-        {/* Visually hidden title and description for screen readers */}
-        <VisuallyHidden.Root asChild>
-          <Dialog.Title>Command Menu</Dialog.Title>
-        </VisuallyHidden.Root>
-        <VisuallyHidden.Root asChild>
-          <Dialog.Description>
-            Search and navigate to any page on the site
-          </Dialog.Description>
-        </VisuallyHidden.Root>
+    <Command.Dialog
+      open={open}
+      onOpenChange={onOpenChange}
+      label="Global Command Menu"
+      className="fixed inset-0 z-[100]"
+    >
+      {/* Visually hidden title and description for screen readers */}
+      <VisuallyHidden.Root asChild>
+        <Dialog.Title>Command Menu</Dialog.Title>
+      </VisuallyHidden.Root>
+      <VisuallyHidden.Root asChild>
+        <Dialog.Description>
+          Search and navigate to any page on the site
+        </Dialog.Description>
+      </VisuallyHidden.Root>
 
-        {/* Backdrop */}
-        <div
-          className="fixed inset-0 bg-black/50 dark:bg-black/70 backdrop-blur-sm"
-          onClick={() => setOpen(false)}
-        />
+      {/* Backdrop */}
+      <div
+        className="fixed inset-0 bg-black/50 dark:bg-black/70 backdrop-blur-sm"
+        onClick={() => onOpenChange(false)}
+      />
 
-        {/* Panel */}
-        <div className="fixed left-1/2 top-[20%] -translate-x-1/2 w-[calc(100%-2rem)] max-w-[480px] bg-[#fafaf9] dark:bg-[#0a0a0a] rounded-xl shadow-2xl border border-black/[0.08] dark:border-white/[0.08] overflow-hidden">
-          {commandContent}
-        </div>
-      </Command.Dialog>
-    </>
+      {/* Panel */}
+      <div className="fixed left-1/2 top-[20%] -translate-x-1/2 w-[calc(100%-2rem)] max-w-[480px] bg-[#fafaf9] dark:bg-[#0a0a0a] rounded-xl shadow-2xl border border-black/[0.08] dark:border-white/[0.08] overflow-hidden">
+        {commandContent}
+      </div>
+    </Command.Dialog>
   );
 }
