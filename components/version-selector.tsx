@@ -8,6 +8,7 @@ import type { Manifest } from "@/lib/manifest";
 import {
   getSameBatchModels,
   getModelDisplayName,
+  getBatch,
 } from "@/lib/manifest";
 
 // Simple back button component for /new and /builds pages
@@ -90,6 +91,29 @@ export function VersionSelector({
         // Silently fail - models just won't show
       });
   }, [providedManifest]);
+
+  // Prefetch agent build HTML files from home page for faster navigation
+  useEffect(() => {
+    // Only prefetch when on home page
+    if (currentRoute !== "/" || !manifest) return;
+
+    const batch = getBatch(manifest);
+    if (!batch) return;
+
+    const links: HTMLLinkElement[] = [];
+    batch.builds
+      .filter((b) => b.status === "success")
+      .forEach(({ path }) => {
+        const link = document.createElement("link");
+        link.rel = "prefetch";
+        link.href = `/${path}`;
+        link.as = "document";
+        document.head.appendChild(link);
+        links.push(link);
+      });
+
+    return () => links.forEach((link) => link.remove());
+  }, [manifest, currentRoute]);
 
   const displayDate = currentDate || manifest?.latest_date;
   const displayTimestamp = currentTimestamp || manifest?.latest_timestamp;

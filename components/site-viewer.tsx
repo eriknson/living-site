@@ -93,12 +93,12 @@ export function SiteViewer({ src, htmlContent, onLoad }: SiteViewerProps) {
     const rawStyles = Array.from(doc.querySelectorAll("style"))
       .map((s) => s.textContent || "")
       .join("\n");
-    const styles = `<style>${rewriteBodySelectors(rawStyles)}</style>`;
+    const rewrittenStyles = rewriteBodySelectors(rawStyles);
 
-    // Extract stylesheet links (fonts, external CSS)
-    const styleLinks = Array.from(doc.querySelectorAll('link[rel="stylesheet"]'))
-      .map((l) => l.outerHTML)
-      .join("\n");
+    // Extract stylesheet link hrefs for loading
+    const stylesheetHrefs = Array.from(doc.querySelectorAll('link[rel="stylesheet"]'))
+      .map((l) => (l as HTMLLinkElement).getAttribute("href"))
+      .filter((href): href is string => !!href);
 
     // Preserve html/body classes for dark mode, themes, etc.
     const htmlClass = doc.documentElement.className || "";
@@ -108,35 +108,69 @@ export function SiteViewer({ src, htmlContent, onLoad }: SiteViewerProps) {
     // Check for dark mode - inherit from parent document
     const prefersDark = window.matchMedia("(prefers-color-scheme: dark)").matches;
 
-    // Build shadow content with proper structure for scrolling
-    shadow.innerHTML = `
-      ${styleLinks}
-      ${styles}
-      <style>
-        :host {
-          display: block;
-          width: 100%;
-          height: 100%;
-          overflow: auto;
-          overscroll-behavior: contain;
-          -webkit-overflow-scrolling: touch;
-        }
-        .shadow-root {
-          min-height: 100%;
-          max-width: 640px;
-          margin-left: auto;
-          margin-right: auto;
-          padding-left: 24px;
-          padding-right: 24px;
-        }
-      </style>
-      <div class="shadow-root ${htmlClass} ${bodyClass}" style="${bodyStyle}" data-theme="${prefersDark ? 'dark' : 'light'}">
-        ${doc.body.innerHTML}
-      </div>
-    `;
+    // Clear shadow DOM and rebuild with trackable elements
+    shadow.innerHTML = "";
 
-    // Notify parent that content is loaded
-    onLoad?.();
+    // Track stylesheet loading to avoid FOUC
+    let loadedCount = 0;
+    const totalLinks = stylesheetHrefs.length;
+
+    const checkAllLoaded = () => {
+      loadedCount++;
+      if (loadedCount >= totalLinks) {
+        onLoad?.();
+      }
+    };
+
+    // Insert link elements with load handlers
+    stylesheetHrefs.forEach((href) => {
+      const link = document.createElement("link");
+      link.rel = "stylesheet";
+      link.href = href;
+      link.onload = checkAllLoaded;
+      link.onerror = checkAllLoaded; // Don't block on failed loads
+      shadow.appendChild(link);
+    });
+
+    // Add inline styles
+    const inlineStyleEl = document.createElement("style");
+    inlineStyleEl.textContent = rewrittenStyles;
+    shadow.appendChild(inlineStyleEl);
+
+    // Add host styles for scrolling
+    const hostStyleEl = document.createElement("style");
+    hostStyleEl.textContent = `
+      :host {
+        display: block;
+        width: 100%;
+        height: 100%;
+        overflow: auto;
+        overscroll-behavior: contain;
+        -webkit-overflow-scrolling: touch;
+      }
+      .shadow-root {
+        min-height: 100%;
+        max-width: 640px;
+        margin-left: auto;
+        margin-right: auto;
+        padding-left: 24px;
+        padding-right: 24px;
+      }
+    `;
+    shadow.appendChild(hostStyleEl);
+
+    // Add body content wrapper
+    const wrapper = document.createElement("div");
+    wrapper.className = `shadow-root ${htmlClass} ${bodyClass}`;
+    if (bodyStyle) wrapper.setAttribute("style", bodyStyle);
+    wrapper.setAttribute("data-theme", prefersDark ? "dark" : "light");
+    wrapper.innerHTML = doc.body.innerHTML;
+    shadow.appendChild(wrapper);
+
+    // If no external stylesheets, notify immediately
+    if (totalLinks === 0) {
+      onLoad?.();
+    }
   }, [content, onLoad]);
 
   // Loading state
