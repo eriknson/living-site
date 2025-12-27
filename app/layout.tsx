@@ -7,6 +7,10 @@ export const viewport: Viewport = {
   width: "device-width",
   initialScale: 1,
   viewportFit: "cover",
+  themeColor: [
+    { media: "(prefers-color-scheme: light)", color: "#fafaf9" },
+    { media: "(prefers-color-scheme: dark)", color: "#0a0a0a" },
+  ],
 };
 
 export const metadata: Metadata = {
@@ -31,6 +35,11 @@ export const metadata: Metadata = {
     ],
     apple: "/apple-touch-icon.png",
   },
+  appleWebApp: {
+    capable: true,
+    statusBarStyle: "default",
+    title: "Erik Nilsson",
+  },
 };
 
 export default function RootLayout({
@@ -40,6 +49,9 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="en">
+      <head>
+        <link rel="preconnect" href="https://va.vercel-scripts.com" />
+      </head>
       <body>
         <AnalyticsProvider />
         {children}
