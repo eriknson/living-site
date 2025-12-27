@@ -86,22 +86,24 @@ function AgentContent() {
       />
       
       {/* Content area - fills remaining space */}
-      <div className="flex-1 flex flex-col min-h-0 bg-neutral-100 dark:bg-[#0a0a0a] pb-[env(safe-area-inset-bottom)]">
+      <div className="relative flex-1 flex flex-col min-h-0 bg-neutral-100 dark:bg-[#0a0a0a] pb-[env(safe-area-inset-bottom)]">
         {activePath ? (
-          <AnimatedContent 
-            contentKey={activePath} 
-            className="flex-1 flex flex-col min-h-0"
-          >
-            <SiteViewer
-              key={activePath}
-              src={`/${activePath}`}
-              onLoad={handleContentLoad}
-            />
-            {/* Loading overlay that hides content flash */}
+          <>
+            <AnimatedContent 
+              contentKey={activePath} 
+              className="flex-1 flex flex-col min-h-0"
+            >
+              <SiteViewer
+                key={activePath}
+                src={`/${activePath}`}
+                onLoad={handleContentLoad}
+              />
+            </AnimatedContent>
+            {/* Loading overlay OUTSIDE AnimatedContent to avoid being animated away */}
             {!contentReady && (
-              <div className="absolute inset-0 top-[var(--menu-bar-height)] bg-neutral-100 dark:bg-[#0a0a0a] pointer-events-none" />
+              <div className="absolute inset-0 bg-neutral-100 dark:bg-[#0a0a0a] pointer-events-none z-10" />
             )}
-          </AnimatedContent>
+          </>
         ) : (
           <div className="flex-1 flex items-center justify-center text-black/60 dark:text-white/60">
             <p>{isLoading ? "Loading..." : "No build available"}</p>
