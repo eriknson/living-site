@@ -5,15 +5,6 @@ export const alt = "Post thumbnail";
 export const size = ogSize;
 export const contentType = ogContentType;
 
-function formatDate(dateStr: string): string {
-  const date = new Date(dateStr);
-  return date.toLocaleDateString("en-US", {
-    day: "numeric",
-    month: "long",
-    year: "numeric",
-  });
-}
-
 export default async function Image({
   params,
 }: {
@@ -26,6 +17,6 @@ export default async function Image({
     return createOgImage("Post not found");
   }
 
-  const subtitle = `${formatDate(post.publishedAt)} · ${post.readTime} min read`;
+  const subtitle = post.readTime ? `${post.readTime} min read` : undefined;
   return createOgImage(post.title, subtitle);
 }
