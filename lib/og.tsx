@@ -20,7 +20,8 @@ export function createOgImage(title: string, subtitle?: string) {
           height: "100%",
           display: "flex",
           flexDirection: "column",
-          justifyContent: "flex-end",
+          alignItems: "center",
+          justifyContent: "center",
           padding: 80,
           backgroundColor: "#0a0a0a",
           fontFamily: "system-ui, -apple-system, sans-serif",
@@ -32,9 +33,10 @@ export function createOgImage(title: string, subtitle?: string) {
             fontSize: 72,
             fontWeight: 500,
             color: "#e5e5e5",
-            lineHeight: 1.15,
+            lineHeight: 1.2,
             marginBottom: subtitle ? 32 : 0,
-            maxWidth: "100%",
+            textAlign: "center",
+            maxWidth: "90%",
           }}
         >
           {title}
@@ -46,9 +48,12 @@ export function createOgImage(title: string, subtitle?: string) {
             style={{
               display: "flex",
               alignItems: "center",
-              gap: 16,
-              fontSize: 28,
+              justifyContent: "center",
+              width: "100%",
+              fontSize: 36,
+              lineHeight: 1.3,
               color: "rgba(255, 255, 255, 0.5)",
+              textAlign: "center",
             }}
           >
             <span>{subtitle}</span>
