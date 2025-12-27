@@ -157,7 +157,7 @@ export function HomePageClient({ posts }: { posts: PostMeta[] }) {
 
             {posts.length > 0 && (
               <div className="mt-12">
-                <PostList posts={posts} showHeading />
+                <PostList posts={posts} />
               </div>
             )}
           </main>

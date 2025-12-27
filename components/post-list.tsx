@@ -12,10 +12,9 @@ function formatDate(dateStr: string) {
 
 interface PostListProps {
   posts: PostMeta[];
-  showHeading?: boolean;
 }
 
-export function PostList({ posts, showHeading = false }: PostListProps) {
+export function PostList({ posts }: PostListProps) {
   if (posts.length === 0) return null;
 
   // Sort by date, newest first
@@ -26,11 +25,6 @@ export function PostList({ posts, showHeading = false }: PostListProps) {
 
   return (
     <div>
-      {showHeading && (
-        <h2 className="text-[15px] font-medium text-black/85 dark:text-white/85 mb-4">
-          Writing
-        </h2>
-      )}
       <ul className="space-y-3">
         {sortedPosts.map((post) => (
           <li
