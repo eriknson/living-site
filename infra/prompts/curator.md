@@ -27,6 +27,13 @@ Read `data/latest.json` and write `data/brief.json` with copy for my website. Wr
     "music": {
       "top_artists": ["Artist 1", "Artist 2", "Artist 3"],
       "genres": ["genre1", "genre2"]
+    },
+    "twitter": {
+      "recent_tweets": [
+        { "text": "the actual tweet text", "date": "YYYY-MM-DD", "url": "https://x.com/..." }
+      ],
+      "posts_this_week": 2,
+      "activity": "active/quiet/dormant"
     }
   }
 }
@@ -72,6 +79,8 @@ This gives generators the content structure without any visual bias.
 - GitHub activity represents personal side projects and experiments, not my day job
 - Frame GitHub repos as "tinkering with", "side project", "playing with" — not "building" or "focused on" which implies main work
 - Keep GitHub mentions brief and secondary to the Cursor work
+- X/Twitter data comes from `sources.typefully` — include up to 3 recent tweets with their URLs
+- Activity level: "active" if posts_this_week > 0, "quiet" if posts_this_month > 0 but not this week, "dormant" otherwise
 
 ## Voice rules (for brief)
 
