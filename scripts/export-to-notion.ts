@@ -232,7 +232,11 @@ function parseRichText(el: cheerio.Cheerio<any>, $: cheerio.CheerioAPI): any[] {
           break;
 
         case "a": {
-          const href = tagEl.attr("href") || "";
+          let href = tagEl.attr("href") || "";
+          // Convert relative URLs to absolute
+          if (href.startsWith("/")) {
+            href = `${SITE_URL}${href}`;
+          }
           result.push({
             type: "text",
             text: {
