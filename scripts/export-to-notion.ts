@@ -1,18 +1,17 @@
 /**
- * Export existing posts to Notion WITH IMAGES
+ * Export existing posts to Notion
  *
- * This parses contentHtml to extract images and their positions,
- * then creates Notion pages with images as external URLs pointing
- * to the live Vercel deployment (eriks.design).
+ * This reads markdown files from data/posts/ and creates/updates
+ * corresponding pages in the Notion database.
  *
  * Usage:
  *   NOTION_TOKEN=secret_xxx NOTION_DATABASE_ID=xxx pnpm run export-to-notion
  */
 
 import { Client } from "@notionhq/client";
-import { readFileSync, readdirSync } from "fs";
+import { readFileSync, readdirSync, existsSync } from "fs";
 import path from "path";
-import * as cheerio from "cheerio";
+import matter from "gray-matter";
 
 const notion = new Client({ auth: process.env.NOTION_TOKEN });
 const DATABASE_ID = process.env.NOTION_DATABASE_ID!;
@@ -25,14 +24,13 @@ if (!process.env.NOTION_TOKEN || !process.env.NOTION_DATABASE_ID) {
   process.exit(1);
 }
 
-interface Post {
+interface PostFrontmatter {
   slug: string;
   title: string;
   publishedAt: string;
   status: "published" | "draft";
-  content: string;
-  contentHtml: string;
   externalUrl?: string;
+  notionPageId?: string;
 }
 
 type NotionBlock = {
@@ -41,242 +39,267 @@ type NotionBlock = {
 };
 
 /**
- * Parse HTML content into Notion blocks
- * This properly extracts images and their positions
+ * Parse markdown content into Notion blocks
  */
-function htmlToNotionBlocks(html: string): NotionBlock[] {
-  const $ = cheerio.load(html);
+function markdownToNotionBlocks(markdown: string): NotionBlock[] {
   const blocks: NotionBlock[] = [];
+  const lines = markdown.split("\n");
+  let i = 0;
 
-  // Process each top-level element
-  $("body")
-    .children()
-    .each((_, element) => {
-      const el = $(element);
-      const tagName = element.tagName?.toLowerCase();
+  while (i < lines.length) {
+    const line = lines[i];
 
-      switch (tagName) {
-        case "p": {
-          const text = el.text().trim();
-          if (text) {
-            blocks.push({
-              type: "paragraph",
-              paragraph: {
-                rich_text: parseRichText(el, $),
-              },
-            });
-          }
-          break;
-        }
+    // Empty line - skip
+    if (line.trim() === "") {
+      i++;
+      continue;
+    }
 
-        case "h2": {
-          blocks.push({
-            type: "heading_2",
-            heading_2: {
-              rich_text: [{ type: "text", text: { content: el.text().trim() } }],
-            },
-          });
-          break;
-        }
+    // Horizontal rule
+    if (line.trim() === "---") {
+      blocks.push({ type: "divider", divider: {} });
+      i++;
+      continue;
+    }
 
-        case "h3": {
-          blocks.push({
-            type: "heading_3",
-            heading_3: {
-              rich_text: [{ type: "text", text: { content: el.text().trim() } }],
-            },
-          });
-          break;
-        }
+    // Heading 2
+    if (line.startsWith("## ")) {
+      blocks.push({
+        type: "heading_2",
+        heading_2: {
+          rich_text: [{ type: "text", text: { content: line.slice(3).trim() } }],
+        },
+      });
+      i++;
+      continue;
+    }
 
-        case "hr": {
-          blocks.push({ type: "divider", divider: {} });
-          break;
-        }
+    // Heading 3
+    if (line.startsWith("### ")) {
+      blocks.push({
+        type: "heading_3",
+        heading_3: {
+          rich_text: [{ type: "text", text: { content: line.slice(4).trim() } }],
+        },
+      });
+      i++;
+      continue;
+    }
 
-        case "pre": {
-          const code = el.find("code").text();
-          // Try to detect language from class or content
-          const language = detectLanguage(code);
-          blocks.push({
-            type: "code",
-            code: {
-              rich_text: [{ type: "text", text: { content: code.slice(0, 2000) } }],
-              language: language,
-            },
-          });
-          break;
-        }
-
-        case "figure": {
-          const img = el.find("img");
-          if (img.length) {
-            const src = img.attr("src") || "";
-            const alt = img.attr("alt") || "";
-            const absoluteUrl = src.startsWith("/") ? `${SITE_URL}${src}` : src;
-
-            blocks.push({
-              type: "image",
-              image: {
-                type: "external",
-                external: { url: absoluteUrl },
-                caption: alt ? [{ type: "text", text: { content: alt } }] : [],
-              },
-            });
-          }
-          break;
-        }
-
-        case "div": {
-          // Check for tweet embed
-          const blockquote = el.find("blockquote.twitter-tweet");
-          if (blockquote.length) {
-            const tweetUrl = blockquote.find("a").attr("href") || "";
-            if (tweetUrl) {
-              blocks.push({
-                type: "bookmark",
-                bookmark: { url: tweetUrl },
-              });
-            }
-          } else {
-            // Check for image grid
-            el.find("img").each((_, imgEl) => {
-              const img = $(imgEl);
-              const src = img.attr("src") || "";
-              const alt = img.attr("alt") || "";
-              const absoluteUrl = src.startsWith("/") ? `${SITE_URL}${src}` : src;
-
-              blocks.push({
-                type: "image",
-                image: {
-                  type: "external",
-                  external: { url: absoluteUrl },
-                  caption: alt ? [{ type: "text", text: { content: alt } }] : [],
-                },
-              });
-            });
-          }
-          break;
-        }
-
-        case "ul": {
-          el.find("li").each((_, liEl) => {
-            blocks.push({
-              type: "bulleted_list_item",
-              bulleted_list_item: {
-                rich_text: [{ type: "text", text: { content: $(liEl).text().trim() } }],
-              },
-            });
-          });
-          break;
-        }
-
-        case "ol": {
-          el.find("li").each((_, liEl) => {
-            blocks.push({
-              type: "numbered_list_item",
-              numbered_list_item: {
-                rich_text: [{ type: "text", text: { content: $(liEl).text().trim() } }],
-              },
-            });
-          });
-          break;
-        }
+    // Code block
+    if (line.startsWith("```")) {
+      const language = detectLanguage(line.slice(3).trim());
+      const codeLines: string[] = [];
+      i++;
+      while (i < lines.length && !lines[i].startsWith("```")) {
+        codeLines.push(lines[i]);
+        i++;
       }
-    });
+      i++; // Skip closing ```
+
+      const code = codeLines.join("\n");
+      blocks.push({
+        type: "code",
+        code: {
+          rich_text: [{ type: "text", text: { content: code.slice(0, 2000) } }],
+          language: language,
+        },
+      });
+      continue;
+    }
+
+    // Tweet embed
+    const tweetMatch = line.match(/<tweet>(.*?)<\/tweet>/);
+    if (tweetMatch) {
+      blocks.push({
+        type: "bookmark",
+        bookmark: { url: tweetMatch[1].trim() },
+      });
+      i++;
+      continue;
+    }
+
+    // Image
+    const imgMatch = line.match(/^!\[([^\]]*)\]\(([^)]+)\)$/);
+    if (imgMatch) {
+      const alt = imgMatch[1];
+      let src = imgMatch[2];
+      // Convert relative URLs to absolute
+      if (src.startsWith("/")) {
+        src = `${SITE_URL}${src}`;
+      }
+      blocks.push({
+        type: "image",
+        image: {
+          type: "external",
+          external: { url: src },
+          caption: alt ? [{ type: "text", text: { content: alt } }] : [],
+        },
+      });
+      i++;
+      continue;
+    }
+
+    // Bullet list
+    if (line.startsWith("- ")) {
+      while (i < lines.length && lines[i].startsWith("- ")) {
+        blocks.push({
+          type: "bulleted_list_item",
+          bulleted_list_item: {
+            rich_text: parseInlineText(lines[i].slice(2).trim()),
+          },
+        });
+        i++;
+      }
+      continue;
+    }
+
+    // Numbered list
+    if (/^\d+\.\s/.test(line)) {
+      while (i < lines.length && /^\d+\.\s/.test(lines[i])) {
+        blocks.push({
+          type: "numbered_list_item",
+          numbered_list_item: {
+            rich_text: parseInlineText(lines[i].replace(/^\d+\.\s+/, "").trim()),
+          },
+        });
+        i++;
+      }
+      continue;
+    }
+
+    // Paragraph (collect lines until we hit something else)
+    const paragraphLines: string[] = [line];
+    i++;
+    while (
+      i < lines.length &&
+      lines[i].trim() !== "" &&
+      !lines[i].startsWith("#") &&
+      !lines[i].startsWith("```") &&
+      !lines[i].startsWith("- ") &&
+      !/^\d+\.\s/.test(lines[i]) &&
+      !lines[i].startsWith("---") &&
+      !/<tweet>/.test(lines[i]) &&
+      !/^!\[/.test(lines[i])
+    ) {
+      paragraphLines.push(lines[i]);
+      i++;
+    }
+
+    const paragraph = paragraphLines.join(" ").trim();
+    if (paragraph) {
+      blocks.push({
+        type: "paragraph",
+        paragraph: {
+          rich_text: parseInlineText(paragraph),
+        },
+      });
+    }
+  }
 
   return blocks;
 }
 
 /**
- * Parse inline elements into Notion rich_text array
+ * Parse inline markdown (bold, italic, code, links) to Notion rich_text
  */
-function parseRichText(el: cheerio.Cheerio<any>, $: cheerio.CheerioAPI): any[] {
+function parseInlineText(text: string): any[] {
   const result: any[] = [];
+  let remaining = text;
 
-  el.contents().each((_, node) => {
-    if (node.type === "text") {
-      const text = $(node).text();
-      if (text) {
-        result.push({ type: "text", text: { content: text } });
-      }
-    } else if (node.type === "tag") {
-      const tagEl = $(node);
-      const tagName = node.tagName?.toLowerCase();
-
-      switch (tagName) {
-        case "strong":
-        case "b":
-          result.push({
-            type: "text",
-            text: { content: tagEl.text() },
-            annotations: { bold: true },
-          });
-          break;
-
-        case "em":
-        case "i":
-          result.push({
-            type: "text",
-            text: { content: tagEl.text() },
-            annotations: { italic: true },
-          });
-          break;
-
-        case "code":
-          result.push({
-            type: "text",
-            text: { content: tagEl.text() },
-            annotations: { code: true },
-          });
-          break;
-
-        case "a": {
-          let href = tagEl.attr("href") || "";
-          // Convert relative URLs to absolute
-          if (href.startsWith("/")) {
-            href = `${SITE_URL}${href}`;
-          }
-          result.push({
-            type: "text",
-            text: {
-              content: tagEl.text(),
-              link: href ? { url: href } : undefined,
-            },
-          });
-          break;
-        }
-
-        default:
-          result.push({ type: "text", text: { content: tagEl.text() } });
-      }
+  while (remaining.length > 0) {
+    // Bold **text**
+    const boldMatch = remaining.match(/^\*\*([^*]+)\*\*/);
+    if (boldMatch) {
+      result.push({
+        type: "text",
+        text: { content: boldMatch[1] },
+        annotations: { bold: true },
+      });
+      remaining = remaining.slice(boldMatch[0].length);
+      continue;
     }
-  });
+
+    // Italic *text* or _text_
+    const italicMatch = remaining.match(/^\*([^*]+)\*/) || remaining.match(/^_([^_]+)_/);
+    if (italicMatch) {
+      result.push({
+        type: "text",
+        text: { content: italicMatch[1] },
+        annotations: { italic: true },
+      });
+      remaining = remaining.slice(italicMatch[0].length);
+      continue;
+    }
+
+    // Inline code `text`
+    const codeMatch = remaining.match(/^`([^`]+)`/);
+    if (codeMatch) {
+      result.push({
+        type: "text",
+        text: { content: codeMatch[1] },
+        annotations: { code: true },
+      });
+      remaining = remaining.slice(codeMatch[0].length);
+      continue;
+    }
+
+    // Link [text](url)
+    const linkMatch = remaining.match(/^\[([^\]]+)\]\(([^)]+)\)/);
+    if (linkMatch) {
+      let href = linkMatch[2];
+      // Convert relative URLs to absolute
+      if (href.startsWith("/")) {
+        href = `${SITE_URL}${href}`;
+      }
+      result.push({
+        type: "text",
+        text: {
+          content: linkMatch[1],
+          link: { url: href },
+        },
+      });
+      remaining = remaining.slice(linkMatch[0].length);
+      continue;
+    }
+
+    // Regular text - find the next special character
+    const nextSpecial = remaining.search(/[\*_`\[]/);
+    if (nextSpecial === -1) {
+      // No more special characters
+      result.push({ type: "text", text: { content: remaining } });
+      break;
+    } else if (nextSpecial === 0) {
+      // Special char at start but not matched - treat as regular text
+      result.push({ type: "text", text: { content: remaining[0] } });
+      remaining = remaining.slice(1);
+    } else {
+      // Add text up to next special char
+      result.push({ type: "text", text: { content: remaining.slice(0, nextSpecial) } });
+      remaining = remaining.slice(nextSpecial);
+    }
+  }
 
   return result.length > 0 ? result : [{ type: "text", text: { content: "" } }];
 }
 
 /**
- * Detect programming language from code content
+ * Detect programming language from code content or hint
  */
-function detectLanguage(code: string): string {
-  // Check for ASCII art diagrams first (box drawing chars, arrows, etc.)
-  const hasBoxChars = /[│├┤┬┴┼╭╮╰╯┌┐└┘─═║╔╗╚╝╠╣╦╩╬►◄▲▼]/.test(code);
-  const hasArrows = code.includes("───") || code.includes("──►") || code.includes("◄──");
-  if (hasBoxChars || hasArrows) return "plain text";
+function detectLanguage(hint: string): string {
+  const lowerHint = hint.toLowerCase();
   
-  // Check for YAML (strategy, matrix, etc.)
-  if (code.includes("strategy:") || code.includes("matrix:")) return "yaml";
+  // Direct language hints
+  if (lowerHint === "typescript" || lowerHint === "ts" || lowerHint === "tsx") return "typescript";
+  if (lowerHint === "javascript" || lowerHint === "js" || lowerHint === "jsx") return "javascript";
+  if (lowerHint === "bash" || lowerHint === "sh" || lowerHint === "shell") return "bash";
+  if (lowerHint === "yaml" || lowerHint === "yml") return "yaml";
+  if (lowerHint === "json") return "json";
+  if (lowerHint === "css") return "css";
+  if (lowerHint === "html") return "html";
   
-  // Check for TypeScript/JavaScript
-  if (code.includes("import ") || code.includes("export ")) return "typescript";
-  if (code.includes("function ") || code.includes("const ")) return "javascript";
-  
-  // Check for bash
-  if (code.includes("npm ") || code.includes("pnpm ") || code.includes("npx ")) return "bash";
-  if (code.trimStart().startsWith("git ") || code.trimStart().startsWith("rm ") || 
-      code.trimStart().startsWith("mkdir ") || code.trimStart().startsWith("cd ")) return "bash";
-  if (code.includes("cursor-agent")) return "bash";
+  // For ASCII art or plain text
+  if (lowerHint === "" || lowerHint === "plain text" || lowerHint === "text") return "plain text";
   
   return "plain text";
 }
@@ -297,7 +320,7 @@ async function findExistingPage(slug: string): Promise<string | null> {
     if (response.results.length > 0) {
       return response.results[0].id;
     }
-  } catch (error) {
+  } catch {
     // Property might not exist yet
   }
   return null;
@@ -312,7 +335,7 @@ async function clearPageContent(pageId: string): Promise<void> {
   for (const block of blocks.results) {
     try {
       await notion.blocks.delete({ block_id: block.id });
-    } catch (error) {
+    } catch {
       // Ignore errors
     }
   }
@@ -321,11 +344,14 @@ async function clearPageContent(pageId: string): Promise<void> {
 /**
  * Create or update a page in Notion
  */
-async function upsertNotionPage(post: Post): Promise<string> {
-  console.log(`\nProcessing: ${post.title}`);
+async function upsertNotionPage(frontmatter: PostFrontmatter, content: string): Promise<string> {
+  console.log(`\nProcessing: ${frontmatter.title}`);
 
   // Check if page exists
-  const existingPageId = await findExistingPage(post.slug);
+  const existingPageId = await findExistingPage(frontmatter.slug);
+
+  const blocks = markdownToNotionBlocks(content);
+  console.log(`  Parsed ${blocks.length} blocks`);
 
   if (existingPageId) {
     console.log(`  Found existing page: ${existingPageId}`);
@@ -333,7 +359,6 @@ async function upsertNotionPage(post: Post): Promise<string> {
     await clearPageContent(existingPageId);
 
     // Add new content
-    const blocks = htmlToNotionBlocks(post.contentHtml);
     console.log(`  Adding ${blocks.length} blocks...`);
 
     for (let i = 0; i < blocks.length; i += 100) {
@@ -359,27 +384,26 @@ async function upsertNotionPage(post: Post): Promise<string> {
     parent: { database_id: DATABASE_ID },
     properties: {
       title: {
-        title: [{ type: "text", text: { content: post.title } }],
+        title: [{ type: "text", text: { content: frontmatter.title } }],
       },
       Slug: {
-        rich_text: [{ type: "text", text: { content: post.slug } }],
+        rich_text: [{ type: "text", text: { content: frontmatter.slug } }],
       },
       Published: {
-        date: { start: post.publishedAt },
+        date: { start: frontmatter.publishedAt },
       },
       Status: {
-        select: { name: post.status === "published" ? "Published" : "Draft" },
+        select: { name: frontmatter.status === "published" ? "Published" : "Draft" },
       },
-      ...(post.externalUrl && {
+      ...(frontmatter.externalUrl && {
         "External URL": {
-          url: post.externalUrl,
+          url: frontmatter.externalUrl,
         },
       }),
     },
   });
 
   // Add content blocks
-  const blocks = htmlToNotionBlocks(post.contentHtml);
   console.log(`  Adding ${blocks.length} blocks...`);
 
   for (let i = 0; i < blocks.length; i += 100) {
@@ -402,11 +426,11 @@ async function upsertNotionPage(post: Post): Promise<string> {
  * Main function
  */
 async function main() {
-  console.log("=== Export Posts to Notion (with images) ===\n");
+  console.log("=== Export Posts to Notion ===\n");
 
   const postsDir = path.join(process.cwd(), "data/posts");
   const files = readdirSync(postsDir).filter(
-    (f) => f.endsWith(".json") && f !== "index.json"
+    (f) => f.endsWith(".md") && !f.startsWith("_")
   );
 
   console.log(`Found ${files.length} posts to export`);
@@ -415,27 +439,37 @@ async function main() {
 
   for (const file of files) {
     const filePath = path.join(postsDir, file);
-    const post: Post = JSON.parse(readFileSync(filePath, "utf-8"));
+    const fileContent = readFileSync(filePath, "utf-8");
+    const { data, content } = matter(fileContent);
+
+    const frontmatter: PostFrontmatter = {
+      slug: data.slug || file.replace(".md", ""),
+      title: data.title || "Untitled",
+      publishedAt: data.publishedAt || new Date().toISOString().split("T")[0],
+      status: data.status || "draft",
+      externalUrl: data.externalUrl,
+      notionPageId: data.notionPageId,
+    };
 
     // Skip posts with external URLs
-    if (post.externalUrl) {
-      console.log(`\nSkipping ${post.slug} (external URL)`);
-      results.push({ slug: post.slug, notionId: "skipped-external", imageCount: 0 });
+    if (frontmatter.externalUrl) {
+      console.log(`\nSkipping ${frontmatter.slug} (external URL)`);
+      results.push({ slug: frontmatter.slug, notionId: "skipped-external", imageCount: 0 });
       continue;
     }
 
     // Count images for reporting
-    const imageCount = (post.contentHtml.match(/<img/g) || []).length;
+    const imageCount = (content.match(/!\[/g) || []).length;
 
     try {
-      const notionId = await upsertNotionPage(post);
-      results.push({ slug: post.slug, notionId, imageCount });
+      const notionId = await upsertNotionPage(frontmatter, content);
+      results.push({ slug: frontmatter.slug, notionId, imageCount });
 
       // Rate limiting
       await new Promise((resolve) => setTimeout(resolve, 500));
     } catch (error: any) {
       console.error(`  ✗ Error: ${error.message}`);
-      results.push({ slug: post.slug, notionId: "", error: error.message, imageCount });
+      results.push({ slug: frontmatter.slug, notionId: "", error: error.message, imageCount });
     }
   }
 
@@ -450,7 +484,7 @@ async function main() {
   }
 
   const totalImages = results.reduce((sum, r) => sum + r.imageCount, 0);
-  console.log(`\nTotal images exported: ${totalImages}`);
+  console.log(`\nTotal images: ${totalImages}`);
 }
 
 main().catch((error) => {

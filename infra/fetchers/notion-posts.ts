@@ -1,13 +1,12 @@
 /**
- * Fetch posts from Notion and save as raw markdown for processing
+ * Fetch posts from Notion and save as markdown files
  *
  * This script:
  * 1. Fetches all pages from the Posts database
  * 2. Converts each page to markdown using notion-to-md
  * 3. Downloads images (Notion URLs expire)
- * 4. Saves raw markdown to data/posts/_raw/{slug}.md
- *
- * The formatter then compares content hashes to only process changed posts.
+ * 4. Saves markdown files directly to data/posts/{slug}.md
+ * 5. Updates index.json with post metadata
  *
  * Usage:
  *   NOTION_TOKEN=secret_xxx NOTION_DATABASE_ID=xxx pnpm run fetch-notion-posts
@@ -17,12 +16,13 @@ import { Client } from "@notionhq/client";
 import { NotionToMarkdown } from "notion-to-md";
 import {
   writeFileSync,
+  readFileSync,
   mkdirSync,
   existsSync,
-  rmSync,
   readdirSync,
 } from "fs";
 import path from "path";
+import { calculateReadingTime } from "../../lib/post-html-renderer";
 
 const notion = new Client({ auth: process.env.NOTION_TOKEN });
 const n2m = new NotionToMarkdown({ notionClient: notion });
@@ -35,7 +35,7 @@ if (!process.env.NOTION_TOKEN || !process.env.NOTION_DATABASE_ID) {
   process.exit(1);
 }
 
-const RAW_DIR = path.join(process.cwd(), "data/posts/_raw");
+const POSTS_DIR = path.join(process.cwd(), "data/posts");
 const IMAGES_DIR = path.join(process.cwd(), "public/posts");
 
 interface NotionPost {
@@ -224,9 +224,31 @@ async function processImages(
 }
 
 /**
+ * Clean up markdown content
+ */
+function cleanMarkdown(markdown: string): string {
+  let result = markdown;
+
+  // Remove excessive blank lines (keep max 2)
+  result = result.replace(/\n{3,}/g, "\n\n");
+
+  // Fix heading spacing
+  result = result.replace(/\n(#{1,3}\s)/g, "\n\n$1");
+
+  // Ensure code blocks have proper spacing
+  result = result.replace(/\n```/g, "\n\n```");
+  result = result.replace(/```\n/g, "```\n\n");
+
+  // Clean up double spaces
+  result = result.replace(/ {2,}/g, " ");
+
+  return result.trim();
+}
+
+/**
  * Fetch and save a single post
  */
-async function fetchPost(post: NotionPost): Promise<void> {
+async function fetchPost(post: NotionPost): Promise<string | null> {
   console.log(`\nProcessing: ${post.title}`);
 
   // Skip external posts
@@ -245,10 +267,10 @@ notionPageId: "${post.id}"
 
 This post is hosted externally at: ${post.externalUrl}
 `;
-    const outputPath = path.join(RAW_DIR, `${post.slug}.md`);
+    const outputPath = path.join(POSTS_DIR, `${post.slug}.md`);
     writeFileSync(outputPath, frontmatter);
     console.log(`  ✓ Saved placeholder: ${outputPath}`);
-    return;
+    return null; // No content for reading time
   }
 
   // Get markdown content from Notion
@@ -257,6 +279,9 @@ This post is hosted externally at: ${post.externalUrl}
 
   // Download Notion-hosted images
   content = await processImages(content, post.slug);
+
+  // Clean up markdown
+  content = cleanMarkdown(content);
 
   // Build frontmatter
   const frontmatter = `---
@@ -269,64 +294,99 @@ notionPageId: "${post.id}"
 
 `;
 
-  // Save to _raw directory
-  const outputPath = path.join(RAW_DIR, `${post.slug}.md`);
+  // Save directly to posts directory
+  const outputPath = path.join(POSTS_DIR, `${post.slug}.md`);
   writeFileSync(outputPath, frontmatter + content);
   console.log(`  ✓ Saved: ${outputPath}`);
+
+  return content; // Return content for reading time calculation
 }
 
 /**
- * Clean up _raw directory
+ * Ensure posts directory exists
  */
-function prepareRawDir(): void {
-  if (existsSync(RAW_DIR)) {
-    rmSync(RAW_DIR, { recursive: true });
+function preparePostsDir(): void {
+  if (!existsSync(POSTS_DIR)) {
+    mkdirSync(POSTS_DIR, { recursive: true });
   }
-  mkdirSync(RAW_DIR, { recursive: true });
 }
 
 /**
- * Save the posts index for reference
+ * Update index.json with post metadata
  */
-function savePostsIndex(posts: NotionPost[]): void {
-  const indexPath = path.join(RAW_DIR, "_index.json");
-  writeFileSync(
-    indexPath,
-    JSON.stringify(
-      {
-        fetchedAt: new Date().toISOString(),
-        posts: posts.map((p) => ({
-          slug: p.slug,
-          title: p.title,
-          publishedAt: p.publishedAt,
-          status: p.status,
-          externalUrl: p.externalUrl,
-          notionPageId: p.id,
-        })),
-      },
-      null,
-      2
-    )
+function updatePostsIndex(posts: NotionPost[], contentMap: Map<string, string>): void {
+  const indexPath = path.join(POSTS_DIR, "index.json");
+
+  // Load existing index to preserve local-only posts
+  let existingPosts: any[] = [];
+  if (existsSync(indexPath)) {
+    try {
+      const existing = JSON.parse(readFileSync(indexPath, "utf-8"));
+      existingPosts = existing.posts || [];
+    } catch {
+      // Ignore errors
+    }
+  }
+
+  // Build index from Notion posts
+  const notionSlugs = new Set(posts.map((p) => p.slug));
+  const indexPosts = posts
+    .filter((p) => p.status === "published")
+    .map((p) => {
+      const content = contentMap.get(p.slug);
+      const readTime = content ? calculateReadingTime(content) : 0;
+      return {
+        slug: p.slug,
+        title: p.title,
+        publishedAt: p.publishedAt,
+        readTime,
+        status: p.status,
+        ...(p.externalUrl && { externalUrl: p.externalUrl }),
+      };
+    });
+
+  // Preserve local-only posts (not in Notion)
+  for (const existing of existingPosts) {
+    if (!notionSlugs.has(existing.slug)) {
+      // Check if markdown file exists locally
+      const mdPath = path.join(POSTS_DIR, `${existing.slug}.md`);
+      if (existsSync(mdPath)) {
+        indexPosts.push(existing);
+      }
+    }
+  }
+
+  // Sort by date
+  indexPosts.sort(
+    (a, b) =>
+      new Date(b.publishedAt).getTime() - new Date(a.publishedAt).getTime()
   );
-  console.log(`\nSaved index: ${indexPath}`);
+
+  const index = { posts: indexPosts };
+  writeFileSync(indexPath, JSON.stringify(index, null, 2));
+  console.log(`\nUpdated: ${indexPath}`);
 }
 
 /**
  * Main function
  */
 async function main() {
-  console.log("=== Notion Posts Fetcher ===\n");
+  console.log("=== Notion Posts Sync ===\n");
 
-  // Prepare _raw directory
-  prepareRawDir();
+  // Prepare posts directory
+  preparePostsDir();
 
-  // Fetch all posts
+  // Fetch all posts from Notion
   const posts = await fetchPostsFromNotion();
 
   // Fetch each post's content
+  const contentMap = new Map<string, string>();
   for (const post of posts) {
     try {
-      await fetchPost(post);
+      const content = await fetchPost(post);
+      if (content) {
+        contentMap.set(post.slug, content);
+      }
       // Rate limiting
       await new Promise((resolve) => setTimeout(resolve, 300));
     } catch (error) {
@@ -334,16 +394,14 @@ async function main() {
     }
   }
 
-  // Save index
-  savePostsIndex(posts);
+  // Update index
+  updatePostsIndex(posts, contentMap);
 
-  console.log("\n=== Fetch Complete ===");
-  console.log(`Raw files saved to: ${RAW_DIR}`);
-  console.log(`Fetched ${posts.length} posts`);
-  console.log("Next: Run format-posts to detect changes and format");
+  console.log("\n=== Sync Complete ===");
+  console.log(`Synced ${posts.length} posts to ${POSTS_DIR}`);
 }
 
 main().catch((error) => {
-  console.error("Fetch failed:", error);
+  console.error("Sync failed:", error);
   process.exit(1);
 });

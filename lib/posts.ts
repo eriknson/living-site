@@ -1,5 +1,10 @@
 import { readFileSync, existsSync, readdirSync } from "fs";
 import path from "path";
+import matter from "gray-matter";
+import {
+  markdownToHtml,
+  calculateReadingTime,
+} from "./post-html-renderer";
 
 export type PostMeta = {
   slug: string;
@@ -19,23 +24,8 @@ export type Post = PostMeta & {
 const POSTS_DIR = path.join(process.cwd(), "data/posts");
 
 /**
- * Calculate reading time based on word count
- * Average reading speed: 200 words per minute
- */
-export function calculateReadingTime(text: string): number {
-  // Strip HTML tags if present
-  const plainText = text.replace(/<[^>]*>/g, "");
-  // Count words (split by whitespace)
-  const wordCount = plainText
-    .trim()
-    .split(/\s+/)
-    .filter((word) => word.length > 0).length;
-  // Calculate minutes, minimum 1 minute
-  return Math.max(1, Math.ceil(wordCount / 200));
-}
-
-/**
  * Get all published posts metadata, sorted by date (newest first)
+ * Uses index.json for fast listing without parsing all markdown files
  */
 export function getAllPosts(): PostMeta[] {
   const indexPath = path.join(POSTS_DIR, "index.json");
@@ -52,11 +42,44 @@ export function getAllPosts(): PostMeta[] {
 
 /**
  * Get a single post by slug
+ * Reads markdown file, parses frontmatter, and generates HTML
  */
 export function getPost(slug: string): Post | null {
-  const filePath = path.join(POSTS_DIR, `${slug}.json`);
+  const filePath = path.join(POSTS_DIR, `${slug}.md`);
   if (!existsSync(filePath)) return null;
-  return JSON.parse(readFileSync(filePath, "utf-8"));
+
+  const fileContent = readFileSync(filePath, "utf-8");
+  const { data, content } = matter(fileContent);
+
+  // Handle external URL posts (no content to render)
+  if (data.externalUrl) {
+    return {
+      slug: data.slug || slug,
+      title: data.title || "Untitled",
+      publishedAt: data.publishedAt || new Date().toISOString().split("T")[0],
+      readTime: 0,
+      status: data.status || "draft",
+      content: "",
+      contentHtml: "",
+      externalUrl: data.externalUrl,
+      notionPageId: data.notionPageId || null,
+    };
+  }
+
+  // Generate HTML from markdown at read time
+  const contentHtml = markdownToHtml(content);
+  const readTime = calculateReadingTime(content);
+
+  return {
+    slug: data.slug || slug,
+    title: data.title || "Untitled",
+    publishedAt: data.publishedAt || new Date().toISOString().split("T")[0],
+    readTime,
+    status: data.status || "draft",
+    content,
+    contentHtml,
+    notionPageId: data.notionPageId || null,
+  };
 }
 
 /**
@@ -66,6 +89,6 @@ export function getAllPostSlugs(): string[] {
   if (!existsSync(POSTS_DIR)) return [];
 
   return readdirSync(POSTS_DIR)
-    .filter((file) => file.endsWith(".json") && file !== "index.json")
-    .map((file) => file.replace(".json", ""));
+    .filter((file) => file.endsWith(".md") && !file.startsWith("_"))
+    .map((file) => file.replace(".md", ""));
 }
