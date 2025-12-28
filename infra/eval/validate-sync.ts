@@ -71,20 +71,23 @@ function validatePost(slug: string): ValidationResult {
     ? JSON.parse(readFileSync(refPath, "utf-8"))
     : null;
 
-  // 1. Check content length (should not shrink significantly)
+  // 1. Check content length - only WARN on changes, don't fail
+  // This allows intentional text edits in Notion
   if (reference) {
     const refLength = reference.contentHtml.length;
     const postLength = post.contentHtml.length;
-    const shrinkage = (refLength - postLength) / refLength;
+    const change = (refLength - postLength) / refLength;
 
-    if (shrinkage > 0.1) {
+    if (Math.abs(change) > 0.5) {
+      // Only fail if MORE THAN HALF the content is lost (likely corruption)
       result.errors.push(
-        `Content shrunk by ${(shrinkage * 100).toFixed(1)}% (${refLength} → ${postLength} chars)`
+        `Content changed by ${(change * 100).toFixed(1)}% (${refLength} → ${postLength} chars) - possible corruption`
       );
       result.passed = false;
-    } else if (shrinkage > 0.05) {
+    } else if (Math.abs(change) > 0.1) {
+      // Large change is a warning, not an error
       result.warnings.push(
-        `Content shrunk by ${(shrinkage * 100).toFixed(1)}%`
+        `Content changed by ${(change * 100).toFixed(1)}% (intentional edit?)`
       );
     }
   }

@@ -103,11 +103,13 @@ function renderInline(text: string): string {
     return `<a href="${url}" target="_blank" rel="noopener noreferrer">${text}</a>`;
   });
   
-  // Bold: **text**
+  // Bold: **text** or __text__
   result = result.replace(/\*\*([^*]+)\*\*/g, '<strong>$1</strong>');
+  result = result.replace(/__([^_]+)__/g, '<strong>$1</strong>');
   
-  // Italic: *text*
+  // Italic: *text* or _text_
   result = result.replace(/\*([^*]+)\*/g, '<em>$1</em>');
+  result = result.replace(/\b_([^_]+)_\b/g, '<em>$1</em>');
   
   // Inline code: `text`
   result = result.replace(/`([^`]+)`/g, '<code>$1</code>');
