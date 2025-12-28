@@ -260,10 +260,24 @@ function parseRichText(el: cheerio.Cheerio<any>, $: cheerio.CheerioAPI): any[] {
  * Detect programming language from code content
  */
 function detectLanguage(code: string): string {
+  // Check for ASCII art diagrams first (box drawing chars, arrows, etc.)
+  const hasBoxChars = /[│├┤┬┴┼╭╮╰╯┌┐└┘─═║╔╗╚╝╠╣╦╩╬►◄▲▼]/.test(code);
+  const hasArrows = code.includes("───") || code.includes("──►") || code.includes("◄──");
+  if (hasBoxChars || hasArrows) return "plain text";
+  
+  // Check for YAML (strategy, matrix, etc.)
+  if (code.includes("strategy:") || code.includes("matrix:")) return "yaml";
+  
+  // Check for TypeScript/JavaScript
   if (code.includes("import ") || code.includes("export ")) return "typescript";
   if (code.includes("function ") || code.includes("const ")) return "javascript";
+  
+  // Check for bash
   if (code.includes("npm ") || code.includes("pnpm ") || code.includes("npx ")) return "bash";
-  if (code.includes("git ")) return "bash";
+  if (code.trimStart().startsWith("git ") || code.trimStart().startsWith("rm ") || 
+      code.trimStart().startsWith("mkdir ") || code.trimStart().startsWith("cd ")) return "bash";
+  if (code.includes("cursor-agent")) return "bash";
+  
   return "plain text";
 }
 
