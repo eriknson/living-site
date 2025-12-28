@@ -1,19 +1,11 @@
 name: Sync Notion Posts
 
-# TEMPORARILY DISABLED while we fix the content preservation issue
-# on:
-#   # Triggered by webhook from Notion automation
-#   repository_dispatch:
-#     types: [notion-posts-updated]
-#   # Manual trigger for testing
-#   workflow_dispatch:
-
 on:
+  # Triggered by webhook from Notion automation
+  repository_dispatch:
+    types: [notion-posts-updated]
+  # Manual trigger for testing
   workflow_dispatch:
-    inputs:
-      confirm:
-        description: 'Type "sync" to confirm (temporarily disabled)'
-        required: true
 
 concurrency:
   group: sync-notion-posts
@@ -29,7 +21,7 @@ env:
 jobs:
   sync:
     runs-on: ubuntu-latest
-    timeout-minutes: 15
+    timeout-minutes: 10
     steps:
       - name: Debounce (wait for more edits)
         run: |
@@ -38,6 +30,8 @@ jobs:
 
       - name: Checkout repository
         uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
 
       - name: Setup pnpm
         uses: pnpm/action-setup@v4
@@ -58,39 +52,20 @@ jobs:
           NOTION_TOKEN: ${{ secrets.NOTION_TOKEN }}
           NOTION_DATABASE_ID: ${{ secrets.NOTION_DATABASE_ID }}
         run: |
-          echo "Fetching posts from Notion..."
+          echo "=== Fetching posts from Notion ==="
           pnpm run fetch-notion-posts
           
           echo ""
           echo "=== Raw files ==="
           ls -la data/posts/_raw/ || echo "No raw files"
 
-      - name: Install Cursor CLI
+      - name: Format posts (deterministic)
         run: |
-          curl https://cursor.com/install -fsS | bash
-          cursor-agent --version || echo "Failed to get cursor-agent version"
-
-      - name: Run post formatter agent
-        env:
-          CURSOR_API_KEY: ${{ secrets.CURSOR_API_KEY }}
-        run: |
-          echo "Running post formatter agent..."
-          
-          # Check if there are raw files to process
-          if [ ! -d "data/posts/_raw" ] || [ -z "$(ls -A data/posts/_raw/*.md 2>/dev/null)" ]; then
-            echo "No raw markdown files to process"
-            exit 0
-          fi
-          
-          PROMPT="Read infra/prompts/post-formatter.md for your instructions.
-          
-          Process all files in data/posts/_raw/ and create the final JSON files in data/posts/.
-          Update data/posts/index.json with the complete list of posts."
-          
-          cursor-agent -p --force --model composer-1 "$PROMPT" 2>&1 || true
+          echo "=== Formatting posts ==="
+          pnpm run format-posts
           
           echo ""
-          echo "=== Processed posts ==="
+          echo "=== Post files ==="
           ls -la data/posts/*.json | head -20
 
       - name: Cleanup raw files
@@ -104,55 +79,49 @@ jobs:
           cat data/posts/index.json | head -50
           
           echo ""
-          echo "=== Post files ==="
-          for f in data/posts/*.json; do
-            if [ "$f" != "data/posts/index.json" ]; then
-              echo "- $f ($(wc -c < "$f") bytes)"
-            fi
-          done
+          echo "=== Post count ==="
+          cat data/posts/index.json | jq '.posts | length' || echo "Unable to count"
 
       - name: Commit and push
         run: |
           git config --local user.email "action@github.com"
           git config --local user.name "GitHub Action"
           
-          # Stage post files and images (the expected changes)
+          # Stage post files and images
           git add data/posts/
           git add public/posts/
-          
-          # Discard any other unstaged changes the agent might have made
-          git checkout -- . 2>/dev/null || true
           
           # Check if there are changes to commit
           if git diff --staged --quiet; then
             echo "No changes to commit"
-          else
-            git commit -m "Sync posts from Notion"
-            
-            # Pull latest changes before pushing
-            # Use merge instead of rebase to avoid issues with staged changes
-            git pull --no-rebase origin main || true
-            
-            # Push with retry
-            MAX_RETRIES=3
-            RETRY_DELAY=10
-            for i in $(seq 1 $MAX_RETRIES); do
-              echo "Push attempt $i of $MAX_RETRIES..."
-              if git push; then
-                echo "Push succeeded"
-                break
-              else
-                if [ $i -lt $MAX_RETRIES ]; then
-                  echo "Push failed, retrying in ${RETRY_DELAY}s..."
-                  sleep $RETRY_DELAY
-                  RETRY_DELAY=$((RETRY_DELAY * 2))
-                else
-                  echo "Push failed after $MAX_RETRIES attempts"
-                  exit 1
-                fi
-              fi
-            done
+            exit 0
           fi
+          
+          git commit -m "Sync posts from Notion"
+          
+          # Pull latest and rebase
+          git pull --rebase origin main
+          
+          # Push with retry
+          MAX_RETRIES=3
+          RETRY_DELAY=5
+          for i in $(seq 1 $MAX_RETRIES); do
+            echo "Push attempt $i of $MAX_RETRIES..."
+            if git push; then
+              echo "Push succeeded"
+              break
+            else
+              if [ $i -lt $MAX_RETRIES ]; then
+                echo "Push failed, pulling and retrying in ${RETRY_DELAY}s..."
+                git pull --rebase origin main
+                sleep $RETRY_DELAY
+                RETRY_DELAY=$((RETRY_DELAY * 2))
+              else
+                echo "Push failed after $MAX_RETRIES attempts"
+                exit 1
+              fi
+            fi
+          done
 
       - name: Write job summary
         run: |
@@ -161,4 +130,4 @@ jobs:
           echo "**Triggered:** $(date -u +%Y-%m-%dT%H:%M:%SZ)" >> $GITHUB_STEP_SUMMARY
           echo "" >> $GITHUB_STEP_SUMMARY
           echo "### Posts" >> $GITHUB_STEP_SUMMARY
-          cat data/posts/index.json | jq -r '.posts[] | "- \(.title) (\(.status))"' >> $GITHUB_STEP_SUMMARY 2>/dev/null || echo "- (unable to parse index)" >> $GITHUB_STEP_SUMMARY
+          cat data/posts/index.json | jq -r '.posts[] | "- \(.title)"' >> $GITHUB_STEP_SUMMARY 2>/dev/null || echo "- (unable to parse index)" >> $GITHUB_STEP_SUMMARY
