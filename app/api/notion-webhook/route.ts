@@ -54,11 +54,11 @@ export async function POST(request: Request) {
 
     // Handle verification request
     // Notion sends this when you first set up the webhook
-    if (body?.type === "url_verification" || body?.verification_token) {
-      console.log("Handling verification request");
-      // Echo back the verification token
+    if (body?.verification_token) {
+      console.log("Verification token received:", body.verification_token);
+      // Return the token so Notion can verify we received it
       return NextResponse.json({
-        challenge: body.challenge || body.verification_token,
+        verification_token: body.verification_token,
       });
     }
 
