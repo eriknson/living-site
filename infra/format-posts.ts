@@ -234,6 +234,7 @@ function updateIndex(posts: Post[]): void {
         title: p.title,
         publishedAt: p.publishedAt,
         readTime: p.readTime,
+        status: p.status,
         externalUrl: p.externalUrl,
       })),
   };
