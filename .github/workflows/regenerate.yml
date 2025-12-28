@@ -469,9 +469,138 @@ jobs:
             generated/${{ matrix.model }}.html
           retention-days: 3
 
-  # Job 4: Commit all builds
-  commit:
+  # Job 4: Validate and optionally polish builds
+  validate:
     needs: [aggregate, curator, generate]
+    if: inputs.dry_run != 'true'
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    strategy:
+      fail-fast: false
+      matrix:
+        model: [composer-1, claude-4.5-opus-high-thinking, gpt-5.1-codex, gemini-3-pro]
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Setup pnpm
+        uses: pnpm/action-setup@v4
+        with:
+          version: ${{ env.PNPM_VERSION }}
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: 'pnpm'
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Download build artifact
+        uses: actions/download-artifact@v4
+        with:
+          name: build-${{ matrix.model }}
+          path: artifacts/
+
+      - name: Organize files
+        run: |
+          mkdir -p generated
+          cp artifacts/generated/${{ matrix.model }}.html generated/ 2>/dev/null || echo "No HTML to copy"
+          
+          # Also keep the output.json for commit job
+          DATE="${{ needs.aggregate.outputs.date }}"
+          mkdir -p "public/builds/${DATE}"
+          cp artifacts/public/builds/${DATE}/*-output.json "public/builds/${DATE}/" 2>/dev/null || true
+
+      - name: Validate build
+        id: validate
+        run: |
+          if [ -f "generated/${{ matrix.model }}.html" ]; then
+            set +e
+            RESULT=$(pnpm run validate-build -- "generated/${{ matrix.model }}.html" 2>&1)
+            EXIT_CODE=$?
+            set -e
+            
+            echo "$RESULT"
+            
+            if [ $EXIT_CODE -eq 0 ]; then
+              echo "needs_polish=false" >> $GITHUB_OUTPUT
+            else
+              echo "needs_polish=true" >> $GITHUB_OUTPUT
+              # Extract just the issues for the polish prompt
+              ISSUES=$(echo "$RESULT" | grep -A20 "ISSUES" | head -15 || echo "$RESULT")
+              echo "issues<<EOF" >> $GITHUB_OUTPUT
+              echo "$ISSUES" >> $GITHUB_OUTPUT
+              echo "EOF" >> $GITHUB_OUTPUT
+            fi
+          else
+            echo "No build to validate"
+            echo "needs_polish=false" >> $GITHUB_OUTPUT
+          fi
+
+      - name: Notify validation result
+        if: env.BUILD_WEBHOOK_URL != ''
+        run: |
+          STATUS="validate.passed"
+          if [ "${{ steps.validate.outputs.needs_polish }}" = "true" ]; then
+            STATUS="validate.needs_polish"
+          fi
+          curl -s -X POST "$BUILD_WEBHOOK_URL" \
+            -H "Authorization: Bearer $BUILD_WEBHOOK_SECRET" \
+            -H "Content-Type: application/json" \
+            -d '{"buildId":"'"$BUILD_ID"'","event":"'"$STATUS"'","model":"${{ matrix.model }}","timestamp":"'"$(date -u +%Y-%m-%dT%H:%M:%S.000Z)"'"}' || true
+
+      - name: Install Cursor CLI
+        if: steps.validate.outputs.needs_polish == 'true'
+        run: |
+          curl https://cursor.com/install -fsS | bash
+          cursor-agent --version || echo "Failed to get cursor-agent version"
+
+      - name: Download curator artifact for polish
+        if: steps.validate.outputs.needs_polish == 'true'
+        uses: actions/download-artifact@v4
+        with:
+          name: curator-data
+          path: data/
+
+      - name: Run polish agent
+        if: steps.validate.outputs.needs_polish == 'true'
+        env:
+          CURSOR_API_KEY: ${{ secrets.CURSOR_API_KEY }}
+        run: |
+          ISSUES="${{ steps.validate.outputs.issues }}"
+          
+          PROMPT="Read infra/prompts/polish.md for instructions.
+          
+          Validation issues to fix:
+          $ISSUES
+          
+          File to fix: generated/${{ matrix.model }}.html
+          
+          Read the file, fix the issues, write it back."
+          
+          echo "=== Running polish agent for ${{ matrix.model }} ==="
+          cursor-agent -p --force --model composer-1 "$PROMPT" 2>&1 || true
+
+      - name: Re-validate after polish
+        if: steps.validate.outputs.needs_polish == 'true'
+        run: |
+          echo "=== Re-validating after polish ==="
+          pnpm run validate-build -- "generated/${{ matrix.model }}.html" || echo "Still has issues after polish"
+
+      - name: Upload validated artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: validated-${{ matrix.model }}
+          path: |
+            generated/${{ matrix.model }}.html
+            public/builds/${{ needs.aggregate.outputs.date }}/
+          retention-days: 3
+
+  # Job 5: Commit all builds
+  commit:
+    needs: [aggregate, curator, generate, validate]
     if: inputs.dry_run != 'true'
     runs-on: ubuntu-latest
     timeout-minutes: 10
@@ -522,10 +651,10 @@ jobs:
           cp artifacts/curator/reference.html data/reference.html
           echo "Data files organized"
 
-      - name: Download all build artifacts
+      - name: Download all validated artifacts
         uses: actions/download-artifact@v4
         with:
-          pattern: build-*
+          pattern: validated-*
           path: artifacts/
 
       - name: Organize builds
@@ -534,28 +663,26 @@ jobs:
           mkdir -p "public/builds/${DATE}"
           mkdir -p "generated"
           
-          # Copy build output JSONs from artifacts (for log processing)
-          for dir in artifacts/build-*/public/builds/${DATE}; do
+          # Copy build output JSONs from validated artifacts (for log processing)
+          for dir in artifacts/validated-*/public/builds/${DATE}; do
             if [ -d "$dir" ]; then
-              # Only copy the output.json files, not the HTML (save-build-log will handle HTML with timestamps)
               cp "$dir"/*-output.json "public/builds/${DATE}/" 2>/dev/null || true
             fi
           done
           
-          # Copy model-specific generated files from artifacts (derive models from artifact dirs)
-          # These will be copied to timestamped paths by save-build-log
-          for artifact_dir in artifacts/build-*/; do
-            model=$(basename "$artifact_dir" | sed 's/^build-//')
+          # Copy validated generated files from artifacts
+          for artifact_dir in artifacts/validated-*/; do
+            model=$(basename "$artifact_dir" | sed 's/^validated-//')
             src="${artifact_dir}generated/${model}.html"
             if [ -f "$src" ]; then
               cp "$src" "generated/${model}.html"
-              echo "Copied generated/${model}.html"
+              echo "Copied validated generated/${model}.html"
             fi
           done
           
           echo "Build outputs collected:"
           ls -la "public/builds/${DATE}/"
-          echo "Generated files:"
+          echo "Validated files:"
           ls -la "generated/"
 
       - name: Process build logs and update manifest
@@ -664,9 +791,9 @@ jobs:
           echo "" >> $GITHUB_STEP_SUMMARY
           echo "**Date:** ${DATE}" >> $GITHUB_STEP_SUMMARY
           echo "" >> $GITHUB_STEP_SUMMARY
-          echo "### Model Builds" >> $GITHUB_STEP_SUMMARY
-          for artifact_dir in artifacts/build-*/; do
-            model=$(basename "$artifact_dir" | sed 's/^build-//')
+          echo "### Model Builds (Validated)" >> $GITHUB_STEP_SUMMARY
+          for artifact_dir in artifacts/validated-*/; do
+            model=$(basename "$artifact_dir" | sed 's/^validated-//')
             if [ -f "generated/${model}.html" ]; then
               echo "- ✅ ${model}" >> $GITHUB_STEP_SUMMARY
             else
