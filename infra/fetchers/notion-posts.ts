@@ -179,27 +179,37 @@ async function downloadImage(
 }
 
 /**
- * Process markdown to download Notion-hosted images
+ * Process markdown to handle images:
+ * 1. Download Notion-hosted images to local
+ * 2. Convert eriks.design absolute URLs to relative paths
  */
 async function processImages(
   markdown: string,
   slug: string
 ): Promise<string> {
-  // Match Notion-hosted images
+  let result = markdown;
+
+  // 1. Convert eriks.design absolute URLs to relative paths
+  // This handles the roundtrip from export → Notion → sync
+  result = result.replace(
+    /!\[([^\]]*)\]\(https:\/\/eriks\.design(\/posts\/[^)]+)\)/g,
+    "![$1]($2)"
+  );
+
+  // 2. Match and download Notion-hosted images
   const notionImageRegex =
     /!\[([^\]]*)\]\((https:\/\/(?:prod-files-secure\.s3\.us-west-2\.amazonaws\.com|s3\.us-west-2\.amazonaws\.com\/secure\.notion-static\.com)[^)]+)\)/g;
 
-  let result = markdown;
   let match;
   let imageIndex = 0;
 
   // Collect all matches first (regex is stateful)
   const matches: { full: string; alt: string; url: string }[] = [];
-  while ((match = notionImageRegex.exec(markdown)) !== null) {
+  while ((match = notionImageRegex.exec(result)) !== null) {
     matches.push({ full: match[0], alt: match[1], url: match[2] });
   }
 
-  // Download each image
+  // Download each Notion-hosted image
   for (const m of matches) {
     const localPath = await downloadImage(m.url, slug, imageIndex++);
     result = result.replace(m.full, `![${m.alt}](${localPath})`);
