@@ -23,6 +23,11 @@ jobs:
     runs-on: ubuntu-latest
     timeout-minutes: 15
     steps:
+      - name: Debounce (wait for more edits)
+        run: |
+          echo "Waiting 30s for additional edits..."
+          sleep 30
+
       - name: Checkout repository
         uses: actions/checkout@v4
 
@@ -103,9 +108,12 @@ jobs:
           git config --local user.email "action@github.com"
           git config --local user.name "GitHub Action"
           
-          # Stage post files and images
+          # Stage post files and images (the expected changes)
           git add data/posts/
           git add public/posts/
+          
+          # Discard any other unstaged changes the agent might have made
+          git checkout -- . 2>/dev/null || true
           
           # Check if there are changes to commit
           if git diff --staged --quiet; then
@@ -113,8 +121,9 @@ jobs:
           else
             git commit -m "Sync posts from Notion"
             
-            # Pull latest and rebase
-            git pull --rebase origin main
+            # Pull latest changes before pushing
+            # Use merge instead of rebase to avoid issues with staged changes
+            git pull --no-rebase origin main || true
             
             # Push with retry
             MAX_RETRIES=3
