@@ -47,36 +47,13 @@ jobs:
       - name: Install dependencies
         run: pnpm install --frozen-lockfile
 
-      - name: Extract page ID
-        id: page
-        run: |
-          # Get page ID from webhook payload (page-level isolation)
-          PAGE_ID="${{ github.event.client_payload.page_id }}"
-          
-          if [ -n "$PAGE_ID" ] && [ "$PAGE_ID" != "null" ]; then
-            echo "page_id=$PAGE_ID" >> $GITHUB_OUTPUT
-            echo "mode=single" >> $GITHUB_OUTPUT
-            echo "📄 Single page mode: $PAGE_ID"
-          else
-            echo "page_id=" >> $GITHUB_OUTPUT
-            echo "mode=full" >> $GITHUB_OUTPUT
-            echo "📚 Full sync mode (no page ID in webhook)"
-          fi
-
       - name: Fetch posts from Notion
         env:
           NOTION_TOKEN: ${{ secrets.NOTION_TOKEN }}
           NOTION_DATABASE_ID: ${{ secrets.NOTION_DATABASE_ID }}
         run: |
-          PAGE_ID="${{ steps.page.outputs.page_id }}"
-          
-          if [ -n "$PAGE_ID" ]; then
-            echo "=== Fetching single page from Notion (isolation mode) ==="
-            pnpm run fetch-notion-posts -- --page-id="$PAGE_ID"
-          else
-            echo "=== Fetching ALL posts from Notion ==="
-            pnpm run fetch-notion-posts
-          fi
+          echo "=== Fetching posts from Notion ==="
+          pnpm run fetch-notion-posts
           
           echo ""
           echo "=== Raw files ==="
@@ -154,16 +131,15 @@ jobs:
         run: |
           echo "=== Updating reference files ==="
           
-          # Get the slug that was processed (in single-page mode)
-          if [ -f "data/posts/_raw/_index.json" ]; then
-            SLUGS=$(cat data/posts/_raw/_index.json | jq -r '.posts[].slug')
-            for SLUG in $SLUGS; do
-              if [ -f "data/posts/${SLUG}.json" ]; then
-                cp "data/posts/${SLUG}.json" "data/posts/_reference/${SLUG}.json"
-                echo "Updated reference: $SLUG"
-              fi
-            done
-          fi
+          # Update all reference files from current posts
+          mkdir -p data/posts/_reference/
+          for f in data/posts/*.json; do
+            if [ "$f" != "data/posts/index.json" ]; then
+              SLUG=$(basename "$f" .json)
+              cp "$f" "data/posts/_reference/${SLUG}.json"
+              echo "Updated reference: $SLUG"
+            fi
+          done
 
       - name: Cleanup raw files
         run: |
@@ -229,27 +205,17 @@ jobs:
 
       - name: Write job summary
         run: |
-          MODE="${{ steps.page.outputs.mode }}"
-          PAGE_ID="${{ steps.page.outputs.page_id }}"
-          
           echo "## 📝 Notion Posts Sync" >> $GITHUB_STEP_SUMMARY
           echo "" >> $GITHUB_STEP_SUMMARY
           echo "**Triggered:** $(date -u +%Y-%m-%dT%H:%M:%SZ)" >> $GITHUB_STEP_SUMMARY
           echo "" >> $GITHUB_STEP_SUMMARY
-          
-          if [ "$MODE" = "single" ]; then
-            echo "**Mode:** 📄 Single Page (isolation)" >> $GITHUB_STEP_SUMMARY
-            echo "**Page ID:** \`$PAGE_ID\`" >> $GITHUB_STEP_SUMMARY
-          else
-            echo "**Mode:** 📚 Full Sync" >> $GITHUB_STEP_SUMMARY
-          fi
-          
+          echo "**Mode:** Smart sync (content hashing)" >> $GITHUB_STEP_SUMMARY
           echo "" >> $GITHUB_STEP_SUMMARY
           echo "### Pipeline" >> $GITHUB_STEP_SUMMARY
-          echo "1. ✅ Fetched from Notion" >> $GITHUB_STEP_SUMMARY
-          echo "2. ✅ Formatted (deterministic)" >> $GITHUB_STEP_SUMMARY
-          echo "3. ✅ Validated against reference" >> $GITHUB_STEP_SUMMARY
-          echo "4. ✅ Updated reference files" >> $GITHUB_STEP_SUMMARY
+          echo "1. ✅ Fetched all posts from Notion" >> $GITHUB_STEP_SUMMARY
+          echo "2. ✅ Detected changes (hash comparison)" >> $GITHUB_STEP_SUMMARY
+          echo "3. ✅ Formatted only changed posts" >> $GITHUB_STEP_SUMMARY
+          echo "4. ✅ Validated against reference" >> $GITHUB_STEP_SUMMARY
           echo "" >> $GITHUB_STEP_SUMMARY
           echo "### Posts" >> $GITHUB_STEP_SUMMARY
           cat data/posts/index.json | jq -r '.posts[] | "- \(.title)"' >> $GITHUB_STEP_SUMMARY 2>/dev/null || echo "- (unable to parse index)" >> $GITHUB_STEP_SUMMARY

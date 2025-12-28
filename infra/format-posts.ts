@@ -4,6 +4,11 @@
  * Converts raw markdown files from Notion to the final JSON format.
  * This is a deterministic process - NO agent/AI involved.
  *
+ * Features:
+ * - Content hashing to detect changes (only re-format what changed)
+ * - Preserves posts that weren't modified in Notion
+ * - Handles multiple edits across posts in a single run
+ *
  * Input: data/posts/_raw/{slug}.md (markdown with frontmatter)
  * Output: data/posts/{slug}.json (final post format)
  *
@@ -12,6 +17,7 @@
  */
 
 import { readFileSync, writeFileSync, readdirSync, existsSync } from "fs";
+import { createHash } from "crypto";
 import path from "path";
 import {
   markdownToHtml,
@@ -41,8 +47,41 @@ interface Post {
   status: "published" | "draft";
   content: string;
   contentHtml: string;
+  contentHash?: string; // Hash of raw markdown for change detection
   notionPageId?: string;
   externalUrl?: string;
+}
+
+/**
+ * Compute a hash of the content for change detection
+ */
+function computeContentHash(content: string): string {
+  return createHash("sha256").update(content).digest("hex").slice(0, 16);
+}
+
+/**
+ * Check if content has changed by comparing hashes
+ */
+function hasContentChanged(slug: string, newMarkdown: string): boolean {
+  const existingPath = path.join(OUTPUT_DIR, `${slug}.json`);
+  
+  if (!existsSync(existingPath)) {
+    return true; // New post, definitely changed
+  }
+  
+  try {
+    const existing = JSON.parse(readFileSync(existingPath, "utf-8"));
+    const existingHash = existing.contentHash;
+    const newHash = computeContentHash(newMarkdown);
+    
+    if (!existingHash) {
+      return true; // No hash stored, assume changed
+    }
+    
+    return existingHash !== newHash;
+  } catch {
+    return true; // Error reading, assume changed
+  }
 }
 
 /**
@@ -163,8 +202,9 @@ function cleanMarkdown(markdown: string): string {
 
 /**
  * Process a single markdown file
+ * Returns { post, changed } where changed indicates if content was modified
  */
-function processPost(filename: string): Post | null {
+function processPost(filename: string): { post: Post | null; changed: boolean; rawMarkdown: string } {
   const inputPath = path.join(RAW_DIR, filename);
   const content = readFileSync(inputPath, "utf-8");
 
@@ -175,26 +215,36 @@ function processPost(filename: string): Post | null {
     if (frontmatter.externalUrl) {
       console.log(`  → External: ${frontmatter.externalUrl}`);
       return {
-        slug: frontmatter.slug,
-        title: frontmatter.title,
-        publishedAt: frontmatter.publishedAt,
-        readTime: 0,
-        status: frontmatter.status,
-        content: "",
-        contentHtml: "",
-        externalUrl: frontmatter.externalUrl,
-        notionPageId: frontmatter.notionPageId,
+        post: {
+          slug: frontmatter.slug,
+          title: frontmatter.title,
+          publishedAt: frontmatter.publishedAt,
+          readTime: 0,
+          status: frontmatter.status,
+          content: "",
+          contentHtml: "",
+          externalUrl: frontmatter.externalUrl,
+          notionPageId: frontmatter.notionPageId,
+        },
+        changed: true,
+        rawMarkdown: "",
       };
     }
 
-    // Clean and process markdown
+    // Clean markdown
     const cleanedMarkdown = cleanMarkdown(body);
+    
+    // Check if content has actually changed
+    const changed = hasContentChanged(frontmatter.slug, cleanedMarkdown);
 
     // Convert to HTML
     const contentHtml = markdownToHtml(cleanedMarkdown);
 
     // Calculate reading time
     const readTime = calculateReadingTime(cleanedMarkdown);
+    
+    // Compute content hash for future change detection
+    const contentHash = computeContentHash(cleanedMarkdown);
 
     const post: Post = {
       slug: frontmatter.slug,
@@ -204,59 +254,27 @@ function processPost(filename: string): Post | null {
       status: frontmatter.status,
       content: cleanedMarkdown,
       contentHtml,
+      contentHash,
     };
 
     if (frontmatter.notionPageId) {
       post.notionPageId = frontmatter.notionPageId;
     }
 
-    return post;
+    return { post, changed, rawMarkdown: cleanedMarkdown };
   } catch (error) {
     console.error(`  ✗ Error parsing ${filename}:`, error);
-    return null;
+    return { post: null, changed: false, rawMarkdown: "" };
   }
 }
 
 /**
  * Update the posts index
- * In single-page mode, merges with existing index instead of replacing
  */
-function updateIndex(processedPosts: Post[], singlePageMode: boolean): void {
+function updateIndex(posts: Post[], _unused: boolean): void {
   const indexPath = path.join(OUTPUT_DIR, "index.json");
-  
-  let allPosts: Post[] = [];
-  
-  if (singlePageMode && existsSync(indexPath)) {
-    // Single page mode: load existing index and merge
-    try {
-      const existingIndex = JSON.parse(readFileSync(indexPath, "utf-8"));
-      const existingSlugs = new Set(processedPosts.map((p) => p.slug));
-      
-      // Keep existing posts that weren't updated
-      for (const entry of existingIndex.posts || []) {
-        if (!existingSlugs.has(entry.slug)) {
-          // Load the full post to get all fields
-          const postPath = path.join(OUTPUT_DIR, `${entry.slug}.json`);
-          if (existsSync(postPath)) {
-            try {
-              const post = JSON.parse(readFileSync(postPath, "utf-8"));
-              allPosts.push(post);
-            } catch {
-              // Fall back to index entry
-              allPosts.push(entry as Post);
-            }
-          }
-        }
-      }
-    } catch (error) {
-      console.warn("Warning: Could not load existing index, creating new one");
-    }
-  }
-  
-  // Add processed posts
-  allPosts = [...allPosts, ...processedPosts];
 
-  const publishedPosts = allPosts.filter((p) => p.status === "published");
+  const publishedPosts = posts.filter((p) => p.status === "published");
 
   const index = {
     posts: publishedPosts
@@ -275,43 +293,14 @@ function updateIndex(processedPosts: Post[], singlePageMode: boolean): void {
   };
 
   writeFileSync(indexPath, JSON.stringify(index, null, 2));
-  console.log(`\nUpdated: ${indexPath}`);
-}
-
-/**
- * Detect if we're in single-page mode (only 1 file in _raw)
- */
-function isSinglePageMode(): boolean {
-  if (!existsSync(RAW_DIR)) return false;
-  
-  // Check if _index.json indicates single page
-  const indexPath = path.join(RAW_DIR, "_index.json");
-  if (existsSync(indexPath)) {
-    try {
-      const index = JSON.parse(readFileSync(indexPath, "utf-8"));
-      return (index.posts?.length || 0) === 1;
-    } catch {
-      // Fall back to file count
-    }
-  }
-  
-  const files = readdirSync(RAW_DIR).filter(
-    (f) => f.endsWith(".md") && !f.startsWith("_")
-  );
-  return files.length === 1;
+  console.log(`Updated: ${indexPath}`);
 }
 
 /**
  * Main function
  */
 function main() {
-  const singlePageMode = isSinglePageMode();
-  
-  if (singlePageMode) {
-    console.log("=== Deterministic Post Formatter (Single Page Mode) ===\n");
-  } else {
-    console.log("=== Deterministic Post Formatter ===\n");
-  }
+  console.log("=== Deterministic Post Formatter ===\n");
 
   if (!existsSync(RAW_DIR)) {
     console.error(`Error: ${RAW_DIR} does not exist`);
@@ -328,52 +317,74 @@ function main() {
     process.exit(0);
   }
 
-  console.log(`Found ${files.length} posts to process\n`);
+  console.log(`Found ${files.length} posts to check\n`);
 
-  const posts: Post[] = [];
+  const allPosts: Post[] = [];
+  const changedPosts: string[] = [];
+  const unchangedPosts: string[] = [];
   const preserved: string[] = [];
 
   for (const file of files) {
-    console.log(`Processing: ${file}`);
-    const post = processPost(file);
-    if (post) {
-      const outputPath = path.join(OUTPUT_DIR, `${post.slug}.json`);
+    console.log(`Checking: ${file}`);
+    const { post, changed, rawMarkdown } = processPost(file);
+    
+    if (!post) continue;
+    
+    const outputPath = path.join(OUTPUT_DIR, `${post.slug}.json`);
+    
+    if (!changed) {
+      // Content hasn't changed - skip formatting, use existing
+      console.log(`  → Unchanged (hash match)`);
+      unchangedPosts.push(post.slug);
       
-      // Safety check: don't overwrite if existing post has more images
-      // (Skip this in single-page mode - we trust the update is intentional)
-      if (PRESERVE_RICHER_CONTENT && post.contentHtml && !singlePageMode) {
-        const { richer, existingImages, newImages } = existingIsRicher(post.slug, post.contentHtml);
-        if (richer) {
-          console.log(`  ⚠ PRESERVED: existing has ${existingImages} images, new has ${newImages}`);
-          console.log(`    To force update, manually edit Notion or disable PRESERVE_RICHER_CONTENT`);
-          preserved.push(post.slug);
-          // Load existing post for index
-          try {
-            const existing = JSON.parse(readFileSync(outputPath, "utf-8"));
-            posts.push(existing);
-          } catch {
-            posts.push(post);
-          }
+      // Load existing post for index
+      if (existsSync(outputPath)) {
+        try {
+          const existing = JSON.parse(readFileSync(outputPath, "utf-8"));
+          allPosts.push(existing);
           continue;
+        } catch {
+          // Fall through to save new version
         }
       }
-      
-      // Save individual post JSON
-      writeFileSync(outputPath, JSON.stringify(post, null, 2));
-      console.log(`  ✓ Saved: ${outputPath}`);
-      posts.push(post);
     }
+    
+    // Safety check: don't overwrite if existing post has more images
+    if (PRESERVE_RICHER_CONTENT && post.contentHtml) {
+      const { richer, existingImages, newImages } = existingIsRicher(post.slug, post.contentHtml);
+      if (richer) {
+        console.log(`  ⚠ PRESERVED: existing has ${existingImages} images, new has ${newImages}`);
+        preserved.push(post.slug);
+        // Load existing post for index
+        try {
+          const existing = JSON.parse(readFileSync(outputPath, "utf-8"));
+          allPosts.push(existing);
+        } catch {
+          allPosts.push(post);
+        }
+        continue;
+      }
+    }
+    
+    // Save changed post
+    writeFileSync(outputPath, JSON.stringify(post, null, 2));
+    console.log(`  ✓ Changed - saved: ${outputPath}`);
+    changedPosts.push(post.slug);
+    allPosts.push(post);
   }
   
+  console.log("\n=== Summary ===");
+  console.log(`Changed: ${changedPosts.length} (${changedPosts.join(", ") || "none"})`);
+  console.log(`Unchanged: ${unchangedPosts.length} (${unchangedPosts.join(", ") || "none"})`);
+  
   if (preserved.length > 0) {
-    console.log(`\n⚠ Preserved ${preserved.length} posts with richer content: ${preserved.join(", ")}`);
+    console.log(`Preserved: ${preserved.length} (${preserved.join(", ")})`);
   }
 
-  // Update index (merge with existing in single-page mode)
-  updateIndex(posts, singlePageMode);
+  // Update index with all posts
+  updateIndex(allPosts, false);
 
   console.log("\n=== Formatting Complete ===");
-  console.log(`Processed ${posts.length} posts`);
 }
 
 main();
