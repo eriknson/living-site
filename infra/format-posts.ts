@@ -219,9 +219,44 @@ function processPost(filename: string): Post | null {
 
 /**
  * Update the posts index
+ * In single-page mode, merges with existing index instead of replacing
  */
-function updateIndex(posts: Post[]): void {
-  const publishedPosts = posts.filter((p) => p.status === "published");
+function updateIndex(processedPosts: Post[], singlePageMode: boolean): void {
+  const indexPath = path.join(OUTPUT_DIR, "index.json");
+  
+  let allPosts: Post[] = [];
+  
+  if (singlePageMode && existsSync(indexPath)) {
+    // Single page mode: load existing index and merge
+    try {
+      const existingIndex = JSON.parse(readFileSync(indexPath, "utf-8"));
+      const existingSlugs = new Set(processedPosts.map((p) => p.slug));
+      
+      // Keep existing posts that weren't updated
+      for (const entry of existingIndex.posts || []) {
+        if (!existingSlugs.has(entry.slug)) {
+          // Load the full post to get all fields
+          const postPath = path.join(OUTPUT_DIR, `${entry.slug}.json`);
+          if (existsSync(postPath)) {
+            try {
+              const post = JSON.parse(readFileSync(postPath, "utf-8"));
+              allPosts.push(post);
+            } catch {
+              // Fall back to index entry
+              allPosts.push(entry as Post);
+            }
+          }
+        }
+      }
+    } catch (error) {
+      console.warn("Warning: Could not load existing index, creating new one");
+    }
+  }
+  
+  // Add processed posts
+  allPosts = [...allPosts, ...processedPosts];
+
+  const publishedPosts = allPosts.filter((p) => p.status === "published");
 
   const index = {
     posts: publishedPosts
@@ -239,16 +274,44 @@ function updateIndex(posts: Post[]): void {
       })),
   };
 
-  const indexPath = path.join(OUTPUT_DIR, "index.json");
   writeFileSync(indexPath, JSON.stringify(index, null, 2));
   console.log(`\nUpdated: ${indexPath}`);
+}
+
+/**
+ * Detect if we're in single-page mode (only 1 file in _raw)
+ */
+function isSinglePageMode(): boolean {
+  if (!existsSync(RAW_DIR)) return false;
+  
+  // Check if _index.json indicates single page
+  const indexPath = path.join(RAW_DIR, "_index.json");
+  if (existsSync(indexPath)) {
+    try {
+      const index = JSON.parse(readFileSync(indexPath, "utf-8"));
+      return (index.posts?.length || 0) === 1;
+    } catch {
+      // Fall back to file count
+    }
+  }
+  
+  const files = readdirSync(RAW_DIR).filter(
+    (f) => f.endsWith(".md") && !f.startsWith("_")
+  );
+  return files.length === 1;
 }
 
 /**
  * Main function
  */
 function main() {
-  console.log("=== Deterministic Post Formatter ===\n");
+  const singlePageMode = isSinglePageMode();
+  
+  if (singlePageMode) {
+    console.log("=== Deterministic Post Formatter (Single Page Mode) ===\n");
+  } else {
+    console.log("=== Deterministic Post Formatter ===\n");
+  }
 
   if (!existsSync(RAW_DIR)) {
     console.error(`Error: ${RAW_DIR} does not exist`);
@@ -277,7 +340,8 @@ function main() {
       const outputPath = path.join(OUTPUT_DIR, `${post.slug}.json`);
       
       // Safety check: don't overwrite if existing post has more images
-      if (PRESERVE_RICHER_CONTENT && post.contentHtml) {
+      // (Skip this in single-page mode - we trust the update is intentional)
+      if (PRESERVE_RICHER_CONTENT && post.contentHtml && !singlePageMode) {
         const { richer, existingImages, newImages } = existingIsRicher(post.slug, post.contentHtml);
         if (richer) {
           console.log(`  ⚠ PRESERVED: existing has ${existingImages} images, new has ${newImages}`);
@@ -305,8 +369,8 @@ function main() {
     console.log(`\n⚠ Preserved ${preserved.length} posts with richer content: ${preserved.join(", ")}`);
   }
 
-  // Update index
-  updateIndex(posts);
+  // Update index (merge with existing in single-page mode)
+  updateIndex(posts, singlePageMode);
 
   console.log("\n=== Formatting Complete ===");
   console.log(`Processed ${posts.length} posts`);

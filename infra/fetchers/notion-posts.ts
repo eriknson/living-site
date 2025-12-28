@@ -2,7 +2,7 @@
  * Fetch posts from Notion and save as raw markdown for agent processing
  *
  * This script:
- * 1. Fetches all pages from the Posts database
+ * 1. Fetches all pages (or a single page) from the Posts database
  * 2. Converts each page to markdown using notion-to-md
  * 3. Downloads images (Notion URLs expire)
  * 4. Saves raw markdown to data/posts/_raw/{slug}.md
@@ -10,7 +10,11 @@
  * The post formatter agent then processes these into the final format.
  *
  * Usage:
+ *   # Fetch all posts
  *   NOTION_TOKEN=secret_xxx NOTION_DATABASE_ID=xxx pnpm run fetch-notion-posts
+ *
+ *   # Fetch a single post by page ID (page-level isolation)
+ *   NOTION_TOKEN=secret_xxx NOTION_DATABASE_ID=xxx pnpm run fetch-notion-posts -- --page-id=xxx
  */
 
 import { Client } from "@notionhq/client";
@@ -37,6 +41,11 @@ if (!process.env.NOTION_TOKEN || !process.env.NOTION_DATABASE_ID) {
 
 const RAW_DIR = path.join(process.cwd(), "data/posts/_raw");
 const IMAGES_DIR = path.join(process.cwd(), "public/posts");
+
+// Parse command line arguments
+const args = process.argv.slice(2);
+const pageIdArg = args.find((arg) => arg.startsWith("--page-id="));
+const SINGLE_PAGE_ID = pageIdArg ? pageIdArg.split("=")[1] : null;
 
 interface NotionPost {
   id: string;
@@ -73,6 +82,70 @@ n2m.setCustomTransformer("embed", async (block: any) => {
 });
 
 /**
+ * Extract post metadata from a Notion page object
+ */
+function extractPostFromPage(page: any): NotionPost {
+  const props = page.properties;
+
+  // Get title - it's usually the first property or named "Title" or "Name"
+  const titleProp = props.Title || props.title || props.Name || props.name;
+  const title =
+    titleProp?.title?.[0]?.plain_text ||
+    titleProp?.rich_text?.[0]?.plain_text ||
+    "Untitled";
+
+  // Get slug
+  const slugProp = props.Slug || props.slug;
+  const slug =
+    slugProp?.rich_text?.[0]?.plain_text ||
+    title.toLowerCase().replace(/\s+/g, "-").replace(/[^a-z0-9-]/g, "");
+
+  // Get published date
+  const publishedProp = props.Published || props.published || props.Date;
+  const publishedAt =
+    publishedProp?.date?.start || new Date().toISOString().split("T")[0];
+
+  // Get status
+  const statusProp = props.Status || props.status;
+  const statusValue = statusProp?.select?.name || "Draft";
+  const status =
+    statusValue.toLowerCase() === "published" ? "published" : "draft";
+
+  // Get external URL
+  const externalUrlProp = props["External URL"] || props.externalUrl;
+  const externalUrl = externalUrlProp?.url || undefined;
+
+  return {
+    id: page.id,
+    title,
+    slug,
+    publishedAt,
+    status,
+    externalUrl,
+  };
+}
+
+/**
+ * Fetch a single post by page ID
+ */
+async function fetchSinglePost(pageId: string): Promise<NotionPost | null> {
+  console.log(`Fetching single page: ${pageId}`);
+
+  try {
+    const page = await notion.pages.retrieve({ page_id: pageId });
+    const post = extractPostFromPage(page);
+    console.log(`Found: "${post.title}" (${post.slug})`);
+    return post;
+  } catch (error: any) {
+    if (error.code === "object_not_found") {
+      console.log("Page not found - may have been deleted");
+      return null;
+    }
+    throw error;
+  }
+}
+
+/**
  * Fetch all posts from Notion database
  */
 async function fetchPostsFromNotion(): Promise<NotionPost[]> {
@@ -89,46 +162,7 @@ async function fetchPostsFromNotion(): Promise<NotionPost[]> {
     });
 
     for (const page of response.results) {
-      const props = page.properties;
-
-      // Get title - it's usually the first property or named "Title" or "Name"
-      const titleProp =
-        props.Title || props.title || props.Name || props.name;
-      const title =
-        titleProp?.title?.[0]?.plain_text ||
-        titleProp?.rich_text?.[0]?.plain_text ||
-        "Untitled";
-
-      // Get slug
-      const slugProp = props.Slug || props.slug;
-      const slug =
-        slugProp?.rich_text?.[0]?.plain_text ||
-        title.toLowerCase().replace(/\s+/g, "-").replace(/[^a-z0-9-]/g, "");
-
-      // Get published date
-      const publishedProp = props.Published || props.published || props.Date;
-      const publishedAt =
-        publishedProp?.date?.start ||
-        new Date().toISOString().split("T")[0];
-
-      // Get status
-      const statusProp = props.Status || props.status;
-      const statusValue = statusProp?.select?.name || "Draft";
-      const status =
-        statusValue.toLowerCase() === "published" ? "published" : "draft";
-
-      // Get external URL
-      const externalUrlProp = props["External URL"] || props.externalUrl;
-      const externalUrl = externalUrlProp?.url || undefined;
-
-      posts.push({
-        id: page.id,
-        title,
-        slug,
-        publishedAt,
-        status,
-        externalUrl,
-      });
+      posts.push(extractPostFromPage(page));
     }
 
     cursor = response.has_more ? response.next_cursor : undefined;
@@ -271,13 +305,21 @@ notionPageId: "${post.id}"
 }
 
 /**
- * Clean up _raw directory
+ * Clean up _raw directory (or just ensure it exists for single-page mode)
  */
-function cleanRawDir(): void {
-  if (existsSync(RAW_DIR)) {
-    rmSync(RAW_DIR, { recursive: true });
+function prepareRawDir(singlePageMode: boolean): void {
+  if (singlePageMode) {
+    // Single page mode: just ensure directory exists, don't clean
+    if (!existsSync(RAW_DIR)) {
+      mkdirSync(RAW_DIR, { recursive: true });
+    }
+  } else {
+    // Full sync: clean and recreate
+    if (existsSync(RAW_DIR)) {
+      rmSync(RAW_DIR, { recursive: true });
+    }
+    mkdirSync(RAW_DIR, { recursive: true });
   }
-  mkdirSync(RAW_DIR, { recursive: true });
 }
 
 /**
@@ -310,13 +352,33 @@ function savePostsIndex(posts: NotionPost[]): void {
  * Main function
  */
 async function main() {
-  console.log("=== Notion Posts Fetcher ===\n");
+  const singlePageMode = !!SINGLE_PAGE_ID;
 
-  // Clean and recreate _raw directory
-  cleanRawDir();
+  if (singlePageMode) {
+    console.log("=== Notion Posts Fetcher (Single Page Mode) ===\n");
+    console.log(`Page ID: ${SINGLE_PAGE_ID}\n`);
+  } else {
+    console.log("=== Notion Posts Fetcher ===\n");
+  }
 
-  // Fetch all posts
-  const posts = await fetchPostsFromNotion();
+  // Prepare _raw directory
+  prepareRawDir(singlePageMode);
+
+  let posts: NotionPost[] = [];
+
+  if (singlePageMode) {
+    // Fetch single page
+    const post = await fetchSinglePost(SINGLE_PAGE_ID!);
+    if (post) {
+      posts = [post];
+    } else {
+      console.log("No post to process");
+      return;
+    }
+  } else {
+    // Fetch all posts
+    posts = await fetchPostsFromNotion();
+  }
 
   // Fetch each post's content
   for (const post of posts) {
@@ -329,11 +391,14 @@ async function main() {
     }
   }
 
-  // Save index
+  // Save index (includes the slug for format-posts to know what to process)
   savePostsIndex(posts);
 
   console.log("\n=== Fetch Complete ===");
   console.log(`\nRaw files saved to: ${RAW_DIR}`);
+  if (singlePageMode) {
+    console.log(`Processed single page: ${posts[0]?.slug}`);
+  }
   console.log(
     "Next: Run the post formatter agent to process into final format"
   );
