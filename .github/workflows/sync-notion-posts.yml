@@ -1,11 +1,19 @@
 name: Sync Notion Posts
 
+# DISABLED - Image paths and content preservation issues need fixing
+# on:
+#   # Triggered by webhook from Notion automation
+#   repository_dispatch:
+#     types: [notion-posts-updated]
+#   # Manual trigger for testing
+#   workflow_dispatch:
+
 on:
-  # Triggered by webhook from Notion automation
-  repository_dispatch:
-    types: [notion-posts-updated]
-  # Manual trigger for testing
   workflow_dispatch:
+    inputs:
+      confirm:
+        description: 'Type "sync" to confirm manual sync'
+        required: true
 
 concurrency:
   group: sync-notion-posts
