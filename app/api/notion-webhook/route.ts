@@ -102,11 +102,17 @@ export async function POST(request: Request) {
     }
 
     // Trigger GitHub workflow
-    const githubToken = process.env.GITHUB_TOKEN;
-    const githubRepo = process.env.GITHUB_REPO || "eriknson/living-site";
+    // Support both GITHUB_TOKEN and GITHUB_PAT for flexibility
+    const githubToken = process.env.GITHUB_TOKEN || process.env.GITHUB_PAT;
+    // Support GITHUB_REPO as full path or construct from GITHUB_OWNER + GITHUB_REPO
+    const githubOwner = process.env.GITHUB_OWNER || "eriknson";
+    const githubRepoName = process.env.GITHUB_REPO || "living-site";
+    const githubRepo = githubRepoName.includes("/") 
+      ? githubRepoName 
+      : `${githubOwner}/${githubRepoName}`;
 
     if (!githubToken) {
-      console.error("GITHUB_TOKEN not configured");
+      console.error("GITHUB_TOKEN/GITHUB_PAT not configured");
       return NextResponse.json(
         { error: "Server misconfigured" },
         { status: 500 }
