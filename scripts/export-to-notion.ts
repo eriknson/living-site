@@ -1,8 +1,9 @@
 /**
- * Export existing posts to Notion
+ * Export existing posts to Notion WITH IMAGES
  *
- * This is a one-time script to bootstrap your Notion Posts database
- * with the existing posts from data/posts/*.json
+ * This parses contentHtml to extract images and their positions,
+ * then creates Notion pages with images as external URLs pointing
+ * to the live Vercel deployment (eriks.design).
  *
  * Usage:
  *   NOTION_TOKEN=secret_xxx NOTION_DATABASE_ID=xxx pnpm run export-to-notion
@@ -11,12 +12,16 @@
 import { Client } from "@notionhq/client";
 import { readFileSync, readdirSync } from "fs";
 import path from "path";
+import * as cheerio from "cheerio";
 
 const notion = new Client({ auth: process.env.NOTION_TOKEN });
 const DATABASE_ID = process.env.NOTION_DATABASE_ID!;
+const SITE_URL = "https://eriks.design";
 
 if (!process.env.NOTION_TOKEN || !process.env.NOTION_DATABASE_ID) {
-  console.error("Missing NOTION_TOKEN or NOTION_DATABASE_ID environment variables");
+  console.error(
+    "Missing NOTION_TOKEN or NOTION_DATABASE_ID environment variables"
+  );
   process.exit(1);
 }
 
@@ -26,309 +31,315 @@ interface Post {
   publishedAt: string;
   status: "published" | "draft";
   content: string;
+  contentHtml: string;
   externalUrl?: string;
 }
 
+type NotionBlock = {
+  type: string;
+  [key: string]: any;
+};
+
 /**
- * Convert markdown content to Notion blocks
- * This is a simplified converter - handles common cases
+ * Parse HTML content into Notion blocks
+ * This properly extracts images and their positions
  */
-function markdownToNotionBlocks(markdown: string): any[] {
-  const blocks: any[] = [];
-  const lines = markdown.split("\n");
-  let i = 0;
+function htmlToNotionBlocks(html: string): NotionBlock[] {
+  const $ = cheerio.load(html);
+  const blocks: NotionBlock[] = [];
 
-  while (i < lines.length) {
-    const line = lines[i];
+  // Process each top-level element
+  $("body")
+    .children()
+    .each((_, element) => {
+      const el = $(element);
+      const tagName = element.tagName?.toLowerCase();
 
-    // Skip empty lines
-    if (line.trim() === "") {
-      i++;
-      continue;
-    }
+      switch (tagName) {
+        case "p": {
+          const text = el.text().trim();
+          if (text) {
+            blocks.push({
+              type: "paragraph",
+              paragraph: {
+                rich_text: parseRichText(el, $),
+              },
+            });
+          }
+          break;
+        }
 
-    // Headings
-    if (line.startsWith("## ")) {
-      blocks.push({
-        type: "heading_2",
-        heading_2: {
-          rich_text: [{ type: "text", text: { content: line.slice(3).trim() } }],
-        },
-      });
-      i++;
-      continue;
-    }
+        case "h2": {
+          blocks.push({
+            type: "heading_2",
+            heading_2: {
+              rich_text: [{ type: "text", text: { content: el.text().trim() } }],
+            },
+          });
+          break;
+        }
 
-    if (line.startsWith("### ")) {
-      blocks.push({
-        type: "heading_3",
-        heading_3: {
-          rich_text: [{ type: "text", text: { content: line.slice(4).trim() } }],
-        },
-      });
-      i++;
-      continue;
-    }
+        case "h3": {
+          blocks.push({
+            type: "heading_3",
+            heading_3: {
+              rich_text: [{ type: "text", text: { content: el.text().trim() } }],
+            },
+          });
+          break;
+        }
 
-    // Horizontal rule
-    if (line.trim() === "---") {
-      blocks.push({ type: "divider", divider: {} });
-      i++;
-      continue;
-    }
+        case "hr": {
+          blocks.push({ type: "divider", divider: {} });
+          break;
+        }
 
-    // Code blocks
-    if (line.startsWith("```")) {
-      const language = line.slice(3).trim() || "plain text";
-      const codeLines: string[] = [];
-      i++;
-      while (i < lines.length && !lines[i].startsWith("```")) {
-        codeLines.push(lines[i]);
-        i++;
-      }
-      i++; // Skip closing ```
-
-      const codeContent = codeLines.join("\n");
-      // Notion has a 2000 character limit per rich_text block
-      if (codeContent.length <= 2000) {
-        blocks.push({
-          type: "code",
-          code: {
-            rich_text: [{ type: "text", text: { content: codeContent } }],
-            language: mapLanguage(language),
-          },
-        });
-      } else {
-        // Split into multiple code blocks if too long
-        const chunks = splitIntoChunks(codeContent, 1900);
-        for (const chunk of chunks) {
+        case "pre": {
+          const code = el.find("code").text();
+          // Try to detect language from class or content
+          const language = detectLanguage(code);
           blocks.push({
             type: "code",
             code: {
-              rich_text: [{ type: "text", text: { content: chunk } }],
-              language: mapLanguage(language),
+              rich_text: [{ type: "text", text: { content: code.slice(0, 2000) } }],
+              language: language,
             },
           });
+          break;
+        }
+
+        case "figure": {
+          const img = el.find("img");
+          if (img.length) {
+            const src = img.attr("src") || "";
+            const alt = img.attr("alt") || "";
+            const absoluteUrl = src.startsWith("/") ? `${SITE_URL}${src}` : src;
+
+            blocks.push({
+              type: "image",
+              image: {
+                type: "external",
+                external: { url: absoluteUrl },
+                caption: alt ? [{ type: "text", text: { content: alt } }] : [],
+              },
+            });
+          }
+          break;
+        }
+
+        case "div": {
+          // Check for tweet embed
+          const blockquote = el.find("blockquote.twitter-tweet");
+          if (blockquote.length) {
+            const tweetUrl = blockquote.find("a").attr("href") || "";
+            if (tweetUrl) {
+              blocks.push({
+                type: "bookmark",
+                bookmark: { url: tweetUrl },
+              });
+            }
+          } else {
+            // Check for image grid
+            el.find("img").each((_, imgEl) => {
+              const img = $(imgEl);
+              const src = img.attr("src") || "";
+              const alt = img.attr("alt") || "";
+              const absoluteUrl = src.startsWith("/") ? `${SITE_URL}${src}` : src;
+
+              blocks.push({
+                type: "image",
+                image: {
+                  type: "external",
+                  external: { url: absoluteUrl },
+                  caption: alt ? [{ type: "text", text: { content: alt } }] : [],
+                },
+              });
+            });
+          }
+          break;
+        }
+
+        case "ul": {
+          el.find("li").each((_, liEl) => {
+            blocks.push({
+              type: "bulleted_list_item",
+              bulleted_list_item: {
+                rich_text: [{ type: "text", text: { content: $(liEl).text().trim() } }],
+              },
+            });
+          });
+          break;
+        }
+
+        case "ol": {
+          el.find("li").each((_, liEl) => {
+            blocks.push({
+              type: "numbered_list_item",
+              numbered_list_item: {
+                rich_text: [{ type: "text", text: { content: $(liEl).text().trim() } }],
+              },
+            });
+          });
+          break;
         }
       }
-      continue;
-    }
-
-    // Tweet embeds: <tweet>url</tweet>
-    const tweetMatch = line.match(/<tweet>(.*?)<\/tweet>/);
-    if (tweetMatch) {
-      blocks.push({
-        type: "bookmark",
-        bookmark: {
-          url: tweetMatch[1].trim(),
-        },
-      });
-      i++;
-      continue;
-    }
-
-    // Bullet lists
-    if (line.startsWith("- ")) {
-      blocks.push({
-        type: "bulleted_list_item",
-        bulleted_list_item: {
-          rich_text: parseInlineMarkdown(line.slice(2).trim()),
-        },
-      });
-      i++;
-      continue;
-    }
-
-    // Numbered lists
-    const numberedMatch = line.match(/^\d+\.\s+(.*)$/);
-    if (numberedMatch) {
-      blocks.push({
-        type: "numbered_list_item",
-        numbered_list_item: {
-          rich_text: parseInlineMarkdown(numberedMatch[1].trim()),
-        },
-      });
-      i++;
-      continue;
-    }
-
-    // Images: ![alt](url)
-    const imageMatch = line.match(/!\[(.*?)\]\((.*?)\)/);
-    if (imageMatch) {
-      const [, alt, url] = imageMatch;
-      // Convert relative URLs to absolute
-      const absoluteUrl = url.startsWith("/")
-        ? `https://eriks.design${url}`
-        : url;
-      blocks.push({
-        type: "image",
-        image: {
-          type: "external",
-          external: { url: absoluteUrl },
-          caption: alt
-            ? [{ type: "text", text: { content: alt } }]
-            : [],
-        },
-      });
-      i++;
-      continue;
-    }
-
-    // Regular paragraph - collect consecutive non-empty lines
-    const paragraphLines: string[] = [line];
-    i++;
-    while (
-      i < lines.length &&
-      lines[i].trim() !== "" &&
-      !lines[i].startsWith("#") &&
-      !lines[i].startsWith("```") &&
-      !lines[i].startsWith("- ") &&
-      !lines[i].match(/^\d+\.\s/) &&
-      !lines[i].startsWith("---") &&
-      !lines[i].match(/<tweet>/)
-    ) {
-      paragraphLines.push(lines[i]);
-      i++;
-    }
-
-    const paragraphText = paragraphLines.join(" ").trim();
-    if (paragraphText) {
-      // Notion has 2000 char limit per rich_text array
-      const richText = parseInlineMarkdown(paragraphText);
-      blocks.push({
-        type: "paragraph",
-        paragraph: { rich_text: richText },
-      });
-    }
-  }
+    });
 
   return blocks;
 }
 
 /**
- * Parse inline markdown (bold, italic, code, links) into Notion rich_text
+ * Parse inline elements into Notion rich_text array
  */
-function parseInlineMarkdown(text: string): any[] {
+function parseRichText(el: cheerio.Cheerio<any>, $: cheerio.CheerioAPI): any[] {
   const result: any[] = [];
 
-  // Simple regex-based parser for inline elements
-  // This handles: **bold**, *italic*, `code`, [link](url)
-  let remaining = text;
+  el.contents().each((_, node) => {
+    if (node.type === "text") {
+      const text = $(node).text();
+      if (text) {
+        result.push({ type: "text", text: { content: text } });
+      }
+    } else if (node.type === "tag") {
+      const tagEl = $(node);
+      const tagName = node.tagName?.toLowerCase();
 
-  while (remaining.length > 0) {
-    // Link: [text](url)
-    const linkMatch = remaining.match(/^\[([^\]]+)\]\(([^)]+)\)/);
-    if (linkMatch) {
-      result.push({
-        type: "text",
-        text: {
-          content: linkMatch[1],
-          link: { url: linkMatch[2] },
-        },
-      });
-      remaining = remaining.slice(linkMatch[0].length);
-      continue;
+      switch (tagName) {
+        case "strong":
+        case "b":
+          result.push({
+            type: "text",
+            text: { content: tagEl.text() },
+            annotations: { bold: true },
+          });
+          break;
+
+        case "em":
+        case "i":
+          result.push({
+            type: "text",
+            text: { content: tagEl.text() },
+            annotations: { italic: true },
+          });
+          break;
+
+        case "code":
+          result.push({
+            type: "text",
+            text: { content: tagEl.text() },
+            annotations: { code: true },
+          });
+          break;
+
+        case "a": {
+          const href = tagEl.attr("href") || "";
+          result.push({
+            type: "text",
+            text: {
+              content: tagEl.text(),
+              link: href ? { url: href } : undefined,
+            },
+          });
+          break;
+        }
+
+        default:
+          result.push({ type: "text", text: { content: tagEl.text() } });
+      }
     }
+  });
 
-    // Bold: **text**
-    const boldMatch = remaining.match(/^\*\*([^*]+)\*\*/);
-    if (boldMatch) {
-      result.push({
-        type: "text",
-        text: { content: boldMatch[1] },
-        annotations: { bold: true },
-      });
-      remaining = remaining.slice(boldMatch[0].length);
-      continue;
-    }
+  return result.length > 0 ? result : [{ type: "text", text: { content: "" } }];
+}
 
-    // Italic: *text* (but not **)
-    const italicMatch = remaining.match(/^\*([^*]+)\*/);
-    if (italicMatch && !remaining.startsWith("**")) {
-      result.push({
-        type: "text",
-        text: { content: italicMatch[1] },
-        annotations: { italic: true },
-      });
-      remaining = remaining.slice(italicMatch[0].length);
-      continue;
-    }
+/**
+ * Detect programming language from code content
+ */
+function detectLanguage(code: string): string {
+  if (code.includes("import ") || code.includes("export ")) return "typescript";
+  if (code.includes("function ") || code.includes("const ")) return "javascript";
+  if (code.includes("npm ") || code.includes("pnpm ") || code.includes("npx ")) return "bash";
+  if (code.includes("git ")) return "bash";
+  return "plain text";
+}
 
-    // Inline code: `text`
-    const codeMatch = remaining.match(/^`([^`]+)`/);
-    if (codeMatch) {
-      result.push({
-        type: "text",
-        text: { content: codeMatch[1] },
-        annotations: { code: true },
-      });
-      remaining = remaining.slice(codeMatch[0].length);
-      continue;
-    }
-
-    // Plain text up to the next special character
-    const plainMatch = remaining.match(/^[^*`\[]+/);
-    if (plainMatch) {
-      result.push({
-        type: "text",
-        text: { content: plainMatch[0] },
-      });
-      remaining = remaining.slice(plainMatch[0].length);
-      continue;
-    }
-
-    // Single special character (fallback)
-    result.push({
-      type: "text",
-      text: { content: remaining[0] },
+/**
+ * Check if a page already exists for this slug
+ */
+async function findExistingPage(slug: string): Promise<string | null> {
+  try {
+    const response = await notion.databases.query({
+      database_id: DATABASE_ID,
+      filter: {
+        property: "Slug",
+        rich_text: { equals: slug },
+      },
     });
-    remaining = remaining.slice(1);
+
+    if (response.results.length > 0) {
+      return response.results[0].id;
+    }
+  } catch (error) {
+    // Property might not exist yet
+  }
+  return null;
+}
+
+/**
+ * Delete all blocks from a page (to replace content)
+ */
+async function clearPageContent(pageId: string): Promise<void> {
+  const blocks = await notion.blocks.children.list({ block_id: pageId });
+
+  for (const block of blocks.results) {
+    try {
+      await notion.blocks.delete({ block_id: block.id });
+    } catch (error) {
+      // Ignore errors
+    }
+  }
+}
+
+/**
+ * Create or update a page in Notion
+ */
+async function upsertNotionPage(post: Post): Promise<string> {
+  console.log(`\nProcessing: ${post.title}`);
+
+  // Check if page exists
+  const existingPageId = await findExistingPage(post.slug);
+
+  if (existingPageId) {
+    console.log(`  Found existing page: ${existingPageId}`);
+    console.log(`  Clearing old content...`);
+    await clearPageContent(existingPageId);
+
+    // Add new content
+    const blocks = htmlToNotionBlocks(post.contentHtml);
+    console.log(`  Adding ${blocks.length} blocks...`);
+
+    for (let i = 0; i < blocks.length; i += 100) {
+      const chunk = blocks.slice(i, i + 100);
+      try {
+        await notion.blocks.children.append({
+          block_id: existingPageId,
+          children: chunk,
+        });
+      } catch (error: any) {
+        console.error(`  Error adding blocks ${i}-${i + chunk.length}:`, error.message);
+      }
+    }
+
+    console.log(`  ✓ Updated: ${existingPageId}`);
+    return existingPageId;
   }
 
-  return result;
-}
+  // Create new page
+  console.log(`  Creating new page...`);
 
-/**
- * Map common language names to Notion's supported languages
- */
-function mapLanguage(lang: string): string {
-  const mapping: Record<string, string> = {
-    ts: "typescript",
-    tsx: "typescript",
-    js: "javascript",
-    jsx: "javascript",
-    sh: "bash",
-    shell: "bash",
-    yml: "yaml",
-    "": "plain text",
-  };
-  return mapping[lang.toLowerCase()] || lang.toLowerCase();
-}
-
-/**
- * Split text into chunks of max size
- */
-function splitIntoChunks(text: string, maxSize: number): string[] {
-  const chunks: string[] = [];
-  let start = 0;
-  while (start < text.length) {
-    chunks.push(text.slice(start, start + maxSize));
-    start += maxSize;
-  }
-  return chunks;
-}
-
-/**
- * Create a page in Notion for a post
- */
-async function createNotionPage(post: Post): Promise<string> {
-  console.log(`Creating page for: ${post.title}`);
-
-  // Create the page with properties
   const page = await notion.pages.create({
     parent: { database_id: DATABASE_ID },
     properties: {
-      // Title is the default "Name" property in Notion databases
       title: {
         title: [{ type: "text", text: { content: post.title } }],
       },
@@ -350,9 +361,9 @@ async function createNotionPage(post: Post): Promise<string> {
   });
 
   // Add content blocks
-  const blocks = markdownToNotionBlocks(post.content);
+  const blocks = htmlToNotionBlocks(post.contentHtml);
+  console.log(`  Adding ${blocks.length} blocks...`);
 
-  // Notion API limits to 100 blocks per request
   for (let i = 0; i < blocks.length; i += 100) {
     const chunk = blocks.slice(i, i + 100);
     try {
@@ -362,7 +373,6 @@ async function createNotionPage(post: Post): Promise<string> {
       });
     } catch (error: any) {
       console.error(`  Error adding blocks ${i}-${i + chunk.length}:`, error.message);
-      // Continue with remaining blocks
     }
   }
 
@@ -374,35 +384,40 @@ async function createNotionPage(post: Post): Promise<string> {
  * Main function
  */
 async function main() {
+  console.log("=== Export Posts to Notion (with images) ===\n");
+
   const postsDir = path.join(process.cwd(), "data/posts");
   const files = readdirSync(postsDir).filter(
     (f) => f.endsWith(".json") && f !== "index.json"
   );
 
-  console.log(`Found ${files.length} posts to export\n`);
+  console.log(`Found ${files.length} posts to export`);
 
-  const results: { slug: string; notionId: string; error?: string }[] = [];
+  const results: { slug: string; notionId: string; error?: string; imageCount: number }[] = [];
 
   for (const file of files) {
     const filePath = path.join(postsDir, file);
     const post: Post = JSON.parse(readFileSync(filePath, "utf-8"));
 
-    // Skip posts with external URLs (they're hosted elsewhere)
+    // Skip posts with external URLs
     if (post.externalUrl) {
-      console.log(`Skipping ${post.slug} (external URL)`);
-      results.push({ slug: post.slug, notionId: "skipped-external" });
+      console.log(`\nSkipping ${post.slug} (external URL)`);
+      results.push({ slug: post.slug, notionId: "skipped-external", imageCount: 0 });
       continue;
     }
 
-    try {
-      const notionId = await createNotionPage(post);
-      results.push({ slug: post.slug, notionId });
+    // Count images for reporting
+    const imageCount = (post.contentHtml.match(/<img/g) || []).length;
 
-      // Rate limiting - Notion API has limits
+    try {
+      const notionId = await upsertNotionPage(post);
+      results.push({ slug: post.slug, notionId, imageCount });
+
+      // Rate limiting
       await new Promise((resolve) => setTimeout(resolve, 500));
     } catch (error: any) {
       console.error(`  ✗ Error: ${error.message}`);
-      results.push({ slug: post.slug, notionId: "", error: error.message });
+      results.push({ slug: post.slug, notionId: "", error: error.message, imageCount });
     }
   }
 
@@ -412,15 +427,12 @@ async function main() {
     if (r.error) {
       console.log(`  ✗ ${r.slug}: ${r.error}`);
     } else {
-      console.log(`  ✓ ${r.slug}: ${r.notionId}`);
+      console.log(`  ✓ ${r.slug}: ${r.notionId} (${r.imageCount} images)`);
     }
   }
 
-  console.log("\nNext steps:");
-  console.log("1. Open your Notion database and verify the posts look correct");
-  console.log("2. Rename the 'title' column to 'Title' if needed");
-  console.log("3. Add the Slug, Published, Status, and External URL properties if they weren't auto-created");
-  console.log("4. Share the database with your Notion integration");
+  const totalImages = results.reduce((sum, r) => sum + r.imageCount, 0);
+  console.log(`\nTotal images exported: ${totalImages}`);
 }
 
 main().catch((error) => {

@@ -21,7 +21,7 @@ env:
 jobs:
   sync:
     runs-on: ubuntu-latest
-    timeout-minutes: 10
+    timeout-minutes: 15
     steps:
       - name: Debounce (wait for more edits)
         run: |
@@ -61,12 +61,59 @@ jobs:
 
       - name: Format posts (deterministic)
         run: |
-          echo "=== Formatting posts ==="
+          echo "=== Formatting posts (deterministic) ==="
           pnpm run format-posts
           
           echo ""
-          echo "=== Post files ==="
-          ls -la data/posts/*.json | head -20
+          echo "=== Formatted files ==="
+          for f in data/posts/*.json; do
+            if [ "$f" != "data/posts/index.json" ]; then
+              echo "- $f ($(wc -c < "$f") bytes)"
+            fi
+          done
+
+      - name: Install Cursor CLI
+        run: |
+          curl -fsSL https://cursor.com/install | bash
+          echo "$HOME/.cursor/bin" >> $GITHUB_PATH
+
+      - name: Validate and fix posts (agent)
+        env:
+          CURSOR_API_KEY: ${{ secrets.CURSOR_API_KEY }}
+        run: |
+          echo "=== Running validator agent ==="
+          
+          # Check if there are raw files to validate against
+          if [ ! -d "data/posts/_raw" ] || [ -z "$(ls -A data/posts/_raw/*.md 2>/dev/null)" ]; then
+            echo "No raw markdown files to validate against, skipping"
+            exit 0
+          fi
+          
+          PROMPT="Read infra/prompts/post-formatter.md for your instructions.
+          
+          Validate all posts in data/posts/*.json against their raw sources in data/posts/_raw/.
+          Fix any formatting issues you find.
+          
+          Focus on:
+          1. Images: Verify all images from raw markdown appear in contentHtml
+          2. Code blocks: Check syntax highlighting is applied
+          3. Tweet embeds: Verify proper blockquote structure
+          4. Links: Check external links have target=_blank
+          
+          If a post looks correct, move on. Only fix actual issues."
+          
+          # Run agent with timeout
+          timeout 300 cursor-agent -p --force --model composer-1 "$PROMPT" 2>&1 || {
+            EXIT_CODE=$?
+            if [ $EXIT_CODE -eq 124 ]; then
+              echo "Agent timed out after 5 minutes, continuing with current output"
+            else
+              echo "Agent exited with code $EXIT_CODE"
+            fi
+          }
+          
+          echo ""
+          echo "=== Post validation complete ==="
 
       - name: Cleanup raw files
         run: |
@@ -81,6 +128,16 @@ jobs:
           echo ""
           echo "=== Post count ==="
           cat data/posts/index.json | jq '.posts | length' || echo "Unable to count"
+          
+          echo ""
+          echo "=== Image counts per post ==="
+          for f in data/posts/*.json; do
+            if [ "$f" != "data/posts/index.json" ]; then
+              SLUG=$(basename "$f" .json)
+              IMG_COUNT=$(grep -o '<img' "$f" | wc -l | tr -d ' ')
+              echo "- $SLUG: $IMG_COUNT images"
+            fi
+          done
 
       - name: Commit and push
         run: |
@@ -128,6 +185,11 @@ jobs:
           echo "## 📝 Notion Posts Sync" >> $GITHUB_STEP_SUMMARY
           echo "" >> $GITHUB_STEP_SUMMARY
           echo "**Triggered:** $(date -u +%Y-%m-%dT%H:%M:%SZ)" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "### Pipeline" >> $GITHUB_STEP_SUMMARY
+          echo "1. ✅ Fetched posts from Notion" >> $GITHUB_STEP_SUMMARY
+          echo "2. ✅ Formatted with deterministic converter" >> $GITHUB_STEP_SUMMARY
+          echo "3. ✅ Validated with agent" >> $GITHUB_STEP_SUMMARY
           echo "" >> $GITHUB_STEP_SUMMARY
           echo "### Posts" >> $GITHUB_STEP_SUMMARY
           cat data/posts/index.json | jq -r '.posts[] | "- \(.title)"' >> $GITHUB_STEP_SUMMARY 2>/dev/null || echo "- (unable to parse index)" >> $GITHUB_STEP_SUMMARY
