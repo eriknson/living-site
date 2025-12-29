@@ -228,10 +228,27 @@ async function processImages(
  * IMPORTANT: Preserves code block formatting exactly (for ASCII art, etc.)
  */
 function cleanMarkdown(markdown: string): string {
+  // First, fix malformed code blocks from notion-to-md
+  // It outputs: ```\n\nlanguage\ncode\n``` instead of ```language\ncode\n```
+  let result = markdown;
+  
+  // Fix code blocks where language is on a separate line after blank line(s)
+  // Pattern: ``` followed by newlines, then a language identifier, then actual code
+  result = result.replace(
+    /```\s*\n\s*\n(bash|javascript|typescript|yaml|markdown|python|json|html|css|sh|shell|ts|js)\n/g,
+    "```$1\n"
+  );
+  
+  // Also handle case where there's just one newline before language
+  result = result.replace(
+    /```\s*\n(bash|javascript|typescript|yaml|markdown|python|json|html|css|sh|shell|ts|js)\n/g,
+    "```$1\n"
+  );
+
   // Split content into code blocks and non-code blocks
   // We preserve code blocks exactly as-is
   const codeBlockRegex = /(```[\s\S]*?```)/g;
-  const parts = markdown.split(codeBlockRegex);
+  const parts = result.split(codeBlockRegex);
 
   const processed = parts.map((part, index) => {
     // Odd indices are code blocks (captured groups)
@@ -242,21 +259,21 @@ function cleanMarkdown(markdown: string): string {
     }
 
     // Process non-code-block content
-    let result = part;
+    let r = part;
 
     // Remove excessive blank lines (keep max 2)
-    result = result.replace(/\n{3,}/g, "\n\n");
+    r = r.replace(/\n{3,}/g, "\n\n");
 
     // Fix heading spacing
-    result = result.replace(/\n(#{1,3}\s)/g, "\n\n$1");
+    r = r.replace(/\n(#{1,3}\s)/g, "\n\n$1");
 
     // Clean up double spaces (but NOT in code blocks - they're preserved above)
-    result = result.replace(/ {2,}/g, " ");
+    r = r.replace(/ {2,}/g, " ");
 
-    return result;
+    return r;
   });
 
-  let result = processed.join("");
+  result = processed.join("");
 
   // Ensure code blocks have proper spacing (before and after)
   result = result.replace(/([^\n])(```)/g, "$1\n\n$2");
