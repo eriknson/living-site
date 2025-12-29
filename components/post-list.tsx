@@ -12,9 +12,10 @@ function formatDate(dateStr: string) {
 
 interface PostListProps {
   posts: PostMeta[];
+  excludeStaticLink?: boolean;
 }
 
-export function PostList({ posts }: PostListProps) {
+export function PostList({ posts, excludeStaticLink = false }: PostListProps) {
   if (posts.length === 0) return null;
 
   // Sort by date, newest first
@@ -65,26 +66,28 @@ export function PostList({ posts }: PostListProps) {
           </li>
         ))}
         {/* Static external link */}
-        <li className="flex flex-col sm:flex-row sm:items-baseline sm:justify-between gap-1 sm:gap-4">
-          <div className="flex items-baseline gap-3 min-w-0">
-            <a
-              href="https://uu.diva-portal.org/smash/record.jsf?pid=diva2:1453018"
-              target="_blank"
-              rel="noopener noreferrer"
-              className="underline underline-offset-2 decoration-black/20 dark:decoration-white/20 hover:decoration-black/40 dark:hover:decoration-white/40 transition-colors truncate"
-            >
-              Go with the flow{" "}
-              <span className="text-black/35 dark:text-white/35">↗</span>
-            </a>
-            <span className="text-[14px] text-black/35 dark:text-white/35 whitespace-nowrap hidden sm:inline">
-              45 min read
+        {!excludeStaticLink && (
+          <li className="flex flex-col sm:flex-row sm:items-baseline sm:justify-between gap-1 sm:gap-4">
+            <div className="flex items-baseline gap-3 min-w-0">
+              <a
+                href="https://uu.diva-portal.org/smash/record.jsf?pid=diva2:1453018"
+                target="_blank"
+                rel="noopener noreferrer"
+                className="underline underline-offset-2 decoration-black/20 dark:decoration-white/20 hover:decoration-black/40 dark:hover:decoration-white/40 transition-colors truncate"
+              >
+                Go with the flow{" "}
+                <span className="text-black/35 dark:text-white/35">↗</span>
+              </a>
+              <span className="text-[14px] text-black/35 dark:text-white/35 whitespace-nowrap hidden sm:inline">
+                45 min read
+              </span>
+            </div>
+            <span className="text-[14px] text-black/35 dark:text-white/35 whitespace-nowrap">
+              August 4, 2020
+              <span className="sm:hidden"> · 45 min read</span>
             </span>
-          </div>
-          <span className="text-[14px] text-black/35 dark:text-white/35 whitespace-nowrap">
-            August 4, 2020
-            <span className="sm:hidden"> · 45 min read</span>
-          </span>
-        </li>
+          </li>
+        )}
       </ul>
     </div>
   );
