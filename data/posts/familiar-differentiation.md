@@ -10,7 +10,7 @@ The paradigm of building software using AI (via e.g. [Cursor](https://www.cursor
 
 I love this, but I've noticed it comes at (least for now) a cost. When every app is built on the same foundations and models, the result is a smörgåsbord of experiences that lack personality, originality, and distinguishability.
 
-So let’s dive in to how products with millions of users create an edge, and attempt to outline some best practices and high-level principles to make your designs stand out.
+So let’s dive in to how products with millions of users create their edge, and outline some best practices and high-level principles to make your designs stand out.
 
 
 ## Reinvent and reuse
