@@ -10,41 +10,38 @@ Most websites go stale sooner or later. You make them once, update them every fe
 
 I wanted to try making a website that rebuilds itself by spawning Cursor agents via GitHub Actions. CI as the runtime, no user interaction needed. The agents maintain the site. And this is how I built it.
 
-
 ```ascii art
-Cron GitHub Actions Cursor CLI Repository
- │ │ │ │
- │───trigger───────►│ │ │
- │ │ │ │
- │ ├── fetch GitHub │ │
- │ ├── fetch Spotify │ │
- │ ├── fetch X (Typefully) │
- │ ├── fetch weather (lol) │
- │ │ │ │
- │ ├── curator agent │ │
- │ │ └► brief.json │ │
- │ │ │ │
- │ │ ┌──────────────────┤ │
- │ │ │ matrix: 4 models │ │
- │ │ ├──────────────────┤ │
- │ ├─┼─► cursor-agent -p (Opus) │
- │ ├─┼─► cursor-agent -p (Composer) │
- │ ├─┼─► cursor-agent -p (Codex) │
- │ ├─┼─► cursor-agent -p (Gemini) │
- │ │ └──────────────────┤ │
- │ │ │ │
- │ │◄── generated/* ────┤ │
- │ │ (sandboxed) │ │
- │ │ │ │
- │ ├── verify sandbox │ │
- │ ├── git add generated/──────────────────►│
- │ ├── commit + deploy ────────────────────►│
- │ │ │ │
+Cron          GitHub Actions        Cursor CLI          Repository
+ │                  │                    │                   │
+ │───trigger───────►│                    │                   │
+ │                  │                    │                   │
+ │                  ├── fetch GitHub     │                   │
+ │                  ├── fetch Spotify    │                   │
+ │                  ├── fetch X (Typefully)                  │
+ │                  ├── fetch weather (lol)                  │
+ │                  │                    │                   │
+ │                  ├── curator agent    │                   │
+ │                  │   └► brief.json    │                   │
+ │                  │                    │                   │
+ │                  │ ┌──────────────────┤                   │
+ │                  │ │ matrix: 4 models │                   │
+ │                  │ ├──────────────────┤                   │
+ │                  ├─┼─► cursor-agent -p (Opus)             │
+ │                  ├─┼─► cursor-agent -p (Composer)         │
+ │                  ├─┼─► cursor-agent -p (Codex)            │
+ │                  ├─┼─► cursor-agent -p (Gemini)           │
+ │                  │ └──────────────────┤                   │
+ │                  │                    │                   │
+ │                  │◄── generated/* ────┤                   │
+ │                  │    (sandboxed)     │                   │
+ │                  │                    │                   │
+ │                  ├── verify sandbox   │                   │
+ │                  ├── git add generated/──────────────────►│
+ │                  ├── commit + deploy ────────────────────►│
+ │                  │                    │                   │
  │◄─────────────────┼────────────────────┼── site live ✓ ────┤
- │ │ │ │
-
+ │                  │                    │                   │
 ```
-
 
 
 ## Context
@@ -53,12 +50,11 @@ The workflow running via `regenerate.yml` first pulls fresh data from multiple s
 
 A dedicated agent (the "curator") runs first. Its job is to read all the raw data and produce a structured brief.
 
-
-```bash
-cursor-agent -p --force --model composer-1 "$PROMPT"
-
 ```
 
+bash
+cursor-agent -p --force --model composer-1 "$PROMPT"
+```
 
 The curator also receives a reference version of the site I manually designed. It extracts the semantic structure (headings, sections, links) and passes that along too. This gives the generators a visual and structural baseline. Not a blank canvas, but a guided one.
 
@@ -85,43 +81,38 @@ The site is live before I wake up.
 
 The workflow uses a matrix to run four models in parallel:
 
-
-```yaml
-strategy:
- matrix:
- model:
- - claude-4.5-opus
- - composer-1
- - gpt-5.1-codex
- - gemini-3-pro
-
 ```
 
+yaml
+strategy:
+  matrix:
+    model:
+      - claude-4.5-opus
+      - composer-1
+      - gpt-5.1-codex
+      - gemini-3-pro
+```
 
 Each model gets its own isolated workspace via `git worktree`. The agent sees only what it needs: the brief and a reference version. No build history, no other models' outputs.
 
+```
 
-```bash
-
+bash
 # Create isolated workspace from current commit
 git worktree add /tmp/clean-gen --detach HEAD
-
 
 # Remove all build history so agent starts fresh
 rm -rf /tmp/clean-gen/generated/*
 rm -rf /tmp/clean-gen/public/builds/
-
 ```
-
 
 Then each agent runs with a single command:
 
-
-```bash
-cursor-agent -p --model $MODEL "$PROMPT"
-
 ```
 
+bash
+cursor-agent -p --model $MODEL "$PROMPT"
+```
 
 The `-p` flag means non-interactive. No confirmations, no waiting. The agent reads the brief, generates the output, done.
 
@@ -159,31 +150,28 @@ This pattern scales to any use case. For a product landing page, the sandbox mig
 
 Enforcement happens at multiple layers. The prompt itself includes the constraint:
 
-
-```markdown
-You may ONLY create or modify files inside the generated/ folder.
-
 ```
 
+markdown
+You may ONLY create or modify files inside the generated/ folder.
+```
 
 After the agent runs, a verification step checks for violations:
 
-
-```bash
-git diff --name-only | grep -v '^generated/' && exit 1
-
 ```
 
+bash
+git diff --name-only | grep -v '^generated/' && exit 1
+```
 
 If anything outside the sandbox changed, the build fails. Finally, the commit step only stages files in the sandbox:
 
-
-```bash
-git add generated/
-git commit -m "Regenerate site"
-
 ```
 
+bash
+git add generated/
+git commit -m "Regenerate site"
+```
 
 Everything else is ignored.
 
@@ -196,28 +184,26 @@ How do you render arbitrary HTML inside a Next.js app without style conflicts?
 
 Shadow DOM solves this elegantly. It's a browser API that creates an isolated DOM subtree with its own style scope. Styles inside can't leak out, and styles outside can't leak in. But unlike iframes, the content is part of the same document, so scrolling works naturally.
 
-
-```javascript
-const shadow = container.attachShadow({ mode: "open" });
-shadow.innerHTML = `<style>${css}</style>${body}`;
-
 ```
 
+javascript
+const shadow = container.attachShadow({ mode: "open" });
+shadow.innerHTML = `<style>${css}</style>${body}`;
+```
 
 Complete style isolation. Native scrolling. No iframe jank.
 
 The trick is rewriting CSS selectors. Generated content targets `body`, but inside Shadow DOM, we need to target our wrapper:
 
-
-```javascript
-function rewriteBodySelectors(css: string): string {
- return css
- .replace(/\bbody\s*\{/g, "body, .shadow-root {")
- .replace(/\bbody(\.[a-zA-Z_-][\w-]*)\s*\{/g, "body$1, .shadow-root$1 {");
-}
-
 ```
 
+javascript
+function rewriteBodySelectors(css: string): string {
+  return css
+    .replace(/\bbody\s*\{/g, "body, .shadow-root {")
+    .replace(/\bbody(\.[a-zA-Z_-][\w-]*)\s*\{/g, "body$1, .shadow-root$1 {");
+}
+```
 
 This makes Shadow DOM practical for rendering user-generated or AI-generated content in any React app. You get the isolation benefits of iframes without the nested scrolling issues or performance overhead.
 

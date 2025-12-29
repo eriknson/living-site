@@ -10,23 +10,20 @@ There's always been this gap between seeing something in the browser and actuall
 
 I wanted to try closing that gap. Point at something, describe what you want, and let the agent handle the rest.
 
-
 ```plain text
-Browser Overlay API Route cursor-agent Files
- │ │ │ │ │
- │─select elem───►│ │ │ │
- │ │ │ │ │
- │ │─POST context───►│ │ │
- │ │ │ │ │
- │ │ │─spawn agent─────►│ │
- │ │ │ │ │
- │ │ │ │─edit file────►│
- │ │ │ │ │
- │◄───────────────┼─────────────────┼──────────────────┼───HMR reload──┤
- │ │ │ │ │
-
+Browser          Overlay          API Route         cursor-agent      Files
+   │                │                 │                  │               │
+   │─select elem───►│                 │                  │               │
+   │                │                 │                  │               │
+   │                │─POST context───►│                  │               │
+   │                │                 │                  │               │
+   │                │                 │─spawn agent─────►│               │
+   │                │                 │                  │               │
+   │                │                 │                  │─edit file────►│
+   │                │                 │                  │               │
+   │◄───────────────┼─────────────────┼──────────────────┼───HMR reload──┤
+   │                │                 │                  │               │
 ```
-
 
 
 ## How it works
@@ -48,29 +45,28 @@ The overlay is a React component you add to your root layout. It only renders in
 
 When active, it highlights elements as you hover and lets you select them. Think of it like the browser devtools element picker, but instead of inspecting, you're setting up an edit.
 
+```
 
-```typescript
+typescript
 import dynamic from 'next/dynamic';
 
 const ShipflowOverlay = dynamic(() =>
- import('@shipflow/overlay').then((mod) => ({
- default: mod.ShipflowOverlay,
- }))
+  import('@shipflow/overlay').then((mod) => ({
+    default: mod.ShipflowOverlay,
+  }))
 );
 
 export default function RootLayout({ children }) {
- return (
- <html lang="en">
- <body>
- {children}
- {process.env.NODE_ENV === 'development' && <ShipflowOverlay />}
- </body>
- </html>
- );
+  return (
+    <html lang="en">
+      <body>
+        {children}
+        {process.env.NODE_ENV === 'development' && <ShipflowOverlay />}
+      </body>
+    </html>
+  );
 }
-
 ```
-
 
 The overlay is invisible until you activate it. No UI clutter, no extra chrome. Just there when you need it.
 
@@ -81,8 +77,9 @@ The overlay is invisible until you activate it. No UI clutter, no extra chrome. 
 
 The interesting part is how the API route spawns the agent. The handler takes care of all the ceremony: finding the `cursor-agent` binary, building the prompt, managing timeouts, and streaming back the response.
 
+```
 
-```typescript
+typescript
 // app/api/overlay/route.ts
 import { createNextHandler } from '@shipflow/overlay/next';
 
@@ -90,9 +87,7 @@ export const runtime = 'nodejs';
 export const dynamic = 'force-dynamic';
 
 export const POST = createNextHandler();
-
 ```
-
 
 The handler looks for `cursor-agent` in your `PATH` and common installation spots. If it can't find it, you can set `CURSOR_AGENT_BIN` to the absolute path.
 
@@ -105,12 +100,11 @@ When the agent runs, it gets a prompt like: "In `components/Button.tsx`, the `Bu
 
 Run the init command in your Next.js project:
 
-
-```bash
-npx shipflow-overlay init
-
 ```
 
+bash
+npx shipflow-overlay init
+```
 
 This scaffolds the overlay component, the API route, and checks that `cursor-agent` is accessible.
 
@@ -118,45 +112,42 @@ Or set it up manually:
 
 **1. Add the overlay to your root layout**
 
+```
 
-```typescript
+typescript
 // app/layout.tsx
 import { ShipflowOverlay } from '@shipflow/overlay';
 
 export default function RootLayout({ children }) {
- return (
- <html>
- <body>
- {children}
- {process.env.NODE_ENV === 'development' && <ShipflowOverlay />}
- </body>
- </html>
- );
+  return (
+    <html>
+      <body>
+        {children}
+        {process.env.NODE_ENV === 'development' && <ShipflowOverlay />}
+      </body>
+    </html>
+  );
 }
-
 ```
-
 
 **2. Create the API route**
 
+```
 
-```typescript
+typescript
 // app/api/overlay/route.ts
 import { createNextHandler } from '@shipflow/overlay/next';
 
 export const POST = createNextHandler();
-
 ```
-
 
 **3. Start your dev server**
 
-
-```bash
-npm run dev
-
 ```
 
+bash
+npm run dev
+```
 
 The overlay activates with a keyboard shortcut. Select an element, describe the change, and watch the agent make the edit.
 
