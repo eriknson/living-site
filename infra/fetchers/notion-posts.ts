@@ -225,22 +225,42 @@ async function processImages(
 
 /**
  * Clean up markdown content
+ * IMPORTANT: Preserves code block formatting exactly (for ASCII art, etc.)
  */
 function cleanMarkdown(markdown: string): string {
-  let result = markdown;
+  // Split content into code blocks and non-code blocks
+  // We preserve code blocks exactly as-is
+  const codeBlockRegex = /(```[\s\S]*?```)/g;
+  const parts = markdown.split(codeBlockRegex);
 
-  // Remove excessive blank lines (keep max 2)
-  result = result.replace(/\n{3,}/g, "\n\n");
+  const processed = parts.map((part, index) => {
+    // Odd indices are code blocks (captured groups)
+    const isCodeBlock = index % 2 === 1;
+    if (isCodeBlock) {
+      // Preserve code blocks exactly as-is
+      return part;
+    }
 
-  // Fix heading spacing
-  result = result.replace(/\n(#{1,3}\s)/g, "\n\n$1");
+    // Process non-code-block content
+    let result = part;
 
-  // Ensure code blocks have proper spacing
-  result = result.replace(/\n```/g, "\n\n```");
-  result = result.replace(/```\n/g, "```\n\n");
+    // Remove excessive blank lines (keep max 2)
+    result = result.replace(/\n{3,}/g, "\n\n");
 
-  // Clean up double spaces
-  result = result.replace(/ {2,}/g, " ");
+    // Fix heading spacing
+    result = result.replace(/\n(#{1,3}\s)/g, "\n\n$1");
+
+    // Clean up double spaces (but NOT in code blocks - they're preserved above)
+    result = result.replace(/ {2,}/g, " ");
+
+    return result;
+  });
+
+  let result = processed.join("");
+
+  // Ensure code blocks have proper spacing (before and after)
+  result = result.replace(/([^\n])(```)/g, "$1\n\n$2");
+  result = result.replace(/(```[^\n]*\n[\s\S]*?```)\n?([^\n])/g, "$1\n\n$2");
 
   return result.trim();
 }
