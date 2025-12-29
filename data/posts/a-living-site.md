@@ -212,7 +212,7 @@ This makes Shadow DOM practical for rendering user-generated or AI-generated con
 
 **Multi-model comparison is fun.** Seeing how different models interpret the same prompt reveals their personalities. Opus goes deeper. Codex experiments more. Composer is lightning fast. 
 
-**Layered synthesis works.** Split up the workflow and tasks for agents in steps to keep it in control. Unle
+**Layered synthesis works.** Split up the workflow and tasks for agents in steps to keep it in control. This will likely change as models improve though.
 
 <tweet>https://twitter.com/flowstated/status/2004644541350211634</tweet>
 
@@ -221,7 +221,7 @@ This makes Shadow DOM practical for rendering user-generated or AI-generated con
 
 ## Beyond personal sites
 
-The broader idea is that any website can be living. Products, marketing sites, documentation. The pattern is the same: aggregate context, synthesize a brief, let agents generate.
+The really exciting part and broader idea here is that any website can likely benefit from having some layer t. Products, marketing sites, documentation. The pattern is the same: aggregate context, synthesize a brief, let agents generate.
 
 Imagine a product landing page that adapts to seasonality, current events, or what the team just shipped. Or documentation that updates itself when your API changes. Or a changelog that writes itself from your commit history.
 
