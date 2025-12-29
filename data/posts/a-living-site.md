@@ -44,9 +44,9 @@ Cron          GitHub Actions        Cursor CLI          Repository
 
 ## Context
 
-The daily workflow running is defined and running via `regenerate.yml`. It starts by p fresh data from multiple sources: GitHub activity, Spotify listening history, X posts (via Typefully), weather, and static identity files. Raw API responses are noisy and inconsistent. The challenge is turning them into something useful.
+The daily workflow running is defined and running via `regenerate.yml`. It starts by pulling fresh data from multiple sources: GitHub activity, Spotify listening history, X posts (via Typefully), weather, and static identity files.
 
-A dedicated agent (the "curator") runs first. Its job is to read all the raw data and produce a structured brief.
+A dedicated agent (the "curator") runs first and produces a structured brief based on the raw data.
 
 ```
 
@@ -54,7 +54,7 @@ bash
 cursor-agent -p --force --model composer-1 "$PROMPT"
 ```
 
-The curator also receives a reference version of the site I manually designed. It extracts the semantic structure (headings, sections, links) and passes that along too. This gives the generators a visual and structural baseline. Not a blank canvas, but a guided one.
+This agent also receives a reference version of the live site. It extracts the semantic structure (headings, sections, links) and passes that along too. This gives the generators a visual and structural baseline.
 
 By the time the generator agents run, they don't see raw API data. They see a clean brief and a reference. All the messy synthesis work is done upstream.
 
