@@ -68,7 +68,7 @@ export function PostList({ posts }: PostListProps) {
         <li className="flex flex-col sm:flex-row sm:items-baseline sm:justify-between gap-1 sm:gap-4">
           <div className="flex items-baseline gap-3 min-w-0">
             <a
-              href="https://spotify.design/article/go-with-the-flow"
+              href="https://uu.diva-portal.org/smash/record.jsf?pid=diva2:1453018"
               target="_blank"
               rel="noopener noreferrer"
               className="underline underline-offset-2 decoration-black/20 dark:decoration-white/20 hover:decoration-black/40 dark:hover:decoration-white/40 transition-colors truncate"
@@ -77,12 +77,12 @@ export function PostList({ posts }: PostListProps) {
               <span className="text-black/35 dark:text-white/35">↗</span>
             </a>
             <span className="text-[14px] text-black/35 dark:text-white/35 whitespace-nowrap hidden sm:inline">
-              5 min read
+              45 min read
             </span>
           </div>
           <span className="text-[14px] text-black/35 dark:text-white/35 whitespace-nowrap">
-            March 17, 2020
-            <span className="sm:hidden"> · 5 min read</span>
+            August 4, 2020
+            <span className="sm:hidden"> · 45 min read</span>
           </span>
         </li>
       </ul>
