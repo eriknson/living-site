@@ -212,7 +212,7 @@ This makes Shadow DOM practical for rendering user-generated or AI-generated con
 
 **Multi-model comparison is fun.** Seeing how different models interpret the same prompt reveals their personalities. Opus goes deeper. Codex experiments more. Composer is lightning fast. 
 
-**Layered synthesis works.** Don't ask a model to go from raw API data to polished output. Add intermediate layers that extract meaning.
+**Layered synthesis works.** Split up the workflow and tasks for agents in steps to keep it in control. Unle
 
 <tweet>https://twitter.com/flowstated/status/2004644541350211634</tweet>
 
