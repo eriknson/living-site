@@ -112,7 +112,7 @@ cursor-agent -p --model $MODEL "$PROMPT"
 
 The `-p` flag means non-interactive. No confirmations, no waiting. The agent reads the brief, generates the output, done.
 
-Four models, four different takes. The model selector lets you compare.
+Four models, four different takes.
 
 ---
 
