@@ -138,9 +138,9 @@ To experiment with this, I also built an iOS Shortcut that lets me update the sy
 
 ## Sandboxing
 
-When you give AI agents write access to your repo, you likely need some guardrails.
+When you give AI agents write access to your repo, you need some guardrails to keep what they can update focused.
 
-In my setup, agents can only write to `generated/`. This is the quarantine zone. Nothing in there can affect the actual application. The generated files are treated as artifacts, not source code.
+In my setup, agents can only write to `generated/`. Nothing in there can affect the actual application. The generated files are treated as artifacts, not source code.
 
 This pattern scales to any use case. For a product landing page, the sandbox might be `public/generated-pages/`. For documentation, `docs/auto-generated/`. For a dashboard, `src/generated-components/`. The principle is the same: define a boundary, enforce it, and let agents operate freely within.
 
