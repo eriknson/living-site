@@ -6,9 +6,7 @@ status: "published"
 notionPageId: "2d714bfe-df48-8128-9c47-dc1a07b84e53"
 ---
 
-Most websites go stale sooner or later. You make them once, update them every once in a while, and they slowly drift out of sync with what they originally represented.
-
-I wanted to try making a website that rebuilds itself by spawning Cursor agents via GitHub Actions. CI as the runtime, no user interaction needed. The agents maintain the site. And this is how I built it.
+I wanted to try making a website that rebuilds itself by spawning Cursor agents via GitHub Actions. CI as the runtime, a crno user interaction needed. The agents maintain the site. And this is how I built it.
 
 ```ascii art
 Cron          GitHub Actions        Cursor CLI          Repository
