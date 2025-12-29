@@ -1,0 +1,401 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Erik Nilsson — Winter Edition</title>
+  <style>
+    @import url('https://fonts.googleapis.com/css2?family=Crimson+Text:ital,wght@0,400;0,600;1,400&family=Playfair+Display:wght@400;700&family=EB+Garamond:wght@400;500;600&display=swap');
+    
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+    
+    :root {
+      --light-bg: #faf9f6;
+      --light-text: #1a1a1a;
+      --light-accent: #2c2c2c;
+      --light-border: #d4d4d4;
+      --light-meta: #666;
+      --light-headline: #000;
+      
+      --dark-bg: #0a0a0a;
+      --dark-text: #e8e8e8;
+      --dark-accent: #d4d4d4;
+      --dark-border: #333;
+      --dark-meta: #999;
+      --dark-headline: #fff;
+    }
+    
+    @media (prefers-color-scheme: dark) {
+      :root {
+        --bg: var(--dark-bg);
+        --text: var(--dark-text);
+        --accent: var(--dark-accent);
+        --border: var(--dark-border);
+        --meta: var(--dark-meta);
+        --headline: var(--dark-headline);
+      }
+    }
+    
+    @media (prefers-color-scheme: light) {
+      :root {
+        --bg: var(--light-bg);
+        --text: var(--light-text);
+        --accent: var(--light-accent);
+        --border: var(--light-border);
+        --meta: var(--light-meta);
+        --headline: var(--light-headline);
+      }
+    }
+    
+    body {
+      font-family: 'Crimson Text', 'Times New Roman', serif;
+      font-size: 18px;
+      line-height: 1.7;
+      color: var(--text);
+      background: var(--bg);
+      padding: 1rem;
+      transition: background 0.3s ease, color 0.3s ease;
+    }
+    
+    .container {
+      max-width: 640px;
+      margin: 0 auto;
+      background: var(--bg);
+    }
+    
+    /* Masthead */
+    .masthead {
+      border-bottom: 3px double var(--border);
+      padding-bottom: 1rem;
+      margin-bottom: 2rem;
+      text-align: center;
+    }
+    
+    .masthead-title {
+      font-family: 'Playfair Display', serif;
+      font-size: clamp(2rem, 5vw, 3rem);
+      font-weight: 700;
+      letter-spacing: -0.02em;
+      color: var(--headline);
+      margin-bottom: 0.25rem;
+    }
+    
+    .masthead-subtitle {
+      font-family: 'EB Garamond', serif;
+      font-size: 0.9rem;
+      text-transform: uppercase;
+      letter-spacing: 0.15em;
+      color: var(--meta);
+      font-weight: 500;
+    }
+    
+    .date-line {
+      font-family: 'EB Garamond', serif;
+      font-size: 0.85rem;
+      color: var(--meta);
+      margin-top: 0.5rem;
+      text-transform: uppercase;
+      letter-spacing: 0.1em;
+    }
+    
+    /* Main Story */
+    .main-story {
+      margin-bottom: 2.5rem;
+    }
+    
+    .headline {
+      font-family: 'Playfair Display', serif;
+      font-size: clamp(1.75rem, 4vw, 2.25rem);
+      font-weight: 700;
+      line-height: 1.2;
+      color: var(--headline);
+      margin-bottom: 0.5rem;
+      letter-spacing: -0.01em;
+    }
+    
+    .byline {
+      font-family: 'EB Garamond', serif;
+      font-size: 0.85rem;
+      color: var(--meta);
+      text-transform: uppercase;
+      letter-spacing: 0.1em;
+      margin-bottom: 1rem;
+      padding-bottom: 0.5rem;
+      border-bottom: 1px solid var(--border);
+    }
+    
+    .story-body {
+      font-size: 1.1rem;
+      line-height: 1.8;
+      margin-bottom: 1rem;
+    }
+    
+    .story-body p {
+      margin-bottom: 1rem;
+      text-indent: 0;
+    }
+    
+    .story-body p:first-of-type::first-letter {
+      font-family: 'Playfair Display', serif;
+      font-size: 4em;
+      float: left;
+      line-height: 0.8;
+      padding-right: 0.1em;
+      padding-top: 0.1em;
+      color: var(--headline);
+    }
+    
+    /* Sections */
+    .section {
+      margin-bottom: 2rem;
+      padding-top: 1.5rem;
+      border-top: 1px solid var(--border);
+    }
+    
+    .section-title {
+      font-family: 'EB Garamond', serif;
+      font-size: 1rem;
+      font-weight: 600;
+      text-transform: uppercase;
+      letter-spacing: 0.15em;
+      color: var(--headline);
+      margin-bottom: 1rem;
+      padding-bottom: 0.5rem;
+      border-bottom: 1px solid var(--border);
+    }
+    
+    .section-content {
+      font-size: 1rem;
+      line-height: 1.7;
+    }
+    
+    .section-content p {
+      margin-bottom: 0.75rem;
+    }
+    
+    /* Lists */
+    .article-list {
+      list-style: none;
+    }
+    
+    .article-list li {
+      margin-bottom: 1rem;
+      padding-bottom: 1rem;
+      border-bottom: 1px dotted var(--border);
+    }
+    
+    .article-list li:last-child {
+      border-bottom: none;
+    }
+    
+    .article-link {
+      color: var(--text);
+      text-decoration: none;
+      display: block;
+      transition: opacity 0.2s ease;
+    }
+    
+    .article-link:hover {
+      opacity: 0.7;
+    }
+    
+    .article-title {
+      font-family: 'EB Garamond', serif;
+      font-size: 1.1rem;
+      font-weight: 500;
+      margin-bottom: 0.25rem;
+      color: var(--headline);
+    }
+    
+    .article-date {
+      font-size: 0.85rem;
+      color: var(--meta);
+      font-style: italic;
+    }
+    
+    /* Current Status */
+    .status-item {
+      margin-bottom: 0.75rem;
+    }
+    
+    .status-label {
+      font-weight: 600;
+      color: var(--headline);
+      display: inline;
+    }
+    
+    .status-value {
+      color: var(--text);
+    }
+    
+    /* Links */
+    a {
+      color: var(--text);
+      text-decoration: underline;
+      text-decoration-color: var(--border);
+      text-underline-offset: 0.2em;
+      transition: text-decoration-color 0.2s ease;
+    }
+    
+    a:hover {
+      text-decoration-color: var(--text);
+    }
+    
+    /* Footer */
+    .footer {
+      margin-top: 3rem;
+      padding-top: 1.5rem;
+      border-top: 3px double var(--border);
+      text-align: center;
+      font-size: 0.9rem;
+      color: var(--meta);
+      font-family: 'EB Garamond', serif;
+    }
+    
+    .footer-links {
+      margin-top: 0.5rem;
+    }
+    
+    .footer-links a {
+      margin: 0 0.5rem;
+      text-decoration: none;
+      color: var(--meta);
+    }
+    
+    .footer-links a:hover {
+      color: var(--text);
+      text-decoration: underline;
+    }
+    
+    /* Decorative elements */
+    .winter-decoration {
+      text-align: center;
+      color: var(--meta);
+      font-size: 0.8rem;
+      margin: 1rem 0;
+      opacity: 0.5;
+      font-family: 'EB Garamond', serif;
+    }
+    
+    /* Responsive */
+    @media (max-width: 640px) {
+      body {
+        padding: 0.75rem;
+        font-size: 16px;
+      }
+      
+      .story-body {
+        font-size: 1rem;
+      }
+      
+      .story-body p:first-of-type::first-letter {
+        font-size: 3em;
+      }
+      
+      .footer-links {
+        display: flex;
+        flex-direction: column;
+        gap: 0.5rem;
+      }
+      
+      .footer-links a {
+        margin: 0;
+      }
+    }
+    
+    /* Print styles */
+    @media print {
+      body {
+        background: white;
+        color: black;
+      }
+    }
+  </style>
+<style id="__living_site_scroll_guard">html,body{height:auto!important;min-height:100%!important;max-height:none!important;overflow-y:auto!important;overflow-x:hidden!important;position:static!important;-webkit-overflow-scrolling:touch!important;touch-action:pan-y!important;overscroll-behavior-y:contain!important}body{inset:auto!important}</style></head>
+<body>
+  <div class="container">
+    <header class="masthead">
+      <div class="masthead-title">The Daily Erik</div>
+      <div class="masthead-subtitle">Winter Edition</div>
+      <div class="date-line">Sunday, December 29, 2025 • Stockholm, Sweden</div>
+    </header>
+    
+    <article class="main-story">
+      <h1 class="headline">Designer Finds Balance Between Craft and Curiosity</h1>
+      <div class="byline">Special Correspondent</div>
+      <div class="story-body">
+        <p>Hello, I'm Erik. I work as a Product Designer at Cursor, where I spend my days thinking about how tools can feel more intuitive and powerful. When I'm not at work, I tinker with side projects—shipflow, cursor-commands, and baby-notion—mostly because I can't help but wonder "what if we tried it this way?"</p>
+        <p>This site is my playground to try things and write about what I learn. It's not meant to be impressive, just honest. Sometimes I'll share something I figured out, other times I'll just think out loud. The goal is to keep learning and stay curious.</p>
+      </div>
+    </article>
+    
+    <div class="winter-decoration">❄ ❅ ❆ ❄</div>
+    
+    <section class="section">
+      <h2 class="section-title">Current Affairs</h2>
+      <div class="section-content">
+        <div class="status-item">
+          <span class="status-label">At Cursor:</span> <span class="status-value">Product Designer</span>
+        </div>
+        <div class="status-item">
+          <span class="status-label">Side projects:</span> <span class="status-value">shipflow, cursor-commands, baby-notion</span>
+        </div>
+      </div>
+    </section>
+    
+    <section class="section">
+      <h2 class="section-title">Arts & Culture</h2>
+      <div class="section-content">
+        <p>Listening to Dire Straits, Fred again.., Beach House, Arctic Monkeys, Parcels. Mostly dream pop, swedish pop, classic rock, stutter house, house, and indie. Music helps me think, or sometimes helps me not think at all.</p>
+      </div>
+    </section>
+    
+    <section class="section">
+      <h2 class="section-title">Recent Thoughts</h2>
+      <div class="section-content">
+        <p style="margin-bottom: 0.75rem;"><em>"imagine 2026"</em> — December 20</p>
+        <p style="margin-bottom: 0.75rem;"><em>"shipping by sunrise"</em> — December 16</p>
+        <p><em>"exploring ways to spin up agents from my phone<br>iOS shortcuts × github actions × cursor cli"</em> — December 15</p>
+      </div>
+    </section>
+    
+    <section class="section">
+      <h2 class="section-title">Archives</h2>
+      <ul class="article-list">
+        <li>
+          <a href="/posts/a-living-site" class="article-link">
+            <div class="article-title">A living site</div>
+            <div class="article-date">December 26, 2025</div>
+          </a>
+        </li>
+        <li>
+          <a href="/posts/surgical-edits" class="article-link">
+            <div class="article-title">Surgical edits</div>
+            <div class="article-date">November 23, 2025</div>
+          </a>
+        </li>
+        <li>
+          <a href="/posts/familiar-differentiation" class="article-link">
+            <div class="article-title">Familiar differentiation</div>
+            <div class="article-date">November 15, 2024</div>
+          </a>
+        </li>
+        <li>
+          <a href="/posts/hackathon-energy-but-add-users" class="article-link">
+            <div class="article-title">Hackathon energy, but add users</div>
+            <div class="article-date">October 15, 2022</div>
+          </a>
+        </li>
+      </ul>
+    </section>
+    
+    <footer class="footer">
+      <div>Follow on <a href="https://x.com/flowstated">X</a>, check <a href="https://github.com/eriknson">GitHub</a>, or send an <a href="mailto:contact@eriks.design?subject=Hej">email</a>.</div>
+    </footer>
+  </div>
+</body>
+</html>

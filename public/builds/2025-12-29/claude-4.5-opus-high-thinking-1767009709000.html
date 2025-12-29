@@ -1,0 +1,638 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Erik Nilsson</title>
+  <meta name="description" content="Product Designer at Cursor. Tinkering with shipflow and cursor-commands.">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,400;0,500;0,600;1,400;1,500&family=EB+Garamond:ital,wght@0,400;0,500;0,600;1,400;1,500&display=swap" rel="stylesheet">
+  <style>
+    :root {
+      --bg: #faf8f5;
+      --bg-alt: #f5f2ed;
+      --text: #1a1a18;
+      --text-secondary: #5c5a55;
+      --text-tertiary: #8a8780;
+      --accent: #2c4a6e;
+      --border: #d4d0c8;
+      --border-light: #e8e4dc;
+      --link: #3d5a7a;
+      --link-hover: #1a3a5a;
+      --frost: rgba(180, 200, 220, 0.15);
+    }
+
+    @media (prefers-color-scheme: dark) {
+      :root {
+        --bg: #141413;
+        --bg-alt: #1c1c1a;
+        --text: #e8e6e1;
+        --text-secondary: #a8a5a0;
+        --text-tertiary: #706d68;
+        --accent: #8ab4d8;
+        --border: #3a3835;
+        --border-light: #2a2825;
+        --link: #9cc4e8;
+        --link-hover: #c4ddf0;
+        --frost: rgba(140, 170, 200, 0.08);
+      }
+    }
+
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+
+    html {
+      font-size: 18px;
+      -webkit-font-smoothing: antialiased;
+      -moz-osx-font-smoothing: grayscale;
+    }
+
+    body {
+      font-family: 'EB Garamond', Georgia, 'Times New Roman', serif;
+      background: var(--bg);
+      color: var(--text);
+      line-height: 1.6;
+      min-height: 100vh;
+    }
+
+    .page {
+      max-width: 640px;
+      margin: 0 auto;
+      padding: 2rem 1.5rem 4rem;
+    }
+
+    /* Masthead */
+    .masthead {
+      text-align: center;
+      padding-bottom: 1.5rem;
+      margin-bottom: 2rem;
+      border-bottom: 1px solid var(--border);
+      position: relative;
+    }
+
+    .masthead::after {
+      content: '';
+      position: absolute;
+      bottom: 3px;
+      left: 0;
+      right: 0;
+      height: 1px;
+      background: var(--border);
+    }
+
+    .edition-line {
+      font-size: 0.65rem;
+      letter-spacing: 0.2em;
+      text-transform: uppercase;
+      color: var(--text-tertiary);
+      margin-bottom: 0.75rem;
+      font-family: system-ui, -apple-system, sans-serif;
+      font-weight: 500;
+    }
+
+    .masthead-title {
+      font-family: 'Cormorant Garamond', Georgia, serif;
+      font-size: 2.8rem;
+      font-weight: 400;
+      letter-spacing: -0.02em;
+      line-height: 1.1;
+      margin-bottom: 0.5rem;
+    }
+
+    @media (min-width: 480px) {
+      .masthead-title {
+        font-size: 3.4rem;
+      }
+    }
+
+    .masthead-date {
+      font-size: 0.75rem;
+      color: var(--text-secondary);
+      font-style: italic;
+    }
+
+    /* Weather badge */
+    .weather-line {
+      display: inline-flex;
+      align-items: center;
+      gap: 0.5rem;
+      font-size: 0.7rem;
+      color: var(--text-tertiary);
+      margin-top: 0.75rem;
+      padding: 0.35rem 0.75rem;
+      background: var(--frost);
+      border-radius: 2px;
+      font-family: system-ui, -apple-system, sans-serif;
+    }
+
+    .weather-line svg {
+      width: 14px;
+      height: 14px;
+      opacity: 0.7;
+    }
+
+    /* Content sections */
+    .intro {
+      margin-bottom: 2.5rem;
+    }
+
+    .greeting {
+      font-size: 1.35rem;
+      margin-bottom: 1rem;
+      font-weight: 400;
+    }
+
+    .bio {
+      color: var(--text-secondary);
+      font-size: 1.05rem;
+    }
+
+    .bio a {
+      color: var(--link);
+      text-decoration: underline;
+      text-underline-offset: 2px;
+      text-decoration-thickness: 1px;
+      transition: color 0.15s ease;
+    }
+
+    .bio a:hover {
+      color: var(--link-hover);
+    }
+
+    /* Section styling */
+    .section {
+      margin-bottom: 2.5rem;
+    }
+
+    .section-header {
+      display: flex;
+      align-items: center;
+      gap: 0.75rem;
+      margin-bottom: 1rem;
+    }
+
+    .section-label {
+      font-size: 0.65rem;
+      letter-spacing: 0.15em;
+      text-transform: uppercase;
+      color: var(--text-tertiary);
+      font-family: system-ui, -apple-system, sans-serif;
+      font-weight: 600;
+      white-space: nowrap;
+    }
+
+    .section-rule {
+      flex: 1;
+      height: 1px;
+      background: var(--border-light);
+    }
+
+    /* Currently section */
+    .currently-grid {
+      display: grid;
+      gap: 0.75rem;
+    }
+
+    .currently-item {
+      display: flex;
+      gap: 1rem;
+      padding: 0.75rem 0;
+      border-bottom: 1px dotted var(--border-light);
+    }
+
+    .currently-item:last-child {
+      border-bottom: none;
+    }
+
+    .currently-label {
+      font-size: 0.7rem;
+      letter-spacing: 0.1em;
+      text-transform: uppercase;
+      color: var(--text-tertiary);
+      font-family: system-ui, -apple-system, sans-serif;
+      font-weight: 500;
+      min-width: 80px;
+      padding-top: 0.15rem;
+    }
+
+    .currently-value {
+      flex: 1;
+      color: var(--text);
+      font-size: 0.95rem;
+    }
+
+    /* Posts section */
+    .posts-list {
+      list-style: none;
+    }
+
+    .post-item {
+      padding: 1rem 0;
+      border-bottom: 1px solid var(--border-light);
+    }
+
+    .post-item:first-child {
+      padding-top: 0;
+    }
+
+    .post-item:last-child {
+      border-bottom: none;
+    }
+
+    .post-link {
+      display: block;
+      text-decoration: none;
+      color: inherit;
+      transition: transform 0.15s ease;
+    }
+
+    .post-link:hover {
+      transform: translateX(2px);
+    }
+
+    .post-link:hover .post-title {
+      color: var(--link);
+    }
+
+    .post-title {
+      font-size: 1.15rem;
+      font-weight: 500;
+      margin-bottom: 0.25rem;
+      transition: color 0.15s ease;
+    }
+
+    .post-meta {
+      font-size: 0.75rem;
+      color: var(--text-tertiary);
+      font-style: italic;
+    }
+
+    .post-meta .separator {
+      margin: 0 0.35rem;
+      opacity: 0.5;
+    }
+
+    /* Listening section */
+    .listening-content {
+      font-size: 0.9rem;
+      color: var(--text-secondary);
+      line-height: 1.7;
+    }
+
+    .artist {
+      color: var(--text);
+      font-weight: 500;
+    }
+
+    .genre-tags {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 0.4rem;
+      margin-top: 0.75rem;
+    }
+
+    .genre-tag {
+      font-size: 0.65rem;
+      padding: 0.2rem 0.5rem;
+      background: var(--bg-alt);
+      border: 1px solid var(--border-light);
+      border-radius: 2px;
+      color: var(--text-tertiary);
+      font-family: system-ui, -apple-system, sans-serif;
+    }
+
+    /* Murmurs (tweets) section */
+    .murmurs-list {
+      display: flex;
+      flex-direction: column;
+      gap: 1rem;
+    }
+
+    .murmur {
+      padding: 1rem;
+      background: var(--bg-alt);
+      border-left: 2px solid var(--border);
+      font-size: 0.95rem;
+      color: var(--text-secondary);
+      text-decoration: none;
+      display: block;
+      transition: border-color 0.15s ease, background 0.15s ease;
+    }
+
+    .murmur:hover {
+      border-color: var(--accent);
+      background: var(--frost);
+    }
+
+    .murmur-text {
+      margin-bottom: 0.5rem;
+      white-space: pre-wrap;
+      line-height: 1.5;
+      color: var(--text);
+    }
+
+    .murmur-date {
+      font-size: 0.7rem;
+      color: var(--text-tertiary);
+      font-style: italic;
+    }
+
+    /* Footer */
+    .footer {
+      margin-top: 3rem;
+      padding-top: 1.5rem;
+      border-top: 1px solid var(--border);
+      text-align: center;
+    }
+
+    .footer-links {
+      display: flex;
+      justify-content: center;
+      gap: 1.5rem;
+      margin-bottom: 1rem;
+    }
+
+    .footer-link {
+      font-size: 0.8rem;
+      color: var(--text-secondary);
+      text-decoration: none;
+      letter-spacing: 0.05em;
+      transition: color 0.15s ease;
+      display: flex;
+      align-items: center;
+      gap: 0.35rem;
+    }
+
+    .footer-link:hover {
+      color: var(--text);
+    }
+
+    .footer-link svg {
+      width: 14px;
+      height: 14px;
+      opacity: 0.6;
+    }
+
+    .colophon {
+      font-size: 0.7rem;
+      color: var(--text-tertiary);
+      font-style: italic;
+      margin-top: 1.5rem;
+    }
+
+    /* Winter flourish */
+    .flourish {
+      text-align: center;
+      margin: 2rem 0;
+      color: var(--text-tertiary);
+      font-size: 1rem;
+      letter-spacing: 0.5em;
+      opacity: 0.4;
+    }
+
+    /* Projects inline styling */
+    .project-name {
+      font-family: 'SF Mono', 'Monaco', 'Inconsolata', monospace;
+      font-size: 0.85em;
+      background: var(--bg-alt);
+      padding: 0.1em 0.35em;
+      border-radius: 3px;
+      color: var(--text);
+    }
+
+    /* Ornamental elements */
+    .ornament {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 1rem;
+      margin: 2rem 0;
+      color: var(--text-tertiary);
+      opacity: 0.4;
+    }
+
+    .ornament-line {
+      width: 40px;
+      height: 1px;
+      background: currentColor;
+    }
+
+    .ornament-symbol {
+      font-size: 0.8rem;
+    }
+
+    /* Responsive adjustments */
+    @media (max-width: 480px) {
+      html {
+        font-size: 16px;
+      }
+
+      .page {
+        padding: 1.5rem 1.25rem 3rem;
+      }
+
+      .currently-item {
+        flex-direction: column;
+        gap: 0.25rem;
+      }
+
+      .currently-label {
+        min-width: auto;
+      }
+
+      .footer-links {
+        flex-direction: column;
+        gap: 0.75rem;
+      }
+    }
+
+    /* Print styles */
+    @media print {
+      body {
+        background: white;
+        color: black;
+      }
+    }
+  </style>
+<style id="__living_site_scroll_guard">html,body{height:auto!important;min-height:100%!important;max-height:none!important;overflow-y:auto!important;overflow-x:hidden!important;position:static!important;-webkit-overflow-scrolling:touch!important;touch-action:pan-y!important;overscroll-behavior-y:contain!important}body{inset:auto!important}</style></head>
+<body>
+  <div class="page">
+    <header class="masthead">
+      <div class="edition-line">Winter Edition · Stockholm</div>
+      <h1 class="masthead-title">Erik Nilsson</h1>
+      <div class="masthead-date">Sunday, December 29, 2025</div>
+      <div class="weather-line">
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <circle cx="12" cy="12" r="4"></circle>
+          <path d="M12 2v2M12 20v2M4.93 4.93l1.41 1.41M17.66 17.66l1.41 1.41M2 12h2M20 12h2M6.34 17.66l-1.41 1.41M19.07 4.93l-1.41 1.41"></path>
+        </svg>
+        <span>Clear skies · 1°C</span>
+      </div>
+    </header>
+
+    <main>
+      <section class="intro">
+        <p class="greeting">Hello, I'm Erik.</p>
+        <p class="bio">
+          This site is my playground to try things and write about what I learn. 
+          Follow me on <a href="https://x.com/flowstated">X</a>, 
+          check out my <a href="https://github.com/eriknson">GitHub</a>, 
+          or send me an <a href="mailto:contact@eriks.design?subject=Hej">email</a>.
+        </p>
+      </section>
+
+      <section class="section">
+        <div class="section-header">
+          <span class="section-label">Currently</span>
+          <span class="section-rule"></span>
+        </div>
+        <div class="currently-grid">
+          <div class="currently-item">
+            <span class="currently-label">Work</span>
+            <span class="currently-value">Product Designer at Cursor</span>
+          </div>
+          <div class="currently-item">
+            <span class="currently-label">Tinkering</span>
+            <span class="currently-value">
+              <span class="project-name">shipflow</span>, 
+              <span class="project-name">cursor-commands</span>, 
+              <span class="project-name">baby-notion</span>
+            </span>
+          </div>
+        </div>
+      </section>
+
+      <section class="section">
+        <div class="section-header">
+          <span class="section-label">Writing</span>
+          <span class="section-rule"></span>
+        </div>
+        <ul class="posts-list">
+          <li class="post-item">
+            <a href="/posts/a-living-site" class="post-link">
+              <div class="post-title">A living site</div>
+              <div class="post-meta">
+                December 26, 2025
+                <span class="separator">·</span>
+                7 min read
+              </div>
+            </a>
+          </li>
+          <li class="post-item">
+            <a href="/posts/surgical-edits" class="post-link">
+              <div class="post-title">Surgical edits</div>
+              <div class="post-meta">
+                November 23, 2025
+                <span class="separator">·</span>
+                4 min read
+              </div>
+            </a>
+          </li>
+          <li class="post-item">
+            <a href="/posts/familiar-differentiation" class="post-link">
+              <div class="post-title">Familiar differentiation</div>
+              <div class="post-meta">
+                November 15, 2024
+                <span class="separator">·</span>
+                5 min read
+              </div>
+            </a>
+          </li>
+          <li class="post-item">
+            <a href="/posts/hackathon-energy-but-add-users" class="post-link">
+              <div class="post-title">Hackathon energy, but add users</div>
+              <div class="post-meta">
+                October 15, 2022
+                <span class="separator">·</span>
+                4 min read
+              </div>
+            </a>
+          </li>
+        </ul>
+      </section>
+
+      <div class="ornament">
+        <span class="ornament-line"></span>
+        <span class="ornament-symbol">❄</span>
+        <span class="ornament-line"></span>
+      </div>
+
+      <section class="section">
+        <div class="section-header">
+          <span class="section-label">Recent Murmurs</span>
+          <span class="section-rule"></span>
+        </div>
+        <div class="murmurs-list">
+          <a href="https://x.com/flowstated/status/2002167999353241901" class="murmur" target="_blank" rel="noopener">
+            <div class="murmur-text">imagine 2026</div>
+            <div class="murmur-date">December 20</div>
+          </a>
+          <a href="https://x.com/flowstated/status/2000889983562080578" class="murmur" target="_blank" rel="noopener">
+            <div class="murmur-text">shipping by sunrise</div>
+            <div class="murmur-date">December 16</div>
+          </a>
+          <a href="https://x.com/flowstated/status/2000691637190861180" class="murmur" target="_blank" rel="noopener">
+            <div class="murmur-text">exploring ways to spin up agents from my phone
+
+iOS shortcuts × github actions × cursor cli</div>
+            <div class="murmur-date">December 15</div>
+          </a>
+        </div>
+      </section>
+
+      <section class="section">
+        <div class="section-header">
+          <span class="section-label">Listening</span>
+          <span class="section-rule"></span>
+        </div>
+        <div class="listening-content">
+          <span class="artist">Dire Straits</span>, 
+          <span class="artist">Fred again..</span>, 
+          <span class="artist">Beach House</span>, 
+          <span class="artist">Arctic Monkeys</span>, 
+          <span class="artist">Parcels</span>
+          <div class="genre-tags">
+            <span class="genre-tag">dream pop</span>
+            <span class="genre-tag">swedish pop</span>
+            <span class="genre-tag">classic rock</span>
+            <span class="genre-tag">stutter house</span>
+            <span class="genre-tag">house</span>
+            <span class="genre-tag">indie</span>
+          </div>
+        </div>
+      </section>
+    </main>
+
+    <footer class="footer">
+      <div class="footer-links">
+        <a href="https://x.com/flowstated" class="footer-link" target="_blank" rel="noopener">
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor">
+            <path d="M18.244 2.25h3.308l-7.227 8.26 8.502 11.24H16.17l-5.214-6.817L4.99 21.75H1.68l7.73-8.835L1.254 2.25H8.08l4.713 6.231zm-1.161 17.52h1.833L7.084 4.126H5.117z"/>
+          </svg>
+          <span>X</span>
+        </a>
+        <a href="https://github.com/eriknson" class="footer-link" target="_blank" rel="noopener">
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor">
+            <path d="M12 0c-6.626 0-12 5.373-12 12 0 5.302 3.438 9.8 8.207 11.387.599.111.793-.261.793-.577v-2.234c-3.338.726-4.033-1.416-4.033-1.416-.546-1.387-1.333-1.756-1.333-1.756-1.089-.745.083-.729.083-.729 1.205.084 1.839 1.237 1.839 1.237 1.07 1.834 2.807 1.304 3.492.997.107-.775.418-1.305.762-1.604-2.665-.305-5.467-1.334-5.467-5.931 0-1.311.469-2.381 1.236-3.221-.124-.303-.535-1.524.117-3.176 0 0 1.008-.322 3.301 1.23.957-.266 1.983-.399 3.003-.404 1.02.005 2.047.138 3.006.404 2.291-1.552 3.297-1.23 3.297-1.23.653 1.653.242 2.874.118 3.176.77.84 1.235 1.911 1.235 3.221 0 4.609-2.807 5.624-5.479 5.921.43.372.823 1.102.823 2.222v3.293c0 .319.192.694.801.576 4.765-1.589 8.199-6.086 8.199-11.386 0-6.627-5.373-12-12-12z"/>
+          </svg>
+          <span>GitHub</span>
+        </a>
+        <a href="mailto:contact@eriks.design?subject=Hej" class="footer-link">
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <rect x="2" y="4" width="20" height="16" rx="2"></rect>
+            <path d="m22 7-8.97 5.7a1.94 1.94 0 0 1-2.06 0L2 7"></path>
+          </svg>
+          <span>Email</span>
+        </a>
+      </div>
+      <div class="colophon">
+        Clear Stockholm quiet · This page regenerates itself
+      </div>
+    </footer>
+  </div>
+</body>
+</html>
