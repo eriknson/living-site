@@ -221,9 +221,9 @@ This makes Shadow DOM practical for rendering user-generated or AI-generated con
 
 ## Beyond personal sites
 
-The really exciting part and broader idea here is that any website can likely benefit from having some layer t. Products, marketing sites, documentation. The pattern is the same: aggregate context, synthesize a brief, let agents generate.
+The really exciting part and broader idea here is that any website can likely benefit from having some layer that is maintained by agents. Products, marketing sites, documentation, etc. The pattern is the same: aggregate context, synthesize a brief, let agents generate, verify, ship.
 
-Imagine a product landing page that adapts to seasonality, current events, or what the team just shipped. Or documentation that updates itself when your API changes. Or a changelog that writes itself from your commit history.
+Imagine a landing page that adapts to seasonality, current events, or what the team just shipped. Or documentation that updates itself when your API changes. Or a changelog that writes itself from your commit history.
 
 The infrastructure is the same. The constraint is the same. Only the data sources and creative direction change.
 
