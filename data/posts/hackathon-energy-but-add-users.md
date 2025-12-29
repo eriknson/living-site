@@ -3,6 +3,7 @@ title: "Hackathon energy, but add users"
 slug: "hackathon-energy-but-add-users"
 publishedAt: "2022-10-15"
 status: "published"
+notionPageId: "2d714bfe-df48-817d-8f01-f9da113018d0"
 ---
 
 So as I'm currently sitting on my flight home from ETH Bogotá, I figured it would be fun to write something. Flesh out some thoughts that crossed my mind this past week.
@@ -10,6 +11,7 @@ So as I'm currently sitting on my flight home from ETH Bogotá, I figured it wou
 No giga-brain insights, but rather some guiding principles for designing in web3 and AI. Hopefully someone out there will enjoy it.
 
 Time to hit that publish button.
+
 
 ## Draft faster, improve faster
 
@@ -21,6 +23,7 @@ When you can draft quickly, you can start editing sooner. When you can start edi
 
 And the best part? Designing quickly is a compounding skill. Faster iteration cycles mean more opportunities to learn, improve, and ship.
 
+
 ## Skill-up for collaboration
 
 As web3 intersects finance, distributed infrastructure, and socio-technical systems in ways we haven't seen before, teams should seek to build a team of overlapping multidisciplinary members.
@@ -29,7 +32,8 @@ In my experience, I've been able to run the furthest, the fastest, and had the m
 
 So should designers code? Write copy? Understand the sales pipeline? Interview users? Read the data? **Yes.**
 
-It's just that it's not practical to try to be the one person who does *all* of these things day-to-day in any meaningful capacity. But if you can be the bridge between these teams, and not feel alienated by their different lingoes, you'll gain a lot.
+It's just that it's not practical to try to be the one person who does _all_ of these things day-to-day in any meaningful capacity. But if you can be the bridge between these teams, and not feel alienated by their different lingoes, you'll gain a lot.
+
 
 ## Don't try to solve everything
 
@@ -39,11 +43,12 @@ Educating people about new features or changes is tough. And it's even harder to
 
 Designing quality UI is knowing when to add features. Knowing when something works well and when to take things away, especially if a feature is no longer in service of a broader vision.
 
-This past week I've seen too many *can-do-it-all products* showcased; DeFi products with more features than the G Suite, NFT projects with twelve different utility verticals, and alternative layer ones claiming to be better at pretty much everything. I.e. products trying to do everything, but end up doing nothing.
+This past week I've seen too many _can-do-it-all products_ showcased; DeFi products with more features than the G Suite, NFT projects with twelve different utility verticals, and alternative layer ones claiming to be better at pretty much everything. I.e. products trying to do everything, but end up doing nothing.
 
-One thing I've learned from participating in, and [sometimes winning](https://ethglobal.com/showcase/gates-wtf-qy8w8), hackathons is to always scope down your products. Start by identifying one tiny problem, friction, or annoyance you've thought about, and begin with solving *just that* super smooth.
+One thing I've learned from participating in, and [sometimes winning](https://ethglobal.com/showcase/gates-wtf-qy8w8), hackathons is to always scope down your products. Start by identifying one tiny problem, friction, or annoyance you've thought about, and begin with solving _just that_ super smooth.
 
 Quality software is fast. Data is cached. The first paint feels instant. Interactions respond in milliseconds. Simplicity and narrowing things down to the core is everything.
+
 
 ## Track the space
 
@@ -56,6 +61,7 @@ Those who make it a habit to examine the latest trends, details, and product dec
 Prioritize attending conferences, hackathons, and talks within your interest. Wherever you are in life right now, occasionally throwing yourself into 48h sprints with like-minded frens, new tools, and red bulls is an efficient method for staying up-to-date.
 
 ---
+
 
 ## Until next time 👋
 

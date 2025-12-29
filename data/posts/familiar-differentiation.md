@@ -10,7 +10,8 @@ The paradigm of building software using AI (via e.g. [Cursor](https://www.cursor
 
 I love this, but I've noticed it comes at (least for now) a cost. When every app is built on the same foundations and models, the result is a smörgåsbord of experiences that lack personality, originality, and distinguishability.
 
-Let's dive in how apps with millions of users reach their edge and attempt to outline some best practices and high-level principles to help your products stand out.
+So let’s dive in to how products with millions of users create an edge, and attempt to outline some best practices and high-level principles to make your designs stand out.
+
 
 ## Reinvent and reuse
 
@@ -29,6 +30,7 @@ Crafting experiences that feel unique and "resonate with your users" is easier s
 So, let's look into how global brands are achieving this à la _show, don't tell_.
 
 ![Notion button styling](/posts/familiar-differentiation/notion-button.png)
+
 
 ## Breathe your brand
 
@@ -50,6 +52,7 @@ Consistency is key. Ensure that your brand is introduced seamlessly throughout t
 
 ![Typing interaction](/posts/familiar-differentiation/typing-interaction.gif)
 
+
 ## Streamline your UI
 
 Many apps often present all available features at once, on the top level. Everything is right there, all the time, whether the user needs it or not. This makes sense for some apps, but generally leads to cognitive overload.
@@ -67,6 +70,7 @@ Most product teams are caught up with adding more features, capabilities, and fu
 Think of experiences people love, like Apple Pay or AirDrop, which each do one thing exceptionally smoothly without almost any configuration, customizability, or cognitive overload. They just focus on doing one thing well.
 
 Good design emphasizes the usefulness of a product while disregarding anything that could detract (you!!) from it.
+
 
 ## Analog patterns in digital shape
 
@@ -86,6 +90,7 @@ UI parallels to the real world can transform mundane tasks and boring UIs into e
 
 ![MetaMask flow animation](/posts/familiar-differentiation/metamask-flow.gif)
 
+
 ## Speech is silver, and action is gold
 
 While education, descriptions, and explicit context can be needed, the real magic happens when users can seamlessly interact with your product without needing instructions. By holding the users' hands less, you empower them to discover and learn on their own.
@@ -96,9 +101,11 @@ Instead of relying solely on text to guide users, use visual cues and interactiv
 
 Exceptional software goes beyond function; it creates a connection between people and technology. In a world overfilled with apps, adding polish & joy to the core flows of your product is what transforms users into advocates.
 
+
 ## Until next time 👋
 
 Thank you and stay blessed. Included some inspo below, let me know what you think via [X](https://x.com/eriknson).
+
 
 ## Miscellaneous inspo
 

@@ -10,38 +10,42 @@ Most websites go stale sooner or later. You make them once, update them every fe
 
 I wanted to try making a website that rebuilds itself by spawning Cursor agents via GitHub Actions. CI as the runtime, no user interaction needed. The agents maintain the site. And this is how I built it.
 
-```
-Cron          GitHub Actions        Cursor CLI          Repository
- │                  │                    │                   │
- │───trigger───────►│                    │                   │
- │                  │                    │                   │
- │                  ├── fetch GitHub     │                   │
- │                  ├── fetch Spotify    │                   │
- │                  ├── fetch X (Typefully)                  │
- │                  ├── fetch weather (lol)                  │
- │                  │                    │                   │
- │                  ├── curator agent    │                   │
- │                  │   └► brief.json    │                   │
- │                  │                    │                   │
- │                  │ ┌──────────────────┤                   │
- │                  │ │ matrix: 4 models │                   │
- │                  │ ├──────────────────┤                   │
- │                  ├─┼─► cursor-agent -p (Opus)             │
- │                  ├─┼─► cursor-agent -p (Composer)         │
- │                  ├─┼─► cursor-agent -p (Codex)            │
- │                  ├─┼─► cursor-agent -p (Gemini)           │
- │                  │ └──────────────────┤                   │
- │                  │                    │                   │
- │                  │◄── generated/* ────┤                   │
- │                  │    (sandboxed)     │                   │
- │                  │                    │                   │
- │                  ├── verify sandbox   │                   │
- │                  ├── git add generated/──────────────────►│
- │                  ├── commit + deploy ────────────────────►│
- │                  │                    │                   │
+
+```ascii art
+Cron GitHub Actions Cursor CLI Repository
+ │ │ │ │
+ │───trigger───────►│ │ │
+ │ │ │ │
+ │ ├── fetch GitHub │ │
+ │ ├── fetch Spotify │ │
+ │ ├── fetch X (Typefully) │
+ │ ├── fetch weather (lol) │
+ │ │ │ │
+ │ ├── curator agent │ │
+ │ │ └► brief.json │ │
+ │ │ │ │
+ │ │ ┌──────────────────┤ │
+ │ │ │ matrix: 4 models │ │
+ │ │ ├──────────────────┤ │
+ │ ├─┼─► cursor-agent -p (Opus) │
+ │ ├─┼─► cursor-agent -p (Composer) │
+ │ ├─┼─► cursor-agent -p (Codex) │
+ │ ├─┼─► cursor-agent -p (Gemini) │
+ │ │ └──────────────────┤ │
+ │ │ │ │
+ │ │◄── generated/* ────┤ │
+ │ │ (sandboxed) │ │
+ │ │ │ │
+ │ ├── verify sandbox │ │
+ │ ├── git add generated/──────────────────►│
+ │ ├── commit + deploy ────────────────────►│
+ │ │ │ │
  │◄─────────────────┼────────────────────┼── site live ✓ ────┤
- │                  │                    │                   │
+ │ │ │ │
+
 ```
+
+
 
 ## Context
 
@@ -49,20 +53,19 @@ The workflow running via `regenerate.yml` first pulls fresh data from multiple s
 
 A dedicated agent (the "curator") runs first. Its job is to read all the raw data and produce a structured brief.
 
-```bash
-# From regenerate.yml — kick off the curator
-PROMPT="Read infra/prompts/curator.md for your instructions.
-Task 1: Read data/latest.json → Write data/brief.json
-Task 2: Read data/styled-page.html → Write data/reference.html"
 
+```bash
 cursor-agent -p --force --model composer-1 "$PROMPT"
+
 ```
+
 
 The curator also receives a reference version of the site I manually designed. It extracts the semantic structure (headings, sections, links) and passes that along too. This gives the generators a visual and structural baseline. Not a blank canvas, but a guided one.
 
 By the time the generator agents run, they don't see raw API data. They see a clean brief and a reference. All the messy synthesis work is done upstream.
 
 ---
+
 
 ## The daily build
 
@@ -77,42 +80,55 @@ The site is live before I wake up.
 
 ---
 
+
 ## Running agents in CI
 
 The workflow uses a matrix to run four models in parallel:
 
+
 ```yaml
 strategy:
-  matrix:
-    model:
-      - claude-4.5-opus
-      - composer-1
-      - gpt-5.1-codex
-      - gemini-3-pro
+ matrix:
+ model:
+ - claude-4.5-opus
+ - composer-1
+ - gpt-5.1-codex
+ - gemini-3-pro
+
 ```
+
 
 Each model gets its own isolated workspace via `git worktree`. The agent sees only what it needs: the brief and a reference version. No build history, no other models' outputs.
 
+
 ```bash
+
 # Create isolated workspace from current commit
 git worktree add /tmp/clean-gen --detach HEAD
+
 
 # Remove all build history so agent starts fresh
 rm -rf /tmp/clean-gen/generated/*
 rm -rf /tmp/clean-gen/public/builds/
+
 ```
+
 
 Then each agent runs with a single command:
 
+
 ```bash
 cursor-agent -p --model $MODEL "$PROMPT"
+
 ```
+
 
 The `-p` flag means non-interactive. No confirmations, no waiting. The agent reads the brief, generates the output, done.
 
 Four models, four different takes. The model selector lets you compare.
 
 ---
+
 
 ## The system prompt
 
@@ -132,6 +148,7 @@ I also built an iOS Shortcut that lets me update the system prompt from my phone
 
 ---
 
+
 ## Sandboxing
 
 When you give AI agents write access to your repo, you need guardrails.
@@ -142,26 +159,36 @@ This pattern scales to any use case. For a product landing page, the sandbox mig
 
 Enforcement happens at multiple layers. The prompt itself includes the constraint:
 
-```
+
+```markdown
 You may ONLY create or modify files inside the generated/ folder.
+
 ```
+
 
 After the agent runs, a verification step checks for violations:
 
+
 ```bash
 git diff --name-only | grep -v '^generated/' && exit 1
+
 ```
 
+
 If anything outside the sandbox changed, the build fails. Finally, the commit step only stages files in the sandbox:
+
 
 ```bash
 git add generated/
 git commit -m "Regenerate site"
+
 ```
+
 
 Everything else is ignored.
 
 ---
+
 
 ## Shadow DOM
 
@@ -169,26 +196,33 @@ How do you render arbitrary HTML inside a Next.js app without style conflicts?
 
 Shadow DOM solves this elegantly. It's a browser API that creates an isolated DOM subtree with its own style scope. Styles inside can't leak out, and styles outside can't leak in. But unlike iframes, the content is part of the same document, so scrolling works naturally.
 
+
 ```javascript
 const shadow = container.attachShadow({ mode: "open" });
 shadow.innerHTML = `<style>${css}</style>${body}`;
+
 ```
+
 
 Complete style isolation. Native scrolling. No iframe jank.
 
 The trick is rewriting CSS selectors. Generated content targets `body`, but inside Shadow DOM, we need to target our wrapper:
 
+
 ```javascript
 function rewriteBodySelectors(css: string): string {
-  return css
-    .replace(/\bbody\s*\{/g, "body, .shadow-root {")
-    .replace(/\bbody(\.[a-zA-Z_-][\w-]*)\s*\{/g, "body$1, .shadow-root$1 {");
+ return css
+ .replace(/\bbody\s*\{/g, "body, .shadow-root {")
+ .replace(/\bbody(\.[a-zA-Z_-][\w-]*)\s*\{/g, "body$1, .shadow-root$1 {");
 }
+
 ```
+
 
 This makes Shadow DOM practical for rendering user-generated or AI-generated content in any React app. You get the isolation benefits of iframes without the nested scrolling issues or performance overhead.
 
 ---
+
 
 ## Takeaways
 
@@ -202,6 +236,7 @@ This makes Shadow DOM practical for rendering user-generated or AI-generated con
 
 ---
 
+
 ## Beyond personal sites
 
 The broader idea is that any website can be living. Products, marketing sites, documentation. The pattern is the same: aggregate context, synthesize a brief, let agents generate.
@@ -214,6 +249,7 @@ We're early, but the primitive is there: agents running on a schedule, sandboxed
 
 ---
 
+
 ## What's next
 
 This is the fun part and it's still a work in progress. Some things I'm exploring:
@@ -224,6 +260,7 @@ This is the fun part and it's still a work in progress. Some things I'm explorin
 
 ---
 
+
 ## Until next time 👋
 
-If you're curious about the implementation, the source is on [GitHub](https://github.com/eriknson/living-site). And if you want to see today's version, just visit [the home page](/).
+If you're curious about the implementation, the source is on [GitHub](https://github.com/eriknson/living-site). And if you want to see today's version, just visit [the home page](https://eriks.design/).
