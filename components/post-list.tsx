@@ -38,7 +38,7 @@ export function PostList({ posts, excludeStaticLink = false }: PostListProps) {
                   href={post.externalUrl}
                   target="_blank"
                   rel="noopener noreferrer"
-                  className="underline underline-offset-2 decoration-black/20 dark:decoration-white/20 hover:decoration-black/40 dark:hover:decoration-white/40 transition-colors truncate"
+                  className="underline underline-offset-2 decoration-black/20 dark:decoration-white/20 hover:decoration-black/40 dark:hover:decoration-white/40 transition-colors truncate cursor-ne-resize"
                 >
                   {post.title}{" "}
                   <span className="text-black/35 dark:text-white/35">↗</span>
@@ -73,7 +73,7 @@ export function PostList({ posts, excludeStaticLink = false }: PostListProps) {
                 href="https://uu.diva-portal.org/smash/record.jsf?pid=diva2:1453018"
                 target="_blank"
                 rel="noopener noreferrer"
-                className="underline underline-offset-2 decoration-black/20 dark:decoration-white/20 hover:decoration-black/40 dark:hover:decoration-white/40 transition-colors truncate"
+                className="underline underline-offset-2 decoration-black/20 dark:decoration-white/20 hover:decoration-black/40 dark:hover:decoration-white/40 transition-colors truncate cursor-ne-resize"
               >
                 Go with the flow{" "}
                 <span className="text-black/35 dark:text-white/35">↗</span>

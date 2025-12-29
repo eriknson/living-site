@@ -91,7 +91,7 @@ function Link({
   return (
     <a
       href={href}
-      className="underline decoration-black/20 dark:decoration-white/20 underline-offset-2 hover:decoration-black/40 dark:hover:decoration-white/40 transition-colors cursor-ne-resize"
+      className={`underline decoration-black/20 dark:decoration-white/20 underline-offset-2 hover:decoration-black/40 dark:hover:decoration-white/40 transition-colors ${external ? "cursor-ne-resize" : ""}`}
       {...(external && { target: "_blank", rel: "noopener noreferrer" })}
     >
       {children}
