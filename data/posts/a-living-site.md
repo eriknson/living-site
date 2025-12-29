@@ -208,9 +208,9 @@ This makes Shadow DOM practical for rendering user-generated or AI-generated con
 
 ## Takeaways
 
-**CI is a good place for agents.** Headless, reliable, scalable. No user interaction needed. Just run, verify, commit.
+**CI is a great place for agents.** Headless, reliable, scalable. No user interaction needed. Just run, verify, commit.
 
-**Multi-model comparison is valuable.** Seeing how different models interpret the same prompt reveals their personalities. Opus goes deeper. Codex experiments more. Composer is lightning fast. Having options is better than picking one.
+**Multi-model comparison is fun.** Seeing how different models interpret the same prompt reveals their personalities. Opus goes deeper. Codex experiments more. Composer is lightning fast. 
 
 **Layered synthesis works.** Don't ask a model to go from raw API data to polished output. Add intermediate layers that extract meaning.
 
