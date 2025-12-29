@@ -89,7 +89,7 @@ strategy:
       - gemini-3-pro
 ```
 
-Each model gets its own isolated workspace via `git worktree`. The agent sees only what it needs: the brief and a reference version. No build history, no other models' outputs.
+Each model gets its own isolated workspace via `git worktree`. So the agents sees only what they need: the brief and the reference version of the site. No build history, no other models' outputs (which, in another direction, could be interesting to keep in context).
 
 ```
 
