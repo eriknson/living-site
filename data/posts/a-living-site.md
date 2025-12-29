@@ -54,9 +54,7 @@ bash
 cursor-agent -p --force --model composer-1 "$PROMPT"
 ```
 
-This agent also receives a reference version of the live site. It extracts the semantic structure (headings, sections, links) and passes that along too. This gives the generators a visual and structural baseline.
-
-By the time the generator agents run, they don't see raw API data. They see a clean brief and a reference. All the messy synthesis work is done upstream.
+This agent also receives a reference version of the live site. It extracts the semantic structure (headings, sections, links) and passes that along too. This gives the generators a visual and structural baseline. All the messy synthesis work is done upstream.
 
 ---
 
