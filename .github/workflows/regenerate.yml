@@ -693,17 +693,20 @@ jobs:
           # Generate a shared batch timestamp for all models in this run
           BATCH_TIMESTAMP=$(date -u +%Y-%m-%dT%H:%M:%S.000Z)
           
-          # Process each model's build output (derive models from artifact dirs)
+          # Process each model's build output
+          # Loop through validated artifacts (not build-* since we download validated-*)
           # --date: Use the workflow date to ensure consistency across jobs
           # --batch-timestamp: Shared timestamp for all models in this batch
           # --github-run-url: Link to this GitHub Actions run
           # save-build-log will copy HTML from generated/{model}.html to builds/{date}/{model}-{timestamp}.html
-          for artifact_dir in artifacts/build-*/; do
-            model=$(basename "$artifact_dir" | sed 's/^build-//')
+          for artifact_dir in artifacts/validated-*/; do
+            model=$(basename "$artifact_dir" | sed 's/^validated-//')
             output_file="public/builds/${DATE}/${model}-output.json"
             if [ -f "$output_file" ]; then
               echo "Processing build log for ${model}..."
               pnpm run save-build-log -- "$output_file" --model "$model" --date "$DATE" --batch-timestamp "$BATCH_TIMESTAMP" --github-run-url "$GITHUB_RUN_URL"
+            else
+              echo "Warning: No output file found for ${model} at ${output_file}"
             fi
           done
 
