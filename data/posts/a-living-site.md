@@ -129,7 +129,7 @@ This is the most dynamic part of the system. You can approach it several ways:
 
 The prompt is just a markdown file in the repo, so updating it is a single commit.
 
-I also built an iOS Shortcut that lets me update the system prompt from my phone. Tap, type a new direction, and it commits directly to the repo. The next scheduled build picks it up.
+To experiment with this, I also built an iOS Shortcut that lets me update the system prompt from my phone. Tap, type a new direction, and it commits directly to the repo. The next scheduled build picks it up.
 
 <tweet>https://twitter.com/flowstated/status/2000691637190861180</tweet>
 
@@ -138,7 +138,7 @@ I also built an iOS Shortcut that lets me update the system prompt from my phone
 
 ## Sandboxing
 
-When you give AI agents write access to your repo, you need guardrails.
+When you give AI agents write access to your repo, you likely need some guardrails.
 
 In my setup, agents can only write to `generated/`. This is the quarantine zone. Nothing in there can affect the actual application. The generated files are treated as artifacts, not source code.
 
