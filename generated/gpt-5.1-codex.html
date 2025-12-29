@@ -3,31 +3,33 @@
   <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
-    <title>Erik Nilsson · Winter Dispatch</title>
+    <title>Erik Nilsson · Winter Ledger</title>
     <link rel="preconnect" href="https://fonts.googleapis.com" />
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
     <link
-      href="https://fonts.googleapis.com/css2?family=Spectral:ital,wght@0,400;0,500;0,600;1,400&family=Playfair+Display:wght@600;700&family=Source+Sans+3:wght@400;500&display=swap"
+      href="https://fonts.googleapis.com/css2?family=EB+Garamond:wght@400;500;600&family=Newsreader:opsz,wght@6..72,400;6..72,600&family=Space+Grotesk:wght@400;500&display=swap"
       rel="stylesheet"
     />
     <style>
       :root {
-        --bg: #f6f2ea;
-        --paper: #fffdf7;
-        --ink: #19140f;
-        --muted: #5b4d3f;
-        --accent: #4b637d;
-        --rule: #d9cdbd;
+        color-scheme: light dark;
+        --paper: #f7f4ef;
+        --ink: #1c1b1a;
+        --accent: #5a6d86;
+        --frost: #c8d3df;
+        --border: rgba(28, 27, 26, 0.2);
+        --body-font: 'EB Garamond', 'Times New Roman', serif;
+        --display-font: 'Newsreader', 'Times New Roman', serif;
+        --ui-font: 'Space Grotesk', 'Helvetica Neue', Arial, sans-serif;
       }
 
       @media (prefers-color-scheme: dark) {
         :root {
-          --bg: #11100f;
-          --paper: #191a1c;
-          --ink: #f7f1e5;
-          --muted: #b0a799;
-          --accent: #87bce2;
-          --rule: #363839;
+          --paper: #111317;
+          --ink: #f5f1ea;
+          --accent: #9fb7d1;
+          --frost: #2b3849;
+          --border: rgba(245, 241, 234, 0.2);
         }
       }
 
@@ -37,315 +39,348 @@
 
       body {
         margin: 0;
-        background: var(--bg);
+        min-height: 100vh;
+        font-family: var(--body-font);
+        background: radial-gradient(circle at top, rgba(90, 109, 134, 0.08), transparent 60%),
+          radial-gradient(circle at bottom, rgba(200, 211, 223, 0.2), transparent 50%), var(--paper);
         color: var(--ink);
-        font-family: "Spectral", "Times New Roman", serif;
-        line-height: 1.6;
         display: flex;
         justify-content: center;
-        padding: 2rem 1rem 4rem;
+        padding: 2rem 1rem 3rem;
       }
 
       main {
-        width: 100%;
         max-width: 640px;
-        background: var(--paper);
-        border: 1px solid var(--rule);
-        padding: 2.5rem 2rem 3rem;
+        width: 100%;
+        margin: 0 auto;
+        background: color-mix(in srgb, var(--paper) 90%, rgba(255, 255, 255, 0.1));
+        border: 1px solid var(--border);
+        padding: 2rem clamp(1.25rem, 4vw, 2.5rem);
+        position: relative;
+        overflow: hidden;
       }
 
-      header {
-        text-align: center;
-        margin-bottom: 2.5rem;
+      main::after {
+        content: '';
+        position: absolute;
+        inset: 1rem;
+        border: 1px solid var(--border);
+        pointer-events: none;
       }
 
-      .masthead {
-        font-family: "Playfair Display", "Times New Roman", serif;
-        font-size: clamp(2rem, 6vw, 3.25rem);
-        letter-spacing: 0.08em;
-        text-transform: uppercase;
-        border-bottom: 2px solid var(--rule);
-        padding-bottom: 0.5rem;
-        margin-bottom: 0.5rem;
-      }
-
-      .dateline {
-        font-family: "Source Sans 3", "Helvetica Neue", sans-serif;
-        text-transform: uppercase;
-        letter-spacing: 0.15em;
-        font-size: 0.75rem;
-        color: var(--muted);
-      }
-
-      .weather {
-        margin-top: 0.3rem;
-        font-size: 0.95rem;
-        color: var(--muted);
-      }
-
-      section {
-        padding: 1.5rem 0;
-        border-top: 1px solid var(--rule);
-      }
-
-      section:first-of-type {
-        border-top: 0;
-        padding-top: 0;
-      }
-
+      h1,
       h2,
       h3 {
-        font-family: "Playfair Display", "Times New Roman", serif;
-        margin: 0 0 0.5rem;
-        letter-spacing: 0.05em;
-      }
-
-      h2 {
-        font-size: 1.4rem;
-        text-transform: uppercase;
-      }
-
-      h3 {
-        font-size: 1.1rem;
+        font-family: var(--display-font);
+        margin: 0;
+        letter-spacing: 0.02em;
       }
 
       p {
+        line-height: 1.7;
         margin: 0 0 1rem;
       }
 
-      .lede {
-        font-size: 1.25rem;
+      a {
+        color: inherit;
+        text-decoration-color: var(--accent);
+        text-decoration-thickness: 1px;
+      }
+
+      .masthead {
+        text-align: center;
+        margin-bottom: 2rem;
+      }
+
+      .masthead__title {
+        font-size: clamp(2rem, 7vw, 3rem);
+        text-transform: uppercase;
+        letter-spacing: 0.35em;
+        margin-bottom: 0.5rem;
+      }
+
+      .masthead__meta {
+        display: flex;
+        justify-content: center;
+        gap: 1rem;
+        font-size: 0.85rem;
+        font-family: var(--ui-font);
+        text-transform: uppercase;
+        letter-spacing: 0.14em;
+      }
+
+      .masthead__tagline {
+        font-size: 1.1rem;
+        margin-top: 1rem;
         font-style: italic;
       }
 
-      .caps {
+      .divider {
+        border-top: 1px solid var(--border);
+        border-bottom: 2px double var(--border);
+        margin: 1.5rem 0;
+        height: 0.5rem;
+      }
+
+      .lede {
+        font-size: 1.1rem;
+        position: relative;
+      }
+
+      .lede p:first-of-type::first-letter {
+        font-size: 4rem;
+        float: left;
+        padding-right: 0.35rem;
+        line-height: 0.85;
+        font-weight: 600;
+      }
+
+      .badge {
+        font-family: var(--ui-font);
         text-transform: uppercase;
-        letter-spacing: 0.12em;
-        font-size: 0.82rem;
-        color: var(--muted);
+        font-size: 0.75rem;
+        letter-spacing: 0.3em;
+        color: var(--accent);
       }
 
       .grid {
         display: grid;
-        gap: 1.25rem;
+        gap: 1.5rem;
       }
 
-      @media (min-width: 620px) {
-        .grid.two {
+      @media (min-width: 640px) {
+        .grid--twocol {
           grid-template-columns: repeat(2, minmax(0, 1fr));
         }
       }
 
-      ul {
-        padding-left: 1.1rem;
-        margin: 0;
-      }
-
-      li {
-        margin-bottom: 0.6rem;
-      }
-
-      a {
-        color: var(--accent);
-        text-decoration: none;
-        border-bottom: 1px solid rgba(75, 99, 125, 0.2);
-      }
-
-      a:hover,
-      a:focus-visible {
-        border-bottom-color: currentColor;
-      }
-
       .card {
-        border: 1px solid var(--rule);
-        padding: 1rem 1.2rem;
-        background: rgba(255, 255, 255, 0.4);
+        padding: 1.25rem;
+        border: 1px solid var(--border);
+        background: color-mix(in srgb, var(--paper) 92%, rgba(255, 255, 255, 0.05));
       }
 
-      @media (prefers-color-scheme: dark) {
-        .card {
-          background: rgba(17, 17, 17, 0.4);
-        }
+      .card h3 {
+        font-size: 1.2rem;
+        margin-bottom: 0.75rem;
       }
 
-      .list-inline {
-        list-style: none;
-        padding: 0;
-        margin: 0;
+      .pair {
+        display: flex;
+        justify-content: space-between;
+        font-family: var(--ui-font);
+        font-size: 0.95rem;
+        border-top: 1px solid var(--border);
+        padding: 0.4rem 0;
+      }
+
+      .pair:first-of-type {
+        border-top: none;
+      }
+
+      .chips {
         display: flex;
         flex-wrap: wrap;
         gap: 0.4rem;
+        font-family: var(--ui-font);
       }
 
-      .list-inline li {
-        margin: 0;
-        padding: 0.35rem 0.55rem;
-        border: 1px solid var(--rule);
+      .chip {
+        border: 1px solid var(--border);
+        padding: 0.3rem 0.65rem;
+        border-radius: 999px;
         font-size: 0.85rem;
+        background: color-mix(in srgb, var(--frost) 35%, var(--paper));
       }
 
-      blockquote {
+      .list {
+        list-style: none;
+        padding: 0;
         margin: 0;
-        padding-left: 1rem;
-        border-left: 3px solid var(--rule);
+      }
+
+      .list li + li {
+        margin-top: 0.85rem;
+        padding-top: 0.85rem;
+        border-top: 1px dashed var(--border);
+      }
+
+      .list__meta {
+        font-family: var(--ui-font);
+        font-size: 0.85rem;
+        text-transform: uppercase;
+        letter-spacing: 0.1em;
+        color: var(--accent);
+      }
+
+      .tweets blockquote {
+        margin: 0 0 1rem;
+        padding: 0 0 0.25rem;
+        border-bottom: 1px solid var(--border);
         font-style: italic;
       }
 
-      footer {
-        border-top: 1px solid var(--rule);
-        margin-top: 2rem;
-        padding-top: 1.5rem;
-        text-align: center;
-        font-family: "Playfair Display", serif;
+      .tweets blockquote a {
+        display: inline-flex;
+        gap: 0.3rem;
+        align-items: center;
+        font-family: var(--ui-font);
+        font-style: normal;
+        font-size: 0.85rem;
       }
 
-      .small-print {
-        font-size: 0.85rem;
-        color: var(--muted);
-        margin-top: 0.5rem;
+      footer {
+        text-align: center;
+        font-family: var(--ui-font);
+        text-transform: uppercase;
+        letter-spacing: 0.2em;
+        font-size: 0.75rem;
+        margin-top: 2rem;
+      }
+
+      footer a {
+        color: var(--accent);
+        text-decoration: none;
       }
     </style>
   </head>
   <body>
     <main>
-      <header>
-        <div class="masthead">Erik Nilsson</div>
-        <div class="dateline">Winter Dispatch · Stockholm · December 28, 2025</div>
-        <div class="weather">0°C · Clear skies · One quiet commit this week</div>
+      <header class="masthead">
+        <div class="masthead__title">Stockholm Ledger</div>
+        <div class="masthead__meta">
+          <span>December 29, 2025</span>
+          <span>Clear · 1°C</span>
+          <span>Erik Nilsson</span>
+        </div>
+        <p class="masthead__tagline">
+          Product Designer at Cursor, keeping the craft steady through winter light.
+        </p>
       </header>
 
-      <section>
-        <p class="caps">Letter from the studio</p>
-        <p class="lede">
-          Product Designer at Cursor, making tools for building software with AI.
-          Tinkering with cursor-commands and shipflow on the side.
+      <div class="divider" role="presentation"></div>
+
+      <section class="lede card" aria-labelledby="lede-title">
+        <p id="lede-title">
+          From a quiet Stockholm apartment, I’m tuning Cursor’s product surfaces and tinkering with
+          shipflow, cursor-commands, and a tiny baby-notion experiment. Nothing loud—just steady
+          decisions, careful pacing, and enough curiosity to keep the kettle going.
         </p>
         <p>
-          This edition is a humble field note—part logbook, part listening diary,
-          and a map of work-in-progress craft. It is meant to feel held together
-          by newsprint and winter light.
+          The mood is <strong>clear stockholm quiet</strong>. Commits and tweets are light this week,
+          but the sketchbook is full and the guitars are close. This page is my ledger: a humble
+          snapshot of what’s in motion.
         </p>
       </section>
 
-      <section class="grid two">
+      <div class="divider" role="presentation"></div>
+
+      <section class="grid grid--twocol" aria-label="Current focus and soundtrack">
         <article class="card">
-          <p class="caps">Currently</p>
-          <ul>
-            <li><strong>At Cursor:</strong> designing AI-powered developer tools.</li>
-            <li><strong>Side projects:</strong> cursor-commands, shipflow experiments.</li>
-          </ul>
+          <div class="badge">Currently</div>
+          <h3>What’s under the lamp</h3>
+          <div class="pair">
+            <span><a href="https://cursor.com">Cursor</a></span>
+            <span>Product Designer</span>
+          </div>
+          <div class="pair">
+            <span>Side projects</span>
+            <span>shipflow</span>
+          </div>
+          <div class="pair">
+            <span></span>
+            <span>cursor-commands</span>
+          </div>
+          <div class="pair">
+            <span></span>
+            <span>baby-notion</span>
+          </div>
+          <p style="font-family: var(--ui-font); font-size: 0.85rem; margin-top: 1rem;">
+            GitHub is quiet—no commits logged this week. Resting the wrists, keeping intent sharp.
+          </p>
         </article>
+
         <article class="card">
-          <p class="caps">Work rhythm</p>
-          <p>
-            GitHub check-ins stay light—one commit this week across
-            <a href="https://github.com/eriknson/cursor-commands" target="_blank" rel="noreferrer">cursor-commands</a>
-            and
-            <a href="https://github.com/eriknson/shipflow" target="_blank" rel="noreferrer">shipflow</a>.
-            Fewer updates, more listening for good problems.
+          <div class="badge">Listening</div>
+          <h3>Needle drops & loops</h3>
+          <div class="chips" aria-label="Artists in rotation">
+            <span class="chip">Dire Straits</span>
+            <span class="chip">Fred again..</span>
+            <span class="chip">Beach House</span>
+            <span class="chip">Arctic Monkeys</span>
+            <span class="chip">Parcels</span>
+          </div>
+          <p style="font-family: var(--ui-font); font-size: 0.85rem; margin-top: 1rem;">
+            Mix of dream pop, Swedish pop, classic rock, stutter house, house, indie. Keeps the
+            drafts warm.
           </p>
         </article>
       </section>
 
-      <section>
-        <p class="caps">Feature · Studio Notes</p>
-        <h2>Tools that disappear into the work</h2>
-        <p>
-          The Cursor team is deep in the humble pursuit of shipping AI-native
-          workflows that feel obvious once you touch them. It's winter outside,
-          so the focus tilts toward warmth: fewer menus, clearer intent, and
-          commands that keep pace with a builder’s thought process.
-        </p>
-        <p>
-          Cursor-commands lives as a personal proving ground—where Siri shortcuts
-          spark GitHub Actions, and agents wake up from a phone before sunrise.
-          Shipflow, meanwhile, is an ongoing attempt to make “shipping by sunrise”
-          feel less like a metaphor and more like a reliable cadence.
-        </p>
+      <div class="divider" role="presentation"></div>
+
+      <section class="card" aria-labelledby="posts-heading">
+        <div class="badge">Notebook</div>
+        <h3 id="posts-heading">Latest pieces</h3>
+        <ul class="list">
+          <li>
+            <a href="/posts/a-living-site">A living site</a>
+            <div class="list__meta">December 26, 2025</div>
+          </li>
+          <li>
+            <a href="/posts/surgical-edits">Surgical edits</a>
+            <div class="list__meta">November 23, 2025</div>
+          </li>
+          <li>
+            <a href="/posts/familiar-differentiation">Familiar differentiation</a>
+            <div class="list__meta">November 15, 2024</div>
+          </li>
+          <li>
+            <a href="/posts/hackathon-energy-but-add-users">Hackathon energy, but add users</a>
+            <div class="list__meta">October 15, 2022</div>
+          </li>
+        </ul>
       </section>
 
-      <section class="grid two">
-        <article>
-          <p class="caps">Notebook · Recent Posts</p>
-          <ul>
-            <li>
-              <a href="/posts/a-living-site">A living site</a>
-              <span>· Dec 26, 2025</span>
-            </li>
-            <li>
-              <a href="/posts/surgical-edits">Surgical edits</a>
-              <span>· Nov 23, 2025</span>
-            </li>
-            <li>
-              <a href="/posts/familiar-differentiation">Familiar differentiation</a>
-              <span>· Nov 15, 2024</span>
-            </li>
-            <li>
-              <a href="/posts/hackathon-energy-but-add-users">Hackathon energy, but add users</a>
-              <span>· Oct 15, 2022</span>
-            </li>
-            <li>
-              <a href="https://uu.diva-portal.org/smash/record.jsf?pid=diva2:1453018&dswid=2212"
-                >Go with the flow</a
-              >
-              <span>· Aug 4, 2020</span>
-            </li>
-          </ul>
-        </article>
-        <article>
-          <p class="caps">Listening desk</p>
-          <p>
-            Winter evenings sound like a mixtape of Dire Straits, Fred again..,
-            Beach House, sombr, Arctic Monkeys, Parcels, The Velvet Sundown,
-            Bob Dylan, Taylor Swift, David Ritschard, and other soft-lit edges.
-          </p>
-          <ul class="list-inline">
-            <li>Dream pop</li>
-            <li>Classic rock</li>
-            <li>Swedish pop</li>
-            <li>Indie soul</li>
-            <li>Folk rock</li>
-            <li>House</li>
-          </ul>
-        </article>
-      </section>
+      <div class="divider" role="presentation"></div>
 
-      <section class="grid two">
-        <article>
-          <p class="caps">Dispatches from X</p>
+      <section class="grid" aria-label="Signals">
+        <article class="card tweets">
+          <div class="badge">Quiet signals</div>
+          <h3>Recent thoughts</h3>
           <blockquote>
-            <p>“imagine 2026” — <a href="https://x.com/flowstated/status/2002167999353241901">Dec 20</a></p>
-            <p>“shipping by sunrise” — <a href="https://x.com/flowstated/status/2000889983562080578">Dec 16</a></p>
-            <p>
-              “exploring ways to spin up agents from my phone. iOS shortcuts × github
-              actions × cursor cli” —
-              <a href="https://x.com/flowstated/status/2000691637190861180">Dec 15</a>
-            </p>
+            “imagine 2026”
+            <br />
+            <a href="https://x.com/flowstated/status/2002167999353241901" target="_blank" rel="noreferrer"
+              >December 20 · X</a
+            >
           </blockquote>
-          <p class="small-print">The feed is quiet this week—saving words for builds.</p>
-        </article>
-        <article>
-          <p class="caps">Weathered rituals</p>
-          <p>
-            Stockholm sits at freezing, skies clear, sidewalks crisp. The routine:
-            bundle up, walk to the studio, sketch flows until the light fades,
-            then refine commands over a cup of something warm.
+          <blockquote>
+            “shipping by sunrise”
+            <br />
+            <a href="https://x.com/flowstated/status/2000889983562080578" target="_blank" rel="noreferrer"
+              >December 16 · X</a
+            >
+          </blockquote>
+          <blockquote>
+            “exploring ways to spin up agents from my phone — iOS Shortcuts × GitHub Actions × Cursor CLI”
+            <br />
+            <a href="https://x.com/flowstated/status/2000691637190861180" target="_blank" rel="noreferrer"
+              >December 15 · X</a
+            >
+          </blockquote>
+          <p style="font-family: var(--ui-font); font-size: 0.85rem; margin-top: 1rem;">
+            Posting cadence: quiet. Plenty of scribbles happening offscreen.
           </p>
         </article>
       </section>
 
-      <section>
-        <p class="caps">Open door</p>
-        <p>
-          Follow along on <a href="https://x.com/flowstated">X</a>, peek into
-          <a href="https://github.com/eriknson">GitHub</a>, or send a note to
-          <a href="mailto:contact@eriks.design?subject=Hej">contact@eriks.design</a>.
-        </p>
-      </section>
+      <div class="divider" role="presentation"></div>
 
       <footer>
-        <p>— Erik</p>
-        <p class="small-print">Printed for the Winter Special · Designed with care, no bragging.</p>
+        Follow on <a href="https://x.com/flowstated">X</a> · Visit
+        <a href="https://github.com/eriknson">GitHub</a> · Email
+        <a href="mailto:contact@eriks.design?subject=Hej">contact@eriks.design</a>
       </footer>
     </main>
   </body>

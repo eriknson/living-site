@@ -3,770 +3,635 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>Erik Nilsson — Winter 2025</title>
-  <meta name="description" content="Product Designer at Cursor. Building tools for the future of software.">
-  
+  <title>Erik Nilsson</title>
+  <meta name="description" content="Product Designer at Cursor. Tinkering with shipflow and cursor-commands.">
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,400;0,500;0,600;0,700;1,400;1,500&family=Source+Serif+4:ital,opsz,wght@0,8..60,300;0,8..60,400;0,8..60,500;1,8..60,400&family=Inter:wght@400;500&display=swap" rel="stylesheet">
-  
+  <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,400;0,500;0,600;1,400;1,500&family=EB+Garamond:ital,wght@0,400;0,500;0,600;1,400;1,500&display=swap" rel="stylesheet">
   <style>
     :root {
-      --color-bg: #FDFCF9;
-      --color-bg-alt: #F7F5F0;
-      --color-text: #1a1a1a;
-      --color-text-secondary: #4a4a4a;
-      --color-text-muted: #767676;
-      --color-accent: #8B4513;
-      --color-border: #d4d0c8;
-      --color-border-light: #e8e4dc;
-      --color-link: #1a1a1a;
-      --color-link-hover: #8B4513;
-      --color-ornament: #c4b8a8;
-      --color-masthead: #1a1a1a;
-      --font-display: 'Playfair Display', Georgia, serif;
-      --font-body: 'Source Serif 4', Georgia, serif;
-      --font-sans: 'Inter', -apple-system, sans-serif;
+      --bg: #faf8f5;
+      --bg-alt: #f5f2ed;
+      --text: #1a1a18;
+      --text-secondary: #5c5a55;
+      --text-tertiary: #8a8780;
+      --accent: #2c4a6e;
+      --border: #d4d0c8;
+      --border-light: #e8e4dc;
+      --link: #3d5a7a;
+      --link-hover: #1a3a5a;
+      --frost: rgba(180, 200, 220, 0.15);
     }
 
     @media (prefers-color-scheme: dark) {
       :root {
-        --color-bg: #0f0f0f;
-        --color-bg-alt: #1a1918;
-        --color-text: #e8e4dc;
-        --color-text-secondary: #b8b4ac;
-        --color-text-muted: #888580;
-        --color-accent: #d4a574;
-        --color-border: #2c2a28;
-        --color-border-light: #232220;
-        --color-link: #e8e4dc;
-        --color-link-hover: #d4a574;
-        --color-ornament: #3c3a38;
-        --color-masthead: #e8e4dc;
+        --bg: #141413;
+        --bg-alt: #1c1c1a;
+        --text: #e8e6e1;
+        --text-secondary: #a8a5a0;
+        --text-tertiary: #706d68;
+        --accent: #8ab4d8;
+        --border: #3a3835;
+        --border-light: #2a2825;
+        --link: #9cc4e8;
+        --link-hover: #c4ddf0;
+        --frost: rgba(140, 170, 200, 0.08);
       }
     }
 
-    *, *::before, *::after {
-      box-sizing: border-box;
+    * {
       margin: 0;
       padding: 0;
+      box-sizing: border-box;
     }
 
     html {
-      font-size: 17px;
+      font-size: 18px;
       -webkit-font-smoothing: antialiased;
       -moz-osx-font-smoothing: grayscale;
     }
 
     body {
-      font-family: var(--font-body);
-      background: var(--color-bg);
-      color: var(--color-text);
-      line-height: 1.65;
+      font-family: 'EB Garamond', Georgia, 'Times New Roman', serif;
+      background: var(--bg);
+      color: var(--text);
+      line-height: 1.6;
       min-height: 100vh;
     }
 
-    /* Newspaper texture overlay */
-    body::before {
-      content: '';
-      position: fixed;
-      top: 0;
-      left: 0;
-      right: 0;
-      bottom: 0;
-      pointer-events: none;
-      opacity: 0.015;
-      background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noise'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.8' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noise)'/%3E%3C/svg%3E");
-    }
-
-    .container {
+    .page {
       max-width: 640px;
       margin: 0 auto;
-      padding: 0 24px;
+      padding: 2rem 1.5rem 4rem;
     }
 
-    /* ─────────────────────────────────────────────────────────
-       MASTHEAD
-    ───────────────────────────────────────────────────────── */
+    /* Masthead */
     .masthead {
-      padding: 32px 0 24px;
       text-align: center;
-      border-bottom: 1px solid var(--color-border);
+      padding-bottom: 1.5rem;
+      margin-bottom: 2rem;
+      border-bottom: 1px solid var(--border);
+      position: relative;
     }
 
-    .masthead-date {
-      font-family: var(--font-sans);
-      font-size: 10px;
-      font-weight: 500;
-      letter-spacing: 0.15em;
+    .masthead::after {
+      content: '';
+      position: absolute;
+      bottom: 3px;
+      left: 0;
+      right: 0;
+      height: 1px;
+      background: var(--border);
+    }
+
+    .edition-line {
+      font-size: 0.65rem;
+      letter-spacing: 0.2em;
       text-transform: uppercase;
-      color: var(--color-text-muted);
-      margin-bottom: 12px;
+      color: var(--text-tertiary);
+      margin-bottom: 0.75rem;
+      font-family: system-ui, -apple-system, sans-serif;
+      font-weight: 500;
     }
 
     .masthead-title {
-      font-family: var(--font-display);
-      font-size: clamp(36px, 10vw, 52px);
+      font-family: 'Cormorant Garamond', Georgia, serif;
+      font-size: 2.8rem;
       font-weight: 400;
       letter-spacing: -0.02em;
-      color: var(--color-masthead);
-      line-height: 1;
-      margin-bottom: 8px;
+      line-height: 1.1;
+      margin-bottom: 0.5rem;
     }
 
-    .masthead-edition {
-      font-family: var(--font-display);
-      font-size: 12px;
+    @media (min-width: 480px) {
+      .masthead-title {
+        font-size: 3.4rem;
+      }
+    }
+
+    .masthead-date {
+      font-size: 0.75rem;
+      color: var(--text-secondary);
       font-style: italic;
-      color: var(--color-text-muted);
-      letter-spacing: 0.05em;
     }
 
-    .edition-badge {
+    /* Weather badge */
+    .weather-line {
       display: inline-flex;
       align-items: center;
-      gap: 6px;
+      gap: 0.5rem;
+      font-size: 0.7rem;
+      color: var(--text-tertiary);
+      margin-top: 0.75rem;
+      padding: 0.35rem 0.75rem;
+      background: var(--frost);
+      border-radius: 2px;
+      font-family: system-ui, -apple-system, sans-serif;
     }
 
-    .edition-badge::before,
-    .edition-badge::after {
-      content: '❄';
-      font-size: 8px;
-      opacity: 0.6;
+    .weather-line svg {
+      width: 14px;
+      height: 14px;
+      opacity: 0.7;
     }
 
-    /* ─────────────────────────────────────────────────────────
-       WEATHER BAR
-    ───────────────────────────────────────────────────────── */
-    .weather-bar {
-      display: flex;
-      justify-content: center;
-      align-items: center;
-      gap: 16px;
-      padding: 10px 0;
-      border-bottom: 1px solid var(--color-border);
-      font-family: var(--font-sans);
-      font-size: 10px;
-      letter-spacing: 0.08em;
-      text-transform: uppercase;
-      color: var(--color-text-muted);
+    /* Content sections */
+    .intro {
+      margin-bottom: 2.5rem;
     }
 
-    .weather-bar span {
-      display: flex;
-      align-items: center;
-      gap: 4px;
-    }
-
-    .weather-dot {
-      width: 3px;
-      height: 3px;
-      background: var(--color-ornament);
-      border-radius: 50%;
-    }
-
-    /* ─────────────────────────────────────────────────────────
-       ORNAMENTS
-    ───────────────────────────────────────────────────────── */
-    .ornament {
-      text-align: center;
-      padding: 20px 0;
-      color: var(--color-ornament);
-      font-size: 14px;
-      letter-spacing: 0.5em;
-    }
-
-    .ornament-line {
-      display: flex;
-      align-items: center;
-      gap: 16px;
-      margin: 32px 0;
-    }
-
-    .ornament-line::before,
-    .ornament-line::after {
-      content: '';
-      flex: 1;
-      height: 1px;
-      background: var(--color-border);
-    }
-
-    .ornament-line span {
-      font-family: var(--font-display);
-      font-size: 12px;
-      color: var(--color-text-muted);
-      font-style: italic;
-    }
-
-    /* ─────────────────────────────────────────────────────────
-       MAIN CONTENT
-    ───────────────────────────────────────────────────────── */
-    main {
-      padding: 40px 0 60px;
-    }
-
-    /* Lead section */
-    .lead {
-      text-align: center;
-      margin-bottom: 48px;
-    }
-
-    .lead-intro {
-      font-family: var(--font-display);
-      font-size: clamp(22px, 5vw, 28px);
+    .greeting {
+      font-size: 1.35rem;
+      margin-bottom: 1rem;
       font-weight: 400;
-      line-height: 1.4;
-      color: var(--color-text);
-      margin-bottom: 20px;
     }
 
-    .lead-intro .highlight {
-      font-style: italic;
+    .bio {
+      color: var(--text-secondary);
+      font-size: 1.05rem;
     }
 
-    .lead-byline {
-      font-family: var(--font-body);
-      font-size: 15px;
-      color: var(--color-text-secondary);
-      line-height: 1.7;
-      max-width: 520px;
-      margin: 0 auto;
+    .bio a {
+      color: var(--link);
+      text-decoration: underline;
+      text-underline-offset: 2px;
+      text-decoration-thickness: 1px;
+      transition: color 0.15s ease;
     }
 
-    /* ─────────────────────────────────────────────────────────
-       SECTIONS
-    ───────────────────────────────────────────────────────── */
+    .bio a:hover {
+      color: var(--link-hover);
+    }
+
+    /* Section styling */
     .section {
-      margin-bottom: 48px;
+      margin-bottom: 2.5rem;
     }
 
     .section-header {
       display: flex;
       align-items: center;
-      gap: 12px;
-      margin-bottom: 16px;
+      gap: 0.75rem;
+      margin-bottom: 1rem;
     }
 
-    .section-header::before {
-      content: '';
-      width: 24px;
-      height: 1px;
-      background: var(--color-border);
-    }
-
-    .section-title {
-      font-family: var(--font-sans);
-      font-size: 9px;
-      font-weight: 500;
-      letter-spacing: 0.2em;
+    .section-label {
+      font-size: 0.65rem;
+      letter-spacing: 0.15em;
       text-transform: uppercase;
-      color: var(--color-text-muted);
+      color: var(--text-tertiary);
+      font-family: system-ui, -apple-system, sans-serif;
+      font-weight: 600;
+      white-space: nowrap;
+    }
+
+    .section-rule {
+      flex: 1;
+      height: 1px;
+      background: var(--border-light);
     }
 
     /* Currently section */
     .currently-grid {
       display: grid;
-      gap: 2px;
-      background: var(--color-border-light);
-      border: 1px solid var(--color-border);
+      gap: 0.75rem;
     }
 
     .currently-item {
-      display: grid;
-      grid-template-columns: 100px 1fr;
-      background: var(--color-bg);
-      padding: 14px 16px;
-      gap: 16px;
+      display: flex;
+      gap: 1rem;
+      padding: 0.75rem 0;
+      border-bottom: 1px dotted var(--border-light);
     }
 
-    @media (max-width: 480px) {
-      .currently-item {
-        grid-template-columns: 80px 1fr;
-        padding: 12px 14px;
-        gap: 12px;
-      }
+    .currently-item:last-child {
+      border-bottom: none;
     }
 
     .currently-label {
-      font-family: var(--font-sans);
-      font-size: 10px;
-      font-weight: 500;
+      font-size: 0.7rem;
       letter-spacing: 0.1em;
       text-transform: uppercase;
-      color: var(--color-text-muted);
-      align-self: center;
+      color: var(--text-tertiary);
+      font-family: system-ui, -apple-system, sans-serif;
+      font-weight: 500;
+      min-width: 80px;
+      padding-top: 0.15rem;
     }
 
     .currently-value {
-      font-family: var(--font-body);
-      font-size: 14px;
-      color: var(--color-text-secondary);
-      line-height: 1.5;
+      flex: 1;
+      color: var(--text);
+      font-size: 0.95rem;
     }
 
-    .currently-value a {
-      color: var(--color-link);
-      text-decoration: none;
-      border-bottom: 1px solid var(--color-border);
-      transition: border-color 0.2s, color 0.2s;
-    }
-
-    .currently-value a:hover {
-      color: var(--color-link-hover);
-      border-color: var(--color-link-hover);
-    }
-
-    /* ─────────────────────────────────────────────────────────
-       WRITINGS
-    ───────────────────────────────────────────────────────── */
-    .writings-list {
+    /* Posts section */
+    .posts-list {
       list-style: none;
     }
 
-    .writings-item {
-      border-bottom: 1px solid var(--color-border-light);
-      padding: 18px 0;
+    .post-item {
+      padding: 1rem 0;
+      border-bottom: 1px solid var(--border-light);
     }
 
-    .writings-item:first-child {
-      border-top: 1px solid var(--color-border);
+    .post-item:first-child {
+      padding-top: 0;
     }
 
-    .writings-item:last-child {
-      border-bottom: 1px solid var(--color-border);
+    .post-item:last-child {
+      border-bottom: none;
     }
 
-    .writings-link {
+    .post-link {
       display: block;
       text-decoration: none;
       color: inherit;
+      transition: transform 0.15s ease;
     }
 
-    .writings-title {
-      font-family: var(--font-display);
-      font-size: 19px;
+    .post-link:hover {
+      transform: translateX(2px);
+    }
+
+    .post-link:hover .post-title {
+      color: var(--link);
+    }
+
+    .post-title {
+      font-size: 1.15rem;
       font-weight: 500;
-      color: var(--color-text);
-      line-height: 1.35;
-      margin-bottom: 6px;
-      transition: color 0.2s;
+      margin-bottom: 0.25rem;
+      transition: color 0.15s ease;
     }
 
-    .writings-link:hover .writings-title {
-      color: var(--color-link-hover);
-    }
-
-    .writings-meta {
-      font-family: var(--font-sans);
-      font-size: 11px;
-      color: var(--color-text-muted);
-      letter-spacing: 0.02em;
-    }
-
-    .writings-featured {
-      padding: 20px 0;
-    }
-
-    .writings-featured .writings-title {
-      font-size: 22px;
-      font-weight: 600;
-    }
-
-    .writings-featured .writings-excerpt {
-      font-family: var(--font-body);
-      font-size: 14px;
-      color: var(--color-text-secondary);
-      line-height: 1.6;
-      margin: 10px 0;
-    }
-
-    /* ─────────────────────────────────────────────────────────
-       LISTENING
-    ───────────────────────────────────────────────────────── */
-    .listening-box {
-      background: var(--color-bg-alt);
-      border: 1px solid var(--color-border);
-      padding: 20px;
-    }
-
-    .listening-header {
-      font-family: var(--font-display);
-      font-size: 14px;
+    .post-meta {
+      font-size: 0.75rem;
+      color: var(--text-tertiary);
       font-style: italic;
-      color: var(--color-text-muted);
-      margin-bottom: 12px;
     }
 
-    .listening-artists {
-      font-family: var(--font-body);
-      font-size: 14px;
-      color: var(--color-text-secondary);
+    .post-meta .separator {
+      margin: 0 0.35rem;
+      opacity: 0.5;
+    }
+
+    /* Listening section */
+    .listening-content {
+      font-size: 0.9rem;
+      color: var(--text-secondary);
       line-height: 1.7;
     }
 
-    .listening-genres {
-      margin-top: 14px;
-      padding-top: 14px;
-      border-top: 1px solid var(--color-border-light);
-      font-family: var(--font-sans);
-      font-size: 10px;
-      color: var(--color-text-muted);
-      letter-spacing: 0.02em;
-      text-transform: lowercase;
-      font-style: italic;
+    .artist {
+      color: var(--text);
+      font-weight: 500;
     }
 
-    /* ─────────────────────────────────────────────────────────
-       DISPATCH (TWEETS)
-    ───────────────────────────────────────────────────────── */
-    .dispatch {
-      background: var(--color-bg-alt);
-      border-left: 3px solid var(--color-accent);
-      padding: 16px 20px;
-      margin: 8px 0;
+    .genre-tags {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 0.4rem;
+      margin-top: 0.75rem;
     }
 
-    .dispatch-text {
-      font-family: var(--font-body);
-      font-size: 15px;
-      color: var(--color-text);
-      line-height: 1.55;
-      font-style: italic;
+    .genre-tag {
+      font-size: 0.65rem;
+      padding: 0.2rem 0.5rem;
+      background: var(--bg-alt);
+      border: 1px solid var(--border-light);
+      border-radius: 2px;
+      color: var(--text-tertiary);
+      font-family: system-ui, -apple-system, sans-serif;
     }
 
-    .dispatch-meta {
-      margin-top: 10px;
-      font-family: var(--font-sans);
-      font-size: 10px;
-      color: var(--color-text-muted);
-      letter-spacing: 0.02em;
+    /* Murmurs (tweets) section */
+    .murmurs-list {
+      display: flex;
+      flex-direction: column;
+      gap: 1rem;
     }
 
-    .dispatch-meta a {
-      color: var(--color-text-muted);
+    .murmur {
+      padding: 1rem;
+      background: var(--bg-alt);
+      border-left: 2px solid var(--border);
+      font-size: 0.95rem;
+      color: var(--text-secondary);
       text-decoration: none;
-      border-bottom: 1px solid var(--color-border);
-      transition: color 0.2s, border-color 0.2s;
+      display: block;
+      transition: border-color 0.15s ease, background 0.15s ease;
     }
 
-    .dispatch-meta a:hover {
-      color: var(--color-link-hover);
-      border-color: var(--color-link-hover);
+    .murmur:hover {
+      border-color: var(--accent);
+      background: var(--frost);
     }
 
-    /* ─────────────────────────────────────────────────────────
-       FOOTER
-    ───────────────────────────────────────────────────────── */
-    footer {
-      border-top: 2px solid var(--color-border);
-      padding: 32px 0 48px;
+    .murmur-text {
+      margin-bottom: 0.5rem;
+      white-space: pre-wrap;
+      line-height: 1.5;
+      color: var(--text);
+    }
+
+    .murmur-date {
+      font-size: 0.7rem;
+      color: var(--text-tertiary);
+      font-style: italic;
+    }
+
+    /* Footer */
+    .footer {
+      margin-top: 3rem;
+      padding-top: 1.5rem;
+      border-top: 1px solid var(--border);
       text-align: center;
     }
 
     .footer-links {
       display: flex;
       justify-content: center;
-      flex-wrap: wrap;
-      gap: 8px 24px;
-      margin-bottom: 24px;
+      gap: 1.5rem;
+      margin-bottom: 1rem;
     }
 
-    .footer-links a {
-      font-family: var(--font-sans);
-      font-size: 12px;
-      font-weight: 500;
-      color: var(--color-text-secondary);
+    .footer-link {
+      font-size: 0.8rem;
+      color: var(--text-secondary);
       text-decoration: none;
-      letter-spacing: 0.02em;
-      transition: color 0.2s;
-    }
-
-    .footer-links a:hover {
-      color: var(--color-link-hover);
-    }
-
-    .footer-sign-off {
-      font-family: var(--font-display);
-      font-size: 16px;
-      font-style: italic;
-      color: var(--color-text-muted);
-      margin-bottom: 16px;
-    }
-
-    .footer-colophon {
-      font-family: var(--font-sans);
-      font-size: 10px;
-      color: var(--color-text-muted);
       letter-spacing: 0.05em;
-      text-transform: uppercase;
-      opacity: 0.7;
+      transition: color 0.15s ease;
+      display: flex;
+      align-items: center;
+      gap: 0.35rem;
     }
 
-    /* ─────────────────────────────────────────────────────────
-       DECORATIVE RULES
-    ───────────────────────────────────────────────────────── */
-    .double-rule {
-      border: none;
-      height: 4px;
-      background: linear-gradient(
-        to bottom,
-        var(--color-border) 0%,
-        var(--color-border) 25%,
-        transparent 25%,
-        transparent 75%,
-        var(--color-border) 75%,
-        var(--color-border) 100%
-      );
-      margin: 32px 0;
+    .footer-link:hover {
+      color: var(--text);
     }
 
-    .thin-rule {
-      border: none;
+    .footer-link svg {
+      width: 14px;
+      height: 14px;
+      opacity: 0.6;
+    }
+
+    .colophon {
+      font-size: 0.7rem;
+      color: var(--text-tertiary);
+      font-style: italic;
+      margin-top: 1.5rem;
+    }
+
+    /* Winter flourish */
+    .flourish {
+      text-align: center;
+      margin: 2rem 0;
+      color: var(--text-tertiary);
+      font-size: 1rem;
+      letter-spacing: 0.5em;
+      opacity: 0.4;
+    }
+
+    /* Projects inline styling */
+    .project-name {
+      font-family: 'SF Mono', 'Monaco', 'Inconsolata', monospace;
+      font-size: 0.85em;
+      background: var(--bg-alt);
+      padding: 0.1em 0.35em;
+      border-radius: 3px;
+      color: var(--text);
+    }
+
+    /* Ornamental elements */
+    .ornament {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 1rem;
+      margin: 2rem 0;
+      color: var(--text-tertiary);
+      opacity: 0.4;
+    }
+
+    .ornament-line {
+      width: 40px;
       height: 1px;
-      background: var(--color-border);
-      margin: 24px 0;
+      background: currentColor;
     }
 
-    /* ─────────────────────────────────────────────────────────
-       RESPONSIVE
-    ───────────────────────────────────────────────────────── */
+    .ornament-symbol {
+      font-size: 0.8rem;
+    }
+
+    /* Responsive adjustments */
     @media (max-width: 480px) {
       html {
         font-size: 16px;
       }
-      
-      .container {
-        padding: 0 16px;
+
+      .page {
+        padding: 1.5rem 1.25rem 3rem;
       }
-      
-      .masthead {
-        padding: 24px 0 20px;
+
+      .currently-item {
+        flex-direction: column;
+        gap: 0.25rem;
       }
-      
-      main {
-        padding: 32px 0 48px;
+
+      .currently-label {
+        min-width: auto;
       }
-      
-      .lead {
-        margin-bottom: 36px;
-      }
-      
-      .section {
-        margin-bottom: 36px;
-      }
-      
+
       .footer-links {
-        gap: 6px 16px;
+        flex-direction: column;
+        gap: 0.75rem;
       }
     }
 
-    /* ─────────────────────────────────────────────────────────
-       PRINT STYLES
-    ───────────────────────────────────────────────────────── */
+    /* Print styles */
     @media print {
-      body::before {
-        display: none;
-      }
-      
-      .footer-links a {
-        color: var(--color-text);
+      body {
+        background: white;
+        color: black;
       }
     }
   </style>
 </head>
 <body>
-  <div class="container">
-    <!-- ═══════════════════════════════════════════════════════
-         MASTHEAD
-    ════════════════════════════════════════════════════════ -->
+  <div class="page">
     <header class="masthead">
-      <p class="masthead-date">Sunday, December 28, 2025</p>
+      <div class="edition-line">Winter Edition · Stockholm</div>
       <h1 class="masthead-title">Erik Nilsson</h1>
-      <p class="masthead-edition">
-        <span class="edition-badge">Winter Edition</span>
-      </p>
+      <div class="masthead-date">Sunday, December 29, 2025</div>
+      <div class="weather-line">
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <circle cx="12" cy="12" r="4"></circle>
+          <path d="M12 2v2M12 20v2M4.93 4.93l1.41 1.41M17.66 17.66l1.41 1.41M2 12h2M20 12h2M6.34 17.66l-1.41 1.41M19.07 4.93l-1.41 1.41"></path>
+        </svg>
+        <span>Clear skies · 1°C</span>
+      </div>
     </header>
 
-    <!-- ═══════════════════════════════════════════════════════
-         WEATHER BAR
-    ════════════════════════════════════════════════════════ -->
-    <div class="weather-bar">
-      <span>Stockholm</span>
-      <span class="weather-dot"></span>
-      <span>0°C · Clear</span>
-      <span class="weather-dot"></span>
-      <span>Sunset 14:52</span>
-    </div>
-
-    <!-- ═══════════════════════════════════════════════════════
-         MAIN CONTENT
-    ════════════════════════════════════════════════════════ -->
     <main>
-      <!-- Lead -->
-      <section class="lead">
-        <p class="lead-intro">
-          Product Designer at <span class="highlight">Cursor</span>,<br>
-          making tools for building software with AI.
-        </p>
-        <p class="lead-byline">
-          Tinkering with side projects and writing about what I learn. 
-          This site is my little playground—rebuilt daily by AI agents 
-          running in the background.
+      <section class="intro">
+        <p class="greeting">Hello, I'm Erik.</p>
+        <p class="bio">
+          This site is my playground to try things and write about what I learn. 
+          Follow me on <a href="https://x.com/flowstated">X</a>, 
+          check out my <a href="https://github.com/eriknson">GitHub</a>, 
+          or send me an <a href="mailto:contact@eriks.design?subject=Hej">email</a>.
         </p>
       </section>
 
-      <hr class="double-rule">
-
-      <!-- Currently -->
       <section class="section">
         <div class="section-header">
-          <h2 class="section-title">Currently</h2>
+          <span class="section-label">Currently</span>
+          <span class="section-rule"></span>
         </div>
-        
         <div class="currently-grid">
           <div class="currently-item">
-            <span class="currently-label">At Cursor</span>
-            <span class="currently-value">Designing AI-powered developer tools</span>
+            <span class="currently-label">Work</span>
+            <span class="currently-value">Product Designer at Cursor</span>
           </div>
           <div class="currently-item">
-            <span class="currently-label">Side Projects</span>
+            <span class="currently-label">Tinkering</span>
             <span class="currently-value">
-              <a href="https://github.com/eriknson/cursor-commands">cursor-commands</a>, 
-              <a href="https://github.com/eriknson/shipflow">shipflow</a>
+              <span class="project-name">shipflow</span>, 
+              <span class="project-name">cursor-commands</span>, 
+              <span class="project-name">baby-notion</span>
             </span>
           </div>
-          <div class="currently-item">
-            <span class="currently-label">Location</span>
-            <span class="currently-value">Stockholm, Sweden</span>
-          </div>
         </div>
       </section>
 
-      <!-- Recent dispatch -->
       <section class="section">
         <div class="section-header">
-          <h2 class="section-title">Latest Dispatch</h2>
+          <span class="section-label">Writing</span>
+          <span class="section-rule"></span>
         </div>
-        
-        <div class="dispatch">
-          <p class="dispatch-text">"imagine 2026"</p>
-          <p class="dispatch-meta">
-            December 20 · <a href="https://x.com/flowstated/status/2002167999353241901">view on X</a>
-          </p>
-        </div>
-      </section>
-
-      <div class="ornament-line">
-        <span>❖</span>
-      </div>
-
-      <!-- Writings -->
-      <section class="section">
-        <div class="section-header">
-          <h2 class="section-title">Writings</h2>
-        </div>
-        
-        <ul class="writings-list">
-          <li class="writings-item writings-featured">
-            <a href="/posts/a-living-site" class="writings-link">
-              <h3 class="writings-title">A living site</h3>
-              <p class="writings-excerpt">
-                Most websites go stale sooner or later. I wanted to try making one 
-                that rebuilds itself by spawning Cursor agents via GitHub Actions.
-              </p>
-              <span class="writings-meta">December 26, 2025 · 7 min read</span>
+        <ul class="posts-list">
+          <li class="post-item">
+            <a href="/posts/a-living-site" class="post-link">
+              <div class="post-title">A living site</div>
+              <div class="post-meta">
+                December 26, 2025
+                <span class="separator">·</span>
+                7 min read
+              </div>
             </a>
           </li>
-          <li class="writings-item">
-            <a href="/posts/surgical-edits" class="writings-link">
-              <h3 class="writings-title">Surgical edits</h3>
-              <span class="writings-meta">November 23, 2025 · 5 min read</span>
+          <li class="post-item">
+            <a href="/posts/surgical-edits" class="post-link">
+              <div class="post-title">Surgical edits</div>
+              <div class="post-meta">
+                November 23, 2025
+                <span class="separator">·</span>
+                4 min read
+              </div>
             </a>
           </li>
-          <li class="writings-item">
-            <a href="/posts/familiar-differentiation" class="writings-link">
-              <h3 class="writings-title">Familiar differentiation</h3>
-              <span class="writings-meta">November 15, 2024 · 6 min read</span>
+          <li class="post-item">
+            <a href="/posts/familiar-differentiation" class="post-link">
+              <div class="post-title">Familiar differentiation</div>
+              <div class="post-meta">
+                November 15, 2024
+                <span class="separator">·</span>
+                5 min read
+              </div>
             </a>
           </li>
-          <li class="writings-item">
-            <a href="/posts/hackathon-energy-but-add-users" class="writings-link">
-              <h3 class="writings-title">Hackathon energy, but add users</h3>
-              <span class="writings-meta">October 15, 2022 · 5 min read</span>
-            </a>
-          </li>
-          <li class="writings-item">
-            <a href="https://uu.diva-portal.org/smash/record.jsf?pid=diva2:1453018&dswid=2212" class="writings-link">
-              <h3 class="writings-title">Go with the flow</h3>
-              <span class="writings-meta">August 4, 2020 · Thesis</span>
+          <li class="post-item">
+            <a href="/posts/hackathon-energy-but-add-users" class="post-link">
+              <div class="post-title">Hackathon energy, but add users</div>
+              <div class="post-meta">
+                October 15, 2022
+                <span class="separator">·</span>
+                4 min read
+              </div>
             </a>
           </li>
         </ul>
       </section>
 
-      <hr class="thin-rule">
+      <div class="ornament">
+        <span class="ornament-line"></span>
+        <span class="ornament-symbol">❄</span>
+        <span class="ornament-line"></span>
+      </div>
 
-      <!-- Listening -->
       <section class="section">
         <div class="section-header">
-          <h2 class="section-title">On Rotation</h2>
+          <span class="section-label">Recent Murmurs</span>
+          <span class="section-rule"></span>
         </div>
-        
-        <div class="listening-box">
-          <p class="listening-header">What I've been listening to lately</p>
-          <p class="listening-artists">
-            Dire Straits, Fred again.., Beach House, sombr, Arctic Monkeys, 
-            Parcels, The Velvet Sundown, Bob Dylan, Taylor Swift, David Ritschard, 
-            Cigarettes After Sex, Moby, Videoclub, Chris Rea.
-          </p>
-          <p class="listening-genres">
-            dream pop · classic rock · stutter house · indie · folk · trip hop
-          </p>
+        <div class="murmurs-list">
+          <a href="https://x.com/flowstated/status/2002167999353241901" class="murmur" target="_blank" rel="noopener">
+            <div class="murmur-text">imagine 2026</div>
+            <div class="murmur-date">December 20</div>
+          </a>
+          <a href="https://x.com/flowstated/status/2000889983562080578" class="murmur" target="_blank" rel="noopener">
+            <div class="murmur-text">shipping by sunrise</div>
+            <div class="murmur-date">December 16</div>
+          </a>
+          <a href="https://x.com/flowstated/status/2000691637190861180" class="murmur" target="_blank" rel="noopener">
+            <div class="murmur-text">exploring ways to spin up agents from my phone
+
+iOS shortcuts × github actions × cursor cli</div>
+            <div class="murmur-date">December 15</div>
+          </a>
         </div>
       </section>
 
-      <div class="ornament">· · · ·</div>
-
-      <!-- More dispatches -->
       <section class="section">
         <div class="section-header">
-          <h2 class="section-title">Earlier Notes</h2>
+          <span class="section-label">Listening</span>
+          <span class="section-rule"></span>
         </div>
-        
-        <div class="dispatch">
-          <p class="dispatch-text">"shipping by sunrise"</p>
-          <p class="dispatch-meta">
-            December 16 · <a href="https://x.com/flowstated/status/2000889983562080578">view on X</a>
-          </p>
-        </div>
-        
-        <div class="dispatch">
-          <p class="dispatch-text">
-            "exploring ways to spin up agents from my phone—iOS shortcuts × github actions × cursor cli"
-          </p>
-          <p class="dispatch-meta">
-            December 15 · <a href="https://x.com/flowstated/status/2000691637190861180">view on X</a>
-          </p>
+        <div class="listening-content">
+          <span class="artist">Dire Straits</span>, 
+          <span class="artist">Fred again..</span>, 
+          <span class="artist">Beach House</span>, 
+          <span class="artist">Arctic Monkeys</span>, 
+          <span class="artist">Parcels</span>
+          <div class="genre-tags">
+            <span class="genre-tag">dream pop</span>
+            <span class="genre-tag">swedish pop</span>
+            <span class="genre-tag">classic rock</span>
+            <span class="genre-tag">stutter house</span>
+            <span class="genre-tag">house</span>
+            <span class="genre-tag">indie</span>
+          </div>
         </div>
       </section>
     </main>
 
-    <!-- ═══════════════════════════════════════════════════════
-         FOOTER
-    ════════════════════════════════════════════════════════ -->
-    <footer>
-      <nav class="footer-links">
-        <a href="https://x.com/flowstated">X</a>
-        <a href="https://github.com/eriknson">GitHub</a>
-        <a href="https://linkedin.com/in/eriknson">LinkedIn</a>
-        <a href="mailto:contact@eriks.design?subject=Hej">Email</a>
-      </nav>
-      
-      <p class="footer-sign-off">— Erik</p>
-      
-      <p class="footer-colophon">
-        Stockholm · Winter 2025
-      </p>
+    <footer class="footer">
+      <div class="footer-links">
+        <a href="https://x.com/flowstated" class="footer-link" target="_blank" rel="noopener">
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor">
+            <path d="M18.244 2.25h3.308l-7.227 8.26 8.502 11.24H16.17l-5.214-6.817L4.99 21.75H1.68l7.73-8.835L1.254 2.25H8.08l4.713 6.231zm-1.161 17.52h1.833L7.084 4.126H5.117z"/>
+          </svg>
+          <span>X</span>
+        </a>
+        <a href="https://github.com/eriknson" class="footer-link" target="_blank" rel="noopener">
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor">
+            <path d="M12 0c-6.626 0-12 5.373-12 12 0 5.302 3.438 9.8 8.207 11.387.599.111.793-.261.793-.577v-2.234c-3.338.726-4.033-1.416-4.033-1.416-.546-1.387-1.333-1.756-1.333-1.756-1.089-.745.083-.729.083-.729 1.205.084 1.839 1.237 1.839 1.237 1.07 1.834 2.807 1.304 3.492.997.107-.775.418-1.305.762-1.604-2.665-.305-5.467-1.334-5.467-5.931 0-1.311.469-2.381 1.236-3.221-.124-.303-.535-1.524.117-3.176 0 0 1.008-.322 3.301 1.23.957-.266 1.983-.399 3.003-.404 1.02.005 2.047.138 3.006.404 2.291-1.552 3.297-1.23 3.297-1.23.653 1.653.242 2.874.118 3.176.77.84 1.235 1.911 1.235 3.221 0 4.609-2.807 5.624-5.479 5.921.43.372.823 1.102.823 2.222v3.293c0 .319.192.694.801.576 4.765-1.589 8.199-6.086 8.199-11.386 0-6.627-5.373-12-12-12z"/>
+          </svg>
+          <span>GitHub</span>
+        </a>
+        <a href="mailto:contact@eriks.design?subject=Hej" class="footer-link">
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <rect x="2" y="4" width="20" height="16" rx="2"></rect>
+            <path d="m22 7-8.97 5.7a1.94 1.94 0 0 1-2.06 0L2 7"></path>
+          </svg>
+          <span>Email</span>
+        </a>
+      </div>
+      <div class="colophon">
+        Clear Stockholm quiet · This page regenerates itself
+      </div>
     </footer>
   </div>
 </body>
