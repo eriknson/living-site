@@ -1,8 +1,9 @@
 import { notFound } from "next/navigation";
 import Link from "next/link";
-import { getPost, getAllPostSlugs } from "@/lib/posts";
+import { getPost, getAllPostSlugs, getAllPosts } from "@/lib/posts";
 import { GlobalMenuBar } from "@/components/global-menu-bar";
 import { PostContent } from "@/components/post-content";
+import { RelatedPosts } from "@/components/related-posts";
 
 // Generate static params for all posts
 export function generateStaticParams() {
@@ -58,6 +59,7 @@ export default async function PostPage({
     notFound();
   }
 
+  const allPosts = getAllPosts();
   const formattedDate = new Date(post.publishedAt).toLocaleDateString("en-US", {
     year: "numeric",
     month: "long",
@@ -103,6 +105,9 @@ export default async function PostPage({
         >
           <PostContent html={post.contentHtml} />
         </article>
+
+        {/* Related posts */}
+        <RelatedPosts posts={allPosts} currentSlug={slug} />
       </main>
     </div>
   );

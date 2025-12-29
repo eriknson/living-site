@@ -409,7 +409,7 @@ export function GlobalMenuBar({
   }, []);
 
   return (
-    <nav className="shrink-0 py-4 pt-[calc(1rem+env(safe-area-inset-top))] z-50 text-[length:var(--menu-bar-font-size)] text-anysphere-text select-none border-b border-black/[0.06] dark:border-white/[0.06] bg-[#fafaf9] dark:bg-[#0a0a0a]">
+    <nav className="shrink-0 py-4 pt-[calc(1rem+env(safe-area-inset-top))] z-50 text-[length:var(--menu-bar-font-size)] text-anysphere-text select-none border-b border-black/[0.06] dark:border-white/[0.06] bg-[#fafaf9] dark:bg-[#0a0a0a] md:sticky md:top-0">
       <div className="max-w-[640px] mx-auto w-full h-full flex items-center justify-between px-6">
         <div className="flex items-center h-full gap-1">
           {/* Version selector - shown on all pages */}
