@@ -46,7 +46,7 @@ Cron          GitHub Actions        Cursor CLI          Repository
 
 The daily workflow that runs on GitHub Actions is defined via `regenerate.yml`. It starts by pulling fresh data from multiple sources: Articles, GitHub activity, Spotify listening history, X posts (via Typefully), weather, and static identity files.
 
-A dedicated agent (the "curator") parses the raw data and produces a structured brief based on the raw data.
+After that, an agent (the "curator") parses the raw data and produces a structured brief to summarize the key content for the site.
 
 ```
 
