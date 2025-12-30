@@ -6,7 +6,7 @@ status: "published"
 notionPageId: "2d714bfe-df48-8128-9c47-dc1a07b84e53"
 ---
 
-I wanted to try making a website that rebuilds itself. With CI as the runtime, a cron schedule to spawn agents that runs every morning and commits back to the repo, no user interaction needed. And this is how I built it.
+I wanted to try making a website that rebuilds itself. With CI as the runtime, a cron schedule to spawn agents that commit straight back to the repo, no user interaction needed. And this is how I built it.
 
 ```ascii art
 Cron          GitHub Actions        Cursor CLI          Repository
@@ -44,9 +44,9 @@ Cron          GitHub Actions        Cursor CLI          Repository
 
 ## Context
 
-The daily workflow running is defined and running via `regenerate.yml`. It starts by pulling fresh data from multiple sources: GitHub activity, Spotify listening history, X posts (via Typefully), weather, and static identity files.
+The daily workflow that runs on GitHub Actions is defined via `regenerate.yml`. It starts by pulling fresh data from multiple sources: Articles, GitHub activity, Spotify listening history, X posts (via Typefully), weather, and static identity files.
 
-A dedicated agent (the "curator") runs first and produces a structured brief based on the raw data.
+A dedicated agent (the "curator") parses the raw data and produces a structured brief based on the raw data.
 
 ```
 
