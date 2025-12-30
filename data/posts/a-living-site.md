@@ -6,7 +6,7 @@ status: "published"
 notionPageId: "2d714bfe-df48-8128-9c47-dc1a07b84e53"
 ---
 
-I wanted to try making a website that rebuilds itself by spawning Cursor agents via GitHub Actions. CI as the runtime, a cron schedule that initiates every morning, no user interaction needed. The agents maintain the site. And this is how I built it.
+I wanted to try making a website that rebuilds itself. With CI as the runtime, a cron schedule that runs every morning, no user interaction needed. The idea here is that agents maintain the site. And this is how I built it.
 
 ```ascii art
 Cron          GitHub Actions        Cursor CLI          Repository
@@ -48,7 +48,9 @@ The daily workflow running is defined and running via `regenerate.yml`. It start
 
 A dedicated agent (the "curator") runs first and produces a structured brief based on the raw data.
 
-```bash
+```
+
+bash
 cursor-agent -p --force --model composer-1 "$PROMPT"
 ```
 
@@ -75,7 +77,9 @@ The site is live before I wake up.
 
 The workflow uses a matrix to run four models in parallel:
 
-```yaml
+```
+
+yaml
 strategy:
   matrix:
     model:
@@ -87,7 +91,9 @@ strategy:
 
 Each model gets its own isolated workspace via `git worktree`. So the agents sees only what they need: the brief and the reference version of the site. No build history, no other models' outputs (which, in another direction, could be interesting to keep in context).
 
-```bash
+```
+
+bash
 # Create isolated workspace from current commit
 git worktree add /tmp/clean-gen --detach HEAD
 
@@ -98,7 +104,9 @@ rm -rf /tmp/clean-gen/public/builds/
 
 Then each agent runs with a single command:
 
-```bash
+```
+
+bash
 cursor-agent -p --model $MODEL "$PROMPT"
 ```
 
@@ -138,19 +146,25 @@ This pattern scales to any use case. For a product landing page, the sandbox mig
 
 Enforcement happens at multiple layers. The prompt itself includes the constraint:
 
-```markdown
+```
+
+markdown
 You may ONLY create or modify files inside the generated/ folder.
 ```
 
 After the agent runs, a verification step checks for violations:
 
-```bash
+```
+
+bash
 git diff --name-only | grep -v '^generated/' && exit 1
 ```
 
 If anything outside the sandbox changed, the build fails. Finally, the commit step only stages files in the sandbox:
 
-```bash
+```
+
+bash
 git add generated/
 git commit -m "Regenerate site"
 ```
@@ -166,7 +180,9 @@ How do you render arbitrary HTML inside a Next.js app without style conflicts?
 
 Shadow DOM solves this elegantly. It's a browser API that creates an isolated DOM subtree with its own style scope. Styles inside can't leak out, and styles outside can't leak in. But unlike iframes, the content is part of the same document, so scrolling works naturally.
 
-```javascript
+```
+
+javascript
 const shadow = container.attachShadow({ mode: "open" });
 shadow.innerHTML = `<style>${css}</style>${body}`;
 ```
@@ -175,7 +191,9 @@ Complete style isolation. Native scrolling. No iframe jank.
 
 The trick is rewriting CSS selectors. Generated content targets `body`, but inside Shadow DOM, we need to target our wrapper:
 
-```javascript
+```
+
+javascript
 function rewriteBodySelectors(css: string): string {
   return css
     .replace(/\bbody\s*\{/g, "body, .shadow-root {")
