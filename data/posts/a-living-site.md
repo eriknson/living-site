@@ -6,7 +6,7 @@ status: "published"
 notionPageId: "2d714bfe-df48-8128-9c47-dc1a07b84e53"
 ---
 
-I wanted to try making a website that rebuilds itself. With CI as the runtime, a cron schedule that runs every morning, no user interaction needed. The idea here is that agents maintain the site. And this is how I built it.
+I wanted to try making a website that rebuilds itself. With CI as the runtime, a cron schedule to spawn agents that runs every morning and commits back to the repo, no user interaction needed. And this is how I built it.
 
 ```ascii art
 Cron          GitHub Actions        Cursor CLI          Repository
