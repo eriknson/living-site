@@ -136,6 +136,36 @@ export function markdownToHtml(markdown: string, images?: { position: string; sr
   const htmlParts: string[] = [];
   let i = 0;
   let imageIndex = 0;
+
+  // Some Notion → Markdown pipelines accidentally put the language on the first
+  // line *inside* the code fence:
+  // ```
+  //
+  // typescript
+  // const x = 1
+  // ```
+  // We treat that as metadata (language) and do not render it.
+  const KNOWN_CODE_LANGS = new Set([
+    'bash',
+    'sh',
+    'shell',
+    'javascript',
+    'js',
+    'typescript',
+    'ts',
+    'tsx',
+    'yaml',
+    'yml',
+    'markdown',
+    'md',
+    'python',
+    'py',
+    'json',
+    'html',
+    'css',
+    'text',
+    'plain text',
+  ]);
   
   // Helper to insert images after headings or at specific positions
   const insertImagesAfter = (afterHeading?: string) => {
@@ -189,7 +219,7 @@ export function markdownToHtml(markdown: string, images?: { position: string; sr
     
     // Code block
     if (line.startsWith('```')) {
-      const language = line.slice(3).trim() || 'text';
+      const fenceLanguage = line.slice(3).trim();
       const codeLines: string[] = [];
       i++;
       while (i < lines.length && !lines[i].startsWith('```')) {
@@ -198,7 +228,31 @@ export function markdownToHtml(markdown: string, images?: { position: string; sr
       }
       i++; // Skip closing ```
       
-      const code = codeLines.join('\n');
+      // If no language was provided on the fence, try to infer + strip a
+      // "language line" inside the code block (common Notion export quirk).
+      let language = fenceLanguage || 'text';
+      let normalizedCodeLines = codeLines;
+      if (!fenceLanguage) {
+        // Drop leading blank lines for detection and rendering.
+        let start = 0;
+        while (start < normalizedCodeLines.length && normalizedCodeLines[start].trim() === '') {
+          start++;
+        }
+        const firstNonEmpty = normalizedCodeLines[start]?.trim() ?? '';
+        const maybeLang = firstNonEmpty.toLowerCase();
+        if (firstNonEmpty && KNOWN_CODE_LANGS.has(maybeLang)) {
+          language = firstNonEmpty;
+          normalizedCodeLines = normalizedCodeLines.slice(start + 1);
+          // Also drop a single blank line after the language, if present.
+          if (normalizedCodeLines[0]?.trim() === '') {
+            normalizedCodeLines = normalizedCodeLines.slice(1);
+          }
+        } else if (start > 0) {
+          normalizedCodeLines = normalizedCodeLines.slice(start);
+        }
+      }
+
+      const code = normalizedCodeLines.join('\n');
       const ascii = isAsciiArt(code);
       htmlParts.push(renderCodeBlock(code, language, ascii));
       continue;
