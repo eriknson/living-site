@@ -42,31 +42,14 @@ Cron          GitHub Actions        Cursor CLI          Repository
 ```
 
 
-## Context
-
-The daily workflow that runs on GitHub Actions is defined via `regenerate.yml`. It starts by pulling fresh data from multiple sources: Articles, GitHub activity, Spotify listening history, X posts (via Typefully), weather, and static identity files.
-
-After that, an agent (the "curator") parses the raw data and produces a structured brief to summarize the key content for the site.
-
-```
-
-bash
-cursor-agent -p --force --model composer-1 "$PROMPT"
-```
-
-This agent also receives a reference version of the live site. It extracts the semantic structure (headings, sections, links) and passes that along too. This gives the generators a visual and structural baseline. All the messy synthesis work is done upstream.
-
----
-
-
 ## The daily build
 
 Every day at 6am UTC, `regenerate.yml` kicks off:
 
 1. Context — Pull fresh data, compare against history, synthesize a brief.
-2. Generate — Four models run in parallel, each writing to generated/.
-3. Archive — Save outputs to public/builds/, update the manifest, commit. Deploys automatically via Vercel.
-4. Learn (coming soon, maybe) — Usage data feeds back into context. What visitors engage with informs the next build. The loop becomes a flywheel.
+2. Generate — Four models run in parallel, each creating their own version of the site.
+3. Archive — Save outputs to public/builds/, update the manifest, commit to main. The site deploys automatically via Vercel.
+4. _Learn (coming soon, maybe)_ — Usage data feeds back into context. What visitors engage with informs the next build. The loop becomes a flywheel.
 
 The site is live before I wake up.
 
