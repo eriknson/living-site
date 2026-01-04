@@ -126,3 +126,27 @@ Not static, not forgotten,
 But growing, ever new,
 A digital reflection,
 Of all that's me and you.
+
+---
+
+*A poem about penguins*
+
+In black and white they waddle,
+Across the ice so bright,
+Penguins march in perfect rows,
+Through Antarctic night.
+
+They dive in frigid waters,
+With grace and skill they swim,
+Then hop back to their colonies,
+Where life begins again.
+
+With flippers like small wings,
+They cannot truly fly,
+But in the ocean's depths,
+They dance across the sky.
+
+So elegant and comical,
+In tuxedos they are dressed,
+Penguins teach us balance,
+Between work and rest.
