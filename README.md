@@ -107,3 +107,9 @@ npm run curator          # Run curator agent locally
 ## License
 
 MIT
+
+---
+
+Code flows like water,
+Daily regeneration blooms—
+A living website.
