@@ -121,7 +121,7 @@ export function BerkeleyMonoPageClient({ posts }: { posts: PostMeta[] }) {
           {/* Main Content */}
           <main className="max-w-[640px] mx-auto px-6 pt-16 w-full">
             <article className="text-[15px] leading-[1.5] text-black/85 dark:text-white/85 space-y-4">
-              <p>Hello, I'm Erik.</p>
+              <p>Hej, I'm Erik.</p>
 
               <p>
                 This site is my playground to try things and write about what I learn. Follow me on{" "}
