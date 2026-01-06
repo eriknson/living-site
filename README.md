@@ -107,17 +107,3 @@ npm run curator          # Run curator agent locally
 ## License
 
 MIT
-
----
-
-## Winter Poem
-
-Snowflakes dance in silent grace,
-A blanket covers earth's embrace.
-Frosty branches reach for sky,
-As winter's breath goes drifting by.
-
-The world grows quiet, soft and still,
-Beneath the snow on hill and hill.
-A time for rest, for peace, for thought,
-When nature's beauty can't be bought.
