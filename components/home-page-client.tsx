@@ -5,6 +5,7 @@ import { motion } from "motion/react";
 import { GlobalMenuBar } from "@/components/global-menu-bar";
 import { PostList } from "@/components/post-list";
 import type { PostMeta } from "@/lib/posts";
+import type { MainPageContent } from "@/lib/main-page";
 
 // Smooth ease for classy feel
 const smoothEase = [0.25, 0.1, 0.25, 1] as const;
@@ -98,7 +99,7 @@ function Link({
   );
 }
 
-export function HomePageClient({ posts }: { posts: PostMeta[] }) {
+export function HomePageClient({ posts, content }: { posts: PostMeta[]; content: MainPageContent }) {
   return (
     <LinkTooltipProvider>
       <div className="min-h-dvh flex flex-col bg-[#fafaf9] dark:bg-[#0a0a0a] text-[#1a1a1a] dark:text-[#e5e5e5]">
@@ -117,19 +118,22 @@ export function HomePageClient({ posts }: { posts: PostMeta[] }) {
           {/* Main Content */}
           <main className="max-w-[640px] mx-auto px-6 pt-16 w-full">
             <article className="text-[15px] leading-[1.5] text-black/85 dark:text-white/85 space-y-4">
-              <p>Hej, I'm Erik.</p>
+              <p>{content.greeting}</p>
 
               <p>
-                This site is my playground to try things and write about what I learn. Follow me on{" "}
-                <Link href="https://x.com/flowstated" external>
-                  X
+                {content.bio}{" "}
+                <Link href={content.links.x.url} external>
+                  {content.links.x.text}
                 </Link>
                 , checkout my{" "}
-                <Link href="https://github.com/eriknson" external>
-                  GitHub
+                <Link href={content.links.github.url} external>
+                  {content.links.github.text}
                 </Link>
-                , or send me an{" "}
-                <Link href="mailto:contact@eriks.design?subject=Hej">email</Link>.
+                {content.bioAfterLinks}{" "}
+                <Link href={content.links.email.url}>
+                  {content.links.email.text}
+                </Link>
+                .
               </p>
             </article>
 
