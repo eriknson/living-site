@@ -14,6 +14,7 @@ import {
   Mail,
   FileText,
   BookOpen,
+  MessageSquare,
 } from "lucide-react";
 import { SearchIcon } from "@/components/icons/search-icon";
 import { useIsMobile } from "@/lib/use-media-query";
@@ -28,6 +29,12 @@ const PAGES = [
     label: "Posts",
     icon: BookOpen,
     keywords: ["articles", "blog", "writing", "essays"],
+  },
+  {
+    path: "/guestbook",
+    label: "Guestbook",
+    icon: MessageSquare,
+    keywords: ["sign", "leave", "note", "message", "visitor"],
   },
   {
     path: "/new",

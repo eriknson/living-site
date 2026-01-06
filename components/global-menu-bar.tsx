@@ -27,7 +27,7 @@ const CommandMenuDialog = dynamic(() => import("./command-menu"), {
   ssr: false,
 });
 
-type RouteType = "/" | "/agent" | "/new" | "/builds" | "/posts";
+type RouteType = "/" | "/agent" | "/new" | "/builds" | "/posts" | "/guestbook";
 
 // Build status helpers for /builds page
 function getNextBuildTime(): Date {
