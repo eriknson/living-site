@@ -104,6 +104,12 @@ npm run curator          # Run curator agent locally
 - `/new` — Generate a fresh build on-demand via Cloud Agents
 - `/builds` — Build history and logs
 
+## Fun Fact
+
+Varför gick svensken inte över vägen? För att han var redan på andra sidan! 🇸🇪
+
+*(Why didn't the Swede cross the road? Because he was already on the other side!)*
+
 ## License
 
 MIT
