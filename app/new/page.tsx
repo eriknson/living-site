@@ -119,7 +119,7 @@ export default function NewBuildPage() {
     ];
 
     return (
-      <div className="h-dvh flex flex-col bg-[#002FA7] text-white">
+      <div className="h-dvh flex flex-col bg-[#FFD700] text-black">
         <GlobalMenuBar currentRoute="/new" />
         <main className="flex-1 flex flex-col items-center justify-center min-h-0 px-4">
           <div className="w-full max-w-[400px]">

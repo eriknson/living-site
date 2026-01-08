@@ -38,26 +38,26 @@ export function PostList({ posts, excludeStaticLink = false }: PostListProps) {
                   href={post.externalUrl}
                   target="_blank"
                   rel="noopener noreferrer"
-                  className="underline underline-offset-2 decoration-white/30 hover:decoration-white/50 transition-colors truncate cursor-ne-resize"
+                  className="underline underline-offset-2 decoration-black/30 hover:decoration-black/50 transition-colors truncate cursor-ne-resize"
                 >
                   {post.title}{" "}
-                  <span className="text-white/50">↗</span>
+                  <span className="text-black/50">↗</span>
                 </a>
               ) : (
                 <Link
                   href={`/posts/${post.slug}`}
-                  className="underline underline-offset-2 decoration-white/30 hover:decoration-white/50 transition-colors"
+                  className="underline underline-offset-2 decoration-black/30 hover:decoration-black/50 transition-colors"
                 >
                   {post.title}
                 </Link>
               )}
               {post.readTime && (
-                <span className="text-[14px] text-white/60 whitespace-nowrap hidden sm:inline">
+                <span className="text-[14px] text-black/60 whitespace-nowrap hidden sm:inline">
                   {post.readTime} min read
                 </span>
               )}
             </div>
-            <span className="text-[14px] text-white/60 whitespace-nowrap">
+            <span className="text-[14px] text-black/60 whitespace-nowrap">
               {formatDate(post.publishedAt)}
               {post.readTime && (
                 <span className="sm:hidden"> · {post.readTime} min read</span>
@@ -73,16 +73,16 @@ export function PostList({ posts, excludeStaticLink = false }: PostListProps) {
                 href="https://uu.diva-portal.org/smash/record.jsf?pid=diva2:1453018"
                 target="_blank"
                 rel="noopener noreferrer"
-                className="underline underline-offset-2 decoration-white/30 hover:decoration-white/50 transition-colors truncate cursor-ne-resize"
+                className="underline underline-offset-2 decoration-black/30 hover:decoration-black/50 transition-colors truncate cursor-ne-resize"
               >
                 Go with the flow{" "}
-                <span className="text-white/50">↗</span>
+                <span className="text-black/50">↗</span>
               </a>
-              <span className="text-[14px] text-white/60 whitespace-nowrap hidden sm:inline">
+              <span className="text-[14px] text-black/60 whitespace-nowrap hidden sm:inline">
                 45 min read
               </span>
             </div>
-            <span className="text-[14px] text-white/60 whitespace-nowrap">
+            <span className="text-[14px] text-black/60 whitespace-nowrap">
               August 4, 2020
               <span className="sm:hidden"> · 45 min read</span>
             </span>

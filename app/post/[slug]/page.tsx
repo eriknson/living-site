@@ -67,7 +67,7 @@ export default async function PostPage({
   });
 
   return (
-    <div className="min-h-dvh bg-[#002FA7] text-white">
+    <div className="min-h-dvh bg-[#FFD700] text-black">
       <GlobalMenuBar currentRoute="/" />
 
       <main className="max-w-[640px] mx-auto px-6 pt-16 pb-16">

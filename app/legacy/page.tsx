@@ -51,7 +51,7 @@ function ExperimentalModes() {
 
 function HomeContent() {
   return (
-    <div className="min-h-dvh bg-[#002FA7] text-white flex flex-col">
+    <div className="min-h-dvh bg-[#FFD700] text-black flex flex-col">
       {/* Menu Bar */}
       <div className="sticky top-0 z-50">
         <GlobalMenuBar currentRoute="/" />

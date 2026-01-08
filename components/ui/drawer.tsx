@@ -73,13 +73,13 @@ const DrawerContent = React.forwardRef<
       ref={ref}
       aria-describedby={undefined}
       className={cn(
-        "fixed inset-x-0 bottom-0 z-50 mt-24 flex h-auto flex-col rounded-t-[20px] bg-white/95 backdrop-blur-xl text-[#002FA7]",
+        "fixed inset-x-0 bottom-0 z-50 mt-24 flex h-auto flex-col rounded-t-[20px] bg-white/95 backdrop-blur-xl text-black",
         className
       )}
       {...props}
     >
       {/* Drag handle */}
-      <div className="mx-auto mt-3 mb-2 h-1 w-10 rounded-full bg-[#002FA7]/30" />
+      <div className="mx-auto mt-3 mb-2 h-1 w-10 rounded-full bg-black/30" />
       {/* Visually hidden title for accessibility when no visible title is provided */}
       <VisuallyHidden.Root asChild>
         <DrawerPrimitive.Title>{ariaLabel || "Menu"}</DrawerPrimitive.Title>
@@ -130,7 +130,7 @@ const DrawerDescription = React.forwardRef<
 >(({ className, ...props }, ref) => (
   <DrawerPrimitive.Description
     ref={ref}
-    className={cn("text-sm text-[#002FA7]/70", className)}
+    className={cn("text-sm text-black/70", className)}
     {...props}
   />
 ));

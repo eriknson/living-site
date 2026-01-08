@@ -79,7 +79,7 @@ export default async function PostPage({
   });
 
   return (
-    <div className="min-h-dvh bg-[#002FA7] text-white">
+    <div className="min-h-dvh bg-[#FFD700] text-black">
       <GlobalMenuBar currentRoute="/posts" />
 
       <main className="max-w-[640px] mx-auto px-6 pt-16 pb-16">
@@ -88,7 +88,7 @@ export default async function PostPage({
           <h1 className="text-2xl font-medium mb-3 leading-tight">
             {post.title}
           </h1>
-          <p className="text-white/60 text-sm">
+          <p className="text-black/60 text-sm">
             {formattedDate}
             {post.readTime && ` · ${post.readTime} min read`}
           </p>
@@ -98,12 +98,12 @@ export default async function PostPage({
         <article
           className="
             prose prose-neutral dark:prose-invert
-            prose-headings:font-medium prose-headings:tracking-tight prose-headings:text-white
+            prose-headings:font-medium prose-headings:tracking-tight prose-headings:text-black
             prose-h2:text-xl prose-h2:mt-10 prose-h2:mb-4
-            prose-p:text-[15px] prose-p:leading-[1.75] prose-p:text-white
-            prose-a:underline prose-a:decoration-white/30
-            prose-a:underline-offset-2 hover:prose-a:decoration-white/50
-            prose-a:text-white
+            prose-p:text-[15px] prose-p:leading-[1.75] prose-p:text-black
+            prose-a:underline prose-a:decoration-black/30
+            prose-a:underline-offset-2 hover:prose-a:decoration-black/50
+            prose-a:text-black
             max-w-none
           "
         >

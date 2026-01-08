@@ -10,7 +10,7 @@ const smoothEase = [0.25, 0.1, 0.25, 1] as const;
 
 export function PostsPageClient({ posts }: { posts: PostMeta[] }) {
   return (
-    <div className="min-h-dvh flex flex-col bg-[#002FA7] text-white">
+    <div className="min-h-dvh flex flex-col bg-[#FFD700] text-black">
       {/* Menu Bar - fixed at top */}
       <div className="sticky top-0 z-50">
         <GlobalMenuBar currentRoute="/posts" />
@@ -30,7 +30,7 @@ export function PostsPageClient({ posts }: { posts: PostMeta[] }) {
           {posts.length > 0 ? (
             <PostList posts={posts} />
           ) : (
-            <p className="text-white/60">
+            <p className="text-black/60">
               No posts yet.
             </p>
           )}

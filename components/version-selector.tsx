@@ -38,7 +38,7 @@ function BackButton() {
   return (
     <button
       onClick={handleBack}
-      className="flex items-center cursor-pointer h-8 px-3 rounded-full bg-white/10 active:bg-white/15 transition-colors select-none"
+      className="flex items-center cursor-pointer h-8 px-3 rounded-full bg-black/10 active:bg-black/15 transition-colors select-none"
       style={{ touchAction: 'manipulation', WebkitTapHighlightColor: 'transparent' }}
       aria-label="Go back"
     >

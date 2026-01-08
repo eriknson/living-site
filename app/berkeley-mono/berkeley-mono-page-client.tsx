@@ -64,7 +64,7 @@ function LinkTooltipProvider({ children }: { children: React.ReactNode }) {
       {children}
       {tooltip && (
         <div
-          className="fixed pointer-events-none z-50 px-2.5 py-1.5 text-[15px] bg-white/90 text-[#002FA7] rounded-md shadow-lg backdrop-blur-sm -translate-x-1/2"
+          className="fixed pointer-events-none z-50 px-2.5 py-1.5 text-[15px] bg-black/90 text-[#FFD700] rounded-md shadow-lg backdrop-blur-sm -translate-x-1/2"
           style={{
             left: tooltip.x,
             top: tooltip.y + 20,
@@ -91,7 +91,7 @@ function Link({
   return (
     <a
       href={href}
-      className={`underline decoration-white/30 underline-offset-2 hover:decoration-white/50 transition-colors ${external ? "cursor-ne-resize" : ""}`}
+      className={`underline decoration-black/30 underline-offset-2 hover:decoration-black/50 transition-colors ${external ? "cursor-ne-resize" : ""}`}
       {...(external && { target: "_blank", rel: "noopener noreferrer" })}
     >
       {children}
@@ -103,7 +103,7 @@ export function BerkeleyMonoPageClient({ posts }: { posts: PostMeta[] }) {
   return (
     <LinkTooltipProvider>
       <div 
-        className="min-h-dvh flex flex-col bg-[#002FA7] text-white"
+        className="min-h-dvh flex flex-col bg-[#FFD700] text-black"
         style={{ fontFamily: "'Berkeley Mono', monospace" }}
       >
         {/* Menu Bar - fixed at top */}
@@ -120,7 +120,7 @@ export function BerkeleyMonoPageClient({ posts }: { posts: PostMeta[] }) {
         >
           {/* Main Content */}
           <main className="max-w-[640px] mx-auto px-6 pt-16 w-full">
-            <article className="text-[15px] leading-[1.5] text-white space-y-4">
+            <article className="text-[15px] leading-[1.5] text-black space-y-4">
               <p>Hej, I'm Erik.</p>
 
               <p>

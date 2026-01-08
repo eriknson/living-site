@@ -99,24 +99,24 @@ function ModelCard({
 
   if (isFailed) {
     return (
-      <div className="bg-white/10 rounded-xl px-3 py-2.5 opacity-50">
-        <div className="text-[15px] font-medium text-white/50">{name}</div>
+      <div className="bg-black/10 rounded-xl px-3 py-2.5 opacity-50">
+        <div className="text-[15px] font-medium text-black/50">{name}</div>
         <div className="text-[13px] text-red-400 mt-1">Build failed</div>
       </div>
     );
   }
 
   return (
-    <div className="bg-white/10 rounded-xl">
+    <div className="bg-black/10 rounded-xl">
       {/* Desktop layout */}
       <div className="hidden sm:block px-3 py-2.5">
         <div className="flex items-center justify-between gap-2">
-          <span className="text-[15px] font-medium text-white">{name}</span>
+          <span className="text-[15px] font-medium text-black">{name}</span>
           <div className="flex items-center -mr-1">
             {hasLogs && (
               <button
                 onClick={onOpenLogs}
-                className="p-1.5 rounded-md text-white/40 hover:text-white/60 hover:bg-white/10 transition-colors"
+                className="p-1.5 rounded-md text-black/40 hover:text-black/60 hover:bg-black/10 transition-colors"
                 title="View agent logs"
               >
                 <ScrollText className="w-4 h-4" />
@@ -134,10 +134,10 @@ function ModelCard({
         </div>
         <div className="flex items-center gap-2.5 mt-1 text-[13px]">
           {duration && (
-            <span className="text-white/60">{formatDuration(duration)}</span>
+            <span className="text-black/60">{formatDuration(duration)}</span>
           )}
           {lineCount && (
-            <span className="text-green-300 font-medium">+{lineCount}</span>
+            <span className="text-green-700 font-medium">+{lineCount}</span>
           )}
         </div>
       </div>
@@ -145,13 +145,13 @@ function ModelCard({
       {/* Mobile layout */}
       <div className="flex sm:hidden overflow-hidden">
         <div className="flex-1 min-w-0 px-3 py-3">
-          <div className="text-[15px] font-medium text-white truncate">{name}</div>
+          <div className="text-[15px] font-medium text-black truncate">{name}</div>
           <div className="flex items-center gap-2.5 mt-1 text-[13px]">
             {duration && (
-              <span className="text-white/60">{formatDuration(duration)}</span>
+              <span className="text-black/60">{formatDuration(duration)}</span>
             )}
             {lineCount && (
-              <span className="text-green-300 font-medium">+{lineCount}</span>
+              <span className="text-green-700 font-medium">+{lineCount}</span>
             )}
           </div>
         </div>
@@ -159,7 +159,7 @@ function ModelCard({
           {hasLogs && (
             <button
               onClick={onOpenLogs}
-              className="w-11 h-11 flex items-center justify-center rounded-lg bg-white/10 text-white/50 active:bg-white/15 transition-colors"
+              className="w-11 h-11 flex items-center justify-center rounded-lg bg-black/10 text-black/50 active:bg-black/15 transition-colors"
               title="View agent logs"
             >
               <ScrollText className="w-[18px] h-[18px]" />
@@ -209,12 +209,12 @@ export function BuildsPageClient({
 
   if (!manifest?.dates?.length) {
     return (
-      <div className="min-h-dvh bg-[#002FA7] text-white">
+      <div className="min-h-dvh bg-[#FFD700] text-black">
         <div className="sticky top-0 z-50">
           <GlobalMenuBar currentRoute="/builds" />
         </div>
         <div className="p-6">
-          <div className="text-center py-12 text-white/60">
+          <div className="text-center py-12 text-black/60">
             No builds yet. The site regenerates daily with multiple AI models.
           </div>
         </div>
@@ -239,10 +239,10 @@ export function BuildsPageClient({
         <div className="max-w-[640px] mx-auto px-6 pt-6 pb-6">
           {/* Header */}
           <div className="mb-8">
-            <h1 className="text-xl font-semibold text-white">
+            <h1 className="text-xl font-semibold text-black">
               Build History
             </h1>
-            <p className="text-[15px] text-white/70 mt-1">
+            <p className="text-[15px] text-black/70 mt-1">
               Browse and compare model outputs
             </p>
           </div>
@@ -262,7 +262,7 @@ export function BuildsPageClient({
                 <section key={batchKey}>
                   {/* Session header with prompt and GitHub icons */}
                   <div className="flex items-center gap-2 mb-2.5 px-1">
-                    <h2 className="text-[15px] font-medium text-white/80">
+                    <h2 className="text-[15px] font-medium text-black/80">
                       {formatBuildTime(batch.timestamp)}
                     </h2>
                     {batch.system_prompt && (
@@ -274,7 +274,7 @@ export function BuildsPageClient({
                             timestamp: batch.timestamp,
                           });
                         }}
-                        className="text-white/40 hover:text-white/60 transition-colors"
+                        className="text-black/40 hover:text-black/60 transition-colors"
                         title="View system prompt"
                       >
                         <FileText className="w-4 h-4" />
