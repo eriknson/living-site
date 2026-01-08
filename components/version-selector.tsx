@@ -38,7 +38,7 @@ function BackButton() {
   return (
     <button
       onClick={handleBack}
-      className="flex items-center cursor-pointer h-8 px-3 rounded-full bg-black/[0.03] dark:bg-white/[0.06] active:bg-black/[0.08] dark:active:bg-white/[0.12] transition-colors select-none"
+      className="flex items-center cursor-pointer h-8 px-3 rounded-full bg-white/10 active:bg-white/15 transition-colors select-none"
       style={{ touchAction: 'manipulation', WebkitTapHighlightColor: 'transparent' }}
       aria-label="Go back"
     >
@@ -169,7 +169,7 @@ export function VersionSelector({
 
   return (
     <label 
-      className="relative flex items-center cursor-pointer h-8 px-3 rounded-full bg-black/[0.03] dark:bg-white/[0.06] active:bg-black/[0.08] dark:active:bg-white/[0.12] transition-colors select-none"
+      className="relative flex items-center cursor-pointer h-8 px-3 rounded-full bg-white/10 active:bg-white/15 transition-colors select-none"
       style={{ touchAction: 'manipulation', WebkitTapHighlightColor: 'transparent' }}
     >
       {/* Visual display (non-interactive) */}

@@ -158,25 +158,25 @@ export default function CommandMenuDialog({ open, onOpenChange }: CommandMenuDia
   const commandContent = (
     <Command className="flex flex-col" label="Global Command Menu">
       {/* Search Input */}
-      <div className="flex items-center gap-3 px-4 border-b border-black/[0.06] dark:border-white/[0.06]">
-        <SearchIcon className="h-4 w-4 text-black/40 dark:text-white/40 shrink-0" />
+      <div         className="flex items-center gap-3 px-4 border-b border-[#002FA7]/20">
+        <SearchIcon className="h-4 w-4 text-[#002FA7]/50 shrink-0" />
         <Command.Input
           autoFocus={!isMobile}
           placeholder="Search"
-          className="flex-1 h-12 bg-transparent text-[15px] text-[#1a1a1a] dark:text-[#e5e5e5] placeholder:text-black/40 dark:placeholder:text-white/40 outline-none"
+          className="flex-1 h-12 bg-transparent text-[15px] text-[#002FA7] placeholder:text-[#002FA7]/50 outline-none"
         />
       </div>
 
       {/* Results */}
       <Command.List className={`overflow-y-auto p-2 scroll-smooth ${isMobile ? "max-h-[50vh]" : "max-h-[min(60vh,400px)]"}`}>
-        <Command.Empty className="py-6 text-center text-[14px] text-black/50 dark:text-white/50">
+        <Command.Empty className="py-6 text-center text-[14px] text-[#002FA7]/60">
           No results found.
         </Command.Empty>
 
         {/* Pages Group */}
         <Command.Group
           heading="Pages"
-          className="[&_[cmdk-group-heading]]:px-2 [&_[cmdk-group-heading]]:py-1.5 [&_[cmdk-group-heading]]:text-[12px] [&_[cmdk-group-heading]]:font-medium [&_[cmdk-group-heading]]:text-black/40 [&_[cmdk-group-heading]]:dark:text-white/40 [&_[cmdk-group-heading]]:uppercase [&_[cmdk-group-heading]]:tracking-wide"
+          className="[&_[cmdk-group-heading]]:px-2 [&_[cmdk-group-heading]]:py-1.5 [&_[cmdk-group-heading]]:text-[12px] [&_[cmdk-group-heading]]:font-medium [&_[cmdk-group-heading]]:text-[#002FA7]/50 [&_[cmdk-group-heading]]:uppercase [&_[cmdk-group-heading]]:tracking-wide"
         >
           {PAGES.map((page) => {
             const isCurrent = isCurrentPath(page.path);
@@ -186,7 +186,7 @@ export default function CommandMenuDialog({ open, onOpenChange }: CommandMenuDia
                 value={page.label}
                 keywords={page.keywords}
                 onSelect={() => navigateTo(page.path)}
-                className={`flex items-center gap-3 px-3 rounded-lg cursor-pointer text-[14px] data-[selected=true]:bg-black/[0.05] dark:data-[selected=true]:bg-white/[0.08] outline-none transition-colors active:bg-black/[0.08] dark:active:bg-white/[0.12] ${isMobile ? "py-3.5" : "py-2.5"} ${isCurrent ? "text-black dark:text-white font-medium" : "text-[#1a1a1a] dark:text-[#e5e5e5]"}`}
+                className={`flex items-center gap-3 px-3 rounded-lg cursor-pointer text-[14px] data-[selected=true]:bg-[#002FA7]/10 outline-none transition-colors active:bg-[#002FA7]/15 ${isMobile ? "py-3.5" : "py-2.5"} ${isCurrent ? "text-[#002FA7] font-medium" : "text-[#002FA7]"}`}
               >
                 <page.icon className={`h-4 w-4 ${isCurrent ? "opacity-100" : "opacity-60"}`} />
                 <span className="flex-1">{page.label}</span>
@@ -214,7 +214,7 @@ export default function CommandMenuDialog({ open, onOpenChange }: CommandMenuDia
                   value={post.title}
                   keywords={[post.slug, "article", "post", "blog"]}
                   onSelect={() => isExternal ? openExternal(postPath) : navigateTo(postPath)}
-                  className={`flex items-center gap-3 px-3 rounded-lg cursor-pointer text-[14px] data-[selected=true]:bg-black/[0.05] dark:data-[selected=true]:bg-white/[0.08] outline-none transition-colors active:bg-black/[0.08] dark:active:bg-white/[0.12] ${isMobile ? "py-3.5" : "py-2.5"} ${isCurrent ? "text-black dark:text-white font-medium" : "text-[#1a1a1a] dark:text-[#e5e5e5]"}`}
+                  className={`flex items-center gap-3 px-3 rounded-lg cursor-pointer text-[14px] data-[selected=true]:bg-[#002FA7]/10 outline-none transition-colors active:bg-[#002FA7]/15 ${isMobile ? "py-3.5" : "py-2.5"} ${isCurrent ? "text-[#002FA7] font-medium" : "text-[#002FA7]"}`}
                 >
                   {isExternal ? (
                     <ExternalLink className={`h-4 w-4 ${isCurrent ? "opacity-100" : "opacity-60"}`} />
@@ -250,7 +250,7 @@ export default function CommandMenuDialog({ open, onOpenChange }: CommandMenuDia
                 value={agent.label}
                 keywords={agent.keywords}
                 onSelect={() => navigateTo(agent.path)}
-                className={`flex items-center gap-3 px-3 rounded-lg cursor-pointer text-[14px] data-[selected=true]:bg-black/[0.05] dark:data-[selected=true]:bg-white/[0.08] outline-none transition-colors active:bg-black/[0.08] dark:active:bg-white/[0.12] ${isMobile ? "py-3.5" : "py-2.5"} ${isCurrent ? "text-black dark:text-white font-medium" : "text-[#1a1a1a] dark:text-[#e5e5e5]"}`}
+                className={`flex items-center gap-3 px-3 rounded-lg cursor-pointer text-[14px] data-[selected=true]:bg-[#002FA7]/10 outline-none transition-colors active:bg-[#002FA7]/15 ${isMobile ? "py-3.5" : "py-2.5"} ${isCurrent ? "text-[#002FA7] font-medium" : "text-[#002FA7]"}`}
               >
                 <Zap className={`h-4 w-4 ${isCurrent ? "opacity-100" : "opacity-60"}`} />
                 <span className="flex-1">
@@ -278,7 +278,7 @@ export default function CommandMenuDialog({ open, onOpenChange }: CommandMenuDia
               value={link.label}
               keywords={link.keywords}
               onSelect={() => openExternal(link.href)}
-              className={`flex items-center gap-3 px-3 rounded-lg cursor-pointer text-[14px] text-[#1a1a1a] dark:text-[#e5e5e5] data-[selected=true]:bg-black/[0.05] dark:data-[selected=true]:bg-white/[0.08] outline-none transition-colors active:bg-black/[0.08] dark:active:bg-white/[0.12] ${isMobile ? "py-3.5" : "py-2.5"}`}
+              className={`flex items-center gap-3 px-3 rounded-lg cursor-pointer text-[14px] text-[#002FA7] data-[selected=true]:bg-[#002FA7]/10 outline-none transition-colors active:bg-[#002FA7]/15 ${isMobile ? "py-3.5" : "py-2.5"}`}
             >
               {link.href.startsWith("mailto:") ? (
                 <Mail className="h-4 w-4 opacity-60" />
@@ -343,7 +343,7 @@ export default function CommandMenuDialog({ open, onOpenChange }: CommandMenuDia
       />
 
       {/* Panel */}
-      <div className="fixed left-1/2 top-[20%] -translate-x-1/2 w-[calc(100%-2rem)] max-w-[480px] bg-[#fafaf9] dark:bg-[#0a0a0a] rounded-xl shadow-2xl border border-black/[0.08] dark:border-white/[0.08] overflow-hidden">
+      <div className="fixed left-1/2 top-[20%] -translate-x-1/2 w-[calc(100%-2rem)] max-w-[480px] bg-white rounded-xl shadow-2xl border border-white/20 overflow-hidden">
         {commandContent}
       </div>
     </Command.Dialog>

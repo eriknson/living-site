@@ -79,7 +79,7 @@ export default async function PostPage({
   });
 
   return (
-    <div className="min-h-dvh bg-[#fafaf9] dark:bg-[#0a0a0a] text-[#1a1a1a] dark:text-[#e5e5e5]">
+    <div className="min-h-dvh bg-[#002FA7] text-white">
       <GlobalMenuBar currentRoute="/posts" />
 
       <main className="max-w-[640px] mx-auto px-6 pt-16 pb-16">
@@ -88,7 +88,7 @@ export default async function PostPage({
           <h1 className="text-2xl font-medium mb-3 leading-tight">
             {post.title}
           </h1>
-          <p className="text-black/50 dark:text-white/50 text-sm">
+          <p className="text-white/60 text-sm">
             {formattedDate}
             {post.readTime && ` · ${post.readTime} min read`}
           </p>
@@ -98,11 +98,12 @@ export default async function PostPage({
         <article
           className="
             prose prose-neutral dark:prose-invert
-            prose-headings:font-medium prose-headings:tracking-tight
+            prose-headings:font-medium prose-headings:tracking-tight prose-headings:text-white
             prose-h2:text-xl prose-h2:mt-10 prose-h2:mb-4
-            prose-p:text-[15px] prose-p:leading-[1.75] prose-p:text-black/85 dark:prose-p:text-white/85
-            prose-a:underline prose-a:decoration-black/20 dark:prose-a:decoration-white/20
-            prose-a:underline-offset-2 hover:prose-a:decoration-black/40 dark:hover:prose-a:decoration-white/40
+            prose-p:text-[15px] prose-p:leading-[1.75] prose-p:text-white
+            prose-a:underline prose-a:decoration-white/30
+            prose-a:underline-offset-2 hover:prose-a:decoration-white/50
+            prose-a:text-white
             max-w-none
           "
         >

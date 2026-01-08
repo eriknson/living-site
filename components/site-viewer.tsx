@@ -203,7 +203,7 @@ export function SiteViewer({ src, htmlContent, onLoad }: SiteViewerProps) {
   return (
     <div
       ref={containerRef}
-      className="flex-1 min-h-0 bg-white dark:bg-[#0a0a0a]"
+      className="flex-1 min-h-0 bg-[#002FA7]"
     />
   );
 }

@@ -18,7 +18,7 @@ interface ViewModeMenuProps {
 export function ViewModeMenu({ value, onChange }: ViewModeMenuProps) {
   return (
     <DropdownMenu>
-      <DropdownMenuTrigger className="h-full px-2.5 hover:bg-black/5 dark:hover:bg-white/10 transition-colors outline-none">
+      <DropdownMenuTrigger className="h-full px-2.5 hover:bg-white/10 transition-colors outline-none">
         View
       </DropdownMenuTrigger>
       <DropdownMenuContent align="start">

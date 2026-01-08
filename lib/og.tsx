@@ -23,7 +23,7 @@ export function createOgImage(title: string, subtitle?: string) {
           alignItems: "center",
           justifyContent: "center",
           padding: 80,
-          backgroundColor: "#0a0a0a",
+          backgroundColor: "#002FA7",
           fontFamily: "system-ui, -apple-system, sans-serif",
         }}
       >
@@ -32,7 +32,7 @@ export function createOgImage(title: string, subtitle?: string) {
           style={{
             fontSize: 72,
             fontWeight: 500,
-            color: "#e5e5e5",
+            color: "#ffffff",
             lineHeight: 1.2,
             marginBottom: subtitle ? 32 : 0,
             textAlign: "center",

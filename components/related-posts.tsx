@@ -54,8 +54,8 @@ export function RelatedPosts({ posts, currentSlug }: RelatedPostsProps) {
   const recommendedPosts = shuffled.slice(0, 3);
 
   return (
-    <section className="mt-16 pt-8 border-t border-black/10 dark:border-white/10">
-      <h2 className="text-sm font-medium text-black/50 dark:text-white/50 mb-6 uppercase tracking-wide">
+    <section className="mt-16 pt-8 border-t border-white/20">
+      <h2 className="text-sm font-medium text-white/60 mb-6 uppercase tracking-wide">
         More stuff
       </h2>
       <PostList posts={recommendedPosts} excludeStaticLink={true} />
