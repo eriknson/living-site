@@ -4,6 +4,7 @@ import { useState, useCallback, useEffect } from "react";
 import { motion } from "motion/react";
 import { GlobalMenuBar } from "@/components/global-menu-bar";
 import { PostList } from "@/components/post-list";
+import { AttributionSheet } from "@/components/attribution-sheet";
 import type { PostMeta } from "@/lib/posts";
 
 // Smooth ease for classy feel
@@ -138,6 +139,11 @@ export function HomePageClient({ posts }: { posts: PostMeta[] }) {
                 <PostList posts={posts} />
               </div>
             )}
+
+            {/* Footer with Attribution */}
+            <footer className="mt-16 mb-8 pt-6 border-t border-black/10 dark:border-white/10">
+              <AttributionSheet />
+            </footer>
           </main>
         </motion.div>
       </div>
