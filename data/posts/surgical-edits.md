@@ -8,7 +8,7 @@ notionPageId: "2d714bfe-df48-8144-a58f-e53b7e9f6bdb"
 
 There's always been this gap between seeing something in the browser and changing it. You notice a typo, a margin that's off, a color that doesn't feel right. Then you switch to your editor, reference the component and context, phrase the edit, send it, wait for the dev server to reload. By the time you're done, you've lost the thread of whatever you were actually working on.
 
-I wanted to try closing that gap. Point at something, describe what you want, and let the agent handle the rest.
+I wanted to try closing that gap. Point at an element, describe what you want, see the change. Without leaving context.
 
 ```plain text
 Browser          Overlay          API Route         cursor-agent      Files
