@@ -665,11 +665,29 @@ jobs:
           cp artifacts/curator/reference.html data/reference.html
           echo "Data files organized"
 
-      - name: Download all validated artifacts
+      - name: Download all validated artifacts (attempt 1)
+        id: download_validated_artifacts
+        continue-on-error: true
         uses: actions/download-artifact@v4
         with:
           pattern: validated-*
           path: artifacts/
+
+      - name: Download all validated artifacts (retry)
+        if: steps.download_validated_artifacts.outcome == 'failure'
+        uses: actions/download-artifact@v4
+        with:
+          pattern: validated-*
+          path: artifacts/
+
+      - name: Verify validated artifacts download
+        run: |
+          COUNT=$(ls -d artifacts/validated-* 2>/dev/null | wc -l)
+          if [ "$COUNT" -eq 0 ]; then
+            echo "No validated artifacts were downloaded"
+            exit 1
+          fi
+          echo "Validated artifact directories downloaded: $COUNT"
 
       - name: Organize builds
         run: |
