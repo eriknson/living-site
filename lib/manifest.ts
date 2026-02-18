@@ -26,8 +26,12 @@ export interface Manifest {
   dates: DateEntry[];
 }
 
-// Model display names (shortened - no "Codex" or "Pro" suffixes)
+// Model display names (short labels for known model IDs)
 export const modelDisplayNames: Record<string, string> = {
+  "composer-1.5": "Composer 1.5",
+  "claude-4.6-opus-max-thinking": "Opus 4.6 Max",
+  "gpt-5.3-codex-xhigh": "GPT-5.3 XHigh",
+  "gemini-3.1-pro": "Gemini 3.1 Pro",
   "composer-1": "Composer 1",
   "claude-4.5-opus-high-thinking": "Opus 4.5",
   "gpt-5.1-codex": "GPT-5.1",
@@ -36,6 +40,10 @@ export const modelDisplayNames: Record<string, string> = {
 
 // URL-friendly slugs
 export const modelSlugs: Record<string, string> = {
+  "composer-1.5": "composer-1.5",
+  "claude-4.6-opus-max-thinking": "opus-4.6-max",
+  "gpt-5.3-codex-xhigh": "gpt-5.3-codex-xhigh",
+  "gemini-3.1-pro": "gemini-3.1-pro",
   "composer-1": "composer-1",
   "claude-4.5-opus-high-thinking": "opus-4.5",
   "gpt-5.1-codex": "gpt-5.1-codex",

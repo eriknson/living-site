@@ -40,7 +40,7 @@ Task 2: Read data/styled-page.html → Write data/reference.html (semantic versi
 
 # Run cursor-agent
 cd "$WORKTREE_DIR"
-cursor-agent -p --force --model composer-1 "$PROMPT" 2>&1 || true
+cursor-agent -p --force --model composer-1.5 "$PROMPT" 2>&1 || true
 
 # Check if brief was created
 if [ ! -f "$WORKTREE_DIR/data/brief.json" ]; then

@@ -13,6 +13,13 @@ const FETCH_SUMMARY_PATH = "data/fetch-summary.json";
 const SYSTEM_PROMPT_PATH = "infra/prompts/system.md";
 const MAX_BUILDS = 50;
 const MAX_DATES = 14;
+const DEFAULT_MODEL = "claude-4.6-opus-max-thinking";
+const DEFAULT_MODELS = [
+  "composer-1.5",
+  "claude-4.6-opus-max-thinking",
+  "gpt-5.3-codex-xhigh",
+  "gemini-3.1-pro",
+];
 
 function injectScrollGuard(html: string): string {
   // Idempotent: don't inject twice.
@@ -295,8 +302,8 @@ async function loadHistory(): Promise<BuildHistory> {
 async function loadManifest(): Promise<Manifest> {
   if (!existsSync(MANIFEST_PATH)) {
     return {
-      default_model: "composer-1",
-      models: ["composer-1", "claude-4.5-opus-high-thinking", "gpt-5.1-codex", "gemini-3-pro"],
+      default_model: DEFAULT_MODEL,
+      models: DEFAULT_MODELS,
       latest_date: null,
       latest_timestamp: null,
       dates: [],
@@ -307,8 +314,8 @@ async function loadManifest(): Promise<Manifest> {
     return JSON.parse(content);
   } catch {
     return {
-      default_model: "composer-1",
-      models: ["composer-1", "claude-4.5-opus-high-thinking", "gpt-5.1-codex", "gemini-3-pro"],
+      default_model: DEFAULT_MODEL,
+      models: DEFAULT_MODELS,
       latest_date: null,
       latest_timestamp: null,
       dates: [],
@@ -504,6 +511,14 @@ async function saveBuildLog(outputPath: string, options: SaveBuildLogOptions = {
   // 3. Update manifest.json (if build was successful)
   if (finalStatus === "success") {
     const manifest = await loadManifest();
+
+    // Keep manifest models aligned with active CI models while preserving historical ones.
+    const existingModels = Array.isArray(manifest.models) ? manifest.models : [];
+    const mergedModels = [...DEFAULT_MODELS, ...existingModels, model];
+    manifest.models = Array.from(new Set(mergedModels));
+    if (!manifest.default_model || !manifest.models.includes(manifest.default_model)) {
+      manifest.default_model = DEFAULT_MODEL;
+    }
     
     // Find or create the date entry
     let dateEntry = manifest.dates.find(d => d.date === dateStr);

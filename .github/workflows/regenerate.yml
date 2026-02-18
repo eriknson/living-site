@@ -193,7 +193,7 @@ jobs:
           Task 1: Read data/latest.json → Write data/brief.json
           Task 2: Read data/styled-page.html → Write data/reference.html (semantic version)"
           
-          cursor-agent -p --force --model composer-1 "$PROMPT" 2>&1 || true
+          cursor-agent -p --force --model composer-1.5 "$PROMPT" 2>&1 || true
 
       - name: Copy curator output or create fallback
         run: |
@@ -263,7 +263,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        model: [composer-1, claude-4.5-opus-high-thinking, gpt-5.1-codex, gemini-3-pro]
+        model: [composer-1.5, claude-4.6-opus-max-thinking, gpt-5.3-codex-xhigh, gemini-3.1-pro]
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
@@ -478,7 +478,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        model: [composer-1, claude-4.5-opus-high-thinking, gpt-5.1-codex, gemini-3-pro]
+        model: [composer-1.5, claude-4.6-opus-max-thinking, gpt-5.3-codex-xhigh, gemini-3.1-pro]
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
@@ -581,7 +581,7 @@ jobs:
           Read the file, fix the issues, write it back."
           
           echo "=== Running polish agent for ${{ matrix.model }} ==="
-          cursor-agent -p --force --model composer-1 "$PROMPT" 2>&1 || true
+          cursor-agent -p --force --model composer-1.5 "$PROMPT" 2>&1 || true
 
       - name: Re-validate after polish
         if: steps.validate.outputs.needs_polish == 'true'
@@ -723,8 +723,8 @@ jobs:
 
       - name: Commit changes
         run: |
-          git config --local user.email "action@github.com"
-          git config --local user.name "GitHub Action"
+          git config --local user.email "eriks@mail.se"
+          git config --local user.name "Erik Nilsson"
           
           # Stage all build files
           git add data/latest.json
@@ -777,7 +777,7 @@ jobs:
         if: always() && env.BUILD_WEBHOOK_URL != ''
         run: |
           # Determine final status
-          if [ -f "generated/composer-1.html" ] || [ -f "generated/claude-4.5-opus-high-thinking.html" ] || [ -f "generated/gpt-5.1-codex.html" ] || [ -f "generated/gemini-3-pro.html" ]; then
+          if [ -f "generated/composer-1.5.html" ] || [ -f "generated/claude-4.6-opus-max-thinking.html" ] || [ -f "generated/gpt-5.3-codex-xhigh.html" ] || [ -f "generated/gemini-3.1-pro.html" ]; then
             STATUS="build.complete"
           else
             STATUS="build.error"

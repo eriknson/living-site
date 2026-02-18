@@ -162,7 +162,7 @@ export function getSubtextsForPhase(state: BuildState | null): string[] {
 
   if (state.workflow.generate === "running") {
     return [
-      "Three minds, three perspectives",
+      "Four minds, four perspectives",
       "Finding the right aesthetic",
       "Translating data into design",
       "Making something that feels like you",
@@ -280,19 +280,19 @@ export function createInitialBuildState(buildId: string): BuildState {
       commit: "pending",
     },
     models: {
-      "composer-1": {
+      "composer-1.5": {
         status: "queued",
         rawLog: [],
       },
-      "claude-4.5-opus-high-thinking": {
+      "claude-4.6-opus-max-thinking": {
         status: "queued",
         rawLog: [],
       },
-      "gpt-5.1-codex": {
+      "gpt-5.3-codex-xhigh": {
         status: "queued",
         rawLog: [],
       },
-      "gemini-3-pro": {
+      "gemini-3.1-pro": {
         status: "queued",
         rawLog: [],
       },

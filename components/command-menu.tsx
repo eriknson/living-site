@@ -46,20 +46,20 @@ const PAGES = [
 // Agent models - each links to /agent?model=<slug>
 const AGENTS = [
   {
-    modelId: "claude-4.5-opus-high-thinking",
-    keywords: ["claude", "anthropic", "opus", "ai"],
+    modelId: "claude-4.6-opus-max-thinking",
+    keywords: ["claude", "anthropic", "opus", "4.6", "max", "ai"],
   },
   {
-    modelId: "composer-1",
-    keywords: ["cursor", "composer", "ai"],
+    modelId: "composer-1.5",
+    keywords: ["cursor", "composer", "1.5", "ai"],
   },
   {
-    modelId: "gemini-3-pro",
-    keywords: ["google", "gemini", "ai"],
+    modelId: "gpt-5.3-codex-xhigh",
+    keywords: ["openai", "gpt", "codex", "xhigh", "max", "ai"],
   },
   {
-    modelId: "gpt-5.1-codex",
-    keywords: ["openai", "gpt", "codex", "ai"],
+    modelId: "gemini-3.1-pro",
+    keywords: ["google", "gemini", "3.1", "pro", "ai"],
   },
 ].map((agent) => ({
   ...agent,

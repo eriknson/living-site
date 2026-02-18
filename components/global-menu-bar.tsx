@@ -73,6 +73,10 @@ function getActiveModels(state: BuildState): string[] {
     .filter(([, progress]) => progress.status === "running")
     .map(([model]) => {
       const names: Record<string, string> = {
+        "composer-1.5": "Composer 1.5",
+        "claude-4.6-opus-max-thinking": "Opus 4.6 Max",
+        "gpt-5.3-codex-xhigh": "GPT-5.3 Codex XHigh",
+        "gemini-3.1-pro": "Gemini 3.1 Pro",
         "composer-1": "Composer",
         "claude-4.5-opus-high-thinking": "Opus 4.5",
         "gpt-5.1-codex": "GPT-5.1 Codex",

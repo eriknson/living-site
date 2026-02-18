@@ -4,6 +4,41 @@ const nextConfig = {
   async redirects() {
     return [
       {
+        source: '/opus-4.6',
+        destination: '/?model=opus-4.6',
+        permanent: true,
+      },
+      {
+        source: '/opus-4.6-max',
+        destination: '/?model=opus-4.6-max',
+        permanent: true,
+      },
+      {
+        source: '/composer-1.5',
+        destination: '/?model=composer-1.5',
+        permanent: true,
+      },
+      {
+        source: '/gpt-5.3-codex-high',
+        destination: '/?model=gpt-5.3-codex-high',
+        permanent: true,
+      },
+      {
+        source: '/gpt-5.3-codex-xhigh',
+        destination: '/?model=gpt-5.3-codex-xhigh',
+        permanent: true,
+      },
+      {
+        source: '/gpt-5.3-spark-xhigh',
+        destination: '/?model=gpt-5.3-spark-xhigh',
+        permanent: true,
+      },
+      {
+        source: '/gemini-3.1-pro',
+        destination: '/?model=gemini-3.1-pro',
+        permanent: true,
+      },
+      {
         source: '/opus-4.5',
         destination: '/?model=opus-4.5',
         permanent: true,
