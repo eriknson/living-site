@@ -1,0 +1,431 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="description" content="Erik Nilsson - product designer at Cursor. Notes from an overcast Stockholm winter.">
+  <title>Erik Nilsson</title>
+  <style>
+    :root {
+      color-scheme: light dark;
+      --paper: #f6f1e8;
+      --paper-wash: #f0eadf;
+      --ink: #1f1b17;
+      --muted: #6f6457;
+      --rule: #c7bcac;
+      --link: #2f2a24;
+      --link-hover: #000000;
+    }
+
+    @media (prefers-color-scheme: dark) {
+      :root {
+        --paper: #12100e;
+        --paper-wash: #171411;
+        --ink: #ede3d6;
+        --muted: #b4a897;
+        --rule: #433a31;
+        --link: #f3e4cd;
+        --link-hover: #fff5e6;
+      }
+    }
+
+    * {
+      box-sizing: border-box;
+    }
+
+    html,
+    body {
+      margin: 0;
+      padding: 0;
+      min-height: 100%;
+      background: linear-gradient(180deg, var(--paper-wash), var(--paper));
+      color: var(--ink);
+      font-family: "Iowan Old Style", "Palatino Linotype", "Book Antiqua", Palatino, "Times New Roman", serif;
+      -webkit-font-smoothing: antialiased;
+      text-rendering: optimizeLegibility;
+    }
+
+    body {
+      line-height: 1.6;
+      padding: 1rem 0 2rem;
+    }
+
+    .paper {
+      width: min(calc(100% - 1.5rem), 640px);
+      margin: 0 auto;
+      border: 1px solid var(--rule);
+      padding: clamp(1.1rem, 2.2vw, 1.7rem);
+      background: var(--paper);
+    }
+
+    .masthead {
+      text-align: center;
+      margin-bottom: 0.95rem;
+    }
+
+    .edition {
+      margin: 0;
+      font-size: 0.7rem;
+      letter-spacing: 0.2em;
+      text-transform: uppercase;
+      color: var(--muted);
+    }
+
+    .nameplate {
+      margin: 0.28rem 0 0.24rem;
+      line-height: 1;
+      text-transform: uppercase;
+      letter-spacing: 0.12em;
+      font-weight: 700;
+      font-size: clamp(2rem, 6.2vw, 2.9rem);
+    }
+
+    .deck {
+      margin: 0 auto;
+      max-width: 44ch;
+      color: var(--muted);
+      font-style: italic;
+      font-size: 0.97rem;
+    }
+
+    .dateline {
+      margin-top: 0.85rem;
+      border-top: 1px solid var(--rule);
+      border-bottom: 1px solid var(--rule);
+      display: flex;
+      justify-content: space-between;
+      gap: 0.9rem;
+      align-items: center;
+      padding: 0.38rem 0.15rem;
+      font-size: 0.72rem;
+      text-transform: uppercase;
+      letter-spacing: 0.12em;
+      color: var(--muted);
+    }
+
+    .dateline span {
+      white-space: nowrap;
+    }
+
+    main section {
+      margin-top: 1.22rem;
+      padding-top: 1.05rem;
+      border-top: 1px solid var(--rule);
+    }
+
+    h2 {
+      margin: 0 0 0.65rem;
+      text-transform: uppercase;
+      font-size: 0.72rem;
+      letter-spacing: 0.16em;
+      color: var(--muted);
+      font-weight: 600;
+    }
+
+    p {
+      margin: 0 0 0.8rem;
+      font-size: 1.02rem;
+      hyphens: auto;
+    }
+
+    .lead {
+      max-width: 60ch;
+      margin-inline: auto;
+    }
+
+    .lead p:first-of-type::first-letter {
+      float: left;
+      font-size: 3.35rem;
+      line-height: 0.82;
+      margin: 0.06rem 0.28rem 0 0;
+      font-weight: 700;
+    }
+
+    .current-list {
+      margin: 0;
+      display: grid;
+      grid-template-columns: minmax(6.7rem, 8.6rem) 1fr;
+      gap: 0.42rem 0.9rem;
+      align-items: baseline;
+    }
+
+    .current-list dt {
+      margin: 0;
+      font-size: 0.88rem;
+      color: var(--muted);
+      text-transform: uppercase;
+      letter-spacing: 0.08em;
+    }
+
+    .current-list dd {
+      margin: 0;
+      font-size: 0.98rem;
+    }
+
+    .split {
+      display: grid;
+      grid-template-columns: 1fr;
+      gap: 1rem;
+    }
+
+    .brief-list,
+    .links-list {
+      margin: 0;
+      padding: 0;
+      list-style: none;
+    }
+
+    .brief-list li,
+    .links-list li {
+      margin: 0;
+      padding: 0.38rem 0;
+      border-bottom: 1px dotted var(--rule);
+      font-size: 0.97rem;
+    }
+
+    .brief-list li:last-child,
+    .links-list li:last-child {
+      border-bottom: 0;
+      padding-bottom: 0.06rem;
+    }
+
+    .note-date {
+      display: inline-block;
+      margin-left: 0.42rem;
+      color: var(--muted);
+      font-size: 0.79rem;
+      text-transform: uppercase;
+      letter-spacing: 0.08em;
+      white-space: nowrap;
+    }
+
+    .posts {
+      margin: 0;
+      padding: 0;
+      list-style: none;
+    }
+
+    .posts li {
+      margin: 0;
+      padding: 0.45rem 0;
+      border-bottom: 1px dotted var(--rule);
+      display: grid;
+      grid-template-columns: 1fr auto;
+      gap: 0.7rem;
+      align-items: baseline;
+    }
+
+    .posts li:last-child {
+      border-bottom: 0;
+      padding-bottom: 0.08rem;
+    }
+
+    .post-date {
+      color: var(--muted);
+      font-size: 0.79rem;
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+      white-space: nowrap;
+    }
+
+    a {
+      color: var(--link);
+      text-decoration-color: var(--muted);
+      text-decoration-thickness: 0.075em;
+      text-underline-offset: 0.12em;
+    }
+
+    a:hover,
+    a:focus-visible {
+      color: var(--link-hover);
+      text-decoration-color: currentColor;
+    }
+
+    a:focus-visible {
+      outline: 1px dashed var(--muted);
+      outline-offset: 2px;
+    }
+
+    .closing {
+      margin-top: 1.35rem;
+      border-top: 1px solid var(--rule);
+      padding-top: 0.9rem;
+      color: var(--muted);
+      text-align: center;
+      font-size: 0.93rem;
+    }
+
+    .closing p {
+      margin: 0.35rem 0;
+      font-size: 0.93rem;
+    }
+
+    .mono {
+      font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", monospace;
+      font-size: 0.92em;
+    }
+
+    @media (min-width: 620px) {
+      .split {
+        grid-template-columns: 1fr 1fr;
+        gap: 1.4rem;
+      }
+    }
+
+    @media (max-width: 560px) {
+      body {
+        padding-top: 0.7rem;
+      }
+
+      .paper {
+        width: calc(100% - 1rem);
+        padding: 1rem 0.9rem 1.1rem;
+      }
+
+      .dateline {
+        display: block;
+        text-align: center;
+      }
+
+      .dateline span {
+        display: block;
+        white-space: normal;
+      }
+
+      .dateline span + span {
+        margin-top: 0.12rem;
+      }
+
+      .current-list {
+        grid-template-columns: 1fr;
+        gap: 0.16rem;
+      }
+
+      .current-list dt {
+        margin-top: 0.36rem;
+      }
+
+      .posts li {
+        grid-template-columns: 1fr;
+        gap: 0.17rem;
+      }
+    }
+  </style>
+
+<style id="__living_site_scroll_guard">
+  /* Scroll guard injected at build time to ensure generated pages remain scrollable in iframes. */
+  html, body {
+    height: auto !important;
+    min-height: 100% !important;
+    max-height: none !important;
+    overflow-y: auto !important;
+    overflow-x: hidden !important;
+    position: static !important;
+    -webkit-overflow-scrolling: touch !important;
+    touch-action: pan-y !important;
+    overscroll-behavior-y: contain !important;
+  }
+  /* Avoid accidental fixed full-screen traps that break scrolling on mobile. */
+  body {
+    inset: auto !important;
+  }
+</style>
+</head>
+<body>
+  <article class="paper">
+    <header class="masthead">
+      <p class="edition">Stockholm Winter Edition</p>
+      <h1 class="nameplate">Erik Nilsson</h1>
+      <p class="deck">A small personal paper for ongoing work, unfinished thoughts, and quiet progress.</p>
+      <div class="dateline" aria-label="Current context">
+        <span>Wednesday, February 18, 2026</span>
+        <span>Overcast, -2 C</span>
+        <span>Mood: Overcast Stockholm Winter</span>
+      </div>
+    </header>
+
+    <main>
+      <section class="lead" aria-labelledby="lead-heading">
+        <h2 id="lead-heading">Front Page</h2>
+        <p>Hej, I am Erik. I design products at Cursor, mostly by listening first and trying to make one practical thing better each day.</p>
+        <p>This site is a simple logbook. Lately I have been tinkering with <span class="mono">living-site</span>, a personal site that regenerates itself from activity data. Some days it feels elegant, some days it feels patched together, and both are useful.</p>
+        <p>I care about steady craft over loud claims, and I am happiest when the details line up and the work is clear for the people using it.</p>
+      </section>
+
+      <section aria-labelledby="currently-heading">
+        <h2 id="currently-heading">Currently</h2>
+        <dl class="current-list">
+          <dt>Work</dt>
+          <dd>Product Designer at Cursor</dd>
+          <dt>Side project</dt>
+          <dd><span class="mono">living-site</span> - a self-regenerating personal website</dd>
+          <dt>Playing with</dt>
+          <dd><span class="mono">shipflow</span>, <span class="mono">cursor-web</span>, <span class="mono">plugin-template</span></dd>
+          <dt>This week</dt>
+          <dd>5 commits across active repos, mostly small iterative updates</dd>
+        </dl>
+      </section>
+
+      <section aria-labelledby="notes-heading">
+        <h2 id="notes-heading">Notebook Margins</h2>
+        <div class="split">
+          <ul class="brief-list" aria-label="Recent notes">
+            <li>
+              <a href="https://x.com/flowstated/status/2002167999353241901">Imagine 2026</a>
+              <span class="note-date">Dec 20, 2025</span>
+            </li>
+            <li>
+              <a href="https://x.com/flowstated/status/2000889983562080578">Shipping by sunrise</a>
+              <span class="note-date">Dec 16, 2025</span>
+            </li>
+            <li>
+              <a href="https://x.com/flowstated/status/2000691637190861180">iOS Shortcuts x GitHub Actions x Cursor CLI</a>
+              <span class="note-date">Dec 15, 2025</span>
+            </li>
+          </ul>
+          <ul class="links-list" aria-label="Listening and links">
+            <li>Listening: Beach House, kent, Endel, Taylor Swift, Tame Impala</li>
+            <li>Genres: dream pop, swedish pop, indie, downtempo</li>
+            <li>
+              Follow on <a href="https://x.com/flowstated">X</a>,
+              browse <a href="https://github.com/eriknson">GitHub</a>,
+              or send an <a href="mailto:contact@eriks.design?subject=Hej">email</a>.
+            </li>
+          </ul>
+        </div>
+      </section>
+
+      <section aria-labelledby="writing-heading">
+        <h2 id="writing-heading">Selected Writing</h2>
+        <ul class="posts">
+          <li>
+            <a href="/posts/a-living-site">A living site</a>
+            <span class="post-date">Dec 26, 2025</span>
+          </li>
+          <li>
+            <a href="/posts/surgical-edits">Surgical edits</a>
+            <span class="post-date">Nov 23, 2025</span>
+          </li>
+          <li>
+            <a href="/posts/familiar-differentiation">Familiar differentiation</a>
+            <span class="post-date">Nov 15, 2024</span>
+          </li>
+          <li>
+            <a href="/posts/hackathon-energy-but-add-users">Hackathon energy, but add users</a>
+            <span class="post-date">Oct 15, 2022</span>
+          </li>
+          <li>
+            <a href="https://uu.diva-portal.org/smash/record.jsf?pid=diva2:1453018">Go with the flow</a>
+            <span class="post-date">Aug 4, 2020</span>
+          </li>
+        </ul>
+      </section>
+    </main>
+
+    <footer class="closing">
+      <p>Made with care in winter light.</p>
+      <p>Hej</p>
+    </footer>
+  </article>
+</body>
+</html>
