@@ -589,7 +589,9 @@ jobs:
           echo "=== Re-validating after polish ==="
           pnpm run validate-build -- "generated/${{ matrix.model }}.html" || echo "Still has issues after polish"
 
-      - name: Upload validated artifact
+      - name: Upload validated artifact (attempt 1)
+        id: upload_validated_artifact
+        continue-on-error: true
         uses: actions/upload-artifact@v4
         with:
           name: validated-${{ matrix.model }}
@@ -597,6 +599,18 @@ jobs:
             generated/${{ matrix.model }}.html
             public/builds/${{ needs.aggregate.outputs.date }}/
           retention-days: 3
+          overwrite: true
+
+      - name: Upload validated artifact (retry)
+        if: steps.upload_validated_artifact.outcome == 'failure'
+        uses: actions/upload-artifact@v4
+        with:
+          name: validated-${{ matrix.model }}
+          path: |
+            generated/${{ matrix.model }}.html
+            public/builds/${{ needs.aggregate.outputs.date }}/
+          retention-days: 3
+          overwrite: true
 
   # Job 5: Commit all builds
   commit:
