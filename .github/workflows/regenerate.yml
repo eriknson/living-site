@@ -770,18 +770,21 @@ jobs:
           if git diff --staged --quiet; then
             echo "No changes to commit"
           else
+            TARGET_BRANCH="${GITHUB_REF_NAME:-main}"
+            echo "Target branch: ${TARGET_BRANCH}"
+
             git commit -m "Regenerate site (4 models) - $(date -u +%Y-%m-%d)"
             
             # Pull latest changes and rebase before pushing
             # This handles the case where another push happened during the workflow
-            git pull --rebase origin main
+            git pull --rebase origin "${TARGET_BRANCH}"
             
             # Push with retry logic for transient network failures (SSL timeouts, etc.)
             MAX_RETRIES=3
             RETRY_DELAY=10
             for i in $(seq 1 $MAX_RETRIES); do
               echo "Push attempt $i of $MAX_RETRIES..."
-              if git push; then
+              if git push origin "HEAD:${TARGET_BRANCH}"; then
                 echo "Push succeeded on attempt $i"
                 break
               else
