@@ -1,0 +1,378 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Erik Nilsson — Stockholm</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,400;0,500;0,600;0,700;1,400;1,500&family=Source+Serif+4:ital,wght@0,400;0,500;0,600;1,400&display=swap" rel="stylesheet">
+  <style>
+    :root {
+      --ink: #1a1a1a;
+      --paper: #f7f5f1;
+      --muted: #5a5854;
+      --accent: #2c5282;
+      --rule: #c4bfb6;
+      --highlight: #e6e2da;
+    }
+
+    @media (prefers-color-scheme: dark) {
+      :root {
+        --ink: #e8e4de;
+        --paper: #1a1a1a;
+        --muted: #9a958d;
+        --accent: #7eb8e8;
+        --rule: #3a3632;
+        --highlight: #2a2622;
+      }
+    }
+
+    * {
+      box-sizing: border-box;
+    }
+
+    html {
+      font-size: 18px;
+      -webkit-font-smoothing: antialiased;
+      -moz-osx-font-smoothing: grayscale;
+      color-scheme: light dark;
+    }
+
+    a:focus-visible {
+      outline: 2px solid var(--accent);
+      outline-offset: 2px;
+    }
+
+    body {
+      font-family: 'Source Serif 4', Georgia, serif;
+      font-weight: 400;
+      line-height: 1.6;
+      color: var(--ink);
+      background: var(--paper);
+      margin: 0;
+      padding: 1.5rem 1.25rem 3rem;
+      min-height: 100vh;
+    }
+
+    .paper {
+      max-width: 640px;
+      margin: 0 auto;
+    }
+
+    /* Masthead */
+    .masthead {
+      border-bottom: 2px solid var(--ink);
+      padding-bottom: 0.75rem;
+      margin-bottom: 1rem;
+      position: relative;
+    }
+
+    .masthead::after {
+      content: '— · —';
+      position: absolute;
+      bottom: -0.5rem;
+      left: 50%;
+      transform: translateX(-50%);
+      font-size: 0.55rem;
+      color: var(--muted);
+      background: var(--paper);
+      padding: 0 0.4rem;
+      letter-spacing: 0.15em;
+    }
+
+    .masthead-title {
+      font-family: 'Cormorant Garamond', Georgia, serif;
+      font-size: clamp(2rem, 5vw, 2.75rem);
+      font-weight: 600;
+      letter-spacing: -0.02em;
+      margin: 0;
+      line-height: 1.1;
+    }
+
+    .dateline {
+      font-family: 'Cormorant Garamond', Georgia, serif;
+      font-size: 0.8rem;
+      color: var(--muted);
+      margin-top: 0.5rem;
+      font-style: italic;
+    }
+
+    .dateline .weather {
+      font-style: normal;
+    }
+
+    .edition {
+      font-size: 0.65rem;
+      letter-spacing: 0.2em;
+      text-transform: uppercase;
+      color: var(--muted);
+      margin-bottom: 0.25rem;
+    }
+
+    /* Sections */
+    .section {
+      margin-bottom: 2rem;
+    }
+
+    .section-label {
+      font-family: 'Cormorant Garamond', Georgia, serif;
+      font-size: 0.7rem;
+      font-weight: 600;
+      letter-spacing: 0.15em;
+      text-transform: uppercase;
+      color: var(--muted);
+      margin-bottom: 0.75rem;
+    }
+
+    .lede {
+      font-family: 'Cormorant Garamond', Georgia, serif;
+      font-size: 1.35rem;
+      font-weight: 500;
+      line-height: 1.45;
+      margin: 0 0 1rem;
+    }
+
+    .lede em {
+      font-style: italic;
+      font-weight: 400;
+    }
+
+    .drop-cap::first-letter {
+      float: left;
+      font-family: 'Cormorant Garamond', Georgia, serif;
+      font-size: 3.2em;
+      line-height: 0.85;
+      padding-right: 0.08em;
+      font-weight: 600;
+    }
+
+    p {
+      margin: 0 0 1rem;
+      font-size: 1rem;
+    }
+
+    .intro-block {
+      margin-bottom: 2rem;
+    }
+
+    /* Posts list */
+    .posts-list {
+      list-style: none;
+      padding: 0;
+      margin: 0;
+    }
+
+    .posts-list li {
+      border-bottom: 1px solid var(--rule);
+      padding: 0.6rem 0;
+      display: flex;
+      flex-wrap: wrap;
+      gap: 0.35rem;
+      align-items: baseline;
+    }
+
+    .posts-list li:first-child {
+      border-top: 1px solid var(--rule);
+    }
+
+    .posts-list a {
+      color: var(--ink);
+      text-decoration: none;
+      font-weight: 500;
+    }
+
+    .posts-list a:hover {
+      color: var(--accent);
+      text-decoration: underline;
+      text-underline-offset: 2px;
+    }
+
+    .posts-list .date {
+      font-size: 0.85rem;
+      color: var(--muted);
+      font-style: italic;
+    }
+
+    /* Currently */
+    .currently-grid {
+      display: grid;
+      gap: 0.5rem;
+    }
+
+    .currently-item {
+      display: flex;
+      gap: 0.5rem;
+      font-size: 0.95rem;
+    }
+
+    .currently-item .label {
+      color: var(--muted);
+      min-width: 5rem;
+    }
+
+    /* Listening */
+    .listening {
+      font-size: 0.95rem;
+      color: var(--muted);
+      font-style: italic;
+    }
+
+    /* Links */
+    .links {
+      margin-top: 2rem;
+      padding-top: 1.5rem;
+      border-top: 1px solid var(--rule);
+      font-size: 0.9rem;
+    }
+
+    .links a {
+      color: var(--accent);
+      text-decoration: none;
+    }
+
+    .links a:hover {
+      text-decoration: underline;
+      text-underline-offset: 2px;
+    }
+
+    .links .separator {
+      color: var(--muted);
+      margin: 0 0.35rem;
+    }
+
+    /* Footer */
+    .footer {
+      margin-top: 2.5rem;
+      font-family: 'Cormorant Garamond', Georgia, serif;
+      font-size: 1.1rem;
+      font-style: italic;
+      color: var(--muted);
+    }
+
+    /* Decorative rule */
+    .rule-ornament {
+      width: 100%;
+      height: 1px;
+      background: linear-gradient(90deg, transparent, var(--rule) 20%, var(--rule) 80%, transparent);
+      margin: 1.5rem 0;
+    }
+
+    /* Responsive tweaks */
+    @media (min-width: 480px) {
+      body {
+        padding: 2rem 2rem 4rem;
+      }
+
+      .posts-list .date {
+        margin-left: auto;
+      }
+    }
+  </style>
+
+<style id="__living_site_scroll_guard">
+  /* Scroll guard injected at build time to ensure generated pages remain scrollable in iframes. */
+  html, body {
+    height: auto !important;
+    min-height: 100% !important;
+    max-height: none !important;
+    overflow-y: auto !important;
+    overflow-x: hidden !important;
+    position: static !important;
+    -webkit-overflow-scrolling: touch !important;
+    touch-action: pan-y !important;
+    overscroll-behavior-y: contain !important;
+  }
+  /* Avoid accidental fixed full-screen traps that break scrolling on mobile. */
+  body {
+    inset: auto !important;
+  }
+</style>
+</head>
+<body>
+  <div class="paper">
+    <header class="masthead">
+      <p class="edition">Winter Edition</p>
+      <h1 class="masthead-title">Erik Nilsson</h1>
+      <p class="dateline">
+        Stockholm, Wednesday, February 18, 2026
+        <span class="weather">— Overcast, −2°C</span>
+      </p>
+    </header>
+
+    <section class="section intro-block">
+      <p class="section-label">From the desk</p>
+      <p class="lede drop-cap">Hej, I'm Erik.</p>
+      <p>
+        Designing Cursor — the AI-powered editor for writing code. That's the day job.
+        This site is where I try things and write about what I learn.
+      </p>
+    </section>
+
+    <div class="rule-ornament"></div>
+
+    <section class="section">
+      <p class="section-label">Currently</p>
+      <div class="currently-grid">
+        <div class="currently-item">
+          <span class="label">Day job</span>
+          <span>Product Designer at Cursor</span>
+        </div>
+        <div class="currently-item">
+          <span class="label">Location</span>
+          <span>Stockholm</span>
+        </div>
+      </div>
+    </section>
+
+    <section class="section">
+      <p class="section-label">On rotation</p>
+      <p class="listening">
+        Beach House, Taylor Swift, Endel, Fred again.., kent. Dream pop, swedish pop, downtempo, stutter house.
+      </p>
+    </section>
+
+    <div class="rule-ornament"></div>
+
+    <section class="section">
+      <p class="section-label">Essays &amp; notes</p>
+      <ul class="posts-list">
+        <li>
+          <a href="/posts/a-living-site">A living site</a>
+          <span class="date">December 26, 2025</span>
+        </li>
+        <li>
+          <a href="/posts/surgical-edits">Surgical edits</a>
+          <span class="date">November 23, 2025</span>
+        </li>
+        <li>
+          <a href="/posts/familiar-differentiation">Familiar differentiation</a>
+          <span class="date">November 15, 2024</span>
+        </li>
+        <li>
+          <a href="/posts/hackathon-energy-but-add-users">Hackathon energy, but add users</a>
+          <span class="date">October 15, 2022</span>
+        </li>
+        <li>
+          <a href="https://uu.diva-portal.org/smash/record.jsf?pid=diva2:1453018">Go with the flow</a>
+          <span class="date">August 4, 2020</span>
+        </li>
+      </ul>
+    </section>
+
+    <div class="rule-ornament"></div>
+
+    <nav class="links">
+      <a href="https://x.com/flowstated">X</a>
+      <span class="separator">·</span>
+      <a href="https://github.com/eriknson">GitHub</a>
+      <span class="separator">·</span>
+      <a href="mailto:contact@eriks.design?subject=Hej">Email</a>
+    </nav>
+
+    <footer class="footer">
+      Hej
+    </footer>
+  </div>
+</body>
+</html>

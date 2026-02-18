@@ -1,0 +1,433 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="color-scheme" content="light dark">
+  <meta name="description" content="Erik Nilsson's winter edition personal site.">
+  <title>Erik Nilsson | Winter Edition</title>
+  <style>
+    :root {
+      color-scheme: light dark;
+      --paper: #f8f5ee;
+      --paper-tint: #f1ebdd;
+      --ink: #191613;
+      --ink-soft: #585146;
+      --rule: #b8ad9c;
+      --link: #1f3f70;
+      --link-hover: #6f3724;
+      --panel: #fcfaf4;
+      --accent: #4f5d74;
+      --grain: rgba(25, 22, 19, 0.04);
+      --surface: rgba(252, 250, 244, 0.96);
+      --frame: rgba(184, 173, 156, 0.62);
+      --lead-frame: rgba(184, 173, 156, 0.66);
+      --lead-surface: #f9f4e8;
+      --soft-rule: rgba(184, 173, 156, 0.86);
+      --underline: rgba(88, 81, 70, 0.52);
+    }
+
+    @media (prefers-color-scheme: dark) {
+      :root {
+        --paper: #111214;
+        --paper-tint: #1a1d22;
+        --ink: #ece6dd;
+        --ink-soft: #b7aea0;
+        --rule: #5f584d;
+        --link: #9dc2ff;
+        --link-hover: #f6ccb0;
+        --panel: #171a1f;
+        --accent: #a8bfd9;
+        --grain: rgba(236, 230, 221, 0.05);
+        --surface: rgba(23, 26, 31, 0.96);
+        --frame: rgba(95, 88, 77, 0.68);
+        --lead-frame: rgba(95, 88, 77, 0.75);
+        --lead-surface: #171b20;
+        --soft-rule: rgba(95, 88, 77, 0.9);
+        --underline: rgba(183, 174, 160, 0.58);
+      }
+    }
+
+    * {
+      box-sizing: border-box;
+    }
+
+    html,
+    body {
+      margin: 0;
+      padding: 0;
+    }
+
+    body {
+      background:
+        linear-gradient(to bottom, var(--paper), var(--paper-tint) 42%, var(--paper)),
+        repeating-linear-gradient(
+          0deg,
+          transparent 0,
+          transparent 23px,
+          var(--grain) 24px
+        );
+      color: var(--ink);
+      font-family: "Iowan Old Style", "Palatino Linotype", Palatino, "Book Antiqua", Georgia, serif;
+      line-height: 1.58;
+      letter-spacing: 0.002em;
+      padding: 1rem 0.95rem 1.4rem;
+    }
+
+    main {
+      width: 100%;
+      max-width: 640px;
+      margin: 0 auto;
+      background: var(--surface);
+      border: 1px solid var(--frame);
+      padding: 1rem 1rem 1.2rem;
+    }
+
+    a {
+      color: var(--link);
+      text-decoration-thickness: 1px;
+      text-underline-offset: 0.13em;
+    }
+
+    a:hover {
+      color: var(--link-hover);
+    }
+
+    .masthead {
+      text-align: center;
+      margin-bottom: 0.65rem;
+    }
+
+    .edition {
+      font-size: 0.78rem;
+      text-transform: uppercase;
+      letter-spacing: 0.18em;
+      color: var(--ink-soft);
+      margin-bottom: 0.2rem;
+    }
+
+    h1 {
+      margin: 0;
+      font-size: clamp(2rem, 8vw, 3.05rem);
+      line-height: 0.95;
+      font-weight: 600;
+    }
+
+    .subhead {
+      margin-top: 0.35rem;
+      font-size: 0.84rem;
+      text-transform: uppercase;
+      letter-spacing: 0.11em;
+      color: var(--ink-soft);
+    }
+
+    .ornament {
+      display: flex;
+      align-items: center;
+      gap: 0.7rem;
+      margin: 0.85rem 0;
+    }
+
+    .ornament::before,
+    .ornament::after {
+      content: "";
+      height: 1px;
+      flex: 1;
+      background: var(--rule);
+    }
+
+    .ornament span {
+      font-size: 0.72rem;
+      letter-spacing: 0.17em;
+      text-transform: uppercase;
+      color: var(--ink-soft);
+      white-space: nowrap;
+    }
+
+    .dateline {
+      display: flex;
+      justify-content: space-between;
+      flex-wrap: wrap;
+      row-gap: 0.25rem;
+      column-gap: 1rem;
+      border-top: 1px solid var(--rule);
+      border-bottom: 1px solid var(--rule);
+      padding: 0.45rem 0.1rem;
+      margin-bottom: 1rem;
+      font-size: 0.79rem;
+      text-transform: uppercase;
+      letter-spacing: 0.09em;
+      color: var(--ink-soft);
+    }
+
+    .lead {
+      border: 1px solid var(--lead-frame);
+      padding: 0.85rem 0.85rem 0.25rem;
+      margin-bottom: 1rem;
+      background: var(--lead-surface);
+    }
+
+    .lead p {
+      margin: 0 0 0.72rem;
+    }
+
+    .lead p:first-of-type::first-letter {
+      float: left;
+      font-size: 2.55em;
+      line-height: 0.8;
+      margin-right: 0.07em;
+      padding-top: 0.05em;
+      font-weight: 600;
+    }
+
+    .section {
+      margin-top: 0.9rem;
+    }
+
+    .section h2 {
+      margin: 0 0 0.5rem;
+      border-top: 1px solid var(--rule);
+      padding-top: 0.72rem;
+      font-size: 0.86rem;
+      text-transform: uppercase;
+      letter-spacing: 0.16em;
+      color: var(--ink-soft);
+      font-weight: 600;
+    }
+
+    .snapshot {
+      margin: 0;
+      padding: 0;
+      list-style: none;
+    }
+
+    .snapshot li {
+      display: flex;
+      justify-content: space-between;
+      gap: 0.7rem;
+      border-bottom: 1px dotted var(--soft-rule);
+      padding: 0.4rem 0;
+    }
+
+    .label {
+      color: var(--ink-soft);
+      text-transform: uppercase;
+      letter-spacing: 0.07em;
+      font-size: 0.8rem;
+      white-space: nowrap;
+    }
+
+    .value {
+      text-align: right;
+    }
+
+    .dispatches {
+      margin: 0;
+      padding: 0;
+      list-style: none;
+    }
+
+    .dispatches li {
+      border-bottom: 1px dotted var(--soft-rule);
+      padding: 0.55rem 0;
+    }
+
+    .dispatches a {
+      color: var(--ink);
+      font-size: 1.06rem;
+      text-decoration-color: var(--underline);
+    }
+
+    .meta {
+      display: block;
+      color: var(--ink-soft);
+      font-size: 0.82rem;
+      margin-top: 0.12rem;
+      letter-spacing: 0.02em;
+    }
+
+    .columns {
+      column-count: 1;
+      column-gap: 1.2rem;
+    }
+
+    .listening,
+    .notes {
+      margin: 0;
+      padding-left: 1.1rem;
+    }
+
+    .listening li,
+    .notes li {
+      margin-bottom: 0.35rem;
+    }
+
+    .quiet {
+      margin-top: 0.55rem;
+      color: var(--accent);
+      font-size: 0.9rem;
+    }
+
+    footer {
+      margin-top: 1rem;
+      border-top: 1px solid var(--rule);
+      padding-top: 0.7rem;
+      color: var(--ink-soft);
+      font-size: 0.9rem;
+      text-align: center;
+    }
+
+    @media (min-width: 590px) {
+      .columns {
+        column-count: 2;
+      }
+    }
+
+    @media (max-width: 430px) {
+      main {
+        padding: 0.85rem 0.8rem 1rem;
+      }
+
+      .snapshot li {
+        flex-direction: column;
+        gap: 0.12rem;
+      }
+
+      .value {
+        text-align: left;
+      }
+    }
+  </style>
+
+<style id="__living_site_scroll_guard">
+  /* Scroll guard injected at build time to ensure generated pages remain scrollable in iframes. */
+  html, body {
+    height: auto !important;
+    min-height: 100% !important;
+    max-height: none !important;
+    overflow-y: auto !important;
+    overflow-x: hidden !important;
+    position: static !important;
+    -webkit-overflow-scrolling: touch !important;
+    touch-action: pan-y !important;
+    overscroll-behavior-y: contain !important;
+  }
+  /* Avoid accidental fixed full-screen traps that break scrolling on mobile. */
+  body {
+    inset: auto !important;
+  }
+</style>
+</head>
+<body>
+  <main>
+    <header class="masthead">
+      <div class="edition">Special Winter Edition</div>
+      <h1>The Erik Times</h1>
+      <div class="subhead">Personal Dispatches from an Overcast Stockholm</div>
+      <div class="ornament">
+        <span>Wednesday, February 18, 2026</span>
+      </div>
+      <div class="dateline">
+        <span>Stockholm</span>
+        <span>-2 C - Overcast</span>
+        <span>Late City Final</span>
+      </div>
+    </header>
+
+    <section class="lead">
+      <p>Hej, I'm Erik.</p>
+      <p>
+        Designing Cursor, the AI-powered editor for writing code, is the day job.
+        This page is a small place to keep notes, share things I learn, and stay in touch.
+      </p>
+      <p>
+        Follow along on <a href="https://x.com/flowstated">X</a>, browse
+        <a href="https://github.com/eriknson">GitHub</a>, or send an
+        <a href="mailto:contact@eriks.design?subject=Hej">email</a>.
+      </p>
+    </section>
+
+    <section class="section">
+      <h2>From the Desk</h2>
+      <ul class="snapshot">
+        <li>
+          <span class="label">Day job</span>
+          <span class="value">Product Designer at Cursor</span>
+        </li>
+        <li>
+          <span class="label">Location</span>
+          <span class="value">Stockholm</span>
+        </li>
+        <li>
+          <span class="label">Mood</span>
+          <span class="value">Overcast Stockholm winter</span>
+        </li>
+      </ul>
+      <p class="quiet">A quiet week online, mostly heads-down design work.</p>
+    </section>
+
+    <section class="section">
+      <h2>Recent Dispatches</h2>
+      <ul class="dispatches">
+        <li>
+          <a href="/posts/a-living-site">A living site</a>
+          <span class="meta">December 26, 2025</span>
+        </li>
+        <li>
+          <a href="/posts/surgical-edits">Surgical edits</a>
+          <span class="meta">November 23, 2025</span>
+        </li>
+        <li>
+          <a href="/posts/familiar-differentiation">Familiar differentiation</a>
+          <span class="meta">November 15, 2024</span>
+        </li>
+        <li>
+          <a href="/posts/hackathon-energy-but-add-users">Hackathon energy, but add users</a>
+          <span class="meta">October 15, 2022</span>
+        </li>
+        <li>
+          <a href="https://uu.diva-portal.org/smash/record.jsf?pid=diva2:1453018">Go with the flow</a>
+          <span class="meta">August 4, 2020</span>
+        </li>
+      </ul>
+    </section>
+
+    <section class="section">
+      <h2>Winter Culture Page</h2>
+      <div class="columns">
+        <ul class="listening">
+          <li>Beach House</li>
+          <li>Taylor Swift</li>
+          <li>Endel</li>
+          <li>Fred again..</li>
+          <li>kent</li>
+          <li>Dream pop and Swedish pop</li>
+          <li>Downtempo and stutter house</li>
+        </ul>
+      </div>
+    </section>
+
+    <section class="section">
+      <h2>Three Short Notes</h2>
+      <ol class="notes">
+        <li>
+          <a href="https://x.com/flowstated/status/2002167999353241901">imagine 2026</a>
+          <span class="meta">December 20, 2025</span>
+        </li>
+        <li>
+          <a href="https://x.com/flowstated/status/2000889983562080578">shipping by sunrise</a>
+          <span class="meta">December 16, 2025</span>
+        </li>
+        <li>
+          <a href="https://x.com/flowstated/status/2000691637190861180">exploring ways to spin up agents from my phone</a>
+          <span class="meta">December 15, 2025</span>
+        </li>
+      </ol>
+    </section>
+
+    <footer>
+      Hej.
+    </footer>
+  </main>
+</body>
+</html>
