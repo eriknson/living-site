@@ -12,8 +12,8 @@ import { useRouter, useSearchParams } from "next/navigation";
 import type { Manifest } from "./manifest";
 import { getModelSlug, getModelIdFromSlug, getBuildForModel, getBatch } from "./manifest";
 
-// Default model when none specified - Opus 4.5
-const DEFAULT_MODEL_ID = "claude-4.5-opus-high-thinking";
+// Default model when none specified - Opus 4.6 Max
+const DEFAULT_MODEL_ID = "claude-4.6-opus-max-thinking";
 
 interface ManifestContextValue {
   manifest: Manifest | null;
