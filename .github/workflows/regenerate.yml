@@ -282,17 +282,47 @@ jobs:
       - name: Install dependencies
         run: pnpm install --frozen-lockfile
 
-      - name: Download data artifact
+      - name: Download data artifact (attempt 1)
+        id: download_data_artifact
+        continue-on-error: true
         uses: actions/download-artifact@v4
         with:
           name: aggregated-data
           path: artifacts/aggregated/
 
-      - name: Download curator artifact
+      - name: Download data artifact (retry)
+        if: steps.download_data_artifact.outcome == 'failure'
+        uses: actions/download-artifact@v4
+        with:
+          name: aggregated-data
+          path: artifacts/aggregated/
+
+      - name: Download curator artifact (attempt 1)
+        id: download_curator_artifact
+        continue-on-error: true
         uses: actions/download-artifact@v4
         with:
           name: curator-data
           path: artifacts/curator/
+
+      - name: Download curator artifact (retry)
+        if: steps.download_curator_artifact.outcome == 'failure'
+        uses: actions/download-artifact@v4
+        with:
+          name: curator-data
+          path: artifacts/curator/
+
+      - name: Verify core artifacts download
+        run: |
+          if [ ! -f "artifacts/aggregated/latest.json" ] || [ ! -f "artifacts/aggregated/fetch-summary.json" ]; then
+            echo "Missing aggregated-data artifact files"
+            exit 1
+          fi
+          if [ ! -f "artifacts/curator/brief.json" ] || [ ! -f "artifacts/curator/reference.html" ]; then
+            echo "Missing curator-data artifact files"
+            exit 1
+          fi
+          echo "Core artifacts downloaded successfully"
 
       - name: Organize downloaded files
         run: |
@@ -644,17 +674,47 @@ jobs:
             -H "Content-Type: application/json" \
             -d '{"buildId":"'"$BUILD_ID"'","event":"commit.started","timestamp":"'"$(date -u +%Y-%m-%dT%H:%M:%S.000Z)"'"}' || true
 
-      - name: Download data artifact
+      - name: Download data artifact (attempt 1)
+        id: download_data_artifact_commit
+        continue-on-error: true
         uses: actions/download-artifact@v4
         with:
           name: aggregated-data
           path: artifacts/aggregated/
 
-      - name: Download curator artifact
+      - name: Download data artifact (retry)
+        if: steps.download_data_artifact_commit.outcome == 'failure'
+        uses: actions/download-artifact@v4
+        with:
+          name: aggregated-data
+          path: artifacts/aggregated/
+
+      - name: Download curator artifact (attempt 1)
+        id: download_curator_artifact_commit
+        continue-on-error: true
         uses: actions/download-artifact@v4
         with:
           name: curator-data
           path: artifacts/curator/
+
+      - name: Download curator artifact (retry)
+        if: steps.download_curator_artifact_commit.outcome == 'failure'
+        uses: actions/download-artifact@v4
+        with:
+          name: curator-data
+          path: artifacts/curator/
+
+      - name: Verify core artifacts download
+        run: |
+          if [ ! -f "artifacts/aggregated/latest.json" ] || [ ! -f "artifacts/aggregated/fetch-summary.json" ]; then
+            echo "Missing aggregated-data artifact files"
+            exit 1
+          fi
+          if [ ! -f "artifacts/curator/brief.json" ] || [ ! -f "artifacts/curator/reference.html" ]; then
+            echo "Missing curator-data artifact files"
+            exit 1
+          fi
+          echo "Core artifacts downloaded successfully"
 
       - name: Organize data files
         run: |
