@@ -76,6 +76,14 @@ export function SiteViewer({ src, htmlContent, onLoad }: SiteViewerProps) {
   useEffect(() => {
     if (!containerRef.current || !content) return;
 
+    // Set scrolling behavior on the host element directly.
+    // This avoids relying only on :host CSS, which can be brittle across browsers.
+    containerRef.current.style.overflowY = "auto";
+    containerRef.current.style.overflowX = "hidden";
+    containerRef.current.style.overscrollBehaviorY = "contain";
+    containerRef.current.style.touchAction = "pan-y";
+    containerRef.current.style.setProperty("-webkit-overflow-scrolling", "touch");
+
     // Attach shadow root once (or reuse existing)
     if (!shadowRef.current) {
       shadowRef.current = containerRef.current.attachShadow({ mode: "open" });
@@ -144,12 +152,20 @@ export function SiteViewer({ src, htmlContent, onLoad }: SiteViewerProps) {
         display: block;
         width: 100%;
         height: 100%;
-        overflow: auto;
-        overscroll-behavior: contain;
+        overflow-y: auto;
+        overflow-x: hidden;
+        overscroll-behavior-y: contain;
         -webkit-overflow-scrolling: touch;
+        touch-action: pan-y;
       }
       .shadow-root {
+        /* Neutralize body-level scroll traps from generated CSS. */
+        height: auto !important;
         min-height: 100%;
+        max-height: none !important;
+        overflow: visible !important;
+        position: static !important;
+        inset: auto !important;
         max-width: 640px;
         margin-left: auto;
         margin-right: auto;
