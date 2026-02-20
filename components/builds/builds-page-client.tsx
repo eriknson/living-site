@@ -4,7 +4,7 @@ import { useState } from "react";
 import { track } from "@vercel/analytics";
 import Link from "next/link";
 import { ArrowUpRight, ScrollText, FileText } from "lucide-react";
-import type { Manifest, Batch, Build } from "@/lib/manifest";
+import { getModelDisplayName, type Manifest, type Batch, type Build } from "@/lib/manifest";
 import {
   Drawer,
   DrawerContent,
@@ -30,18 +30,6 @@ interface BuildEntry {
 interface BuildHistory {
   builds: BuildEntry[];
 }
-
-const modelNames: Record<string, string> = {
-  "composer-1.5": "Composer 1.5",
-  "claude-4.6-opus-max-thinking": "Opus 4.6 Max",
-  "gpt-5.3-codex-xhigh": "GPT-5.3 Codex XHigh",
-  "gemini-3.1-pro": "Gemini 3.1 Pro",
-  "composer-1": "Composer",
-  "claude-4.5-opus-high-thinking": "Opus 4.5",
-  "gpt-5.1-codex": "GPT-5.1 Codex",
-  "gpt-5.1-codex-max-low-fast": "GPT-5.1 Max",
-  "gemini-3-pro": "Gemini 3 Pro",
-};
 
 function formatBuildTime(timestamp?: string): string {
   if (!timestamp) return "";
@@ -95,7 +83,7 @@ function ModelCard({
   onOpenLogs: () => void;
   onViewBuild: () => void;
 }) {
-  const name = modelNames[build.model] || build.model;
+  const name = getModelDisplayName(build.model);
   const isFailed = build.status !== "success";
   const hasLogs = !!log?.agent_output;
   const duration = build.duration_ms || log?.duration_ms;
@@ -291,7 +279,7 @@ export function BuildsPageClient({
                     {builds.map((build: Build) => {
                       const log =
                         logsByTimestampModel[`${batch.timestamp}-${build.model}`];
-                      const modelName = modelNames[build.model] || build.model;
+                      const modelName = getModelDisplayName(build.model);
 
                       return (
                         <ModelCard
