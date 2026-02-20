@@ -1,0 +1,368 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Erik Nilsson</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Newsreader:ital,opsz,wght@0,6..72,200..800;1,6..72,200..800&display=swap" rel="stylesheet">
+  <style>
+    :root {
+      --bg: #F7F5F0;
+      --text: #1C1B1A;
+      --meta: #63615E;
+      --border: #1C1B1A;
+      --border-light: #D1CEC7;
+      --font-serif: 'Newsreader', 'Times New Roman', Times, serif;
+      --font-sans: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+    }
+
+    @media (prefers-color-scheme: dark) {
+      :root {
+        --bg: #111111;
+        --text: #EAE8E3;
+        --meta: #999691;
+        --border: #EAE8E3;
+        --border-light: #33312E;
+      }
+    }
+
+    * {
+      box-sizing: border-box;
+    }
+
+    body {
+      background-color: var(--bg);
+      color: var(--text);
+      font-family: var(--font-serif);
+      font-size: 1.125rem;
+      line-height: 1.6;
+      margin: 0;
+      padding: 0;
+      -webkit-font-smoothing: antialiased;
+      -moz-osx-font-smoothing: grayscale;
+    }
+
+    main {
+      max-width: 640px;
+      margin: 0 auto;
+      padding: 3rem 1.5rem 5rem;
+    }
+
+    /* Dateline */
+    .dateline {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      font-family: var(--font-sans);
+      font-size: 0.7rem;
+      text-transform: uppercase;
+      letter-spacing: 0.08em;
+      border-top: 2px solid var(--border);
+      border-bottom: 1px solid var(--border);
+      padding: 0.6rem 0;
+      margin-bottom: 3rem;
+      color: var(--text);
+    }
+
+    .dateline span {
+      display: inline-block;
+    }
+
+    /* Typography */
+    h1 {
+      font-size: 2.5rem;
+      font-weight: 400;
+      letter-spacing: -0.02em;
+      margin: 0 0 1.5rem;
+      line-height: 1.1;
+    }
+
+    h2 {
+      font-family: var(--font-sans);
+      font-size: 0.7rem;
+      font-weight: 600;
+      text-transform: uppercase;
+      letter-spacing: 0.1em;
+      color: var(--text);
+      border-bottom: 1px solid var(--border);
+      padding-bottom: 0.5rem;
+      margin: 3rem 0 1.5rem;
+    }
+
+    h3 {
+      font-family: var(--font-sans);
+      font-size: 0.75rem;
+      font-weight: 600;
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+      color: var(--meta);
+      margin: 0 0 0.5rem;
+    }
+
+    p {
+      margin: 0 0 1.5rem;
+    }
+
+    .intro {
+      font-size: 1.25rem;
+      line-height: 1.5;
+    }
+
+    a {
+      color: inherit;
+      text-decoration: underline;
+      text-decoration-thickness: 1px;
+      text-underline-offset: 3px;
+      text-decoration-color: var(--meta);
+      transition: text-decoration-color 0.2s ease;
+    }
+
+    a:hover {
+      text-decoration-color: var(--text);
+    }
+
+    /* Dictionary List / Currently */
+    .currently-list {
+      display: grid;
+      grid-template-columns: 1fr;
+      gap: 0.75rem 1rem;
+      margin-bottom: 2rem;
+    }
+
+    @media (min-width: 480px) {
+      .currently-list {
+        grid-template-columns: 100px 1fr;
+      }
+    }
+
+    .currently-list dt {
+      font-family: var(--font-sans);
+      font-size: 0.75rem;
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+      color: var(--meta);
+      padding-top: 0.35rem;
+    }
+
+    .currently-list dd {
+      margin: 0;
+    }
+
+    /* Writing List */
+    .writing-list {
+      list-style: none;
+      padding: 0;
+      margin: 0;
+    }
+
+    .writing-list li {
+      display: flex;
+      flex-direction: column;
+      margin-bottom: 1rem;
+    }
+
+    @media (min-width: 480px) {
+      .writing-list li {
+        flex-direction: row;
+        justify-content: space-between;
+        align-items: baseline;
+        border-bottom: 1px dotted var(--border-light);
+        padding-bottom: 0.5rem;
+      }
+      .writing-list li:last-child {
+        border-bottom: none;
+      }
+    }
+
+    .writing-list a {
+      text-decoration: none;
+    }
+
+    .writing-list a:hover {
+      text-decoration: underline;
+      text-decoration-thickness: 1px;
+      text-underline-offset: 3px;
+    }
+
+    .writing-list .date {
+      font-family: var(--font-sans);
+      font-size: 0.8rem;
+      color: var(--meta);
+      margin-top: 0.25rem;
+    }
+
+    /* Logs & Context */
+    .logs-grid {
+      display: grid;
+      grid-template-columns: 1fr;
+      gap: 2rem;
+    }
+
+    @media (min-width: 480px) {
+      .logs-grid {
+        grid-template-columns: 1fr 1fr;
+        gap: 3rem;
+      }
+    }
+
+    .log-entry {
+      margin-bottom: 1.5rem;
+    }
+
+    .log-entry p {
+      margin-bottom: 0.25rem;
+      font-size: 0.95rem;
+    }
+
+    .log-tweet {
+      font-style: italic;
+    }
+
+    .log-meta {
+      font-family: var(--font-sans);
+      font-size: 0.7rem;
+      color: var(--meta);
+    }
+    
+    .log-meta a {
+      text-decoration: none;
+      color: var(--meta);
+    }
+    .log-meta a:hover {
+      text-decoration: underline;
+    }
+
+    footer {
+      margin-top: 4rem;
+      padding-top: 2rem;
+      border-top: 1px solid var(--border);
+      text-align: right;
+      font-style: italic;
+      color: var(--text);
+    }
+  </style>
+
+<style id="__living_site_scroll_guard">
+  /* Scroll guard injected at build time to ensure generated pages remain scrollable in iframes. */
+  html, body {
+    height: auto !important;
+    min-height: 100% !important;
+    max-height: none !important;
+    overflow-y: auto !important;
+    overflow-x: hidden !important;
+    position: static !important;
+    -webkit-overflow-scrolling: touch !important;
+    touch-action: pan-y !important;
+    overscroll-behavior-y: contain !important;
+  }
+  /* Avoid accidental fixed full-screen traps that break scrolling on mobile. */
+  body {
+    inset: auto !important;
+  }
+</style>
+</head>
+<body>
+  <main>
+    <div class="dateline">
+      <span>Vol. I — Daily Log</span>
+      <span>Stockholm, SE</span>
+      <span>Friday, Feb 20, 2026</span>
+    </div>
+
+    <header>
+      <h1>Hej, I'm Erik.</h1>
+      <p class="intro">
+        Product Designer at Cursor. Tinkering with living-site — a self-regenerating site that rebuilds from daily activity data.
+      </p>
+      <p>
+        This site is my playground to try things and write about what I learn. Follow me on <a href="https://x.com/flowstated">X</a>, checkout my <a href="https://github.com/eriknson">GitHub</a>, or send me an <a href="mailto:contact@eriks.design?subject=Hej">email</a>.
+      </p>
+    </header>
+
+    <section>
+      <h2>Currently</h2>
+      <dl class="currently-list">
+        <dt>Work</dt>
+        <dd>Product Designer at Cursor</dd>
+        
+        <dt>Side Project</dt>
+        <dd>living-site — AI agents rebuild the site daily from activity data</dd>
+        
+        <dt>Tinkering</dt>
+        <dd>plugins, plugin-template, shipflow</dd>
+      </dl>
+    </section>
+
+    <section>
+      <h2>Writing</h2>
+      <ul class="writing-list">
+        <li>
+          <a href="/posts/a-living-site">A living site</a>
+          <span class="date">December 26, 2025</span>
+        </li>
+        <li>
+          <a href="/posts/surgical-edits">Surgical edits</a>
+          <span class="date">November 23, 2025</span>
+        </li>
+        <li>
+          <a href="/posts/familiar-differentiation">Familiar differentiation</a>
+          <span class="date">November 15, 2024</span>
+        </li>
+        <li>
+          <a href="/posts/hackathon-energy-but-add-users">Hackathon energy, but add users</a>
+          <span class="date">October 15, 2022</span>
+        </li>
+        <li>
+          <a href="https://uu.diva-portal.org/smash/record.jsf?pid=diva2:1453018">Go with the flow</a>
+          <span class="date">August 4, 2020</span>
+        </li>
+      </ul>
+    </section>
+
+    <section>
+      <h2>Logs & Context</h2>
+      <div class="logs-grid">
+        <div>
+          <h3>Recent Thoughts</h3>
+          <div class="log-entry log-tweet">
+            <p>"imagine 2026"</p>
+            <div class="log-meta"><a href="https://x.com/flowstated/status/2002167999353241901">Dec 20, 2025</a></div>
+          </div>
+          <div class="log-entry log-tweet">
+            <p>"shipping by sunrise"</p>
+            <div class="log-meta"><a href="https://x.com/flowstated/status/2000889983562080578">Dec 16, 2025</a></div>
+          </div>
+          <div class="log-entry log-tweet">
+            <p>"exploring ways to spin up agents from my phone<br><br>iOS shortcuts × github actions × cursor cli"</p>
+            <div class="log-meta"><a href="https://x.com/flowstated/status/2000691637190861180">Dec 15, 2025</a></div>
+          </div>
+        </div>
+
+        <div>
+          <h3>Environment</h3>
+          <div class="log-entry">
+            <p>0°C, overcast. Winter in Stockholm.</p>
+            <div class="log-meta">MOOD: OVERCAST STOCKHOLM WINTER</div>
+          </div>
+
+          <h3>Soundtrack</h3>
+          <div class="log-entry">
+            <p>Beach House, Taylor Swift, Endel, Fred again.., Tame Impala, kent — dream pop, swedish pop, indie, downtempo.</p>
+          </div>
+
+          <h3>Code Activity</h3>
+          <div class="log-entry">
+            <p>13 commits this week across <em>living-site</em>, <em>cursor-web</em>, <em>shipflow</em>, and <em>plugin-template</em>.</p>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <footer>
+      — Erik
+    </footer>
+  </main>
+</body>
+</html>
