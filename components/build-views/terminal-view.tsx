@@ -13,7 +13,7 @@ interface TerminalViewProps {
 export function TerminalView({ state, onStart, isStarting }: TerminalViewProps) {
   const isIdle = !state && !isStarting;
   const showModelPanes = state?.workflow.aggregate === "complete";
-  const models = ["composer-1.5", "claude-4.6-opus-max-thinking", "gpt-5.3-codex-xhigh", "gemini-3.1-pro"];
+  const models = ["composer-1.5", "opus-4.6-thinking", "gpt-5.3-codex-xhigh", "gemini-3.1-pro"];
 
   return (
     <div className="min-h-screen bg-white dark:bg-neutral-900 text-neutral-800 dark:text-neutral-200 font-mono text-xs p-4 pt-[calc(var(--menu-bar-height)+1rem)]">
@@ -190,11 +190,12 @@ function StatusDot({ status }: { status: string }) {
 function shortenModelName(model: string): string {
   const map: Record<string, string> = {
     "composer-1.5": "composer-1.5",
+    "opus-4.6-thinking": "opus-4.6",
     "claude-4.6-opus-max-thinking": "opus-4.6-max",
     "gpt-5.3-codex-xhigh": "gpt-5.3-xhigh",
     "gemini-3.1-pro": "gemini-3.1-pro",
     "composer-1": "composer-1",
-    "claude-4.5-opus-high-thinking": "claude-4.5",
+    "claude-4.5-opus-high-thinking": "opus-4.5",
     "gpt-5.1-codex": "gpt-5.1",
     "gemini-3-pro": "gemini-3-pro",
   };

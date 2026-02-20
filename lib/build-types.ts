@@ -284,7 +284,7 @@ export function createInitialBuildState(buildId: string): BuildState {
         status: "queued",
         rawLog: [],
       },
-      "claude-4.6-opus-max-thinking": {
+      "opus-4.6-thinking": {
         status: "queued",
         rawLog: [],
       },

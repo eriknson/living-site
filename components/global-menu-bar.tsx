@@ -19,7 +19,7 @@ import {
   DrawerTrigger,
 } from "@/components/ui/drawer";
 import { useIsMobile } from "@/lib/use-media-query";
-import type { Manifest } from "@/lib/manifest";
+import { getModelDisplayName, type Manifest } from "@/lib/manifest";
 import type { BuildState } from "@/lib/build-types";
 
 // Lazy load the command menu dialog - chunk loads after initial paint
@@ -71,19 +71,7 @@ function getPhaseLabel(state: BuildState): string {
 function getActiveModels(state: BuildState): string[] {
   return Object.entries(state.models)
     .filter(([, progress]) => progress.status === "running")
-    .map(([model]) => {
-      const names: Record<string, string> = {
-        "composer-1.5": "Composer 1.5",
-        "claude-4.6-opus-max-thinking": "Opus 4.6 Max",
-        "gpt-5.3-codex-xhigh": "GPT-5.3 Codex XHigh",
-        "gemini-3.1-pro": "Gemini 3.1 Pro",
-        "composer-1": "Composer",
-        "claude-4.5-opus-high-thinking": "Opus 4.5",
-        "gpt-5.1-codex": "GPT-5.1 Codex",
-        "gemini-3-pro": "Gemini 3 Pro",
-      };
-      return names[model] || model;
-    });
+    .map(([model]) => getModelDisplayName(model));
 }
 
 // Mobile drawer content for IDLE state

@@ -46,8 +46,8 @@ const PAGES = [
 // Agent models - each links to /agent?model=<slug>
 const AGENTS = [
   {
-    modelId: "claude-4.6-opus-max-thinking",
-    keywords: ["claude", "anthropic", "opus", "4.6", "max", "ai"],
+    modelId: "opus-4.6-thinking",
+    keywords: ["claude", "anthropic", "opus", "4.6", "thinking", "ai"],
   },
   {
     modelId: "composer-1.5",
