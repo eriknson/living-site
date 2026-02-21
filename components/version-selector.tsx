@@ -134,7 +134,17 @@ export function VersionSelector({
   // Determine what to show as the current selection
   const getDisplayName = () => {
     if (isHome) return "Erik";
-    if (isAgent && currentModel) return getModelDisplayName(currentModel);
+    if (isAgent && currentModel) {
+      if (currentModel === "gpt-5.3-codex-xhigh") {
+        return (
+          <>
+            <span className="sm:hidden">GPT-5.3 Codex</span>
+            <span className="hidden sm:inline">GPT-5.3 Codex Extra High</span>
+          </>
+        );
+      }
+      return getModelDisplayName(currentModel);
+    }
     return "Select version";
   };
 
@@ -175,7 +185,7 @@ export function VersionSelector({
       {/* Visual display (non-interactive) */}
       <span className="flex items-center gap-1.5 pointer-events-none">
         <Infinity className="h-[1.15em] w-[1.15em] opacity-35" strokeWidth={2.5} />
-        <span>{getDisplayName()}</span>
+        <span className="whitespace-nowrap">{getDisplayName()}</span>
         <ChevronDown className="h-3.5 w-3.5 opacity-50" />
       </span>
       
