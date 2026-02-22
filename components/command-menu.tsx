@@ -14,6 +14,7 @@ import {
   Mail,
   FileText,
   BookOpen,
+  Activity,
 } from "lucide-react";
 import { SearchIcon } from "@/components/icons/search-icon";
 import { useIsMobile } from "@/lib/use-media-query";
@@ -40,6 +41,12 @@ const PAGES = [
     label: "Build History",
     icon: History,
     keywords: ["builds", "history", "past", "archive"],
+  },
+  {
+    path: "/activity",
+    label: "Activity",
+    icon: Activity,
+    keywords: ["github", "contributions", "activity", "stats", "charts"],
   },
 ];
 

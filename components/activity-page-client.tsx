@@ -43,6 +43,18 @@ const MODEL_FAMILIES: [string, string[]][] = [
   ["Gemini", ["gemini-3.1-pro", "gemini-3-pro"]],
 ];
 
+/** Compute a trailing 7-day rolling average from daily contribution points */
+function rollingWeeklyAverage(points: LivelinePoint[]): LivelinePoint[] {
+  const WINDOW = 7;
+  return points.map((point, i) => {
+    const start = Math.max(0, i - WINDOW + 1);
+    const windowSlice = points.slice(start, i + 1);
+    const avg =
+      windowSlice.reduce((sum, p) => sum + p.value, 0) / windowSlice.length;
+    return { time: point.time, value: Math.round(avg * 10) / 10 };
+  });
+}
+
 function buildDurationSeries(manifest: Manifest): ModelTimeSeries[] {
   const allPoints: Record<string, LivelinePoint[]> = {};
 
@@ -82,7 +94,7 @@ export function ActivityPageClient() {
   const [data, setData] = useState<ActivityData | null>(null);
   const [manifest, setManifest] = useState<Manifest | null>(null);
   const [error, setError] = useState<string | null>(null);
-  const [windowSecs, setWindowSecs] = useState(30 * 86400);
+  const [windowSecs, setWindowSecs] = useState(90 * 86400);
   const theme = useSystemTheme();
   const isMobile = useIsMobile();
 
@@ -117,11 +129,16 @@ export function ActivityPageClient() {
       return p.time >= latest - windowSecs;
     }) ?? [];
 
-  const latestValue = filteredPoints[filteredPoints.length - 1]?.value ?? 0;
+  const smoothedPoints = useMemo(
+    () => rollingWeeklyAverage(filteredPoints),
+    [filteredPoints]
+  );
+
+  const latestValue = smoothedPoints[smoothedPoints.length - 1]?.value ?? 0;
 
   const avgValue =
-    filteredPoints.length > 0
-      ? filteredPoints.reduce((sum, p) => sum + p.value, 0) / filteredPoints.length
+    smoothedPoints.length > 0
+      ? smoothedPoints.reduce((sum, p) => sum + p.value, 0) / smoothedPoints.length
       : 0;
 
   return (
@@ -134,7 +151,7 @@ export function ActivityPageClient() {
             Activity
           </h1>
           <p className="text-[15px] text-black/50 dark:text-white/50 mt-1">
-            GitHub contributions over time
+            GitHub contributions · 7-day rolling avg
           </p>
         </div>
 
@@ -153,7 +170,7 @@ export function ActivityPageClient() {
             <div className="-mx-6 sm:mx-[-24px]">
               <div style={{ height: isMobile ? 280 : 320 }}>
                 <Liveline
-                  data={filteredPoints}
+                  data={smoothedPoints}
                   value={latestValue}
                   theme={theme}
                   color="#238636"
@@ -185,7 +202,7 @@ export function ActivityPageClient() {
                       day: "numeric",
                     });
                   }}
-                  window={30 * 86400}
+                  window={90 * 86400}
                   referenceLine={{ value: Math.round(avgValue * 10) / 10, label: "avg" }}
                   lerpSpeed={0.06}
                   padding={isMobile

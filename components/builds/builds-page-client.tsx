@@ -3,7 +3,7 @@
 import { useState } from "react";
 import { track } from "@vercel/analytics";
 import Link from "next/link";
-import { ArrowUpRight, ScrollText, FileText } from "lucide-react";
+import { ArrowUpRight, ScrollText, FileText, Activity } from "lucide-react";
 import { getModelDisplayName, type Manifest, type Batch, type Build } from "@/lib/manifest";
 import {
   Drawer,
@@ -237,6 +237,13 @@ export function BuildsPageClient({
             <p className="text-[15px] text-black/50 dark:text-white/50 mt-1">
               Browse and compare model outputs
             </p>
+            <Link
+              href="/activity"
+              className="inline-flex items-center gap-1.5 mt-3 text-[13px] text-black/35 dark:text-white/35 hover:text-black/60 dark:hover:text-white/60 transition-colors"
+            >
+              <Activity className="w-3.5 h-3.5" />
+              <span>GitHub activity &amp; build times →</span>
+            </Link>
           </div>
 
           {/* Build sessions list */}
