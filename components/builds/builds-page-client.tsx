@@ -231,19 +231,21 @@ export function BuildsPageClient({
         <div className="max-w-[640px] mx-auto px-6 pt-6 pb-6">
           {/* Header */}
           <div className="mb-8">
-            <h1 className="text-xl font-semibold text-black/85 dark:text-white/85">
-              Build History
-            </h1>
+            <div className="flex items-baseline justify-between">
+              <h1 className="text-xl font-semibold text-black/85 dark:text-white/85">
+                Build History
+              </h1>
+              <Link
+                href="/activity"
+                className="inline-flex items-center gap-1.5 text-[13px] text-black/35 dark:text-white/35 hover:text-black/55 dark:hover:text-white/55 transition-colors"
+              >
+                <Activity className="w-3.5 h-3.5" />
+                <span>Activity</span>
+              </Link>
+            </div>
             <p className="text-[15px] text-black/50 dark:text-white/50 mt-1">
               Browse and compare model outputs
             </p>
-            <Link
-              href="/activity"
-              className="inline-flex items-center gap-1.5 mt-3 text-[13px] text-black/35 dark:text-white/35 hover:text-black/60 dark:hover:text-white/60 transition-colors"
-            >
-              <Activity className="w-3.5 h-3.5" />
-              <span>GitHub activity &amp; build times →</span>
-            </Link>
           </div>
 
           {/* Build sessions list */}

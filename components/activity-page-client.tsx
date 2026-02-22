@@ -155,12 +155,6 @@ export function ActivityPageClient() {
           </p>
         </div>
 
-        {error && (
-          <div className="rounded-xl bg-red-500/10 px-4 py-3 text-[14px] text-red-600 dark:text-red-400">
-            Failed to load activity: {error}
-          </div>
-        )}
-
         {!data && !error && (
           <div className="h-[300px] animate-pulse rounded-2xl bg-black/[0.02] dark:bg-white/[0.02]" />
         )}
