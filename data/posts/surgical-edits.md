@@ -32,7 +32,7 @@ The idea combines two things: [React Grab](https://www.react-grab.com/?ref=eriks
 
 When you click an element, the overlay figures out which React component rendered it. It grabs the file path, the component name, the props, and the surrounding context. All the stuff you'd normally have to hunt down manually.
 
-Then it sends that context to an API route running on your dev server. The route spawns `cursor-agent` with a prompt that includes everything it needs to make a targeted edit. No guessing, no searching. The agent knows exactly where to look.
+Then it sends the context to an API route running on your dev server. The route spawns `cursor-agent` with a prompt that includes everything it needs to make a targeted edit. No guessing, no searching. The agent knows exactly where to look.
 
 <tweet>https://twitter.com/flowstated/status/1992678167052722278</tweet>
 
