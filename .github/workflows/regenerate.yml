@@ -253,6 +253,90 @@ jobs:
             data/reference.html
           retention-days: 3
 
+  # Job 2.5: Generate me.txt (lightweight, runs in parallel with generate)
+  metxt:
+    needs: [aggregate, curator]
+    if: inputs.dry_run != 'true'
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Setup pnpm
+        uses: pnpm/action-setup@v4
+        with:
+          version: ${{ env.PNPM_VERSION }}
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: 'pnpm'
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Download data artifact
+        uses: actions/download-artifact@v4
+        with:
+          name: aggregated-data
+          path: artifacts/aggregated/
+
+      - name: Organize downloaded files
+        run: |
+          cp artifacts/aggregated/latest.json data/latest.json
+          echo "Data organized for me.txt generation"
+
+      - name: Install Cursor CLI
+        run: |
+          curl https://cursor.com/install -fsS | bash
+          cursor-agent --version || echo "Failed to get cursor-agent version"
+
+      - name: Create clean worktree for me.txt
+        run: |
+          git worktree add /tmp/metxt-workspace --detach HEAD
+          cp data/latest.json /tmp/metxt-workspace/data/latest.json
+          rm -f /tmp/metxt-workspace/public/me.txt
+          echo "me.txt workspace created"
+
+      - name: Generate me.txt with agent
+        id: agent
+        continue-on-error: true
+        working-directory: /tmp/metxt-workspace
+        env:
+          CURSOR_API_KEY: ${{ secrets.CURSOR_API_KEY }}
+        run: |
+          PROMPT="Read infra/prompts/metxt.md for your instructions.
+
+          Read data/latest.json + data/identity.json + data/about.json.
+          Write public/me.txt following the me.txt spec."
+
+          cursor-agent -p --force --model composer-1.5 "$PROMPT" 2>&1 || true
+
+      - name: Copy agent output or run fallback
+        run: |
+          if [ -f "/tmp/metxt-workspace/public/me.txt" ]; then
+            cp /tmp/metxt-workspace/public/me.txt public/me.txt
+            echo "=== me.txt (from agent) ==="
+          else
+            echo "⚠ Agent did not create me.txt, running fallback..."
+            pnpm run generate-metxt
+            echo "=== me.txt (fallback) ==="
+          fi
+          cat public/me.txt
+          echo ""
+          echo "Lines: $(wc -l < public/me.txt)"
+
+          git worktree remove /tmp/metxt-workspace --force || true
+
+      - name: Upload me.txt artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: metxt
+          path: public/me.txt
+          retention-days: 3
+
   # Job 3: Generate with each model (parallel matrix)
   # Uses git worktree for isolation - agent sees no previous builds
   generate:
@@ -600,7 +684,7 @@ jobs:
 
   # Job 5: Commit all builds
   commit:
-    needs: [aggregate, curator, generate, validate]
+    needs: [aggregate, curator, generate, validate, metxt]
     if: inputs.dry_run != 'true'
     runs-on: ubuntu-latest
     timeout-minutes: 10
@@ -656,6 +740,12 @@ jobs:
         with:
           pattern: validated-*
           path: artifacts/
+
+      - name: Download me.txt artifact
+        uses: actions/download-artifact@v4
+        with:
+          name: metxt
+          path: artifacts/metxt/
 
       - name: Organize builds
         run: |
@@ -721,6 +811,15 @@ jobs:
           mkdir -p public/data
           cp data/fetch-summary.json public/data/fetch-summary.json
 
+      - name: Copy me.txt to public
+        run: |
+          if [ -f "artifacts/metxt/me.txt" ]; then
+            cp artifacts/metxt/me.txt public/me.txt
+            echo "✓ me.txt copied to public/"
+          else
+            echo "⚠ No me.txt artifact found"
+          fi
+
       - name: Commit changes
         run: |
           git config --local user.email "eriks@mail.se"
@@ -732,6 +831,7 @@ jobs:
           git add data/brief.json
           git add public/data/
           git add public/builds/
+          git add public/me.txt || true
           git add generated/
           
           # Check if there are changes to commit
