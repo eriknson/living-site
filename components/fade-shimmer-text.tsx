@@ -1,7 +1,5 @@
 "use client";
 
-import { motion } from "motion/react";
-
 interface FadeTextProps {
   text: string;
   /** Delay before animation starts (ms) */
@@ -19,18 +17,14 @@ export function FadeShimmerText({
   className 
 }: FadeTextProps) {
   return (
-    <motion.span
+    <span
       key={text}
-      className={className}
-      initial={{ opacity: 0 }}
-      animate={{ opacity: 1 }}
-      transition={{ 
-        duration: 0.3, 
-        delay: delay / 1000,
-        ease: [0, 0, 0.2, 1]
+      className={`animate-soft-fade-in ${className ?? ""}`.trim()}
+      style={{
+        animationDelay: `${delay}ms`,
       }}
     >
       {text}
-    </motion.span>
+    </span>
   );
 }

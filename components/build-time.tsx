@@ -18,19 +18,64 @@ interface BuildTimeProps {
   currentModel?: string | null;
   currentDate?: string | null;
   currentTimestamp?: string | null;
+  manualVersionDate?: string | null;
 }
 
-export function BuildTime({ currentRoute, manifest, currentModel, currentDate, currentTimestamp }: BuildTimeProps) {
-  const [relativeTime, setRelativeTime] = useState<string>("");
-  const [manualVersionDate, setManualVersionDate] = useState<string | null>(null);
-  const isMobile = useIsMobile();
+function getInitialRelativeTime({
+  currentRoute,
+  manifest,
+  currentDate,
+  currentTimestamp,
+  manualVersionDate,
+}: Pick<
+  BuildTimeProps,
+  "currentRoute" | "manifest" | "currentDate" | "currentTimestamp" | "manualVersionDate"
+>): string {
+  if (currentRoute === "/" && manualVersionDate) {
+    return formatRelativeTime(manualVersionDate);
+  }
 
+  if (currentRoute === "/agent" && manifest) {
+    const builtAt = getBuiltAt(
+      manifest,
+      currentDate ?? undefined,
+      currentTimestamp ?? undefined
+    );
+
+    if (builtAt) {
+      return formatRelativeTime(builtAt);
+    }
+  }
+
+  return "";
+}
+
+export function BuildTime({
+  currentRoute,
+  manifest,
+  currentModel,
+  currentDate,
+  currentTimestamp,
+  manualVersionDate: providedManualVersionDate,
+}: BuildTimeProps) {
   const isHome = currentRoute === "/";
   const isAgent = currentRoute === "/agent";
+  const [fetchedManualVersionDate, setFetchedManualVersionDate] = useState<string | null>(null);
+  const manualVersionDate = providedManualVersionDate ?? fetchedManualVersionDate;
+  const [relativeTime, setRelativeTime] = useState<string>(() =>
+    getInitialRelativeTime({
+      currentRoute,
+      manifest,
+      currentDate,
+      currentTimestamp,
+      manualVersionDate: providedManualVersionDate,
+    })
+  );
+  const isMobile = useIsMobile();
 
   // Fetch manual version date for Erik's version
   useEffect(() => {
-    if (!isHome) return;
+    if (!isHome || providedManualVersionDate) return;
 
     fetch("/data/manual-version.json")
       .then((res) => {
@@ -38,10 +83,10 @@ export function BuildTime({ currentRoute, manifest, currentModel, currentDate, c
         return res.json();
       })
       .then((data: ManualVersionData) => {
-        setManualVersionDate(data.lastUpdated);
+        setFetchedManualVersionDate(data.lastUpdated);
       })
-      .catch(() => setManualVersionDate(null));
-  }, [isHome]);
+      .catch(() => setFetchedManualVersionDate(null));
+  }, [isHome, providedManualVersionDate]);
 
   // Update relative time for manual version
   useEffect(() => {
@@ -72,8 +117,7 @@ export function BuildTime({ currentRoute, manifest, currentModel, currentDate, c
     return () => clearInterval(interval);
   }, [isAgent, manifest, currentDate, currentTimestamp]);
 
-  // Don't render on /new page
-  if (currentRoute === "/new") return null;
+  if (!isHome && !isAgent) return null;
 
   if (!relativeTime) return null;
 

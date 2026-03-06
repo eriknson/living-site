@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback, useRef } from "react";
 import { useRouter } from "next/navigation";
 import { track } from "@vercel/analytics";
 import { ArrowLeft, ChevronDown, Infinity } from "lucide-react";
@@ -71,6 +71,7 @@ export function VersionSelector({
 }: VersionSelectorProps) {
   const router = useRouter();
   const [fetchedManifest, setFetchedManifest] = useState<Manifest | null>(null);
+  const hasPrefetchedBuilds = useRef(false);
 
   // Use provided manifest or fetch it
   const manifest = providedManifest ?? fetchedManifest;
@@ -92,28 +93,33 @@ export function VersionSelector({
       });
   }, [providedManifest]);
 
-  // Prefetch agent build HTML files from home page for faster navigation
-  useEffect(() => {
-    // Only prefetch when on home page
-    if (currentRoute !== "/" || !manifest) return;
+  const prefetchBuilds = useCallback(() => {
+    if (hasPrefetchedBuilds.current || currentRoute !== "/" || !manifest) return;
+
+    const connection = (
+      navigator as Navigator & {
+        connection?: { saveData?: boolean; effectiveType?: string };
+      }
+    ).connection;
+
+    if (connection?.saveData || connection?.effectiveType?.includes("2g")) {
+      return;
+    }
 
     const batch = getBatch(manifest);
     if (!batch) return;
 
-    const links: HTMLLinkElement[] = [];
+    hasPrefetchedBuilds.current = true;
     batch.builds
-      .filter((b) => b.status === "success")
+      .filter((build) => build.status === "success")
       .forEach(({ path }) => {
         const link = document.createElement("link");
         link.rel = "prefetch";
         link.href = `/${path}`;
         link.as = "document";
         document.head.appendChild(link);
-        links.push(link);
       });
-
-    return () => links.forEach((link) => link.remove());
-  }, [manifest, currentRoute]);
+  }, [currentRoute, manifest]);
 
   const displayDate = currentDate || manifest?.latest_date;
   const displayTimestamp = currentTimestamp || manifest?.latest_timestamp;
@@ -181,6 +187,8 @@ export function VersionSelector({
     <label 
       className="relative flex items-center cursor-pointer h-8 px-3 rounded-full bg-black/[0.03] dark:bg-white/[0.06] active:bg-black/[0.08] dark:active:bg-white/[0.12] transition-colors select-none"
       style={{ touchAction: 'manipulation', WebkitTapHighlightColor: 'transparent' }}
+      onPointerEnter={prefetchBuilds}
+      onFocus={prefetchBuilds}
     >
       {/* Visual display (non-interactive) */}
       <span className="flex items-center gap-1.5 pointer-events-none">

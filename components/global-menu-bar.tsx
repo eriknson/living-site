@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import dynamic from "next/dynamic";
 import Link from "next/link";
 import { ArrowLeft, ArrowUpRight, Clock, Home, Zap } from "lucide-react";
@@ -356,6 +356,7 @@ interface GlobalMenuBarProps {
   currentDate?: string | null;
   currentTimestamp?: string | null;
   onModelChange?: (model: string) => void;
+  manualVersionDate?: string | null;
   // For /new page when build is complete
   buildComplete?: boolean;
   buildTotalTime?: number;
@@ -368,6 +369,7 @@ export function GlobalMenuBar({
   currentDate = null,
   currentTimestamp = null,
   onModelChange,
+  manualVersionDate = null,
   buildComplete = false,
   buildTotalTime = 0,
 }: GlobalMenuBarProps) {
@@ -379,26 +381,25 @@ export function GlobalMenuBar({
   const [commandOpen, setCommandOpen] = useState(false);
   const [commandLoaded, setCommandLoaded] = useState(false);
 
-  // Preload command menu chunk shortly after mount (not blocking initial paint)
-  useEffect(() => {
-    const timer = setTimeout(() => {
-      import("./command-menu").then(() => setCommandLoaded(true));
-    }, 100);
-    return () => clearTimeout(timer);
-  }, []);
+  const preloadCommandMenu = useCallback(() => {
+    if (commandLoaded) return;
+
+    import("./command-menu").then(() => setCommandLoaded(true));
+  }, [commandLoaded]);
 
   // Global keyboard listener for ⌘K / Ctrl+K - always active
   useEffect(() => {
     const down = (e: KeyboardEvent) => {
       if (e.key === "k" && (e.metaKey || e.ctrlKey)) {
         e.preventDefault();
+        preloadCommandMenu();
         setCommandOpen((prev) => !prev);
       }
     };
 
     document.addEventListener("keydown", down);
     return () => document.removeEventListener("keydown", down);
-  }, []);
+  }, [preloadCommandMenu]);
 
   return (
     <nav className="shrink-0 py-4 pt-[calc(1rem+env(safe-area-inset-top))] z-50 text-[length:var(--menu-bar-font-size)] text-anysphere-text select-none border-b border-black/[0.06] dark:border-white/[0.06] bg-[#fafaf9] dark:bg-[#0a0a0a] md:sticky md:top-0">
@@ -429,6 +430,7 @@ export function GlobalMenuBar({
               currentModel={currentModel}
               currentDate={currentDate}
               currentTimestamp={currentTimestamp}
+              manualVersionDate={manualVersionDate}
             />
           )}
         </div>
@@ -443,7 +445,12 @@ export function GlobalMenuBar({
           
           {/* Command menu trigger button - always rendered */}
           <button
-            onClick={() => setCommandOpen(true)}
+            onClick={() => {
+              preloadCommandMenu();
+              setCommandOpen(true);
+            }}
+            onPointerEnter={preloadCommandMenu}
+            onFocus={preloadCommandMenu}
             className="flex items-center gap-1.5 h-8 px-3 rounded-full bg-black/[0.03] dark:bg-white/[0.06] active:bg-black/[0.08] dark:active:bg-white/[0.12] transition-colors select-none cursor-pointer"
             style={{
               touchAction: "manipulation",

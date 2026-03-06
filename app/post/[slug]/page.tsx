@@ -2,6 +2,8 @@ import { notFound } from "next/navigation";
 import Link from "next/link";
 import { getPost, getAllPostSlugs, getAllPosts } from "@/lib/posts";
 import { GlobalMenuBar } from "@/components/global-menu-bar";
+import { getManualVersionData } from "@/lib/manual-version-server";
+import { getManifest } from "@/lib/manifest-server";
 import { PostContent } from "@/components/post-content";
 import { RelatedPosts } from "@/components/related-posts";
 
@@ -60,6 +62,10 @@ export default async function PostPage({
   }
 
   const allPosts = getAllPosts();
+  const [manifest, manualVersion] = await Promise.all([
+    getManifest().catch(() => null),
+    getManualVersionData(),
+  ]);
   const formattedDate = new Date(post.publishedAt).toLocaleDateString("en-US", {
     year: "numeric",
     month: "long",
@@ -69,7 +75,11 @@ export default async function PostPage({
   return (
     <div className="min-h-dvh bg-[#fafaf9] dark:bg-[#0a0a0a] text-[#1a1a1a] dark:text-[#e5e5e5]">
       <div className="sticky top-0 z-50">
-        <GlobalMenuBar currentRoute="/" />
+        <GlobalMenuBar
+          currentRoute="/"
+          manifest={manifest}
+          manualVersionDate={manualVersion?.lastUpdated ?? null}
+        />
       </div>
 
       <main className="max-w-[640px] mx-auto px-6 pt-16 pb-16">
