@@ -15,7 +15,7 @@ Time to hit that publish button.
 
 ## Draft faster, improve faster
 
-We're collectively trying things out, exploring patterns, and finding out what sticks. To keep the momentum up during this exploration, it helps to be able to design quickly.
+We're collectively trying things out, exploring patterns, and finding out what sticks. To keep the momentum up during this exploration, it helps to be able to design ideas quickly.
 
 For most people, the design process is split into two phases: drafting and editing. In the drafting phase, the goal is generally to get out of your way to get something onto the screen (or whatever medium you're working with). Then you step back and evaluate the work from a more critical perspective in the editing phase.
 
