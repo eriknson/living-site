@@ -54,9 +54,12 @@ export function RelatedPosts({ posts, currentSlug }: RelatedPostsProps) {
   const recommendedPosts = shuffled.slice(0, 3);
 
   return (
-    <section className="mt-16 pt-8 border-t border-black/10 dark:border-white/10">
-      <h2 className="text-sm font-medium text-black/50 dark:text-white/50 mb-6 uppercase tracking-wide">
-        More stuff
+    <section className="mt-16 pt-10 border-t border-black/12 dark:border-white/12">
+      <h2
+        className="text-lg font-bold text-black/80 dark:text-white/80 mb-6 tracking-tight"
+        style={{ fontFamily: 'Georgia, "Times New Roman", Times, serif' }}
+      >
+        More to Read
       </h2>
       <PostList posts={recommendedPosts} excludeStaticLink={true} />
     </section>

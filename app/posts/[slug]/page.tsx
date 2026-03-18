@@ -79,35 +79,41 @@ export default async function PostPage({
   });
 
   return (
-    <div className="min-h-dvh bg-[#fafaf9] dark:bg-[#0a0a0a] text-[#1a1a1a] dark:text-[#e5e5e5]">
+    <div className="min-h-dvh bg-white dark:bg-[#0a0a0a] text-[#121212] dark:text-[#e5e5e5]">
       <div className="sticky top-0 z-50">
         <GlobalMenuBar currentRoute="/posts" />
       </div>
 
-      <main className="max-w-[640px] mx-auto px-6 pt-16 pb-16">
+      <main className="max-w-[680px] mx-auto px-6 pt-12 pb-20">
         {/* Header */}
-        <header className="mb-10">
-          <h1 className="text-2xl font-medium mb-3 leading-tight">
+        <header className="mb-0">
+          <h1
+            className="text-3xl sm:text-4xl md:text-[2.625rem] font-bold leading-[1.15] tracking-tight mb-4"
+            style={{ fontFamily: 'Georgia, "Times New Roman", Times, serif' }}
+          >
             {post.title}
           </h1>
-          <p className="text-black/50 dark:text-white/50 text-sm">
-            {formattedDate}
-            {post.readTime && ` · ${post.readTime} min read`}
-          </p>
+          <div className="flex flex-col gap-1 mt-4 mb-6">
+            <p className="text-sm text-black/60 dark:text-white/50 tracking-wide">
+              By{" "}
+              <span className="font-semibold text-black/90 dark:text-white/80">
+                Erik Nilsson
+              </span>
+            </p>
+            <p className="text-sm text-black/45 dark:text-white/40">
+              {formattedDate}
+              {post.readTime && (
+                <span className="ml-2 pl-2 border-l border-black/15 dark:border-white/15">
+                  {post.readTime} min read
+                </span>
+              )}
+            </p>
+          </div>
+          <hr className="nyt-rule" />
         </header>
 
         {/* Article content */}
-        <article
-          className="
-            prose prose-neutral dark:prose-invert
-            prose-headings:font-medium prose-headings:tracking-tight
-            prose-h2:text-xl prose-h2:mt-10 prose-h2:mb-4
-            prose-p:text-[15px] prose-p:leading-[1.75] prose-p:text-black/85 dark:prose-p:text-white/85
-            prose-a:underline prose-a:decoration-black/20 dark:prose-a:decoration-white/20
-            prose-a:underline-offset-2 hover:prose-a:decoration-black/40 dark:hover:prose-a:decoration-white/40
-            max-w-none
-          "
-        >
+        <article className="nyt-article mt-8 max-w-none">
           <PostContent html={post.contentHtml} />
         </article>
 
