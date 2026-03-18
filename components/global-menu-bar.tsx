@@ -401,9 +401,9 @@ export function GlobalMenuBar({
   }, []);
 
   return (
-    <nav className="shrink-0 py-4 pt-[calc(1rem+env(safe-area-inset-top))] z-50 text-[length:var(--menu-bar-font-size)] text-anysphere-text select-none border-b border-black/[0.06] dark:border-white/[0.06] bg-[#fafaf9] dark:bg-[#0a0a0a] md:sticky md:top-0">
-      <div className="max-w-[640px] mx-auto w-full h-full flex items-center justify-between px-6">
-        <div className="flex items-center h-full gap-1">
+    <nav className="sticky top-0 z-50 shrink-0 border-b border-[var(--color-border)] bg-[color:color-mix(in_srgb,var(--color-bg)_86%,transparent)] py-4 pt-[calc(1rem+env(safe-area-inset-top))] text-[length:var(--menu-bar-font-size)] text-[var(--color-text)] backdrop-blur-xl select-none">
+      <div className="site-container flex h-full w-full items-center justify-between gap-3">
+        <div className="flex items-center h-full gap-1.5">
           {/* Version selector - shown on all pages */}
           <VersionSelector
             manifest={manifest}
@@ -416,7 +416,7 @@ export function GlobalMenuBar({
 
           {/* For /builds page: show build status after version selector */}
           {isBuilds && (
-            <span className="px-2">
+            <span className="hidden px-1.5 sm:inline-flex">
               <BuildStatus />
             </span>
           )}
@@ -436,7 +436,7 @@ export function GlobalMenuBar({
         <div className="flex items-center h-full gap-2">
           {/* Built in Xs - shown on /new when complete */}
           {isNew && buildComplete && buildTotalTime > 0 && (
-            <span className="h-full px-2 text-anysphere-muted flex items-center">
+            <span className="hidden h-full items-center px-2 text-[11px] font-bold uppercase tracking-[0.14em] text-[var(--color-muted)] sm:flex">
               Built in {buildTotalTime}s
             </span>
           )}
@@ -444,16 +444,16 @@ export function GlobalMenuBar({
           {/* Command menu trigger button - always rendered */}
           <button
             onClick={() => setCommandOpen(true)}
-            className="flex items-center gap-1.5 h-8 px-3 rounded-full bg-black/[0.03] dark:bg-white/[0.06] active:bg-black/[0.08] dark:active:bg-white/[0.12] transition-colors select-none cursor-pointer"
+            className="swiss-nav-chip cursor-pointer"
             style={{
               touchAction: "manipulation",
               WebkitTapHighlightColor: "transparent",
             }}
             aria-label="Open command menu"
           >
-            <SearchIcon className="h-[1em] w-[1em] opacity-50" />
+            <SearchIcon className="h-[1em] w-[1em] opacity-55" />
             {!isMobile && (
-              <span className="text-black/40 dark:text-white/40 text-[0.85em]">
+              <span className="text-[0.9em] text-[var(--color-muted)]">
                 ⌘K
               </span>
             )}

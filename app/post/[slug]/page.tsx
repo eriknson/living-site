@@ -67,49 +67,56 @@ export default async function PostPage({
   });
 
   return (
-    <div className="min-h-dvh bg-[#fafaf9] dark:bg-[#0a0a0a] text-[#1a1a1a] dark:text-[#e5e5e5]">
+    <div className="site-shell">
       <div className="sticky top-0 z-50">
         <GlobalMenuBar currentRoute="/" />
       </div>
 
-      <main className="max-w-[640px] mx-auto px-6 pt-16 pb-16">
-        {/* Back link */}
-        <Link
-          href="/posts"
-          className="inline-flex items-center gap-1.5 text-sm text-black/50 dark:text-white/50 hover:text-black/70 dark:hover:text-white/70 transition-colors mb-8"
-        >
-          <span>←</span>
-          <span>Back</span>
-        </Link>
+      <main className="site-container py-10 sm:py-14">
+        <section className="swiss-grid border-t border-[var(--color-border-strong)] pt-5 sm:pt-8">
+          <div className="space-y-5">
+            <Link
+              href="/posts"
+              className="inline-flex items-center gap-2 swiss-meta transition-colors hover:text-[var(--color-text)]"
+            >
+              <span aria-hidden="true">←</span>
+              <span>Back to archive</span>
+            </Link>
+            <div className="space-y-2">
+              <span className="swiss-kicker">Essay</span>
+              <p className="swiss-meta">
+                {formattedDate}
+                {post.readTime && ` / ${post.readTime} min read`}
+              </p>
+            </div>
+          </div>
 
-        {/* Header */}
-        <header className="mb-10">
-          <h1 className="text-2xl font-medium mb-3 leading-tight">
-            {post.title}
-          </h1>
-          <p className="text-black/50 dark:text-white/50 text-sm">
-            {formattedDate}
-            {post.readTime && ` · ${post.readTime} min read`}
-          </p>
-        </header>
+          <div className="site-column">
+            <header className="border-b border-[var(--color-border)] pb-8">
+              <h1 className="max-w-[15ch] text-[clamp(2.6rem,7vw,5.4rem)] font-bold leading-[0.94] tracking-[-0.06em]">
+                {post.title}
+              </h1>
+            </header>
 
-        {/* Article content */}
-        <article
-          className="
-            prose prose-neutral dark:prose-invert
-            prose-headings:font-medium prose-headings:tracking-tight
-            prose-h2:text-xl prose-h2:mt-10 prose-h2:mb-4
-            prose-p:text-[15px] prose-p:leading-[1.75] prose-p:text-black/85 dark:prose-p:text-white/85
-            prose-a:underline prose-a:decoration-black/20 dark:prose-a:decoration-white/20
-            prose-a:underline-offset-2 hover:prose-a:decoration-black/40 dark:hover:prose-a:decoration-white/40
-            max-w-none
-          "
-        >
-          <PostContent html={post.contentHtml} />
-        </article>
+            <article
+              className="
+                swiss-prose prose prose-neutral max-w-none pt-8 dark:prose-invert
+                prose-headings:font-bold prose-headings:tracking-[-0.04em]
+                prose-h2:mt-12 prose-h2:mb-4 prose-h2:text-[1.65rem]
+                prose-h3:mt-10 prose-h3:mb-3 prose-h3:text-[1.2rem]
+                prose-p:text-[16px] prose-p:leading-8
+                prose-a:swiss-inline-link
+                prose-li:text-[15px] prose-li:leading-7
+                prose-blockquote:border-l-[3px] prose-blockquote:border-[var(--color-accent)]
+                prose-blockquote:pl-5 prose-blockquote:italic prose-blockquote:text-[var(--color-text)]
+              "
+            >
+              <PostContent html={post.contentHtml} />
+            </article>
 
-        {/* Related posts */}
-        <RelatedPosts posts={allPosts} currentSlug={slug} />
+            <RelatedPosts posts={allPosts} currentSlug={slug} />
+          </div>
+        </section>
       </main>
     </div>
   );

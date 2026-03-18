@@ -15,18 +15,18 @@ import {
 // Falls back to home if there's no history (direct entry to subpage)
 function BackButton() {
   const router = useRouter();
-  
+
   const handleBack = () => {
     track("back_button_clicked");
-    
+
     // Check if we have meaningful history to go back to
     // history.length > 1 means there's at least one previous entry
     // Also check if referrer is from our own site (same origin)
     const hasHistory = typeof window !== "undefined" && window.history.length > 1;
-    const referrerIsInternal = typeof document !== "undefined" && 
-      document.referrer && 
+    const referrerIsInternal = typeof document !== "undefined" &&
+      document.referrer &&
       document.referrer.startsWith(window.location.origin);
-    
+
     if (hasHistory && referrerIsInternal) {
       router.back();
     } else {
@@ -38,12 +38,12 @@ function BackButton() {
   return (
     <button
       onClick={handleBack}
-      className="flex items-center cursor-pointer h-8 px-3 rounded-full bg-black/[0.03] dark:bg-white/[0.06] active:bg-black/[0.08] dark:active:bg-white/[0.12] transition-colors select-none"
-      style={{ touchAction: 'manipulation', WebkitTapHighlightColor: 'transparent' }}
+      className="swiss-nav-chip cursor-pointer"
+      style={{ touchAction: "manipulation", WebkitTapHighlightColor: "transparent" }}
       aria-label="Go back"
     >
       <span className="flex items-center gap-1.5">
-        <ArrowLeft className="h-[1em] w-[1em] opacity-50" strokeWidth={2} />
+        <ArrowLeft className="h-[1em] w-[1em] opacity-55" strokeWidth={2} />
         <span>Back</span>
       </span>
     </button>
@@ -178,17 +178,17 @@ export function VersionSelector({
   };
 
   return (
-    <label 
-      className="relative flex items-center cursor-pointer h-8 px-3 rounded-full bg-black/[0.03] dark:bg-white/[0.06] active:bg-black/[0.08] dark:active:bg-white/[0.12] transition-colors select-none"
-      style={{ touchAction: 'manipulation', WebkitTapHighlightColor: 'transparent' }}
+    <label
+      className="swiss-nav-chip relative cursor-pointer select-none"
+      style={{ touchAction: "manipulation", WebkitTapHighlightColor: "transparent" }}
     >
       {/* Visual display (non-interactive) */}
       <span className="flex items-center gap-1.5 pointer-events-none">
-        <Infinity className="h-[1.15em] w-[1.15em] opacity-35" strokeWidth={2.5} />
+        <Infinity className="h-[1.05em] w-[1.05em] opacity-45" strokeWidth={2.3} />
         <span className="whitespace-nowrap">{getDisplayName()}</span>
-        <ChevronDown className="h-3.5 w-3.5 opacity-50" />
+        <ChevronDown className="h-3.5 w-3.5 opacity-55" />
       </span>
-      
+
       {/* Native select overlay */}
       <select
         value={getCurrentValue()}

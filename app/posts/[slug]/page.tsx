@@ -79,40 +79,50 @@ export default async function PostPage({
   });
 
   return (
-    <div className="min-h-dvh bg-[#fafaf9] dark:bg-[#0a0a0a] text-[#1a1a1a] dark:text-[#e5e5e5]">
+    <div className="site-shell">
       <div className="sticky top-0 z-50">
         <GlobalMenuBar currentRoute="/posts" />
       </div>
 
-      <main className="max-w-[640px] mx-auto px-6 pt-16 pb-16">
-        {/* Header */}
-        <header className="mb-10">
-          <h1 className="text-2xl font-medium mb-3 leading-tight">
-            {post.title}
-          </h1>
-          <p className="text-black/50 dark:text-white/50 text-sm">
-            {formattedDate}
-            {post.readTime && ` · ${post.readTime} min read`}
-          </p>
-        </header>
+      <main className="site-container pb-16 pt-10 sm:pt-14">
+        <section className="swiss-grid border-t border-[var(--color-border-strong)] pt-5 sm:pt-8">
+          <div className="space-y-4">
+            <span className="swiss-kicker">Essay</span>
+            <div className="swiss-meta space-y-1">
+              <p>{formattedDate}</p>
+              {post.readTime && <p>{post.readTime} min read</p>}
+            </div>
+          </div>
 
-        {/* Article content */}
-        <article
-          className="
-            prose prose-neutral dark:prose-invert
-            prose-headings:font-medium prose-headings:tracking-tight
-            prose-h2:text-xl prose-h2:mt-10 prose-h2:mb-4
-            prose-p:text-[15px] prose-p:leading-[1.75] prose-p:text-black/85 dark:prose-p:text-white/85
-            prose-a:underline prose-a:decoration-black/20 dark:prose-a:decoration-white/20
-            prose-a:underline-offset-2 hover:prose-a:decoration-black/40 dark:hover:prose-a:decoration-white/40
-            max-w-none
-          "
-        >
-          <PostContent html={post.contentHtml} />
-        </article>
+          <div className="site-column">
+            <header className="mb-10 border-b border-[var(--color-border)] pb-8">
+              <h1 className="max-w-[16ch] text-[clamp(2.5rem,6vw,4.6rem)] font-bold leading-[0.95] tracking-[-0.05em] text-[var(--color-text)]">
+                {post.title}
+              </h1>
+            </header>
 
-        {/* Related posts */}
-        <RelatedPosts posts={allPosts} currentSlug={slug} />
+            <article
+              className="
+                swiss-prose prose prose-neutral dark:prose-invert
+                prose-headings:font-bold prose-headings:tracking-[-0.04em]
+                prose-h2:mt-14 prose-h2:mb-5 prose-h2:text-[1.65rem]
+                prose-h3:mt-10 prose-h3:mb-4 prose-h3:text-[1.15rem]
+                prose-p:text-[16px] prose-p:leading-8 prose-p:text-[color:color-mix(in_srgb,var(--color-text)_88%,transparent)]
+                prose-a:text-[var(--color-text)] prose-a:no-underline
+                prose-blockquote:border-l-[3px] prose-blockquote:border-[var(--color-accent)] prose-blockquote:pl-5
+                prose-blockquote:text-[color:color-mix(in_srgb,var(--color-text)_82%,transparent)]
+                prose-li:text-[15px] prose-li:leading-7 prose-strong:text-[var(--color-text)]
+                prose-code:border prose-code:border-[var(--code-border)]
+                prose-pre:border prose-pre:border-[var(--code-border)] prose-pre:bg-[var(--code-bg)]
+                max-w-none
+              "
+            >
+              <PostContent html={post.contentHtml} />
+            </article>
+
+            <RelatedPosts posts={allPosts} currentSlug={slug} />
+          </div>
+        </section>
       </main>
     </div>
   );

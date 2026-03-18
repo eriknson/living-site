@@ -93,7 +93,7 @@ function AppContent() {
       />
       
       {/* Content area - fills remaining space, uses iframe for better mobile support */}
-      <div className="flex-1 relative min-h-0 overflow-hidden bg-anysphere-bg pb-[env(safe-area-inset-bottom)]">
+      <div className="relative flex-1 min-h-0 overflow-hidden bg-[var(--color-bg)] pb-[env(safe-area-inset-bottom)]">
         {activePath ? (
           <>
             <iframe
@@ -105,11 +105,11 @@ function AppContent() {
             />
             {/* Loading overlay that hides the white flash */}
             {!iframeReady && (
-              <div className="absolute inset-0 bg-anysphere-bg pointer-events-none" />
+              <div className="pointer-events-none absolute inset-0 bg-[var(--color-bg)]" />
             )}
           </>
         ) : (
-          <div className="flex items-center justify-center h-full text-anysphere-muted">
+          <div className="flex h-full items-center justify-center text-[var(--color-muted)]">
             <p>{isLoading ? "Loading..." : "No build available"}</p>
           </div>
         )}
@@ -121,7 +121,7 @@ function AppContent() {
 export function AppShell({ children }: { children?: ReactNode }) {
   return (
     <Suspense fallback={
-      <div className="h-[var(--menu-bar-height)] flex items-center justify-between px-3 bg-[var(--color-hover)] backdrop-blur-2xl backdrop-saturate-[1.8] border-b border-[var(--color-border)] text-[13px] text-anysphere-text select-none">
+      <div className="flex h-[var(--menu-bar-height)] items-center justify-between border-b border-[var(--color-border)] bg-[var(--color-hover)] px-3 text-[13px] text-[var(--color-text)] backdrop-blur-2xl backdrop-saturate-[1.8] select-none">
         <div className="flex items-center h-full">
           <a href="/" className="font-medium hover:bg-[var(--color-hover)] active:bg-[var(--color-active)] px-2.5 h-full flex items-center">eriks.design</a>
         </div>
