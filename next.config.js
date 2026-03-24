@@ -58,11 +58,6 @@ const nextConfig = {
         destination: '/?model=gemini-3-pro',
         permanent: true,
       },
-      {
-        source: '/dither',
-        destination: '/dither/',
-        permanent: false,
-      },
     ];
   },
   // Serve builds folder - handle requests without .html extension
@@ -71,6 +66,10 @@ const nextConfig = {
       {
         source: '/builds/:date/:model',
         destination: '/builds/:date/:model.html',
+      },
+      {
+        source: '/dither',
+        destination: '/dither/index.html',
       },
     ];
   },
