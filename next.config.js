@@ -64,9 +64,12 @@ const nextConfig = {
   async rewrites() {
     return [
       {
-        // Handle requests without .html extension
         source: '/builds/:date/:model',
         destination: '/builds/:date/:model.html',
+      },
+      {
+        source: '/dither',
+        destination: '/dither/index.html',
       },
     ];
   },

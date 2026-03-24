@@ -1,0 +1,199 @@
+*, *::before, *::after {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+}
+
+body {
+  background: #000;
+  color: #fff;
+  transition: background 0.5s ease, color 0.5s ease;
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+  width: 100vw;
+  height: 100vh;
+  height: 100dvh;
+  overflow: hidden;
+  overscroll-behavior: none;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  -webkit-touch-callout: none;
+  user-select: none;
+  -webkit-user-select: none;
+}
+
+#upload-zone {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  z-index: 10;
+  transition: opacity 0.4s ease, visibility 0.4s ease;
+  touch-action: manipulation;
+}
+
+#upload-zone.hidden {
+  opacity: 0;
+  visibility: hidden;
+  pointer-events: none;
+}
+
+#upload-zone.dragover::before {
+  content: "";
+  position: absolute;
+  inset: 24px;
+  border: 2px dashed rgba(255, 255, 255, 0.4);
+  border-radius: 16px;
+  pointer-events: none;
+}
+
+.upload-content {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 16px;
+  color: rgba(255, 255, 255, 0.5);
+  transition: color 0.2s ease;
+  user-select: none;
+}
+
+#upload-zone:hover .upload-content,
+#upload-zone.dragover .upload-content {
+  color: rgba(255, 255, 255, 0.8);
+}
+
+.upload-content p {
+  font-size: 18px;
+  font-weight: 500;
+}
+
+.upload-content .hint {
+  font-size: 13px;
+  opacity: 0.6;
+}
+
+#file-input {
+  display: none;
+}
+
+#canvas {
+  display: block;
+  width: 100vw;
+  height: 100vh;
+  height: 100dvh;
+  opacity: 0;
+  transition: opacity 0.6s ease;
+  touch-action: none;
+}
+
+#canvas.visible {
+  opacity: 1;
+}
+
+#reset-btn {
+  position: fixed;
+  bottom: calc(24px + env(safe-area-inset-bottom, 0px));
+  right: calc(24px + env(safe-area-inset-right, 0px));
+  width: 44px;
+  height: 44px;
+  border-radius: 50%;
+  border: 1px solid rgba(255, 255, 255, 0.15);
+  background: rgba(255, 255, 255, 0.06);
+  color: rgba(255, 255, 255, 0.5);
+  cursor: pointer;
+  display: none;
+  align-items: center;
+  justify-content: center;
+  z-index: 20;
+  transition: background 0.2s ease, color 0.2s ease, border-color 0.2s ease;
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
+}
+
+#reset-btn.visible {
+  display: flex;
+}
+
+#reset-btn:hover {
+  background: rgba(255, 255, 255, 0.12);
+  color: rgba(255, 255, 255, 0.9);
+  border-color: rgba(255, 255, 255, 0.3);
+}
+
+body.light-mode {
+  background: #f0f0f0;
+  color: #1a1a1a;
+}
+
+body.light-mode #upload-zone.dragover::before {
+  border-color: rgba(0, 0, 0, 0.3);
+}
+
+body.light-mode .upload-content {
+  color: rgba(0, 0, 0, 0.4);
+}
+
+body.light-mode #upload-zone:hover .upload-content,
+body.light-mode #upload-zone.dragover .upload-content {
+  color: rgba(0, 0, 0, 0.7);
+}
+
+body.light-mode #reset-btn {
+  border-color: rgba(0, 0, 0, 0.12);
+  background: rgba(0, 0, 0, 0.04);
+  color: rgba(0, 0, 0, 0.4);
+}
+
+body.light-mode #reset-btn:hover {
+  background: rgba(0, 0, 0, 0.08);
+  color: rgba(0, 0, 0, 0.8);
+  border-color: rgba(0, 0, 0, 0.2);
+}
+
+@media (max-width: 480px) {
+  .upload-content svg {
+    width: 36px;
+    height: 36px;
+  }
+
+  .upload-content p {
+    font-size: 16px;
+  }
+
+  .upload-content .hint {
+    font-size: 12px;
+  }
+}
+
+@media (pointer: coarse) {
+  #upload-zone {
+    padding: env(safe-area-inset-top, 0px) env(safe-area-inset-right, 0px)
+      env(safe-area-inset-bottom, 0px) env(safe-area-inset-left, 0px);
+  }
+
+  #reset-btn:hover {
+    background: rgba(255, 255, 255, 0.06);
+    color: rgba(255, 255, 255, 0.5);
+    border-color: rgba(255, 255, 255, 0.15);
+  }
+
+  #reset-btn:active {
+    background: rgba(255, 255, 255, 0.12);
+    color: rgba(255, 255, 255, 0.9);
+    border-color: rgba(255, 255, 255, 0.3);
+  }
+
+  body.light-mode #reset-btn:hover {
+    background: rgba(0, 0, 0, 0.04);
+    color: rgba(0, 0, 0, 0.4);
+    border-color: rgba(0, 0, 0, 0.12);
+  }
+
+  body.light-mode #reset-btn:active {
+    background: rgba(0, 0, 0, 0.08);
+    color: rgba(0, 0, 0, 0.8);
+    border-color: rgba(0, 0, 0, 0.2);
+  }
+}
