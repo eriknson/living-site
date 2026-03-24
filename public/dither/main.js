@@ -198,7 +198,7 @@
     particles = [];
     ripples = [];
 
-    let step = GRID_STEP;
+    let step = Math.max(1, Math.round(SCREEN_STEP / scale));
     const estCount =
       Math.ceil(img.width / step) * Math.ceil(img.height / step);
     if (estCount > MAX_PARTICLES) {
