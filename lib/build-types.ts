@@ -280,7 +280,7 @@ export function createInitialBuildState(buildId: string): BuildState {
       commit: "pending",
     },
     models: {
-      "composer-1.5": {
+      "composer-2": {
         status: "queued",
         rawLog: [],
       },
@@ -288,7 +288,7 @@ export function createInitialBuildState(buildId: string): BuildState {
         status: "queued",
         rawLog: [],
       },
-      "gpt-5.3-codex-xhigh": {
+      "gpt-5.4-high-fast": {
         status: "queued",
         rawLog: [],
       },

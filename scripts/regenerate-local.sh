@@ -1,8 +1,8 @@
 #!/bin/bash
 set -e
 
-# Default to composer-1.5, or use provided model
-MODEL="${1:-composer-1.5}"
+# Default to composer-2, or use provided model
+MODEL="${1:-composer-2}"
 DATE=$(date -u +%Y-%m-%d)
 
 echo "=== Local Regeneration ==="

@@ -14,8 +14,18 @@ const nextConfig = {
         permanent: true,
       },
       {
+        source: '/composer-2',
+        destination: '/?model=composer-2',
+        permanent: true,
+      },
+      {
         source: '/composer-1.5',
         destination: '/?model=composer-1.5',
+        permanent: true,
+      },
+      {
+        source: '/gpt-5.4-high-fast',
+        destination: '/?model=gpt-5.4-high-fast',
         permanent: true,
       },
       {

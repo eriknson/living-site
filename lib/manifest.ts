@@ -27,9 +27,11 @@ export interface Manifest {
 }
 
 export const modelDisplayNames: Record<string, string> = {
+  "composer-2": "Composer 2",
   "composer-1.5": "Composer 1.5",
   "claude-4.6-opus-max-thinking": "Opus 4.6 Thinking",
   "opus-4.6-thinking": "Opus 4.6 Thinking",
+  "gpt-5.4-high-fast": "GPT-5.4 High Fast",
   "gpt-5.3-codex-xhigh": "GPT-5.3 Codex Extra High",
   "gemini-3.1-pro": "Gemini 3.1 Pro",
   "composer-1": "Composer 1",
@@ -41,9 +43,11 @@ export const modelDisplayNames: Record<string, string> = {
 
 // URL-friendly slugs
 export const modelSlugs: Record<string, string> = {
+  "composer-2": "composer-2",
   "composer-1.5": "composer-1.5",
   "claude-4.6-opus-max-thinking": "opus-4.6-max",
   "opus-4.6-thinking": "opus-4.6-thinking",
+  "gpt-5.4-high-fast": "gpt-5.4-high-fast",
   "gpt-5.3-codex-xhigh": "gpt-5.3-codex-xhigh",
   "gemini-3.1-pro": "gemini-3.1-pro",
   "composer-1": "composer-1",

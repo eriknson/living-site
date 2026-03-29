@@ -143,6 +143,14 @@ export function VersionSelector({
           </>
         );
       }
+      if (currentModel === "gpt-5.4-high-fast") {
+        return (
+          <>
+            <span className="sm:hidden">GPT-5.4</span>
+            <span className="hidden sm:inline">GPT-5.4 High Fast</span>
+          </>
+        );
+      }
       return getModelDisplayName(currentModel);
     }
     return "Select version";
