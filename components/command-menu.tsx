@@ -57,12 +57,12 @@ const AGENTS = [
     keywords: ["claude", "anthropic", "opus", "4.6", "thinking", "ai"],
   },
   {
-    modelId: "composer-1.5",
-    keywords: ["cursor", "composer", "1.5", "ai"],
+    modelId: "composer-2",
+    keywords: ["cursor", "composer", "2", "ai"],
   },
   {
-    modelId: "gpt-5.3-codex-xhigh",
-    keywords: ["openai", "gpt", "codex", "xhigh", "max", "ai"],
+    modelId: "gpt-5.4-high-fast",
+    keywords: ["openai", "gpt", "5.4", "high", "fast", "ai"],
   },
   {
     modelId: "gemini-3.1-pro",

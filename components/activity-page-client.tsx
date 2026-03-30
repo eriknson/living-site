@@ -37,9 +37,9 @@ function useSystemTheme(): "light" | "dark" {
 }
 
 const MODEL_FAMILIES: [string, string[]][] = [
-  ["Composer", ["composer-1.5", "composer-1"]],
+  ["Composer", ["composer-2", "composer-1.5", "composer-1"]],
   ["Opus", ["opus-4.6-thinking", "claude-4.6-opus-max-thinking", "claude-4.5-opus-high-thinking"]],
-  ["GPT Codex", ["gpt-5.3-codex-xhigh", "gpt-5.1-codex", "gpt-5.1-codex-max-low-fast"]],
+  ["GPT", ["gpt-5.4-high-fast", "gpt-5.3-codex-xhigh", "gpt-5.1-codex", "gpt-5.1-codex-max-low-fast"]],
   ["Gemini", ["gemini-3.1-pro", "gemini-3-pro"]],
 ];
 

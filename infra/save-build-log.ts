@@ -15,9 +15,9 @@ const MAX_BUILDS = 50;
 const MAX_DATES = 14;
 const DEFAULT_MODEL = "opus-4.6-thinking";
 const DEFAULT_MODELS = [
-  "composer-1.5",
+  "composer-2",
   "opus-4.6-thinking",
-  "gpt-5.3-codex-xhigh",
+  "gpt-5.4-high-fast",
   "gemini-3.1-pro",
 ];
 
