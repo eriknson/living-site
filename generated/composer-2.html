@@ -1,0 +1,424 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="color-scheme" content="light dark">
+  <title>Erik Nilsson</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,500;0,600;0,700;1,500&family=Source+Serif+4:ital,opsz,wght@0,8..60,400;0,8..60,600;1,8..60,400&display=swap" rel="stylesheet">
+  <style>
+    :root {
+      --paper: #f4f1e8;
+      --paper-elevated: #faf8f2;
+      --ink: #1a1917;
+      --ink-soft: #3d3a35;
+      --muted: #6b665c;
+      --faint: #9a9488;
+      --rule: #c4bfb2;
+      --rule-strong: #8a8476;
+      --link: #5c4a3a;
+      --link-hover: #3d2f24;
+      --focus: #2c5282;
+      --ornament: #a39e90;
+    }
+
+    @media (prefers-color-scheme: dark) {
+      :root {
+        --paper: #121110;
+        --paper-elevated: #1a1816;
+        --ink: #ebe6dc;
+        --ink-soft: #d4cfc4;
+        --muted: #9a9488;
+        --faint: #6b665c;
+        --rule: #3a3632;
+        --rule-strong: #524d47;
+        --link: #c9b896;
+        --link-hover: #e8dcc4;
+        --focus: #90cdf4;
+        --ornament: #5c574f;
+      }
+    }
+
+    *,
+    *::before,
+    *::after {
+      box-sizing: border-box;
+    }
+
+    html {
+      color-scheme: light dark;
+      -webkit-text-size-adjust: 100%;
+    }
+
+    body {
+      margin: 0;
+      min-height: 100vh;
+      overflow-wrap: break-word;
+      font-family: "Source Serif 4", "Georgia", "Times New Roman", serif;
+      font-size: 1.0625rem;
+      font-optical-sizing: auto;
+      line-height: 1.65;
+      letter-spacing: 0.01em;
+      color: var(--ink);
+      background: var(--paper);
+      font-variant-numeric: oldstyle-nums;
+    }
+
+    .sheet {
+      max-width: 640px;
+      margin: 0 auto;
+      padding: 1.75rem 1.25rem 3.5rem;
+    }
+
+    @media (min-width: 480px) {
+      .sheet {
+        padding: 2.25rem 1.75rem 4rem;
+      }
+    }
+
+    .masthead {
+      text-align: center;
+      padding-bottom: 1.25rem;
+      border-bottom: 3px double var(--rule-strong);
+      margin-bottom: 1.5rem;
+    }
+
+    .masthead__kicker {
+      font-family: "Source Serif 4", Georgia, serif;
+      font-size: 0.6875rem;
+      font-weight: 600;
+      letter-spacing: 0.28em;
+      text-transform: uppercase;
+      color: var(--muted);
+      margin: 0 0 0.65rem;
+    }
+
+    .masthead__title {
+      font-family: "Playfair Display", Georgia, serif;
+      font-weight: 600;
+      font-size: clamp(2rem, 8vw, 2.75rem);
+      line-height: 1.05;
+      letter-spacing: -0.02em;
+      margin: 0;
+      color: var(--ink);
+    }
+
+    .masthead__line {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 0.65rem;
+      margin-top: 1rem;
+      font-size: 0.75rem;
+      color: var(--muted);
+      flex-wrap: wrap;
+    }
+
+    .masthead__line span[aria-hidden="true"] {
+      color: var(--ornament);
+      font-weight: 400;
+    }
+
+    .dateline {
+      font-variant-caps: all-small-caps;
+      letter-spacing: 0.12em;
+      font-size: 0.8125rem;
+      color: var(--muted);
+    }
+
+    .weather {
+      font-style: italic;
+      font-size: 0.8125rem;
+      color: var(--faint);
+    }
+
+    .lead {
+      font-size: 1.125rem;
+      line-height: 1.7;
+      color: var(--ink-soft);
+      margin: 0 0 1.5rem;
+    }
+
+    .lead:first-letter {
+      float: left;
+      font-family: "Playfair Display", Georgia, serif;
+      font-size: 3.25rem;
+      line-height: 0.85;
+      padding-right: 0.45rem;
+      padding-top: 0.12rem;
+      font-weight: 600;
+      color: var(--ink);
+    }
+
+    p {
+      margin: 0 0 1.1rem;
+      hyphens: auto;
+      -webkit-hyphens: auto;
+    }
+
+    a {
+      color: var(--link);
+      text-decoration: underline;
+      text-decoration-thickness: 1px;
+      text-underline-offset: 0.18em;
+      transition: color 0.15s ease;
+    }
+
+    a:hover {
+      color: var(--link-hover);
+    }
+
+    a:focus-visible {
+      outline: 2px solid var(--focus);
+      outline-offset: 3px;
+    }
+
+    .section {
+      margin-top: 2.25rem;
+      padding-top: 1.5rem;
+      border-top: 1px solid var(--rule);
+    }
+
+    .section:first-of-type {
+      margin-top: 1.75rem;
+    }
+
+    .section__label {
+      font-family: "Source Serif 4", Georgia, serif;
+      font-size: 0.6875rem;
+      font-weight: 600;
+      letter-spacing: 0.22em;
+      text-transform: uppercase;
+      color: var(--muted);
+      margin: 0 0 1rem;
+    }
+
+    .two-col {
+      display: grid;
+      gap: 1.25rem 2rem;
+    }
+
+    @media (min-width: 520px) {
+      .two-col {
+        grid-template-columns: 1fr 1fr;
+        align-items: start;
+      }
+    }
+
+    dl.inline-pairs {
+      margin: 0;
+    }
+
+    dl.inline-pairs dt {
+      font-variant-caps: all-small-caps;
+      letter-spacing: 0.08em;
+      font-size: 0.75rem;
+      color: var(--muted);
+      margin: 0 0 0.2rem;
+      font-weight: 600;
+    }
+
+    dl.inline-pairs dd {
+      margin: 0 0 1.15rem;
+      color: var(--ink-soft);
+    }
+
+    dl.inline-pairs dd:last-child {
+      margin-bottom: 0;
+    }
+
+    .list-plain {
+      list-style: none;
+      margin: 0;
+      padding: 0;
+    }
+
+    .list-plain li {
+      padding: 0.65rem 0;
+      border-bottom: 1px solid var(--rule);
+      color: var(--ink-soft);
+    }
+
+    .list-plain li:first-child {
+      padding-top: 0;
+    }
+
+    .list-plain li:last-child {
+      border-bottom: none;
+      padding-bottom: 0;
+    }
+
+    .list-plain a {
+      font-weight: 600;
+      color: var(--ink);
+      text-decoration: none;
+    }
+
+    .list-plain a:hover {
+      text-decoration: underline;
+      color: var(--link);
+    }
+
+    .list-plain .meta {
+      display: block;
+      font-size: 0.8125rem;
+      color: var(--muted);
+      font-weight: 400;
+      margin-top: 0.2rem;
+    }
+
+    .notes {
+      font-size: 0.9375rem;
+      color: var(--ink-soft);
+    }
+
+    .tweet {
+      margin-bottom: 1rem;
+      padding-left: 0.85rem;
+      border-left: 2px solid var(--rule);
+    }
+
+    .tweet:last-child {
+      margin-bottom: 0;
+    }
+
+    .tweet a {
+      font-style: italic;
+      text-decoration: none;
+    }
+
+    .tweet a:hover {
+      text-decoration: underline;
+    }
+
+    .tweet time {
+      display: block;
+      font-size: 0.75rem;
+      font-style: normal;
+      color: var(--muted);
+      margin-top: 0.35rem;
+      letter-spacing: 0.02em;
+    }
+
+    .tweet-stack {
+      margin-top: 1.25rem;
+    }
+
+    .footer {
+      margin-top: 2.75rem;
+      padding-top: 1.5rem;
+      border-top: 3px double var(--rule-strong);
+      text-align: center;
+      font-style: italic;
+      font-size: 0.9375rem;
+      color: var(--muted);
+    }
+
+    .ornament-row {
+      text-align: center;
+      color: var(--ornament);
+      font-size: 1rem;
+      letter-spacing: 0.35em;
+      margin: 1.25rem 0 0;
+      user-select: none;
+    }
+  </style>
+</head>
+<body>
+  <main class="sheet">
+    <header class="masthead">
+      <p class="masthead__kicker">A small home on the web</p>
+      <h1 class="masthead__title">Erik Nilsson</h1>
+      <div class="masthead__line" role="presentation">
+        <span class="dateline">Stockholm · 30 March 2026</span>
+        <span aria-hidden="true">·</span>
+        <span class="weather">Spring, overcast, about 5°</span>
+      </div>
+    </header>
+
+    <p class="lead">Hej, I’m Erik. I work in product design at Cursor — mostly the editor and how people build with AI. Lately my own commits tend to land on <em>living-site</em>: this corner of the web regenerates from daily activity data, which is part useful, part absurd, and a good excuse to ship small things.</p>
+
+    <p>The rest of this page is a scratch pad: links, a few posts, whatever I was listening to. Nothing here is a pitch. If something’s useful, that’s plenty.</p>
+
+    <section class="section" aria-labelledby="present-heading">
+      <h2 id="present-heading" class="section__label">At present</h2>
+      <div class="two-col">
+        <dl class="inline-pairs">
+          <dt>Day job</dt>
+          <dd>Product design on the editor and how people build with AI — lots of small decisions that need to feel obvious in hindsight.</dd>
+          <dt>On the side</dt>
+          <dd><em>living-site</em> (see above). When there’s time I also poke at <em>terminal-design</em> and <em>shipflow</em>.</dd>
+        </dl>
+        <dl class="inline-pairs">
+          <dt>This week</dt>
+          <dd>Seven commits across a handful of repos — nothing heroic, just steady progress. Active tinkering includes <em>living-site</em>, <em>terminal-design</em>, <em>cursor-web</em>, <em>shipflow</em>, and <em>baby-notion</em>.</dd>
+          <dt>Correspondence</dt>
+          <dd>I’m quiet on X lately. Older notes are still there if you’re curious.</dd>
+        </dl>
+      </div>
+    </section>
+
+    <p class="ornament-row" aria-hidden="true">❧</p>
+
+    <section class="section" aria-labelledby="rotation-heading">
+      <h2 id="rotation-heading" class="section__label">In rotation</h2>
+      <p class="notes">Lately: Beach House, Fred again.., Hov1, Parra for Cuva, Taylor Swift, Arctic Monkeys, Veronica Maggio — a mix of dream pop, Swedish pop, downtempo, house, indie, and a bit of neo-psychedelia. The algorithm and I don’t always agree; these are the ones that stuck.</p>
+    </section>
+
+    <section class="section" aria-labelledby="posts-heading">
+      <h2 id="posts-heading" class="section__label">Dispatches &amp; writing</h2>
+      <ul class="list-plain">
+        <li>
+          <a href="/posts/test">Test</a>
+          <span class="meta">March 13, 2026 · about 1 min</span>
+        </li>
+        <li>
+          <a href="/posts/a-living-site">A living site</a>
+          <span class="meta">December 26, 2025 · about 6 min</span>
+        </li>
+        <li>
+          <a href="/posts/surgical-edits">Surgical edits</a>
+          <span class="meta">November 23, 2025 · about 4 min</span>
+        </li>
+        <li>
+          <a href="/posts/familiar-differentiation">Familiar differentiation</a>
+          <span class="meta">November 15, 2024 · about 5 min</span>
+        </li>
+        <li>
+          <a href="/posts/hackathon-energy-but-add-users">Hackathon energy, but add users</a>
+          <span class="meta">October 15, 2022 · about 4 min</span>
+        </li>
+        <li>
+          <a href="https://uu.diva-portal.org/smash/record.jsf?pid=diva2:1453018">Go with the flow</a>
+          <span class="meta">August 4, 2020 · longer read (thesis)</span>
+        </li>
+      </ul>
+    </section>
+
+    <section class="section" aria-labelledby="contact-heading">
+      <h2 id="contact-heading" class="section__label">Elsewhere</h2>
+      <p class="notes">Say hello on <a href="https://x.com/flowstated">X</a>, browse code on <a href="https://github.com/eriknson">GitHub</a>, or write <a href="mailto:contact@eriks.design?subject=Hej">contact@eriks.design</a>. I read everything; I don’t always reply the same day.</p>
+      <div class="notes tweet-stack">
+        <div class="tweet">
+          <a href="https://x.com/flowstated/status/2002167999353241901">“imagine 2026”</a>
+          <time datetime="2025-12-20">20 December 2025</time>
+        </div>
+        <div class="tweet">
+          <a href="https://x.com/flowstated/status/2000889983562080578">“shipping by sunrise”</a>
+          <time datetime="2025-12-16">16 December 2025</time>
+        </div>
+        <div class="tweet">
+          <a href="https://x.com/flowstated/status/2000691637190861180">Exploring ways to spin up agents from my phone — iOS shortcuts, GitHub Actions, Cursor CLI.</a>
+          <time datetime="2025-12-15">15 December 2025</time>
+        </div>
+      </div>
+    </section>
+
+    <footer class="footer">
+      Hej from Stockholm.
+    </footer>
+  </main>
+</body>
+</html>
