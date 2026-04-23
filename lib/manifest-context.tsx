@@ -54,7 +54,7 @@ export function ManifestProvider({ children }: { children: ReactNode }) {
         currentDate || undefined,
         currentTimestamp || undefined,
         modelIdFromUrl || DEFAULT_MODEL_ID
-      )
+      ) || null
     : modelIdFromUrl || DEFAULT_MODEL_ID;
 
   // Redirect to show model param if none specified

@@ -50,18 +50,19 @@ export function GamesManifestProvider({ children }: { children: ReactNode }) {
   const currentModel = manifest
     ? getDefaultModelForBatch(manifest, currentDate || undefined, currentTimestamp || undefined, modelIdFromUrl || undefined)
     : modelIdFromUrl || DEFAULT_MODEL_ID;
+  const resolvedCurrentModel = currentModel || null;
 
   useEffect(() => {
-    if (manifest && currentModel && getModelIdFromSlug(modelSlug || "") !== currentModel) {
-      const defaultSlug = getModelSlug(currentModel);
+    if (manifest && resolvedCurrentModel && getModelIdFromSlug(modelSlug || "") !== resolvedCurrentModel) {
+      const defaultSlug = getModelSlug(resolvedCurrentModel);
       const params = new URLSearchParams(searchParams.toString());
       params.set("model", defaultSlug);
       router.replace(`/play?${params.toString()}`, { scroll: false });
     }
-  }, [currentModel, manifest, modelSlug, router, searchParams]);
+  }, [resolvedCurrentModel, manifest, modelSlug, router, searchParams]);
 
-  const currentBuildPath = manifest && currentModel && currentDate
-    ? getBuildForModel(manifest, currentModel, currentDate, currentTimestamp || undefined)?.path || null
+  const currentBuildPath = manifest && resolvedCurrentModel && currentDate
+    ? getBuildForModel(manifest, resolvedCurrentModel, currentDate, currentTimestamp || undefined)?.path || null
     : null;
 
   useEffect(() => {
@@ -129,7 +130,7 @@ export function GamesManifestProvider({ children }: { children: ReactNode }) {
     <GamesManifestContext.Provider
       value={{
         manifest,
-        currentModel,
+        currentModel: resolvedCurrentModel,
         currentDate,
         currentTimestamp,
         currentBuildPath,
