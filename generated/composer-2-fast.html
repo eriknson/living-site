@@ -1,0 +1,757 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="color-scheme" content="light dark">
+  <title>Erik Nilsson</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Fraunces:ital,opsz,wght@0,9..144,400;0,9..144,550;0,9..144,650;1,9..144,400&family=IBM+Plex+Sans:ital,wght@0,400;0,500;0,600;1,400&display=swap" rel="stylesheet">
+  <style>
+    /* sRGB fallbacks — overridden below when Display P3 is available */
+    :root {
+      --paper: #f6f2eb;
+      --paper-2: #ebe4d8;
+      --ink: #1c1524;
+      --ink-soft: #4a3f56;
+      --rule: rgba(28, 21, 36, 0.12);
+      --accent-1: #c026d3;
+      --accent-2: #0891b2;
+      --accent-3: #ca8a04;
+      --accent-4: #16a34a;
+      --glow-mix: rgba(192, 38, 211, 0.14);
+      --card-edge: rgba(28, 21, 36, 0.08);
+      --focus: #7c3aed;
+      font-family: "IBM Plex Sans", system-ui, sans-serif;
+    }
+
+    @supports (color: color(display-p3 1 1 1)) {
+      :root {
+        --paper: color(display-p3 0.965 0.949 0.922);
+        --paper-2: color(display-p3 0.915 0.895 0.855);
+        --ink: color(display-p3 0.105 0.078 0.135);
+        --ink-soft: color(display-p3 0.285 0.245 0.335);
+        --accent-1: color(display-p3 0.92 0.22 0.95);
+        --accent-2: color(display-p3 0.12 0.72 0.92);
+        --accent-3: color(display-p3 0.98 0.62 0.08);
+        --accent-4: color(display-p3 0.28 0.92 0.42);
+        --glow-mix: color(display-p3 0.75 0.2 0.9 / 0.18);
+        --focus: color(display-p3 0.55 0.28 0.98);
+      }
+    }
+
+    :root[data-theme="dark"] {
+      --paper: #0f0c12;
+      --paper-2: #16101c;
+      --ink: #ede8f2;
+      --ink-soft: #b9afc8;
+      --rule: rgba(237, 232, 242, 0.12);
+      --accent-1: #e879f9;
+      --accent-2: #22d3ee;
+      --accent-3: #fbbf24;
+      --accent-4: #4ade80;
+      --glow-mix: rgba(232, 121, 249, 0.16);
+      --card-edge: rgba(237, 232, 242, 0.1);
+      --focus: #c4b5fd;
+    }
+
+      @supports (color: color(display-p3 1 1 1)) {
+      :root[data-theme="dark"] {
+        --paper: color(display-p3 0.055 0.045 0.068);
+        --paper-2: color(display-p3 0.085 0.062 0.105);
+        --ink: color(display-p3 0.93 0.91 0.95);
+        --ink-soft: color(display-p3 0.72 0.68 0.78);
+        --accent-1: color(display-p3 0.95 0.55 1);
+        --accent-2: color(display-p3 0.35 0.88 0.98);
+        --accent-3: color(display-p3 1 0.78 0.28);
+        --accent-4: color(display-p3 0.42 0.95 0.58);
+        --glow-mix: color(display-p3 0.9 0.45 1 / 0.2);
+        --focus: color(display-p3 0.78 0.72 1);
+      }
+    }
+
+    @media (prefers-color-scheme: dark) {
+      :root {
+        --paper: #0f0c12;
+        --paper-2: #16101c;
+        --ink: #ede8f2;
+        --ink-soft: #b9afc8;
+        --rule: rgba(237, 232, 242, 0.12);
+        --accent-1: #e879f9;
+        --accent-2: #22d3ee;
+        --accent-3: #fbbf24;
+        --accent-4: #4ade80;
+        --glow-mix: rgba(232, 121, 249, 0.16);
+        --card-edge: rgba(237, 232, 242, 0.1);
+        --focus: #c4b5fd;
+      }
+
+      @supports (color: color(display-p3 1 1 1)) {
+        :root {
+          --paper: color(display-p3 0.055 0.045 0.068);
+          --paper-2: color(display-p3 0.085 0.062 0.105);
+          --ink: color(display-p3 0.93 0.91 0.95);
+          --ink-soft: color(display-p3 0.72 0.68 0.78);
+          --accent-1: color(display-p3 0.95 0.55 1);
+          --accent-2: color(display-p3 0.35 0.88 0.98);
+          --accent-3: color(display-p3 1 0.78 0.28);
+          --accent-4: color(display-p3 0.42 0.95 0.58);
+          --glow-mix: color(display-p3 0.9 0.45 1 / 0.2);
+          --focus: color(display-p3 0.78 0.72 1);
+        }
+      }
+    }
+
+    :root[data-theme="light"] {
+      --paper: #f6f2eb;
+      --paper-2: #ebe4d8;
+      --ink: #1c1524;
+      --ink-soft: #4a3f56;
+      --rule: rgba(28, 21, 36, 0.12);
+      --accent-1: #c026d3;
+      --accent-2: #0891b2;
+      --accent-3: #ca8a04;
+      --accent-4: #16a34a;
+      --glow-mix: rgba(192, 38, 211, 0.14);
+      --card-edge: rgba(28, 21, 36, 0.08);
+      --focus: #7c3aed;
+    }
+
+    @supports (color: color(display-p3 1 1 1)) {
+      :root[data-theme="light"] {
+        --paper: color(display-p3 0.965 0.949 0.922);
+        --paper-2: color(display-p3 0.915 0.895 0.855);
+        --ink: color(display-p3 0.105 0.078 0.135);
+        --ink-soft: color(display-p3 0.285 0.245 0.335);
+        --accent-1: color(display-p3 0.92 0.22 0.95);
+        --accent-2: color(display-p3 0.12 0.72 0.92);
+        --accent-3: color(display-p3 0.98 0.62 0.08);
+        --accent-4: color(display-p3 0.28 0.92 0.42);
+        --glow-mix: color(display-p3 0.75 0.2 0.9 / 0.18);
+        --focus: color(display-p3 0.55 0.28 0.98);
+      }
+    }
+
+    *,
+    *::before,
+    *::after {
+      box-sizing: border-box;
+    }
+
+    html {
+      scroll-behavior: smooth;
+    }
+
+    @media (prefers-reduced-motion: reduce) {
+      html {
+        scroll-behavior: auto;
+      }
+    }
+
+    body {
+      margin: 0;
+      min-height: 100dvh;
+      background: var(--paper);
+      color: var(--ink);
+      font-size: 1.0625rem;
+      line-height: 1.65;
+      font-weight: 400;
+      letter-spacing: -0.01em;
+      -webkit-font-smoothing: antialiased;
+    }
+
+    .backdrop {
+      position: fixed;
+      inset: 0;
+      z-index: -2;
+      overflow: hidden;
+      pointer-events: none;
+      background:
+        radial-gradient(120% 80% at 10% -10%, var(--glow-mix), transparent 55%),
+        radial-gradient(90% 70% at 95% 15%, color-mix(in srgb, var(--accent-2) 22%, transparent), transparent 50%),
+        radial-gradient(70% 60% at 50% 110%, color-mix(in srgb, var(--accent-3) 18%, transparent), transparent 45%),
+        linear-gradient(165deg, var(--paper), var(--paper-2));
+    }
+
+    @supports (color: color(display-p3 1 1 1)) {
+      .backdrop {
+        background:
+          radial-gradient(120% 80% at 10% -10%, var(--glow-mix), transparent 55%),
+          radial-gradient(90% 70% at 95% 15%, color(display-p3 0.2 0.85 0.98 / 0.22), transparent 52%),
+          radial-gradient(70% 60% at 50% 110%, color(display-p3 0.98 0.75 0.15 / 0.2), transparent 48%),
+          linear-gradient(165deg, var(--paper), var(--paper-2));
+      }
+    }
+
+    .aurora {
+      position: absolute;
+      width: 140%;
+      height: 140%;
+      top: -20%;
+      left: -20%;
+      opacity: 0.55;
+      mix-blend-mode: multiply;
+      filter: blur(48px);
+      animation: drift 28s ease-in-out infinite alternate;
+    }
+
+    :root[data-theme="dark"] .aurora {
+      mix-blend-mode: screen;
+      opacity: 0.35;
+    }
+
+    .aurora__blob {
+      position: absolute;
+      border-radius: 50%;
+      width: min(55vw, 420px);
+      height: min(55vw, 420px);
+    }
+
+    .aurora__blob--a {
+      top: 5%;
+      left: 5%;
+      background: conic-gradient(from 120deg, var(--accent-1), var(--accent-2), var(--accent-4), var(--accent-3), var(--accent-1));
+    }
+
+    .aurora__blob--b {
+      bottom: 0;
+      right: -5%;
+      width: min(70vw, 520px);
+      height: min(70vw, 520px);
+      background: conic-gradient(from 220deg, var(--accent-2), var(--accent-3), var(--accent-1), var(--accent-4), var(--accent-2));
+      animation-delay: -8s;
+    }
+
+    @keyframes drift {
+      0% { transform: translate(0, 0) rotate(0deg) scale(1); }
+      100% { transform: translate(3%, 4%) rotate(12deg) scale(1.05); }
+    }
+
+    @media (prefers-reduced-motion: reduce) {
+      .aurora { animation: none; opacity: 0.25; }
+      :root[data-theme="dark"] .aurora { opacity: 0.18; }
+    }
+
+    .grain {
+      position: fixed;
+      inset: 0;
+      z-index: -1;
+      pointer-events: none;
+      opacity: 0.045;
+      mix-blend-mode: multiply;
+      background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
+    }
+
+    :root[data-theme="dark"] .grain {
+      mix-blend-mode: overlay;
+      opacity: 0.07;
+    }
+
+    .skip {
+      position: absolute;
+      left: -9999px;
+      top: 0.5rem;
+      padding: 0.5rem 1rem;
+      background: var(--ink);
+      color: var(--paper);
+      z-index: 100;
+      font-weight: 500;
+    }
+
+    .skip:focus {
+      left: 0.5rem;
+    }
+
+    .page {
+      max-width: 640px;
+      margin: 0 auto;
+      padding: clamp(1.25rem, 4vw, 2.25rem) clamp(1rem, 4vw, 1.5rem) 3.5rem;
+    }
+
+    .top {
+      display: flex;
+      align-items: flex-start;
+      justify-content: space-between;
+      gap: 1rem;
+      margin-bottom: 2rem;
+    }
+
+    .theme-toggle {
+      flex-shrink: 0;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      width: 2.75rem;
+      height: 2.75rem;
+      border-radius: 999px;
+      border: 1px solid var(--rule);
+      background: color-mix(in srgb, var(--paper) 70%, transparent);
+      color: var(--ink-soft);
+      cursor: pointer;
+      transition: border-color 0.2s ease, color 0.2s ease, background 0.2s ease;
+    }
+
+    .theme-toggle:hover {
+      border-color: color-mix(in srgb, var(--accent-2) 45%, var(--rule));
+      color: var(--ink);
+    }
+
+    .theme-toggle:focus-visible {
+      outline: 2px solid var(--focus);
+      outline-offset: 3px;
+    }
+
+    .theme-toggle svg {
+      width: 1.15rem;
+      height: 1.15rem;
+    }
+
+    .panel {
+      position: relative;
+      padding: clamp(1.5rem, 4vw, 2rem);
+      border-radius: 1.25rem;
+      background: color-mix(in srgb, var(--paper) 82%, transparent);
+      border: 1px solid var(--card-edge);
+      box-shadow:
+        0 1px 0 color-mix(in srgb, var(--ink) 6%, transparent),
+        0 24px 48px -32px color-mix(in srgb, var(--ink) 35%, transparent);
+    }
+
+    .panel::before {
+      content: "";
+      position: absolute;
+      inset: 0;
+      border-radius: inherit;
+      padding: 1px;
+      background: linear-gradient(
+        125deg,
+        color-mix(in srgb, var(--accent-1) 55%, transparent),
+        color-mix(in srgb, var(--accent-2) 45%, transparent),
+        color-mix(in srgb, var(--accent-3) 40%, transparent),
+        color-mix(in srgb, var(--accent-4) 45%, transparent),
+        color-mix(in srgb, var(--accent-1) 50%, transparent)
+      );
+      -webkit-mask: linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0);
+      mask: linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0);
+      -webkit-mask-composite: xor;
+      mask-composite: exclude;
+      pointer-events: none;
+      opacity: 0.65;
+    }
+
+    @supports (color: color(display-p3 1 1 1)) {
+      .panel::before {
+        background: linear-gradient(
+          125deg,
+          color(display-p3 0.95 0.35 0.98 / 0.55),
+          color(display-p3 0.2 0.85 0.98 / 0.5),
+          color(display-p3 0.98 0.72 0.2 / 0.45),
+          color(display-p3 0.35 0.95 0.55 / 0.5),
+          color(display-p3 0.95 0.35 0.98 / 0.55)
+        );
+      }
+    }
+
+    h1 {
+      font-family: "Fraunces", ui-serif, Georgia, serif;
+      font-optical-sizing: auto;
+      font-weight: 650;
+      font-size: clamp(2.15rem, 6vw, 2.85rem);
+      line-height: 1.12;
+      letter-spacing: -0.03em;
+      margin: 0 0 0.35rem;
+    }
+
+    .h1-accent {
+      background: linear-gradient(105deg, var(--accent-1), var(--accent-2) 40%, var(--accent-3) 72%, var(--accent-4));
+      -webkit-background-clip: text;
+      background-clip: text;
+      color: transparent;
+    }
+
+    @supports (color: color(display-p3 1 1 1)) {
+      .h1-accent {
+        background: linear-gradient(
+          105deg,
+          color(display-p3 0.92 0.25 0.98),
+          color(display-p3 0.15 0.82 1) 38%,
+          color(display-p3 1 0.75 0.2) 68%,
+          color(display-p3 0.3 0.95 0.5)
+        );
+        -webkit-background-clip: text;
+        background-clip: text;
+      }
+    }
+
+    .lede {
+      margin: 0;
+      font-size: 1.125rem;
+      color: var(--ink-soft);
+      max-width: 36ch;
+    }
+
+    .mood {
+      margin: 1.75rem 0 0;
+      font-size: 0.8125rem;
+      font-weight: 500;
+      letter-spacing: 0.14em;
+      text-transform: uppercase;
+      color: color-mix(in srgb, var(--ink-soft) 88%, var(--accent-2));
+    }
+
+    .section {
+      margin-top: 2.25rem;
+    }
+
+    .section:first-of-type {
+      margin-top: 2rem;
+    }
+
+    h2 {
+      font-family: "Fraunces", ui-serif, Georgia, serif;
+      font-optical-sizing: auto;
+      font-weight: 550;
+      font-size: 1.2rem;
+      letter-spacing: -0.02em;
+      margin: 0 0 0.85rem;
+      display: flex;
+      align-items: baseline;
+      gap: 0.5rem;
+      flex-wrap: wrap;
+    }
+
+    .section__tag {
+      font-family: "IBM Plex Sans", system-ui, sans-serif;
+      font-size: 0.65rem;
+      font-weight: 600;
+      letter-spacing: 0.12em;
+      text-transform: uppercase;
+      padding: 0.2rem 0.45rem;
+      border-radius: 0.35rem;
+      background: linear-gradient(120deg, color-mix(in srgb, var(--accent-1) 22%, transparent), color-mix(in srgb, var(--accent-2) 18%, transparent));
+      color: var(--ink-soft);
+    }
+
+    p {
+      margin: 0 0 1rem;
+    }
+
+    p:last-child {
+      margin-bottom: 0;
+    }
+
+    a {
+      color: color-mix(in srgb, var(--accent-2) 55%, var(--ink));
+      text-decoration-thickness: 1px;
+      text-underline-offset: 0.18em;
+      transition: color 0.15s ease;
+    }
+
+    a:hover {
+      color: var(--accent-1);
+    }
+
+    a:focus-visible {
+      outline: 2px solid var(--focus);
+      outline-offset: 2px;
+      border-radius: 2px;
+    }
+
+    .dl {
+      display: grid;
+      gap: 0.65rem 1rem;
+      margin: 0;
+    }
+
+    @media (min-width: 480px) {
+      .dl {
+        grid-template-columns: minmax(0, 7.5rem) 1fr;
+      }
+    }
+
+    .dl dt {
+      margin: 0;
+      font-size: 0.75rem;
+      font-weight: 600;
+      letter-spacing: 0.06em;
+      text-transform: uppercase;
+      color: var(--ink-soft);
+    }
+
+    .dl dd {
+      margin: 0;
+    }
+
+    .signals {
+      list-style: none;
+      padding: 0;
+      margin: 0;
+      display: flex;
+      flex-direction: column;
+      gap: 0.5rem;
+    }
+
+    .signals li {
+      position: relative;
+      padding-left: 1.1rem;
+      font-size: 0.9375rem;
+      color: var(--ink-soft);
+    }
+
+    .signals li::before {
+      content: "";
+      position: absolute;
+      left: 0;
+      top: 0.55em;
+      width: 0.35rem;
+      height: 0.35rem;
+      border-radius: 50%;
+      background: linear-gradient(135deg, var(--accent-1), var(--accent-2));
+    }
+
+    .posts {
+      list-style: none;
+      padding: 0;
+      margin: 0;
+    }
+
+    .posts li {
+      padding: 0.85rem 0;
+      border-bottom: 1px solid var(--rule);
+    }
+
+    .posts li:first-child {
+      padding-top: 0;
+    }
+
+    .posts li:last-child {
+      border-bottom: none;
+      padding-bottom: 0;
+    }
+
+    .posts a {
+      font-weight: 500;
+      text-decoration: none;
+      color: var(--ink);
+    }
+
+    .posts a:hover {
+      color: var(--accent-1);
+    }
+
+    .posts .meta {
+      display: block;
+      margin-top: 0.25rem;
+      font-size: 0.8125rem;
+      font-weight: 400;
+      color: var(--ink-soft);
+    }
+
+    .connect .links {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 0.5rem 1rem;
+      margin: 0.5rem 0 0;
+      padding: 0;
+      list-style: none;
+    }
+
+    .connect .links a {
+      font-weight: 500;
+    }
+
+    .notes {
+      margin-top: 0.75rem;
+      font-size: 0.875rem;
+      color: var(--ink-soft);
+    }
+
+    .notes a {
+      font-weight: 500;
+    }
+
+    .footer {
+      margin-top: 2.5rem;
+      padding-top: 1.5rem;
+      border-top: 1px solid var(--rule);
+      font-size: 0.9375rem;
+      color: var(--ink-soft);
+    }
+
+    .listening-note {
+      font-style: italic;
+      color: color-mix(in srgb, var(--ink-soft) 92%, var(--accent-3));
+      font-size: 0.95em;
+    }
+
+    .visually-hidden {
+      position: absolute;
+      width: 1px;
+      height: 1px;
+      padding: 0;
+      margin: -1px;
+      overflow: hidden;
+      clip: rect(0, 0, 0, 0);
+      white-space: nowrap;
+      border: 0;
+    }
+  </style>
+</head>
+<body>
+  <div class="backdrop" aria-hidden="true">
+    <div class="aurora">
+      <div class="aurora__blob aurora__blob--a"></div>
+      <div class="aurora__blob aurora__blob--b"></div>
+    </div>
+  </div>
+  <div class="grain" aria-hidden="true"></div>
+
+  <a class="skip" href="#main">Skip to content</a>
+
+  <div class="page">
+    <header class="top">
+      <p class="mood" id="mood-label">Clear spring night · city cooling</p>
+      <button type="button" class="theme-toggle" id="theme-toggle" aria-pressed="false" aria-label="Use dark theme">
+        <span class="visually-hidden" id="theme-status">Dark mode off</span>
+        <svg class="icon-sun" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.75" aria-hidden="true">
+          <path stroke-linecap="round" stroke-linejoin="round" d="M12 3v2.25m6.364 1.636-1.591 1.591M21 12h-2.25m-1.636 6.364-1.591-1.591M12 18.75V21m-4.773-4.227-1.591 1.591M5.25 12H3m4.227-4.773L5.636 5.636M12 8.25a3.75 3.75 0 1 0 0 7.5 3.75 3.75 0 0 0 0-7.5Z" />
+        </svg>
+        <svg class="icon-moon" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.75" aria-hidden="true" style="display:none">
+          <path stroke-linecap="round" stroke-linejoin="round" d="M21.752 15.002A9.72 9.72 0 0 1 18 15.75c-5.385 0-9.75-4.365-9.75-9.75 0-1.33.266-2.597.748-3.752A9.753 9.753 0 0 0 3 11.25C3 16.635 7.365 21 12.75 21a9.753 9.753 0 0 0 9.002-5.998Z" />
+        </svg>
+      </button>
+    </header>
+
+    <main id="main" class="panel">
+      <h1>Hej — I'm <span class="h1-accent">Erik</span>.</h1>
+      <p class="lede">Product design at <a href="https://cursor.com" target="_blank" rel="noopener noreferrer">Cursor</a>. On the side I tinker with a living site: agents rebuild the page from whatever the day actually logged. This corner of the web is still a playground — a place to try things and write when I have something worth saying.</p>
+
+      <section class="section" aria-labelledby="now-heading">
+        <h2 id="now-heading">Right now <span class="section__tag">April 2026</span></h2>
+        <dl class="dl">
+          <dt>Day job</dt>
+          <dd>Cursor, product design.</dd>
+          <dt>Side repo</dt>
+          <dd><em>living-site</em> — daily regenerations from activity data. Messy, honest, sometimes pretty.</dd>
+          <dt>Also poking</dt>
+          <dd><em>shipflow</em> — point-and-click Next.js edits. Small tool, big relief when it works.</dd>
+          <dt>GitHub lately</dt>
+          <dd>Fourteen commits this week, mostly <em>living-site</em>. Nothing heroic; just steady motion.</dd>
+          <dt>Listening</dt>
+          <dd>— <span class="listening-note">(nothing on loop tonight)</span></dd>
+        </dl>
+      </section>
+
+      <section class="section" aria-labelledby="signals-heading">
+        <h2 id="signals-heading">Skimming the day</h2>
+        <ul class="signals">
+          <li>Newsrooms publishing AI ground rules in public — good to see the conversation out in the open.</li>
+          <li>Someone on the orange site building a cloud by hand. Delightfully stubborn.</li>
+          <li>Compiler threads about borrow-checking minus the type checker. I read more than I understand.</li>
+          <li>Afternoon peaked at 18°, evening air sliding toward 10° — sleeve math all over again.</li>
+          <li>Sunset still an hour out; long shadows on the way.</li>
+        </ul>
+      </section>
+
+      <section class="section" aria-labelledby="writing-heading">
+        <h2 id="writing-heading">Writing</h2>
+        <ul class="posts">
+          <li>
+            <a href="https://eriks.design/posts/test">Test</a>
+            <span class="meta">March 13, 2026 · 1 min read</span>
+          </li>
+          <li>
+            <a href="https://eriks.design/posts/a-living-site">A living site</a>
+            <span class="meta">December 26, 2025 · 6 min read</span>
+          </li>
+          <li>
+            <a href="https://eriks.design/posts/surgical-edits">Surgical edits</a>
+            <span class="meta">November 23, 2025 · 4 min read</span>
+          </li>
+          <li>
+            <a href="https://eriks.design/posts/familiar-differentiation">Familiar differentiation</a>
+            <span class="meta">November 15, 2024 · 5 min read</span>
+          </li>
+          <li>
+            <a href="https://eriks.design/posts/hackathon-energy-but-add-users">Hackathon energy, but add users</a>
+            <span class="meta">October 15, 2022 · 4 min read</span>
+          </li>
+          <li>
+            <a href="https://uu.diva-portal.org/smash/record.jsf?pid=diva2:1453018" target="_blank" rel="noopener noreferrer">Go with the flow</a>
+            <span class="meta">August 4, 2020 · 45 min read · thesis</span>
+          </li>
+        </ul>
+      </section>
+
+      <section class="section connect" aria-labelledby="connect-heading">
+        <h2 id="connect-heading">Say hi</h2>
+        <p>If any of this resonates, I'm easy to find: <a href="https://x.com/flowstated" target="_blank" rel="noopener noreferrer">X</a>, <a href="https://github.com/eriknson" target="_blank" rel="noopener noreferrer">GitHub</a>, or <a href="mailto:contact@eriks.design?subject=Hej">email</a>. No pitch deck required.</p>
+        <p class="notes">Scattered notes elsewhere: <a href="https://x.com/flowstated/status/2002167999353241901" target="_blank" rel="noopener noreferrer">imagine 2026</a> · <a href="https://x.com/flowstated/status/2000889983562080578" target="_blank" rel="noopener noreferrer">shipping by sunrise</a> · <a href="https://x.com/flowstated/status/2000691637190861180" target="_blank" rel="noopener noreferrer">agents from my phone</a>.</p>
+      </section>
+
+      <footer class="footer">
+        See you around. · <time datetime="2026-04-23">23 April 2026</time>
+      </footer>
+    </main>
+  </div>
+
+  <script>
+    (function () {
+      var storageKey = "erik-theme";
+      var root = document.documentElement;
+      var btn = document.getElementById("theme-toggle");
+      var statusEl = document.getElementById("theme-status");
+      var sun = btn.querySelector(".icon-sun");
+      var moon = btn.querySelector(".icon-moon");
+
+      function getPreference() {
+        try {
+          return localStorage.getItem(storageKey);
+        } catch (e) {
+          return null;
+        }
+      }
+
+      function systemDark() {
+        return window.matchMedia("(prefers-color-scheme: dark)").matches;
+      }
+
+      function apply(theme) {
+        var isDark = theme === "dark";
+        root.dataset.theme = isDark ? "dark" : "light";
+        btn.setAttribute("aria-pressed", isDark ? "true" : "false");
+        btn.setAttribute("aria-label", isDark ? "Use light theme" : "Use dark theme");
+        if (statusEl) {
+          statusEl.textContent = isDark ? "Dark mode on" : "Dark mode off";
+        }
+        sun.style.display = isDark ? "none" : "block";
+        moon.style.display = isDark ? "block" : "none";
+      }
+
+      function resolveInitial() {
+        var stored = getPreference();
+        if (stored === "dark" || stored === "light") {
+          return stored;
+        }
+        return systemDark() ? "dark" : "light";
+      }
+
+      apply(resolveInitial());
+
+      btn.addEventListener("click", function () {
+        var next = root.dataset.theme === "dark" ? "light" : "dark";
+        try {
+          localStorage.setItem(storageKey, next);
+        } catch (e) {}
+        apply(next);
+      });
+
+      window.matchMedia("(prefers-color-scheme: dark)").addEventListener("change", function (e) {
+        if (getPreference()) return;
+        apply(e.matches ? "dark" : "light");
+      });
+    })();
+  </script>
+</body>
+</html>
