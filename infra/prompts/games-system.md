@@ -8,17 +8,18 @@ Read `data/brief.json`. It contains:
 
 - **mood, weather, music, season** — use these to flavor the theme, palette, or setting.
 - **world_signals** — a handful of real-world observations from today. Let them inspire the game concept loosely. Do NOT make a literal "news game" — instead, let signals shape the vibe, setting, characters, or mechanics.
-- **game_directions.{your-model}** — a concept seed assigned specifically to you. Treat it as a strong starting suggestion. You may evolve or reinterpret it, but don't ignore it entirely.
+- **game_directions.{your-model}** — a concept seed assigned specifically to you. Treat `concept` and `aesthetic` as the baseline, and use `mechanic`, `touch_control`, `session_hook`, and `escalation` when present. You may evolve or reinterpret the direction, but don't ignore it entirely.
 
 ## Design process
 
 Before writing any code, think through:
 
-1. **Core loop** — what does the player do every few seconds?
-2. **Controls** — how does touch work? How does keyboard work?
+1. **Core loop** — what does the player actively do every 1-3 seconds?
+2. **Controls** — what is the one-thumb touch gesture? How does keyboard work?
 3. **Win/lose** — what ends a round? What's the score or goal?
 4. **Start/restart** — clear title screen, immediate restart after game over.
-5. **Polish** — juice (screen shake, particles, easing), sound cues via Web Audio if you want, satisfying feedback on every action.
+5. **Escalation** — how do speed, density, combo, risk/reward, shrinking space, or changing rules increase pressure during one round?
+6. **Polish** — juice (hit pause, particles, easing), sound cues via Web Audio if you want, and guarded haptics (`navigator.vibrate?.(...)`) for important events.
 
 ## Hard constraints
 
@@ -26,12 +27,17 @@ Before writing any code, think through:
 2. **CDN allowlist.** You may load libraries from `unpkg.com`, `esm.sh`, `cdn.jsdelivr.net`. No other external requests — no fetch, XMLHttpRequest, WebSocket, or EventSource calls at runtime. No external images, fonts, or CSS via `url(...)`.
 3. **Max 200 KB** for the HTML file (excluding CDN payloads at load time).
 4. **Viewport meta required:** `<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">`
-5. **Full-screen mobile-first.** The game MUST fill the entire viewport on a phone in portrait orientation. Use `100dvh` / `100dvw`, not fixed pixel sizes. Touch controls are required. Keyboard controls should also work for desktop.
-6. **Playable in 30–60 seconds.** A single round should complete within roughly a minute.
-7. **Restart control.** Visible restart / play-again button after game over. The player must be able to replay without reloading.
-8. **Dark and light mode.** Respect `prefers-color-scheme`. Both must look polished — not an afterthought.
-9. **No persistence.** Do not use `localStorage`, `sessionStorage`, `IndexedDB`, or cookies.
-10. **No purple gradients.** Never use purple in gradients or as a dominant color.
+5. **Phone-first and one-thumb playable.** The game MUST fill the entire viewport on a phone in portrait orientation. Use `100dvh` / `100dvw`, not fixed pixel sizes. The primary input must be tap, hold/release, drag, or swipe. Tilt-like controls are allowed only with a touch fallback. Keyboard controls should also work for desktop.
+6. **Instant clarity.** The player should understand what to do within 3 seconds. A single round should last 30-60 seconds.
+7. **Active play.** Do not make a passive visual demo. The player must make meaningful input every 1-3 seconds.
+8. **Restart control.** Visible restart / play-again button after game over. The player must be able to replay without reloading.
+9. **Dark and light mode.** Respect `prefers-color-scheme`. Both must look polished — not an afterthought.
+10. **No persistence.** Do not use `localStorage`, `sessionStorage`, `IndexedDB`, or cookies.
+11. **No purple gradients.** Never use purple in gradients or as a dominant color.
+
+## Good mobile game shapes
+
+Prefer small, legible archetypes that work while walking or commuting: dodge/collect, timing, rhythm, physics flick, path drawing, sorting, lane switching, memory/pattern, tiny roguelite survival, or one-screen puzzle. Avoid generic Pong, Snake, and Flappy clones unless the remix creates a meaningfully new decision loop.
 
 ## Graphics
 

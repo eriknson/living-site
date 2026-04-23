@@ -13,7 +13,14 @@ interface TerminalViewProps {
 export function TerminalView({ state, onStart, isStarting }: TerminalViewProps) {
   const isIdle = !state && !isStarting;
   const showModelPanes = state?.workflow.aggregate === "complete";
-  const models = ["composer-2", "opus-4.6-thinking", "gpt-5.4-high-fast", "gemini-3.1-pro"];
+  const models = [
+    "composer-2-fast",
+    "gpt-5.5-extra-high",
+    "kimi-k2.6",
+    "composer-matterhorn-training",
+    "google-gemma-4-31b-it",
+    "claude-nougat-eap-thinking-max",
+  ];
 
   return (
     <div className="min-h-screen bg-white dark:bg-neutral-900 text-neutral-800 dark:text-neutral-200 font-mono text-xs p-4 pt-[calc(var(--menu-bar-height)+1rem)]">
@@ -189,11 +196,15 @@ function StatusDot({ status }: { status: string }) {
 
 function shortenModelName(model: string): string {
   const map: Record<string, string> = {
-    "composer-2": "composer-2",
+    "composer-2-fast": "composer-2-fast",
+    "gpt-5.5-extra-high": "gpt-5.5-xhigh",
+    "kimi-k2.6": "kimi-k2.6",
+    "composer-matterhorn-training": "matterhorn",
+    "google-gemma-4-31b-it": "gemma-4-31b",
+    "claude-nougat-eap-thinking-max": "nougat-max",
     "composer-1.5": "composer-1.5",
     "opus-4.6-thinking": "opus-4.6",
     "claude-4.6-opus-max-thinking": "opus-4.6-max",
-    "gpt-5.4-high-fast": "gpt-5.4-hf",
     "gpt-5.3-codex-xhigh": "gpt-5.3-xhigh",
     "gemini-3.1-pro": "gemini-3.1-pro",
     "composer-1": "composer-1",

@@ -56,12 +56,14 @@ Runs daily at 6am UTC via GitHub Actions.
 │   └── history/              # Weekly snapshots per source
 │
 ├── generated/                # Agent-written HTML (one per model)
-│   ├── composer-1.5.html     # Site builds
-│   ├── opus-4.6-thinking.html
-│   ├── gpt-5.3-codex-xhigh.html
-│   ├── gemini-3.1-pro.html
+│   ├── composer-2-fast.html  # Site builds
+│   ├── gpt-5.5-extra-high.html
+│   ├── kimi-k2.6.html
+│   ├── composer-matterhorn-training.html
+│   ├── google-gemma-4-31b-it.html
+│   ├── claude-nougat-eap-thinking-max.html
 │   └── games/               # Game builds
-│       ├── composer-1.5.html
+│       ├── composer-2-fast.html
 │       └── ...
 │
 ├── public/builds/            # Archived site builds by date

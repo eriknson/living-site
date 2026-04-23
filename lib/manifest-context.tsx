@@ -12,7 +12,7 @@ import { useRouter, useSearchParams } from "next/navigation";
 import type { Manifest } from "./manifest";
 import { getModelSlug, getModelIdFromSlug, getBuildForModel, getBatch } from "./manifest";
 
-const DEFAULT_MODEL_ID = "opus-4.6-thinking";
+const DEFAULT_MODEL_ID = "composer-2-fast";
 
 interface ManifestContextValue {
   manifest: Manifest | null;

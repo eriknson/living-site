@@ -9,15 +9,8 @@ import { existsSync } from "fs";
 
 type BuildKind = "site" | "game";
 
-const SITE_DEFAULT_MODEL = "opus-4.6-thinking";
-const SITE_DEFAULT_MODELS = [
-  "composer-2",
-  "opus-4.6-thinking",
-  "gpt-5.4-high-fast",
-  "gemini-3.1-pro",
-];
-const GAME_DEFAULT_MODEL = "composer-2-fast";
-const GAME_DEFAULT_MODELS = [
+const DEFAULT_MODEL = "composer-2-fast";
+const DEFAULT_MODELS = [
   "composer-2-fast",
   "gpt-5.5-extra-high",
   "kimi-k2.6",
@@ -41,8 +34,8 @@ const KIND_CONFIG: Record<BuildKind, {
     systemPromptPath: "infra/prompts/system.md",
     generatedDir: "generated",
     publicDir: "public/builds",
-    defaultModel: SITE_DEFAULT_MODEL,
-    defaultModels: SITE_DEFAULT_MODELS,
+    defaultModel: DEFAULT_MODEL,
+    defaultModels: DEFAULT_MODELS,
   },
   game: {
     historyPath: "public/games/history.json",
@@ -50,8 +43,8 @@ const KIND_CONFIG: Record<BuildKind, {
     systemPromptPath: "infra/prompts/games-system.md",
     generatedDir: "generated/games",
     publicDir: "public/games",
-    defaultModel: GAME_DEFAULT_MODEL,
-    defaultModels: GAME_DEFAULT_MODELS,
+    defaultModel: DEFAULT_MODEL,
+    defaultModels: DEFAULT_MODELS,
   },
 };
 

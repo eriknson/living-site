@@ -15,6 +15,14 @@ on:
         description: 'Build ID for live streaming (auto-generated if empty)'
         required: false
         type: string
+      debug_models:
+        description: 'Print available Cursor CLI models (diagnostic only)'
+        required: false
+        default: 'false'
+        type: choice
+        options:
+          - 'false'
+          - 'true'
   schedule:
     - cron: '0 6 * * *'  # 6am UTC daily
 
@@ -33,6 +41,27 @@ env:
   BUILD_WEBHOOK_SECRET: ${{ secrets.BUILD_WEBHOOK_SECRET }}
 
 jobs:
+  cursor-models-diagnostic:
+    if: github.event_name == 'workflow_dispatch' && inputs.debug_models == 'true'
+    runs-on: ubuntu-latest
+    continue-on-error: true
+    timeout-minutes: 5
+    steps:
+      - name: Install Cursor CLI
+        run: |
+          curl https://cursor.com/install -fsS | bash
+          cursor-agent --version || echo "Failed to get cursor-agent version"
+
+      - name: Print available Cursor models
+        env:
+          CURSOR_API_KEY: ${{ secrets.CURSOR_API_KEY }}
+        run: |
+          if [ -z "$CURSOR_API_KEY" ]; then
+            echo "CURSOR_API_KEY is not set"
+            exit 0
+          fi
+          cursor-agent models || true
+
   # Job 1: Aggregate data (runs once)
   aggregate:
     runs-on: ubuntu-latest
@@ -197,7 +226,7 @@ jobs:
           Task 1: Read data/latest.json → Write data/brief.json
           Task 2: Read data/styled-page.html → Write data/reference.html (semantic version)"
           
-          cursor-agent -p --force --model composer-2 "$PROMPT" 2>&1 || true
+          cursor-agent -p --force --model composer-1.5 "$PROMPT" 2>&1 || true
 
       - name: Copy curator output or create fallback
         run: |
@@ -214,12 +243,22 @@ jobs:
               const weather = latest.sources?.weather || {};
               const repos = (gh.active_repos || []).filter(r => r.is_owned).slice(0, 2).map(r => r.name);
               const artists = (spotify.medium_term?.artists || []).slice(0, 3).map(a => a.name);
+              const gameDirections = {
+                'composer-2-fast': { concept: 'Catch brief bright signals while dodging heavier shadows in a 45-second one-thumb survival round.', mechanic: 'dodge and collect', touch_control: 'drag anywhere to steer', session_hook: 'quick score chase with near-miss bonuses', escalation: 'signal density and shadow speed increase every 10 seconds', aesthetic: 'crisp monochrome with warm accent sparks' },
+                'gpt-5.5-extra-high': { concept: 'Flick small orbiting moons into matching gates before the orbit collapses.', mechanic: 'physics flick timing', touch_control: 'hold, aim, release', session_hook: 'satisfying flicks and combo chains', escalation: 'the orbit shrinks and gates rotate faster', aesthetic: 'soft orbital diagrams on dark paper' },
+                'kimi-k2.6': { concept: 'Trace safe paths through a shifting rain map before the next weather pulse lands.', mechanic: 'path drawing', touch_control: 'draw a route with one finger', session_hook: 'tiny route-planning bursts', escalation: 'new hazards appear and old paths decay', aesthetic: 'misty map lines and glassy droplets' },
+                'composer-matterhorn-training': { concept: 'Switch lanes to sort falling notes into the right columns before the rhythm stutters.', mechanic: 'lane switching and sorting', touch_control: 'swipe left or right', session_hook: 'fast readable sorting flow', escalation: 'tempo rises and decoy notes appear', aesthetic: 'minimal music staff with bright impacts' },
+                'google-gemma-4-31b-it': { concept: 'Memorize and repeat a tiny constellation pattern as new stars flare in.', mechanic: 'memory pattern', touch_control: 'tap glowing nodes', session_hook: 'one-screen pattern mastery', escalation: 'patterns lengthen and stars fade faster', aesthetic: 'quiet sky chart with ink labels' },
+                'claude-nougat-eap-thinking-max': { concept: 'Guide a small cursor through a shrinking room, trading risky pickups for extra seconds.', mechanic: 'tiny roguelite survival', touch_control: 'drag to move, release to dash', session_hook: 'risk/reward pickups in a minute-long run', escalation: 'walls close in and pickups become more tempting', aesthetic: 'clean terminal geometry with tactile particles' }
+              };
               const brief = {
                 mood: latest.context?.season + ' focus',
                 intro: repos.length ? 'Working on ' + repos.join(' and ') + '.' : 'Building with AI.',
                 currently: [{ label: 'building', value: repos.join(', ') || 'projects' }],
                 listening: artists.join(', ') || 'music',
-                footer: latest.identity?.name?.split(' ')[0]?.toLowerCase() || 'erik'
+                footer: latest.identity?.name?.split(' ')[0]?.toLowerCase() || 'erik',
+                world_signals: [latest.context?.season, weather.conditions].filter(Boolean).slice(0, 3),
+                game_directions: gameDirections
               };
               console.log(JSON.stringify(brief, null, 2));
             " > data/brief.json
@@ -267,7 +306,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        model: [composer-2, opus-4.6-thinking, gpt-5.4-high-fast, gemini-3.1-pro]
+        model: [composer-2-fast, gpt-5.5-extra-high, kimi-k2.6, composer-matterhorn-training, google-gemma-4-31b-it, claude-nougat-eap-thinking-max]
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
@@ -653,7 +692,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        model: [composer-2, opus-4.6-thinking, gpt-5.4-high-fast, gemini-3.1-pro]
+        model: [composer-2-fast, gpt-5.5-extra-high, kimi-k2.6, composer-matterhorn-training, google-gemma-4-31b-it, claude-nougat-eap-thinking-max]
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
@@ -756,7 +795,7 @@ jobs:
           Read the file, fix the issues, write it back."
           
           echo "=== Running polish agent for ${{ matrix.model }} ==="
-          cursor-agent -p --force --model composer-2 "$PROMPT" 2>&1 || true
+          cursor-agent -p --force --model composer-1.5 "$PROMPT" 2>&1 || true
 
       - name: Re-validate after polish
         if: steps.validate.outputs.needs_polish == 'true'
@@ -777,7 +816,7 @@ jobs:
   # Fail-closed: games that still fail after polish are NOT published.
   validate-game:
     needs: [aggregate, curator, generate-game]
-    if: inputs.dry_run != 'true'
+    if: ${{ inputs.dry_run != 'true' && always() && needs.aggregate.result == 'success' && needs.curator.result == 'success' }}
     runs-on: ubuntu-latest
     continue-on-error: true
     timeout-minutes: 20
@@ -808,6 +847,7 @@ jobs:
 
       - name: Download game build artifact
         uses: actions/download-artifact@v4
+        continue-on-error: true
         with:
           name: game-build-${{ matrix.model }}
           path: artifacts/
@@ -958,9 +998,9 @@ jobs:
             public/games/${{ needs.aggregate.outputs.date }}/
           retention-days: 3
 
-  # Job 5: Commit all builds
-  commit:
-    needs: [aggregate, curator, generate, validate, generate-game, validate-game]
+  # Job 5: Commit site builds
+  commit-site:
+    needs: [aggregate, curator, generate, validate]
     if: inputs.dry_run != 'true'
     runs-on: ubuntu-latest
     timeout-minutes: 10
@@ -1017,13 +1057,11 @@ jobs:
           pattern: validated-*
           path: artifacts/
 
-      - name: Organize builds
+      - name: Organize site builds
         run: |
           DATE="${{ needs.aggregate.outputs.date }}"
           mkdir -p "public/builds/${DATE}"
-          mkdir -p "public/games/${DATE}"
           mkdir -p "generated"
-          mkdir -p "generated/games"
           
           # Copy site build output JSONs
           for dir in artifacts/validated-*/public/builds/${DATE}; do
@@ -1045,29 +1083,9 @@ jobs:
             fi
           done
           
-          # Copy game build output JSONs
-          for dir in artifacts/validated-game-*/public/games/${DATE}; do
-            if [ -d "$dir" ]; then
-              cp "$dir"/*-output.json "public/games/${DATE}/" 2>/dev/null || true
-            fi
-          done
-          
-          # Copy validated game generated files
-          for artifact_dir in artifacts/validated-game-*/; do
-            model=$(basename "$artifact_dir" | sed 's/^validated-game-//')
-            src="${artifact_dir}generated/games/${model}.html"
-            if [ -f "$src" ]; then
-              cp "$src" "generated/games/${model}.html"
-              echo "Copied validated generated/games/${model}.html"
-            fi
-          done
-          
           echo "=== Site builds ==="
           ls -la "public/builds/${DATE}/"
           ls -la "generated/"
-          echo "=== Game builds ==="
-          ls -la "public/games/${DATE}/"
-          ls -la "generated/games/"
 
       - name: Process build logs and update manifest
         env:
@@ -1089,43 +1107,29 @@ jobs:
               echo "Warning: No site output file for ${model}"
             fi
           done
-          
-          # Process game build logs
-          for artifact_dir in artifacts/validated-game-*/; do
-            model=$(basename "$artifact_dir" | sed 's/^validated-game-//')
-            output_file="public/games/${DATE}/${model}-output.json"
-            if [ -f "$output_file" ]; then
-              echo "Processing game build log for ${model}..."
-              pnpm run save-build-log -- "$output_file" --model "$model" --date "$DATE" --batch-timestamp "$BATCH_TIMESTAMP" --github-run-url "$GITHUB_RUN_URL" --kind game
-            else
-              echo "Warning: No game output file for ${model}"
-            fi
-          done
 
       - name: Cleanup build outputs
         run: |
           DATE="${{ needs.aggregate.outputs.date }}"
           rm -f public/builds/${DATE}/*-output.json
-          rm -f public/games/${DATE}/*-output.json
 
       - name: Copy fetch summary to public
         run: |
           mkdir -p public/data
           cp data/fetch-summary.json public/data/fetch-summary.json
 
-      - name: Commit changes
+      - name: Commit site changes
         run: |
           git config --local user.email "eriks@mail.se"
           git config --local user.name "Erik Nilsson"
           
-          # Stage all build files (sites + games)
+          # Stage only normal site outputs. Game outputs are committed separately.
           git add data/latest.json
           git add data/fetch-summary.json
           git add data/brief.json
           git add public/data/
           git add public/builds/
-          git add public/games/
-          git add generated/
+          git add generated/*.html 2>/dev/null || true
           
           # Check if there are changes to commit
           if git diff --staged --quiet; then
@@ -1134,21 +1138,18 @@ jobs:
             TARGET_BRANCH="${GITHUB_REF_NAME:-main}"
             echo "Target branch: ${TARGET_BRANCH}"
 
-            git commit -m "Regenerate site + games (4 models) - $(date -u +%Y-%m-%d)"
+            git commit -m "Regenerate site (6 models) - $(date -u +%Y-%m-%d)"
             
-            # Pull latest changes and rebase before pushing
-            # This handles the case where another push happened during the workflow
-            git pull --rebase origin "${TARGET_BRANCH}"
-            
-            # Push with retry logic for transient network failures (SSL timeouts, etc.)
+            # Pull/rebase before every push attempt so independent commit jobs can land cleanly.
             MAX_RETRIES=3
             RETRY_DELAY=10
             for i in $(seq 1 $MAX_RETRIES); do
-              echo "Push attempt $i of $MAX_RETRIES..."
-              if git push origin "HEAD:${TARGET_BRANCH}"; then
+              echo "Sync + push attempt $i of $MAX_RETRIES..."
+              if git pull --rebase origin "${TARGET_BRANCH}" && git push origin "HEAD:${TARGET_BRANCH}"; then
                 echo "Push succeeded on attempt $i"
                 break
               else
+                git rebase --abort 2>/dev/null || true
                 if [ $i -lt $MAX_RETRIES ]; then
                   echo "Push failed, retrying in ${RETRY_DELAY}s..."
                   sleep $RETRY_DELAY
@@ -1173,7 +1174,7 @@ jobs:
         if: always() && env.BUILD_WEBHOOK_URL != ''
         run: |
           # Determine final status
-          if [ -f "generated/composer-2.html" ] || [ -f "generated/opus-4.6-thinking.html" ] || [ -f "generated/gpt-5.4-high-fast.html" ] || [ -f "generated/gemini-3.1-pro.html" ]; then
+          if [ -f "generated/composer-2-fast.html" ] || [ -f "generated/gpt-5.5-extra-high.html" ] || [ -f "generated/kimi-k2.6.html" ] || [ -f "generated/composer-matterhorn-training.html" ] || [ -f "generated/google-gemma-4-31b-it.html" ] || [ -f "generated/claude-nougat-eap-thinking-max.html" ]; then
             STATUS="build.complete"
           else
             STATUS="build.error"
@@ -1186,7 +1187,7 @@ jobs:
       - name: Write job summary
         run: |
           DATE="${{ needs.aggregate.outputs.date }}"
-          echo "## 🔄 Regenerate Site + Games Results" >> $GITHUB_STEP_SUMMARY
+          echo "## 🔄 Regenerate Site Results" >> $GITHUB_STEP_SUMMARY
           echo "" >> $GITHUB_STEP_SUMMARY
           echo "**Date:** ${DATE}" >> $GITHUB_STEP_SUMMARY
           echo "" >> $GITHUB_STEP_SUMMARY
@@ -1201,9 +1202,165 @@ jobs:
               echo "- ❌ ${model} (no HTML generated)" >> $GITHUB_STEP_SUMMARY
             fi
           done
+
+  # Job 6: Commit game builds separately so failures never block the site commit.
+  commit-game:
+    needs: [aggregate, validate-game]
+    if: ${{ inputs.dry_run != 'true' && always() && needs.aggregate.result == 'success' }}
+    runs-on: ubuntu-latest
+    continue-on-error: true
+    timeout-minutes: 10
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Setup pnpm
+        uses: pnpm/action-setup@v4
+        with:
+          version: ${{ env.PNPM_VERSION }}
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: 'pnpm'
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Download data artifact
+        uses: actions/download-artifact@v4
+        with:
+          name: aggregated-data
+          path: artifacts/aggregated/
+
+      - name: Organize data files
+        run: |
+          mkdir -p data
+          cp artifacts/aggregated/fetch-summary.json data/fetch-summary.json
+          echo "Data files organized"
+
+      - name: Download validated game artifacts
+        uses: actions/download-artifact@v4
+        continue-on-error: true
+        with:
+          pattern: validated-game-*
+          path: artifacts/
+
+      - name: Organize game builds
+        run: |
+          DATE="${{ needs.aggregate.outputs.date }}"
+          mkdir -p "public/games/${DATE}"
+          mkdir -p "generated/games"
+
+          shopt -s nullglob
+          artifact_dirs=(artifacts/validated-game-*/)
+
+          if [ ${#artifact_dirs[@]} -eq 0 ]; then
+            echo "No validated game artifacts found"
+          fi
+
+          for artifact_dir in "${artifact_dirs[@]}"; do
+            if [ ! -d "$artifact_dir" ]; then continue; fi
+            model=$(basename "$artifact_dir" | sed 's/^validated-game-//')
+
+            output_dir="${artifact_dir}public/games/${DATE}"
+            if [ -d "$output_dir" ]; then
+              cp "$output_dir"/*-output.json "public/games/${DATE}/" 2>/dev/null || true
+            fi
+
+            src="${artifact_dir}generated/games/${model}.html"
+            if [ -f "$src" ]; then
+              cp "$src" "generated/games/${model}.html"
+              echo "Copied validated generated/games/${model}.html"
+            fi
+          done
+
+          echo "=== Game builds ==="
+          ls -la "public/games/${DATE}/"
+          ls -la "generated/games/"
+
+      - name: Process game build logs and update manifest
+        env:
+          GITHUB_RUN_URL: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}
+        run: |
+          DATE="${{ needs.aggregate.outputs.date }}"
+          BATCH_TIMESTAMP=$(date -u +%Y-%m-%dT%H:%M:%S.000Z)
+
+          shopt -s nullglob
+          artifact_dirs=(artifacts/validated-game-*/)
+
+          for artifact_dir in "${artifact_dirs[@]}"; do
+            if [ ! -d "$artifact_dir" ]; then continue; fi
+            model=$(basename "$artifact_dir" | sed 's/^validated-game-//')
+            output_file="public/games/${DATE}/${model}-output.json"
+            if [ -f "$output_file" ]; then
+              echo "Processing game build log for ${model}..."
+              pnpm run save-build-log -- "$output_file" --model "$model" --date "$DATE" --batch-timestamp "$BATCH_TIMESTAMP" --github-run-url "$GITHUB_RUN_URL" --kind game
+            else
+              echo "Warning: No game output file for ${model}"
+            fi
+          done
+
+      - name: Cleanup game build outputs
+        run: |
+          DATE="${{ needs.aggregate.outputs.date }}"
+          rm -f public/games/${DATE}/*-output.json
+
+      - name: Commit game changes
+        run: |
+          git config --local user.email "eriks@mail.se"
+          git config --local user.name "Erik Nilsson"
+
+          git add public/games/
+          git add generated/games/
+
+          if git diff --staged --quiet; then
+            echo "No game changes to commit"
+          else
+            TARGET_BRANCH="${GITHUB_REF_NAME:-main}"
+            echo "Target branch: ${TARGET_BRANCH}"
+
+            git commit -m "Regenerate games (6 models) - $(date -u +%Y-%m-%d)"
+
+            MAX_RETRIES=3
+            RETRY_DELAY=10
+            for i in $(seq 1 $MAX_RETRIES); do
+              echo "Sync + push attempt $i of $MAX_RETRIES..."
+              if git pull --rebase origin "${TARGET_BRANCH}" && git push origin "HEAD:${TARGET_BRANCH}"; then
+                echo "Push succeeded on attempt $i"
+                break
+              else
+                git rebase --abort 2>/dev/null || true
+                if [ $i -lt $MAX_RETRIES ]; then
+                  echo "Push failed, retrying in ${RETRY_DELAY}s..."
+                  sleep $RETRY_DELAY
+                  RETRY_DELAY=$((RETRY_DELAY * 2))
+                else
+                  echo "Push failed after $MAX_RETRIES attempts"
+                  exit 1
+                fi
+              fi
+            done
+          fi
+
+      - name: Write game job summary
+        run: |
+          DATE="${{ needs.aggregate.outputs.date }}"
+          echo "## Regenerate Game Results" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "**Date:** ${DATE}" >> $GITHUB_STEP_SUMMARY
           echo "" >> $GITHUB_STEP_SUMMARY
           echo "### Game Builds (Validated)" >> $GITHUB_STEP_SUMMARY
-          for artifact_dir in artifacts/validated-game-*/; do
+
+          shopt -s nullglob
+          artifact_dirs=(artifacts/validated-game-*/)
+
+          if [ ${#artifact_dirs[@]} -eq 0 ]; then
+            echo "- No validated game artifacts" >> $GITHUB_STEP_SUMMARY
+          fi
+
+          for artifact_dir in "${artifact_dirs[@]}"; do
             model=$(basename "$artifact_dir" | sed 's/^validated-game-//')
             if [ -f "generated/games/${model}.html" ]; then
               echo "- ✅ ${model} (game)" >> $GITHUB_STEP_SUMMARY

@@ -60,6 +60,10 @@ export interface BuildEvent {
     | "model.stream"
     | "model.complete"
     | "model.error"
+    | "game.model.started"
+    | "game.model.stream"
+    | "game.model.complete"
+    | "game.model.error"
     | "commit.started"
     | "commit.complete"
     | "commit.error"
@@ -162,7 +166,7 @@ export function getSubtextsForPhase(state: BuildState | null): string[] {
 
   if (state.workflow.generate === "running") {
     return [
-      "Four minds, four perspectives",
+      "Six minds, six perspectives",
       "Finding the right aesthetic",
       "Translating data into design",
       "Making something that feels like you",
@@ -280,19 +284,27 @@ export function createInitialBuildState(buildId: string): BuildState {
       commit: "pending",
     },
     models: {
-      "composer-2": {
+      "composer-2-fast": {
         status: "queued",
         rawLog: [],
       },
-      "opus-4.6-thinking": {
+      "gpt-5.5-extra-high": {
         status: "queued",
         rawLog: [],
       },
-      "gpt-5.4-high-fast": {
+      "kimi-k2.6": {
         status: "queued",
         rawLog: [],
       },
-      "gemini-3.1-pro": {
+      "composer-matterhorn-training": {
+        status: "queued",
+        rawLog: [],
+      },
+      "google-gemma-4-31b-it": {
+        status: "queued",
+        rawLog: [],
+      },
+      "claude-nougat-eap-thinking-max": {
         status: "queued",
         rawLog: [],
       },

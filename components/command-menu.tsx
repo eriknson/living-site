@@ -23,6 +23,8 @@ import { Drawer, DrawerContent, DrawerTitle } from "@/components/ui/drawer";
 import { modelDisplayNames, modelSlugs, formatDuration, type Manifest } from "@/lib/manifest";
 import type { PostMeta } from "@/lib/posts";
 
+const SHOW_PLAY_IN_COMMAND_MENU = false;
+
 const PAGES = [
   { path: "/", label: "Home", icon: Home, keywords: ["start", "main", "erik"] },
   {
@@ -57,23 +59,35 @@ const PAGES = [
   },
 ];
 
+const COMMAND_PAGES = SHOW_PLAY_IN_COMMAND_MENU
+  ? PAGES
+  : PAGES.filter((page) => page.path !== "/play");
+
 // Agent models - each links to /agent?model=<slug>
 const AGENTS = [
   {
-    modelId: "opus-4.6-thinking",
-    keywords: ["claude", "anthropic", "opus", "4.6", "thinking", "ai"],
+    modelId: "composer-2-fast",
+    keywords: ["cursor", "composer", "2", "fast", "ai"],
   },
   {
-    modelId: "composer-2",
-    keywords: ["cursor", "composer", "2", "ai"],
+    modelId: "gpt-5.5-extra-high",
+    keywords: ["openai", "gpt", "5.5", "extra", "high", "1m", "ai"],
   },
   {
-    modelId: "gpt-5.4-high-fast",
-    keywords: ["openai", "gpt", "5.4", "high", "fast", "ai"],
+    modelId: "kimi-k2.6",
+    keywords: ["kimi", "moonshot", "k2.6", "ai"],
   },
   {
-    modelId: "gemini-3.1-pro",
-    keywords: ["google", "gemini", "3.1", "pro", "ai"],
+    modelId: "composer-matterhorn-training",
+    keywords: ["cursor", "composer", "matterhorn", "training", "ai"],
+  },
+  {
+    modelId: "google-gemma-4-31b-it",
+    keywords: ["google", "gemma", "4", "31b", "it", "ai"],
+  },
+  {
+    modelId: "claude-nougat-eap-thinking-max",
+    keywords: ["claude", "anthropic", "nougat", "eap", "thinking", "max", "ai"],
   },
 ].map((agent) => ({
   ...agent,
@@ -223,7 +237,7 @@ export default function CommandMenuDialog({ open, onOpenChange }: CommandMenuDia
           heading="Pages"
           className="[&_[cmdk-group-heading]]:px-2 [&_[cmdk-group-heading]]:py-1.5 [&_[cmdk-group-heading]]:text-[12px] [&_[cmdk-group-heading]]:font-medium [&_[cmdk-group-heading]]:text-black/40 [&_[cmdk-group-heading]]:dark:text-white/40 [&_[cmdk-group-heading]]:uppercase [&_[cmdk-group-heading]]:tracking-wide"
         >
-          {PAGES.map((page) => {
+          {COMMAND_PAGES.map((page) => {
             const isCurrent = isCurrentPath(page.path);
             return (
               <Command.Item
@@ -312,30 +326,32 @@ export default function CommandMenuDialog({ open, onOpenChange }: CommandMenuDia
           })}
         </Command.Group>
 
-        {/* Game Agents Group */}
-        <Command.Group
-          heading="Games by agents"
-          className="[&_[cmdk-group-heading]]:px-2 [&_[cmdk-group-heading]]:py-1.5 [&_[cmdk-group-heading]]:text-[12px] [&_[cmdk-group-heading]]:font-medium [&_[cmdk-group-heading]]:text-black/40 [&_[cmdk-group-heading]]:dark:text-white/40 [&_[cmdk-group-heading]]:uppercase [&_[cmdk-group-heading]]:tracking-wide [&_[cmdk-group-heading]]:mt-2"
-        >
-          {GAME_AGENTS.map((agent) => {
-            const isCurrent = isCurrentPath(agent.path);
-            return (
-              <Command.Item
-                key={`game-${agent.modelId}`}
-                value={`${agent.label} game`}
-                keywords={agent.keywords}
-                onSelect={() => navigateTo(agent.path)}
-                className={`flex items-center gap-3 px-3 rounded-lg cursor-pointer text-[14px] data-[selected=true]:bg-black/[0.05] dark:data-[selected=true]:bg-white/[0.08] outline-none transition-colors active:bg-black/[0.08] dark:active:bg-white/[0.12] ${isMobile ? "py-3.5" : "py-2.5"} ${isCurrent ? "text-black dark:text-white font-medium" : "text-[#1a1a1a] dark:text-[#e5e5e5]"}`}
-              >
-                <Gamepad2 className={`h-4 w-4 ${isCurrent ? "opacity-100" : "opacity-60"}`} />
-                <span className="flex-1">{agent.label}</span>
-                {isCurrent && (
-                  <span className="text-[11px] text-black/40 dark:text-white/40 font-normal shrink-0">Current</span>
-                )}
-              </Command.Item>
-            );
-          })}
-        </Command.Group>
+        {/* Game entries stay hidden until /play is ready to launch. */}
+        {SHOW_PLAY_IN_COMMAND_MENU && (
+          <Command.Group
+            heading="Games by agents"
+            className="[&_[cmdk-group-heading]]:px-2 [&_[cmdk-group-heading]]:py-1.5 [&_[cmdk-group-heading]]:text-[12px] [&_[cmdk-group-heading]]:font-medium [&_[cmdk-group-heading]]:text-black/40 [&_[cmdk-group-heading]]:dark:text-white/40 [&_[cmdk-group-heading]]:uppercase [&_[cmdk-group-heading]]:tracking-wide [&_[cmdk-group-heading]]:mt-2"
+          >
+            {GAME_AGENTS.map((agent) => {
+              const isCurrent = isCurrentPath(agent.path);
+              return (
+                <Command.Item
+                  key={`game-${agent.modelId}`}
+                  value={`${agent.label} game`}
+                  keywords={agent.keywords}
+                  onSelect={() => navigateTo(agent.path)}
+                  className={`flex items-center gap-3 px-3 rounded-lg cursor-pointer text-[14px] data-[selected=true]:bg-black/[0.05] dark:data-[selected=true]:bg-white/[0.08] outline-none transition-colors active:bg-black/[0.08] dark:active:bg-white/[0.12] ${isMobile ? "py-3.5" : "py-2.5"} ${isCurrent ? "text-black dark:text-white font-medium" : "text-[#1a1a1a] dark:text-[#e5e5e5]"}`}
+                >
+                  <Gamepad2 className={`h-4 w-4 ${isCurrent ? "opacity-100" : "opacity-60"}`} />
+                  <span className="flex-1">{agent.label}</span>
+                  {isCurrent && (
+                    <span className="text-[11px] text-black/40 dark:text-white/40 font-normal shrink-0">Current</span>
+                  )}
+                </Command.Item>
+              );
+            })}
+          </Command.Group>
+        )}
 
         {/* External Links Group */}
         <Command.Group

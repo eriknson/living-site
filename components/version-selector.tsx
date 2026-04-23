@@ -133,11 +133,11 @@ export function VersionSelector({
   const getDisplayName = () => {
     if (isHome) return "Erik";
     if ((isAgent || isPlay) && currentModel) {
-      if (currentModel === "gpt-5.3-codex-xhigh") {
+      if (currentModel === "gpt-5.5-extra-high") {
         return (
           <>
-            <span className="sm:hidden">GPT-5.3 Codex</span>
-            <span className="hidden sm:inline">GPT-5.3 Codex Extra High</span>
+            <span className="sm:hidden">GPT-5.5</span>
+            <span className="hidden sm:inline">GPT-5.5 1M Extra High</span>
           </>
         );
       }

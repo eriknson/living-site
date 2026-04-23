@@ -3,8 +3,8 @@
  * Validate a generated game HTML build for quality/compliance issues.
  *
  * Usage:
- *   pnpm run validate-game -- generated/games/composer-1.5.html
- *   pnpm run validate-game -- generated/games/composer-1.5.html --json
+ *   pnpm run validate-game -- generated/games/composer-2-fast.html
+ *   pnpm run validate-game -- generated/games/composer-2-fast.html --json
  */
 
 import { readFileSync, statSync } from "fs";
