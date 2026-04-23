@@ -155,6 +155,23 @@ export function getBuildForModel(
   );
 }
 
+export function getDefaultModelForBatch(
+  manifest: Manifest,
+  date?: string,
+  timestamp?: string,
+  preferredModel?: string | null
+): string | undefined {
+  const batch = getBatch(manifest, date, timestamp);
+  if (!batch) return undefined;
+
+  const successfulBuilds = batch.builds.filter((b) => b.status === "success");
+  return (
+    successfulBuilds.find((b) => b.model === preferredModel)?.model ||
+    successfulBuilds.find((b) => b.model === manifest.default_model)?.model ||
+    successfulBuilds[0]?.model
+  );
+}
+
 // Get all successful builds from a batch
 export function getAvailableModels(
   manifest: Manifest,
