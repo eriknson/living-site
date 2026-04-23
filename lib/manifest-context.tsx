@@ -10,7 +10,13 @@ import {
 } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import type { Manifest } from "./manifest";
-import { getModelSlug, getModelIdFromSlug, getBuildForModel, getBatch } from "./manifest";
+import {
+  getModelSlug,
+  getModelIdFromSlug,
+  getBuildForModel,
+  getBatch,
+  getDefaultModelForBatch,
+} from "./manifest";
 
 const DEFAULT_MODEL_ID = "composer-2-fast";
 
@@ -40,20 +46,26 @@ export function ManifestProvider({ children }: { children: ReactNode }) {
   const timestampFromUrl = searchParams.get("t");
   const modelIdFromUrl = modelSlug ? getModelIdFromSlug(modelSlug) : null;
 
-  // Current values: from URL if valid, otherwise defaults
-  const currentModel = modelIdFromUrl || DEFAULT_MODEL_ID;
   const currentDate = dateFromUrl || manifest?.latest_date || null;
   const currentTimestamp = timestampFromUrl || manifest?.latest_timestamp || null;
+  const currentModel = manifest
+    ? getDefaultModelForBatch(
+        manifest,
+        currentDate || undefined,
+        currentTimestamp || undefined,
+        modelIdFromUrl || DEFAULT_MODEL_ID
+      )
+    : modelIdFromUrl || DEFAULT_MODEL_ID;
 
   // Redirect to show model param if none specified
   useEffect(() => {
-    if (manifest && !modelSlug) {
-      const defaultSlug = getModelSlug(DEFAULT_MODEL_ID);
+    if (manifest && currentModel && (!modelSlug || getModelIdFromSlug(modelSlug) !== currentModel)) {
+      const defaultSlug = getModelSlug(currentModel);
       const params = new URLSearchParams(searchParams.toString());
       params.set("model", defaultSlug);
       router.replace(`/agent?${params.toString()}`, { scroll: false });
     }
-  }, [manifest, modelSlug, router, searchParams]);
+  }, [currentModel, manifest, modelSlug, router, searchParams]);
 
   // Get current build path using model, date, and timestamp
   const currentBuildPath = manifest && currentModel && currentDate

@@ -10,7 +10,13 @@ import {
 } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import type { Manifest } from "./manifest";
-import { getModelSlug, getModelIdFromSlug, getBuildForModel, getBatch } from "./manifest";
+import {
+  getModelSlug,
+  getModelIdFromSlug,
+  getBuildForModel,
+  getBatch,
+  getDefaultModelForBatch,
+} from "./manifest";
 
 const DEFAULT_MODEL_ID = "composer-2-fast";
 
@@ -39,18 +45,20 @@ export function GamesManifestProvider({ children }: { children: ReactNode }) {
   const timestampFromUrl = searchParams.get("t");
   const modelIdFromUrl = modelSlug ? getModelIdFromSlug(modelSlug) : null;
 
-  const currentModel = modelIdFromUrl || DEFAULT_MODEL_ID;
   const currentDate = dateFromUrl || manifest?.latest_date || null;
   const currentTimestamp = timestampFromUrl || manifest?.latest_timestamp || null;
+  const currentModel = manifest
+    ? getDefaultModelForBatch(manifest, currentDate || undefined, currentTimestamp || undefined, modelIdFromUrl || undefined)
+    : modelIdFromUrl || DEFAULT_MODEL_ID;
 
   useEffect(() => {
-    if (manifest && !modelSlug) {
-      const defaultSlug = getModelSlug(DEFAULT_MODEL_ID);
+    if (manifest && currentModel && getModelIdFromSlug(modelSlug || "") !== currentModel) {
+      const defaultSlug = getModelSlug(currentModel);
       const params = new URLSearchParams(searchParams.toString());
       params.set("model", defaultSlug);
       router.replace(`/play?${params.toString()}`, { scroll: false });
     }
-  }, [manifest, modelSlug, router, searchParams]);
+  }, [currentModel, manifest, modelSlug, router, searchParams]);
 
   const currentBuildPath = manifest && currentModel && currentDate
     ? getBuildForModel(manifest, currentModel, currentDate, currentTimestamp || undefined)?.path || null

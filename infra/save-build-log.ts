@@ -345,6 +345,24 @@ function parseStreamJson(rawOutput: string): {
   };
 }
 
+function hasUnsupportedModelError(output: string): boolean {
+  return /\bCannot use this model:\s*\S+/i.test(output);
+}
+
+function getSuccessfulManifestModels(manifest: Manifest): string[] {
+  const models: string[] = [];
+  for (const date of manifest.dates) {
+    for (const batch of date.batches) {
+      for (const build of batch.builds) {
+        if (build.status === "success" && !models.includes(build.model)) {
+          models.push(build.model);
+        }
+      }
+    }
+  }
+  return models;
+}
+
 async function loadHistory(historyPath: string): Promise<BuildHistory> {
   if (!existsSync(historyPath)) {
     return { builds: [] };
@@ -365,7 +383,7 @@ async function loadManifest(config: typeof KIND_CONFIG[BuildKind]): Promise<Mani
   if (!existsSync(config.manifestPath)) {
     return {
       default_model: config.defaultModel,
-      models: config.defaultModels,
+      models: [],
       latest_date: null,
       latest_timestamp: null,
       dates: [],
@@ -377,11 +395,18 @@ async function loadManifest(config: typeof KIND_CONFIG[BuildKind]): Promise<Mani
   } catch {
     return {
       default_model: config.defaultModel,
-      models: config.defaultModels,
+      models: [],
       latest_date: null,
       latest_timestamp: null,
       dates: [],
     };
+  }
+}
+
+function normalizeManifestModels(manifest: Manifest, fallbackModel: string): void {
+  manifest.models = getSuccessfulManifestModels(manifest);
+  if (!manifest.default_model || !manifest.models.includes(manifest.default_model)) {
+    manifest.default_model = manifest.models[0] || fallbackModel;
   }
 }
 
@@ -495,7 +520,9 @@ async function saveBuildLog(outputPath: string, options: SaveBuildLogOptions = {
     rawOutput = "Failed to capture build output";
   }
 
-  const { formatted, status, duration_ms, model: detectedModel, token_count } = parseStreamJson(rawOutput);
+  const parsed = parseStreamJson(rawOutput);
+  const { formatted, duration_ms, model: detectedModel, token_count } = parsed;
+  const status = hasUnsupportedModelError(rawOutput) ? "failure" : parsed.status;
   
   // Use override model if provided, otherwise use detected model
   const model = modelOverride || detectedModel || "unknown";
@@ -514,9 +541,10 @@ async function saveBuildLog(outputPath: string, options: SaveBuildLogOptions = {
   
   const generatedPath = getGeneratedPath(model, kind);
   
-  // Check if build HTML exists
+  // Check if build HTML exists. A run without an HTML artifact must fail closed;
+  // otherwise unsupported model output can be published as a blank selectable build.
   const hasGeneratedHtml = existsSync(generatedPath);
-  const finalStatus = hasGeneratedHtml ? "success" : status;
+  const finalStatus = hasGeneratedHtml && status === "success" ? "success" : "failure";
 
   // Load fetch summary and prepend to output
   const fetchSummary = await loadAndFormatFetchSummary();
@@ -579,14 +607,6 @@ async function saveBuildLog(outputPath: string, options: SaveBuildLogOptions = {
   if (finalStatus === "success") {
     const manifest = await loadManifest(config);
 
-    // Keep manifest models aligned with active CI models while preserving historical ones.
-    const existingModels = Array.isArray(manifest.models) ? manifest.models : [];
-    const mergedModels = [...config.defaultModels, ...existingModels, model];
-    manifest.models = Array.from(new Set(mergedModels));
-    if (!manifest.default_model || !manifest.models.includes(manifest.default_model)) {
-      manifest.default_model = config.defaultModel;
-    }
-    
     // Find or create the date entry
     let dateEntry = manifest.dates.find(d => d.date === dateStr);
     if (!dateEntry) {
@@ -645,6 +665,9 @@ async function saveBuildLog(outputPath: string, options: SaveBuildLogOptions = {
     } else {
       batch.builds.push(buildInfo);
     }
+
+    // Only models with published HTML should be advertised as selectable.
+    normalizeManifestModels(manifest, config.defaultModel);
     
     // Update latest date and timestamp
     manifest.latest_date = dateStr;
