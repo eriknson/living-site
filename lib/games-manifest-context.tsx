@@ -14,7 +14,7 @@ import { getModelSlug, getModelIdFromSlug, getBuildForModel, getBatch } from "./
 
 const DEFAULT_MODEL_ID = "composer-2-fast";
 
-interface ManifestContextValue {
+interface GamesManifestContextValue {
   manifest: Manifest | null;
   currentModel: string | null;
   currentDate: string | null;
@@ -26,43 +26,38 @@ interface ManifestContextValue {
   setTimestamp: (timestamp: string) => void;
 }
 
-const ManifestContext = createContext<ManifestContextValue | null>(null);
+const GamesManifestContext = createContext<GamesManifestContextValue | null>(null);
 
-export function ManifestProvider({ children }: { children: ReactNode }) {
+export function GamesManifestProvider({ children }: { children: ReactNode }) {
   const router = useRouter();
   const searchParams = useSearchParams();
   const [manifest, setManifest] = useState<Manifest | null>(null);
   const [isLoading, setIsLoading] = useState(true);
 
-  // Get model, date, and timestamp from URL params
   const modelSlug = searchParams.get("model");
   const dateFromUrl = searchParams.get("date");
   const timestampFromUrl = searchParams.get("t");
   const modelIdFromUrl = modelSlug ? getModelIdFromSlug(modelSlug) : null;
 
-  // Current values: from URL if valid, otherwise defaults
   const currentModel = modelIdFromUrl || DEFAULT_MODEL_ID;
   const currentDate = dateFromUrl || manifest?.latest_date || null;
   const currentTimestamp = timestampFromUrl || manifest?.latest_timestamp || null;
 
-  // Redirect to show model param if none specified
   useEffect(() => {
     if (manifest && !modelSlug) {
       const defaultSlug = getModelSlug(DEFAULT_MODEL_ID);
       const params = new URLSearchParams(searchParams.toString());
       params.set("model", defaultSlug);
-      router.replace(`/agent?${params.toString()}`, { scroll: false });
+      router.replace(`/play?${params.toString()}`, { scroll: false });
     }
   }, [manifest, modelSlug, router, searchParams]);
 
-  // Get current build path using model, date, and timestamp
   const currentBuildPath = manifest && currentModel && currentDate
     ? getBuildForModel(manifest, currentModel, currentDate, currentTimestamp || undefined)?.path || null
     : null;
 
-  // Fetch manifest once on mount
   useEffect(() => {
-    fetch("/builds/manifest.json")
+    fetch("/games/manifest.json")
       .then((res) => res.json())
       .then((data: Manifest) => {
         setManifest(data);
@@ -73,7 +68,6 @@ export function ManifestProvider({ children }: { children: ReactNode }) {
       });
   }, []);
 
-  // Update URL params helper
   const updateParams = useCallback(
     (updates: Record<string, string | null>) => {
       const params = new URLSearchParams(searchParams.toString());
@@ -87,30 +81,22 @@ export function ManifestProvider({ children }: { children: ReactNode }) {
       }
 
       const queryString = params.toString();
-      router.replace(queryString ? `/agent?${queryString}` : "/agent", { scroll: false });
+      router.replace(queryString ? `/play?${queryString}` : "/play", { scroll: false });
     },
     [router, searchParams]
   );
 
-  // Handle model change - stays within the current batch
   const setModel = useCallback(
     (modelId: string) => {
       if (!manifest) return;
-
-      // Always show model in URL
-      updateParams({
-        model: getModelSlug(modelId),
-      });
+      updateParams({ model: getModelSlug(modelId) });
     },
     [manifest, updateParams]
   );
 
-  // Handle date change - resets to latest batch for that date
   const setDate = useCallback(
     (date: string) => {
       if (!manifest) return;
-
-      // When changing date, clear timestamp to get the latest batch for that date
       updateParams({
         date: date === manifest.latest_date ? null : date,
         t: null,
@@ -119,15 +105,11 @@ export function ManifestProvider({ children }: { children: ReactNode }) {
     [manifest, updateParams]
   );
 
-  // Handle timestamp (batch) change
   const setTimestamp = useCallback(
     (timestamp: string) => {
       if (!manifest) return;
-
-      // Check if this is the latest timestamp for the current date
       const batch = getBatch(manifest, currentDate || undefined);
       const isLatestBatch = batch?.timestamp === timestamp;
-
       updateParams({
         t: isLatestBatch && currentDate === manifest.latest_date ? null : timestamp,
       });
@@ -136,7 +118,7 @@ export function ManifestProvider({ children }: { children: ReactNode }) {
   );
 
   return (
-    <ManifestContext.Provider
+    <GamesManifestContext.Provider
       value={{
         manifest,
         currentModel,
@@ -150,14 +132,14 @@ export function ManifestProvider({ children }: { children: ReactNode }) {
       }}
     >
       {children}
-    </ManifestContext.Provider>
+    </GamesManifestContext.Provider>
   );
 }
 
-export function useManifest() {
-  const context = useContext(ManifestContext);
+export function useGamesManifest() {
+  const context = useContext(GamesManifestContext);
   if (!context) {
-    throw new Error("useManifest must be used within ManifestProvider");
+    throw new Error("useGamesManifest must be used within GamesManifestProvider");
   }
   return context;
 }

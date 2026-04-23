@@ -20,6 +20,7 @@ import {
   fetchWeatherData,
   type WeatherData,
 } from "./fetchers/weather.js";
+import { fetchNews, type NewsData } from "./fetchers/news.js";
 import { saveSnapshot, getRecentSnapshots, type Snapshot } from "./history.js";
 import { computeGitHubBaseline } from "./baselines/github.js";
 import { computeSpotifyBaseline } from "./baselines/spotify.js";
@@ -293,6 +294,28 @@ export async function aggregate(): Promise<AggregatedData> {
     console.error("  Failed to fetch weather data:", (err as Error).message);
     fetchResults.push({
       name: "Weather",
+      status: "failure",
+      error: (err as Error).message,
+    });
+  }
+
+  // =========================================================================
+  // News (public RSS, no API key)
+  // =========================================================================
+  console.log("\nFetching news headlines...");
+  try {
+    const news: NewsData = await fetchNews();
+    await writeFile("data/news.json", JSON.stringify(news, null, 2));
+    console.log(`  Saved ${news.items.length} items to data/news.json`);
+    fetchResults.push({
+      name: "News",
+      status: "success",
+      summary: `${news.items.length} headlines from RSS feeds`,
+    });
+  } catch (err) {
+    console.error("  Failed to fetch news:", (err as Error).message);
+    fetchResults.push({
+      name: "News",
       status: "failure",
       error: (err as Error).message,
     });

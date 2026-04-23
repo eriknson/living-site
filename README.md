@@ -7,17 +7,18 @@ Built with [Cursor CLI](https://cursor.com/docs/cli) running in GitHub Actions.
 ## How It Works
 
 ```
-┌─────────────┐     ┌─────────────┐     ┌─────────────┐     ┌─────────────┐     ┌─────────────┐
-│   Fetch     │ ──▶ │  Aggregate  │ ──▶ │   Curator   │ ──▶ │  Generate   │ ──▶ │   Deploy    │
-│  Activity   │     │   Data      │     │   Agent     │     │   Agents    │     │   Vercel    │
-└─────────────┘     └─────────────┘     └─────────────┘     └─────────────┘     └─────────────┘
+┌─────────────┐     ┌─────────────┐     ┌─────────────┐     ┌─────────────────┐     ┌─────────────┐
+│   Fetch     │ ──▶ │  Aggregate  │ ──▶ │   Curator   │ ──▶ │  Generate Sites │ ──▶ │   Deploy    │
+│  Activity   │     │   Data      │     │   Agent     │ ──▶ │  Generate Games │ ──▶ │   Vercel    │
+└─────────────┘     └─────────────┘     └─────────────┘     └─────────────────┘     └─────────────┘
 ```
 
 1. **Fetch** — Pull activity from GitHub, Spotify, Typefully, Weather APIs
 2. **Aggregate** — Combine raw data and compute historical baselines
 3. **Curator** — AI agent synthesizes data into a creative brief
-4. **Generate** — 4 models build variations in parallel (Composer, Opus, GPT-5.1, Gemini)
-5. **Deploy** — HTML committed to main, Vercel auto-deploys
+4. **Generate Sites** — 4 models build site variations in parallel
+5. **Generate Games** — Same 4 models each build a unique game in parallel
+6. **Deploy** — HTML committed to main, Vercel auto-deploys
 
 Runs daily at 6am UTC via GitHub Actions.
 
@@ -26,18 +27,25 @@ Runs daily at 6am UTC via GitHub Actions.
 ```
 ├── app/                      # Next.js app
 │   ├── page.tsx              # Manual home page (eriks.design)
-│   ├── agent/                # /agent - daily generated versions
+│   ├── agent/                # /agent - daily generated site versions
+│   ├── play/                 # /play - daily generated games
 │   ├── new/                  # /new - on-demand generation
 │   └── api/                  # Build triggers, status endpoints
 │
 ├── infra/
 │   ├── prompts/
-│   │   ├── system.md         # Design guidelines for generators
+│   │   ├── system.md         # Design guidelines for site generators
+│   │   ├── games-system.md   # Design guidelines for game generators
+│   │   ├── polish.md         # Polish agent for site builds
+│   │   ├── games-polish.md   # Polish agent for game builds
 │   │   └── curator.md        # Instructions for curator agent
+│   ├── eval/
+│   │   ├── validate-build.ts # Site build validator
+│   │   └── validate-game.ts  # Game build validator
 │   ├── aggregator.ts         # Data collection + baseline computation
 │   ├── fetchers/             # API clients (GitHub, Spotify, etc.)
 │   ├── baselines/            # Historical pattern analysis
-│   └── save-build-log.ts     # Build logging + manifest updates
+│   └── save-build-log.ts     # Build logging + manifest updates (--kind site|game)
 │
 ├── data/
 │   ├── identity.json         # Name, links, socials
@@ -48,15 +56,25 @@ Runs daily at 6am UTC via GitHub Actions.
 │   └── history/              # Weekly snapshots per source
 │
 ├── generated/                # Agent-written HTML (one per model)
-│   ├── composer-1.html
-│   ├── claude-4.5-opus-high-thinking.html
-│   ├── gpt-5.1-codex.html
-│   └── gemini-3-pro.html
+│   ├── composer-2-fast.html  # Site builds
+│   ├── gpt-5.5-extra-high.html
+│   ├── kimi-k2.6.html
+│   ├── composer-matterhorn-training.html
+│   ├── google-gemma-4-31b-it.html
+│   ├── claude-nougat-eap-thinking-max.html
+│   └── games/               # Game builds
+│       ├── composer-2-fast.html
+│       └── ...
 │
-├── public/builds/            # Archived builds by date
-│   ├── manifest.json         # Index of all builds
+├── public/builds/            # Archived site builds by date
+│   ├── manifest.json         # Index of all site builds
 │   ├── history.json          # Agent logs
 │   └── YYYY-MM-DD/           # HTML files per model per day
+│
+├── public/games/             # Archived game builds by date
+│   ├── manifest.json         # Index of all game builds
+│   ├── history.json          # Agent logs
+│   └── YYYY-MM-DD/           # Game HTML files per model per day
 │
 └── lib/                      # Shared utilities and types
 ```
@@ -100,7 +118,8 @@ npm run curator          # Run curator agent locally
 ## Routes
 
 - `/` — Manual home page
-- `/agent` — View daily AI-generated versions
+- `/agent` — View daily AI-generated site versions
+- `/play` — View daily AI-generated games
 - `/new` — Generate a fresh build on-demand via Cloud Agents
 - `/builds` — Build history and logs
 

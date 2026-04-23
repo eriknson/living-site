@@ -6,7 +6,7 @@ import { formatDuration, formatRelativeTime, getBuiltAt, getBuildForModel, type 
 import { FadeShimmerText } from "./fade-shimmer-text";
 import { useIsMobile } from "@/lib/use-media-query";
 
-type RouteType = "/" | "/agent" | "/new" | "/builds" | "/posts";
+type RouteType = "/" | "/agent" | "/new" | "/builds" | "/posts" | "/play";
 
 interface ManualVersionData {
   lastUpdated: string;
@@ -27,6 +27,7 @@ export function BuildTime({ currentRoute, manifest, currentModel, currentDate, c
 
   const isHome = currentRoute === "/";
   const isAgent = currentRoute === "/agent";
+  const isPlay = currentRoute === "/play";
 
   // Fetch manual version date for Erik's version
   useEffect(() => {
@@ -56,9 +57,9 @@ export function BuildTime({ currentRoute, manifest, currentModel, currentDate, c
     return () => clearInterval(interval);
   }, [isHome, manualVersionDate]);
 
-  // Update relative time for agent version
+  // Update relative time for agent/play version
   useEffect(() => {
-    if (!isAgent || !manifest) return;
+    if ((!isAgent && !isPlay) || !manifest) return;
 
     const builtAt = getBuiltAt(manifest, currentDate ?? undefined, currentTimestamp ?? undefined);
     if (!builtAt) return;
@@ -70,9 +71,8 @@ export function BuildTime({ currentRoute, manifest, currentModel, currentDate, c
     updateTime();
     const interval = setInterval(updateTime, 60000);
     return () => clearInterval(interval);
-  }, [isAgent, manifest, currentDate, currentTimestamp]);
+  }, [isAgent, isPlay, manifest, currentDate, currentTimestamp]);
 
-  // Don't render on /new page
   if (currentRoute === "/new") return null;
 
   if (!relativeTime) return null;
@@ -97,8 +97,6 @@ export function BuildTime({ currentRoute, manifest, currentModel, currentDate, c
     );
   }
 
-  // Agent page: link to builds with fade-shimmer animation
-  // Mobile: just show build duration; Desktop: show relative time + duration
   const agentDisplayText = isMobile
     ? (durationStr ? `Built in ${durationStr}` : `Built ${relativeTime}`)
     : (durationStr ? `Built ${relativeTime} in ${durationStr}` : `Built ${relativeTime}`);

@@ -37,9 +37,12 @@ function useSystemTheme(): "light" | "dark" {
 }
 
 const MODEL_FAMILIES: [string, string[]][] = [
-  ["Composer", ["composer-2", "composer-1.5", "composer-1"]],
+  ["Composer", ["composer-2-fast", "composer-matterhorn-training", "composer-1.5", "composer-1"]],
+  ["GPT", ["gpt-5.5-extra-high", "gpt-5.3-codex-xhigh", "gpt-5.1-codex", "gpt-5.1-codex-max-low-fast"]],
+  ["Kimi", ["kimi-k2.6"]],
+  ["Gemma", ["google-gemma-4-31b-it"]],
+  ["Nougat", ["claude-nougat-eap-thinking-max"]],
   ["Opus", ["opus-4.6-thinking", "claude-4.6-opus-max-thinking", "claude-4.5-opus-high-thinking"]],
-  ["GPT", ["gpt-5.4-high-fast", "gpt-5.3-codex-xhigh", "gpt-5.1-codex", "gpt-5.1-codex-max-low-fast"]],
   ["Gemini", ["gemini-3.1-pro", "gemini-3-pro"]],
 ];
 

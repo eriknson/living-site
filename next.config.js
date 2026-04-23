@@ -83,6 +83,40 @@ const nextConfig = {
       },
     ];
   },
+  async headers() {
+    return [
+      {
+        source: '/games/:path*',
+        headers: [
+          {
+            key: 'Content-Security-Policy',
+            value: [
+              "sandbox allow-scripts allow-pointer-lock allow-forms allow-modals allow-presentation",
+              "default-src 'self' https://unpkg.com https://esm.sh https://cdn.jsdelivr.net",
+              "script-src 'self' 'unsafe-inline' 'unsafe-eval' https://unpkg.com https://esm.sh https://cdn.jsdelivr.net",
+              "style-src 'self' 'unsafe-inline'",
+              "img-src 'self' data: blob:",
+              "font-src 'self' data:",
+              "media-src 'self' data: blob:",
+              "worker-src 'self' blob:",
+              "connect-src 'none'",
+              "frame-ancestors 'self'",
+              "base-uri 'none'",
+              "form-action 'none'",
+            ].join('; '),
+          },
+          {
+            key: 'Referrer-Policy',
+            value: 'no-referrer',
+          },
+          {
+            key: 'X-Content-Type-Options',
+            value: 'nosniff',
+          },
+        ],
+      },
+    ];
+  },
   // Exclude infra folder from Next.js compilation
   webpack: (config) => {
     config.watchOptions = {

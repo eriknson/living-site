@@ -50,7 +50,7 @@ function BackButton() {
   );
 }
 
-type RouteType = "/" | "/agent" | "/new" | "/builds" | "/posts";
+type RouteType = "/" | "/agent" | "/new" | "/builds" | "/posts" | "/play";
 
 interface VersionSelectorProps {
   manifest?: Manifest | null;
@@ -75,11 +75,12 @@ export function VersionSelector({
   // Use provided manifest or fetch it
   const manifest = providedManifest ?? fetchedManifest;
 
-  // Fetch manifest if not provided (for home page)
+  // Fetch manifest if not provided (for home page or when no provider)
   useEffect(() => {
     if (providedManifest) return;
 
-    fetch("/builds/manifest.json")
+    const manifestUrl = currentRoute === "/play" ? "/games/manifest.json" : "/builds/manifest.json";
+    fetch(manifestUrl)
       .then((res) => {
         if (!res.ok) throw new Error("Not found");
         return res.json();
@@ -87,10 +88,8 @@ export function VersionSelector({
       .then((data: Manifest) => {
         setFetchedManifest(data);
       })
-      .catch(() => {
-        // Silently fail - models just won't show
-      });
-  }, [providedManifest]);
+      .catch(() => {});
+  }, [providedManifest, currentRoute]);
 
   // Prefetch agent build HTML files from home page for faster navigation
   useEffect(() => {
@@ -123,23 +122,22 @@ export function VersionSelector({
 
   const isHome = currentRoute === "/";
   const isAgent = currentRoute === "/agent";
+  const isPlay = currentRoute === "/play";
   const isNew = currentRoute === "/new";
   const isBuilds = currentRoute === "/builds";
 
-  // For /new, /builds, and /posts pages, show a simple back button
   if (isNew || isBuilds || currentRoute === "/posts") {
     return <BackButton />;
   }
 
-  // Determine what to show as the current selection
   const getDisplayName = () => {
     if (isHome) return "Erik";
-    if (isAgent && currentModel) {
-      if (currentModel === "gpt-5.3-codex-xhigh") {
+    if ((isAgent || isPlay) && currentModel) {
+      if (currentModel === "gpt-5.5-extra-high") {
         return (
           <>
-            <span className="sm:hidden">GPT-5.3 Codex</span>
-            <span className="hidden sm:inline">GPT-5.3 Codex Extra High</span>
+            <span className="sm:hidden">GPT-5.5</span>
+            <span className="hidden sm:inline">GPT-5.5 1M Extra High</span>
           </>
         );
       }
@@ -156,10 +154,9 @@ export function VersionSelector({
     return "Select version";
   };
 
-  // Determine current value for the select
   const getCurrentValue = () => {
     if (isHome) return "erik";
-    if (isAgent && currentModel) return currentModel;
+    if ((isAgent || isPlay) && currentModel) return currentModel;
     return "erik";
   };
 
@@ -173,13 +170,10 @@ export function VersionSelector({
       track("generate_new_clicked", { from: currentRoute });
       router.push("/new");
     } else {
-      // It's a model
       track("version_switched", { version: value, from: currentRoute });
-      if (isAgent && onModelChange) {
-        // Already on agent page, just switch model
+      if ((isAgent || isPlay) && onModelChange) {
         onModelChange(value);
       } else {
-        // Navigate to agent page with model
         router.push(`/agent?model=${value}`);
       }
     }

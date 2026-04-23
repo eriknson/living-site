@@ -1,9 +1,16 @@
+export interface GameMeta {
+  title?: string;
+  renderer?: "canvas2d" | "webgl" | "dom" | "svg";
+  has_audio?: boolean;
+}
+
 export interface Build {
   model: string;
   status: string;
   duration_ms?: number;
   line_count?: number;
   path: string;
+  game_meta?: GameMeta;
 }
 
 export interface Batch {
@@ -29,11 +36,17 @@ export interface Manifest {
 export const modelDisplayNames: Record<string, string> = {
   "composer-2": "Composer 2",
   "composer-1.5": "Composer 1.5",
+  "composer-2-fast": "Composer 2 Fast",
   "claude-4.6-opus-max-thinking": "Opus 4.6 Thinking",
   "opus-4.6-thinking": "Opus 4.6 Thinking",
   "gpt-5.4-high-fast": "GPT-5.4 High Fast",
   "gpt-5.3-codex-xhigh": "GPT-5.3 Codex Extra High",
+  "gpt-5.5-extra-high": "GPT-5.5 1M Extra High",
   "gemini-3.1-pro": "Gemini 3.1 Pro",
+  "kimi-k2.6": "Kimi K2.6",
+  "composer-matterhorn-training": "Composer Matterhorn Training",
+  "google-gemma-4-31b-it": "Gemma 4 31B IT",
+  "claude-nougat-eap-thinking-max": "Nougat EAP Max Thinking",
   "composer-1": "Composer 1",
   "claude-4.5-opus-high-thinking": "Opus 4.5 Thinking",
   "gpt-5.1-codex": "GPT-5.1 Codex",
@@ -45,11 +58,17 @@ export const modelDisplayNames: Record<string, string> = {
 export const modelSlugs: Record<string, string> = {
   "composer-2": "composer-2",
   "composer-1.5": "composer-1.5",
+  "composer-2-fast": "composer-2-fast",
   "claude-4.6-opus-max-thinking": "opus-4.6-max",
   "opus-4.6-thinking": "opus-4.6-thinking",
   "gpt-5.4-high-fast": "gpt-5.4-high-fast",
   "gpt-5.3-codex-xhigh": "gpt-5.3-codex-xhigh",
+  "gpt-5.5-extra-high": "gpt-5.5-extra-high",
   "gemini-3.1-pro": "gemini-3.1-pro",
+  "kimi-k2.6": "kimi-k2.6",
+  "composer-matterhorn-training": "composer-matterhorn-training",
+  "google-gemma-4-31b-it": "google-gemma-4-31b-it",
+  "claude-nougat-eap-thinking-max": "claude-nougat-eap-thinking-max",
   "composer-1": "composer-1",
   "claude-4.5-opus-high-thinking": "opus-4.5",
   "gpt-5.1-codex": "gpt-5.1-codex",
