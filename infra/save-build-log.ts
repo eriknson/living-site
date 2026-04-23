@@ -236,7 +236,7 @@ function parseStreamJson(rawOutput: string): {
 } {
   const lines = rawOutput.trim().split("\n");
   const parts: string[] = [];
-  let status: "success" | "failure" = "success";
+  let status: "success" | "failure" = "failure";
   let duration_ms: number | undefined;
   let model: string | undefined;
   let token_count: number | undefined;
@@ -320,6 +320,7 @@ function parseStreamJson(rawOutput: string): {
               parts.push(`Error: ${event.result}`);
             }
           } else {
+            status = "success";
             parts.push(`Status: SUCCESS`);
           }
           break;
