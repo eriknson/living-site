@@ -1,0 +1,213 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <title>Dot Catcher</title>
+  <style>
+    :root {
+      --bg: #faf8f5;
+      --text: #1a1a1a;
+      --accent: #2563eb;
+      --muted: rgba(0,0,0,0.4);
+      --dot: #e11d48;
+      --arena-bg: #f0ece6;
+    }
+    @media (prefers-color-scheme: dark) {
+      :root {
+        --bg: #0a0a0a;
+        --text: #e5e5e5;
+        --accent: #60a5fa;
+        --muted: rgba(255,255,255,0.4);
+        --dot: #fb7185;
+        --arena-bg: #1a1a1a;
+      }
+    }
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    body {
+      font-family: ui-monospace, 'SFMono-Regular', Menlo, monospace;
+      background: var(--bg);
+      color: var(--text);
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      height: 100dvh;
+      overflow: hidden;
+      user-select: none;
+      -webkit-user-select: none;
+    }
+    .hud {
+      display: flex;
+      justify-content: space-between;
+      width: min(90vw, 400px);
+      padding: 12px 0;
+      font-size: 14px;
+      color: var(--muted);
+    }
+    .score { font-variant-numeric: tabular-nums; }
+    canvas {
+      border-radius: 8px;
+      background: var(--arena-bg);
+      touch-action: none;
+    }
+    .overlay {
+      position: absolute;
+      inset: 0;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      background: rgba(0,0,0,0.5);
+      backdrop-filter: blur(4px);
+      -webkit-backdrop-filter: blur(4px);
+      opacity: 0;
+      pointer-events: none;
+      transition: opacity 0.2s;
+    }
+    .overlay.visible { opacity: 1; pointer-events: auto; }
+    .overlay h2 { color: #fff; font-size: 24px; margin-bottom: 8px; font-weight: 600; }
+    .overlay p { color: rgba(255,255,255,0.7); font-size: 14px; margin-bottom: 24px; }
+    button {
+      font-family: inherit;
+      font-size: 14px;
+      padding: 10px 28px;
+      border: 1px solid rgba(255,255,255,0.2);
+      background: rgba(255,255,255,0.1);
+      color: #fff;
+      border-radius: 6px;
+      cursor: pointer;
+      transition: background 0.15s;
+    }
+    button:hover, button:active { background: rgba(255,255,255,0.2); }
+  </style>
+</head>
+<body>
+  <div class="hud">
+    <span class="score" id="score">Score: 0</span>
+    <span id="timer">Time: 30s</span>
+  </div>
+  <div style="position: relative;">
+    <canvas id="arena" width="360" height="480"></canvas>
+    <div class="overlay" id="startOverlay">
+      <h2>Dot Catcher</h2>
+      <p>Tap the dots before they vanish</p>
+      <button id="startBtn" aria-label="Start game">Start</button>
+    </div>
+    <div class="overlay" id="endOverlay">
+      <h2 id="finalScore">Score: 0</h2>
+      <p id="endMsg">Nice work</p>
+      <button id="restartBtn" aria-label="Restart game">Play Again</button>
+    </div>
+  </div>
+  <script>
+    const canvas = document.getElementById('arena');
+    const ctx = canvas.getContext('2d');
+    const scoreEl = document.getElementById('score');
+    const timerEl = document.getElementById('timer');
+    const startOverlay = document.getElementById('startOverlay');
+    const endOverlay = document.getElementById('endOverlay');
+    const finalScoreEl = document.getElementById('finalScore');
+    const endMsgEl = document.getElementById('endMsg');
+
+    let score = 0, timeLeft = 30, dots = [], animId = null, timerInterval = null, running = false;
+    const DOT_R = 18, SPAWN_INTERVAL = 800, DOT_LIFETIME = 1500;
+    const dpr = window.devicePixelRatio || 1;
+
+    function resize() {
+      const w = Math.min(window.innerWidth * 0.9, 400);
+      const h = Math.min(window.innerHeight * 0.6, 480);
+      canvas.style.width = w + 'px';
+      canvas.style.height = h + 'px';
+      canvas.width = w * dpr;
+      canvas.height = h * dpr;
+      ctx.scale(dpr, dpr);
+    }
+    resize();
+    window.addEventListener('resize', resize);
+
+    function spawnDot() {
+      const w = parseFloat(canvas.style.width);
+      const h = parseFloat(canvas.style.height);
+      dots.push({
+        x: DOT_R + Math.random() * (w - DOT_R * 2),
+        y: DOT_R + Math.random() * (h - DOT_R * 2),
+        born: Date.now(),
+        r: DOT_R
+      });
+    }
+
+    function draw() {
+      const w = parseFloat(canvas.style.width);
+      const h = parseFloat(canvas.style.height);
+      const cs = getComputedStyle(document.documentElement);
+      ctx.clearRect(0, 0, w, h);
+      const now = Date.now();
+      const dotColor = cs.getPropertyValue('--dot').trim();
+
+      dots = dots.filter(d => now - d.born < DOT_LIFETIME);
+      dots.forEach(d => {
+        const age = (now - d.born) / DOT_LIFETIME;
+        const scale = age < 0.1 ? age / 0.1 : age > 0.7 ? 1 - (age - 0.7) / 0.3 : 1;
+        ctx.globalAlpha = Math.max(0, scale);
+        ctx.beginPath();
+        ctx.arc(d.x, d.y, d.r * scale, 0, Math.PI * 2);
+        ctx.fillStyle = dotColor;
+        ctx.fill();
+      });
+      ctx.globalAlpha = 1;
+      if (running) animId = requestAnimationFrame(draw);
+    }
+
+    function hitTest(px, py) {
+      const rect = canvas.getBoundingClientRect();
+      const x = px - rect.left;
+      const y = py - rect.top;
+      for (let i = dots.length - 1; i >= 0; i--) {
+        const d = dots[i];
+        const dx = x - d.x, dy = y - d.y;
+        if (dx * dx + dy * dy < d.r * d.r) {
+          dots.splice(i, 1);
+          score++;
+          scoreEl.textContent = 'Score: ' + score;
+          return;
+        }
+      }
+    }
+
+    canvas.addEventListener('pointerdown', e => { e.preventDefault(); if (running) hitTest(e.clientX, e.clientY); });
+    canvas.addEventListener('touchstart', e => { e.preventDefault(); if (running && e.touches[0]) hitTest(e.touches[0].clientX, e.touches[0].clientY); }, { passive: false });
+
+    function endGame() {
+      running = false;
+      cancelAnimationFrame(animId);
+      clearInterval(timerInterval);
+      finalScoreEl.textContent = 'Score: ' + score;
+      endMsgEl.textContent = score > 20 ? 'Incredible!' : score > 10 ? 'Nice work' : 'Keep trying';
+      endOverlay.classList.add('visible');
+    }
+
+    function startGame() {
+      score = 0; timeLeft = 30; dots = []; running = true;
+      scoreEl.textContent = 'Score: 0';
+      timerEl.textContent = 'Time: 30s';
+      startOverlay.classList.remove('visible');
+      endOverlay.classList.remove('visible');
+
+      const spawnId = setInterval(() => { if (running) spawnDot(); else clearInterval(spawnId); }, SPAWN_INTERVAL);
+      timerInterval = setInterval(() => {
+        timeLeft--;
+        timerEl.textContent = 'Time: ' + timeLeft + 's';
+        if (timeLeft <= 0) endGame();
+      }, 1000);
+
+      spawnDot();
+      draw();
+    }
+
+    startOverlay.classList.add('visible');
+    document.getElementById('startBtn').addEventListener('click', startGame);
+    document.getElementById('restartBtn').addEventListener('click', startGame);
+  </script>
+</body>
+</html>

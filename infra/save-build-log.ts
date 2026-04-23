@@ -7,19 +7,57 @@
 import { readFile, writeFile, mkdir } from "fs/promises";
 import { existsSync } from "fs";
 
-const HISTORY_PATH = "public/builds/history.json";
-const MANIFEST_PATH = "public/builds/manifest.json";
-const FETCH_SUMMARY_PATH = "data/fetch-summary.json";
-const SYSTEM_PROMPT_PATH = "infra/prompts/system.md";
-const MAX_BUILDS = 50;
-const MAX_DATES = 14;
-const DEFAULT_MODEL = "opus-4.6-thinking";
-const DEFAULT_MODELS = [
+type BuildKind = "site" | "game";
+
+const SITE_DEFAULT_MODEL = "opus-4.6-thinking";
+const SITE_DEFAULT_MODELS = [
   "composer-2",
   "opus-4.6-thinking",
   "gpt-5.4-high-fast",
   "gemini-3.1-pro",
 ];
+const GAME_DEFAULT_MODEL = "composer-2-fast";
+const GAME_DEFAULT_MODELS = [
+  "composer-2-fast",
+  "gpt-5.5-extra-high",
+  "kimi-k2.6",
+  "composer-matterhorn-training",
+  "google-gemma-4-31b-it",
+  "claude-nougat-eap-thinking-max",
+];
+
+const KIND_CONFIG: Record<BuildKind, {
+  historyPath: string;
+  manifestPath: string;
+  systemPromptPath: string;
+  generatedDir: string;
+  publicDir: string;
+  defaultModel: string;
+  defaultModels: string[];
+}> = {
+  site: {
+    historyPath: "public/builds/history.json",
+    manifestPath: "public/builds/manifest.json",
+    systemPromptPath: "infra/prompts/system.md",
+    generatedDir: "generated",
+    publicDir: "public/builds",
+    defaultModel: SITE_DEFAULT_MODEL,
+    defaultModels: SITE_DEFAULT_MODELS,
+  },
+  game: {
+    historyPath: "public/games/history.json",
+    manifestPath: "public/games/manifest.json",
+    systemPromptPath: "infra/prompts/games-system.md",
+    generatedDir: "generated/games",
+    publicDir: "public/games",
+    defaultModel: GAME_DEFAULT_MODEL,
+    defaultModels: GAME_DEFAULT_MODELS,
+  },
+};
+
+const FETCH_SUMMARY_PATH = "data/fetch-summary.json";
+const MAX_BUILDS = 50;
+const MAX_DATES = 14;
 
 function injectScrollGuard(html: string): string {
   // Idempotent: don't inject twice.
@@ -64,9 +102,8 @@ function injectScrollGuard(html: string): string {
   return guardCss + html;
 }
 
-// Each model has its own sandbox file
-function getGeneratedPath(model: string): string {
-  return `generated/${model}.html`;
+function getGeneratedPath(model: string, kind: BuildKind = "site"): string {
+  return `${KIND_CONFIG[kind].generatedDir}/${model}.html`;
 }
 
 import type { FetchSourceResult, FetchSummary, StreamEvent } from "../lib/shared-types.js";
@@ -88,12 +125,45 @@ interface BuildHistory {
   builds: BuildEntry[];
 }
 
+interface GameMeta {
+  title?: string;
+  renderer?: "canvas2d" | "webgl" | "dom" | "svg";
+  has_audio?: boolean;
+}
+
+function extractGameMeta(html: string): GameMeta | undefined {
+  const lower = html.toLowerCase();
+
+  const titleMatch = html.match(/<title[^>]*>([^<]+)<\/title>/i);
+  const title = titleMatch?.[1]?.trim() || undefined;
+
+  let renderer: GameMeta["renderer"] = undefined;
+  const hasWebGL = lower.includes("webglrenderer") ||
+    lower.includes("getcontext('webgl") ||
+    lower.includes('getcontext("webgl');
+  if (hasWebGL) {
+    renderer = "webgl";
+  } else if (lower.includes("<canvas")) {
+    renderer = "canvas2d";
+  } else if (lower.includes("<svg")) {
+    renderer = "svg";
+  } else {
+    renderer = "dom";
+  }
+
+  const has_audio = lower.includes("audiocontext") ||
+    (lower.includes("<audio") && lower.includes("play()"));
+
+  return { title, renderer, has_audio };
+}
+
 interface ManifestBuild {
   model: string;
   status: "success" | "failure";
   duration_ms?: number;
   line_count?: number;
   path: string;
+  game_meta?: GameMeta;
 }
 
 interface ManifestBatch {
@@ -282,14 +352,13 @@ function parseStreamJson(rawOutput: string): {
   };
 }
 
-async function loadHistory(): Promise<BuildHistory> {
-  if (!existsSync(HISTORY_PATH)) {
+async function loadHistory(historyPath: string): Promise<BuildHistory> {
+  if (!existsSync(historyPath)) {
     return { builds: [] };
   }
   try {
-    const content = await readFile(HISTORY_PATH, "utf-8");
+    const content = await readFile(historyPath, "utf-8");
     const parsed = JSON.parse(content);
-    // Handle both { builds: [] } and plain [] formats
     if (Array.isArray(parsed)) {
       return { builds: parsed };
     }
@@ -299,23 +368,23 @@ async function loadHistory(): Promise<BuildHistory> {
   }
 }
 
-async function loadManifest(): Promise<Manifest> {
-  if (!existsSync(MANIFEST_PATH)) {
+async function loadManifest(config: typeof KIND_CONFIG[BuildKind]): Promise<Manifest> {
+  if (!existsSync(config.manifestPath)) {
     return {
-      default_model: DEFAULT_MODEL,
-      models: DEFAULT_MODELS,
+      default_model: config.defaultModel,
+      models: config.defaultModels,
       latest_date: null,
       latest_timestamp: null,
       dates: [],
     };
   }
   try {
-    const content = await readFile(MANIFEST_PATH, "utf-8");
+    const content = await readFile(config.manifestPath, "utf-8");
     return JSON.parse(content);
   } catch {
     return {
-      default_model: DEFAULT_MODEL,
-      models: DEFAULT_MODELS,
+      default_model: config.defaultModel,
+      models: config.defaultModels,
       latest_date: null,
       latest_timestamp: null,
       dates: [],
@@ -323,12 +392,12 @@ async function loadManifest(): Promise<Manifest> {
   }
 }
 
-async function loadSystemPrompt(): Promise<string | null> {
-  if (!existsSync(SYSTEM_PROMPT_PATH)) {
+async function loadSystemPrompt(promptPath: string): Promise<string | null> {
+  if (!existsSync(promptPath)) {
     return null;
   }
   try {
-    return await readFile(SYSTEM_PROMPT_PATH, "utf-8");
+    return await readFile(promptPath, "utf-8");
   } catch {
     return null;
   }
@@ -374,6 +443,7 @@ interface ParsedArgs {
   batchTimestamp: string | null;
   skipHtmlCopy: boolean;
   githubRunUrl: string | null;
+  kind: BuildKind;
 }
 
 function parseArgs(args: string[]): ParsedArgs {
@@ -383,6 +453,7 @@ function parseArgs(args: string[]): ParsedArgs {
   let batchTimestamp: string | null = null;
   let skipHtmlCopy = false;
   let githubRunUrl: string | null = null;
+  let kind: BuildKind = "site";
   
   for (let i = 0; i < args.length; i++) {
     if (args[i] === "--model" && args[i + 1]) {
@@ -399,12 +470,15 @@ function parseArgs(args: string[]): ParsedArgs {
     } else if (args[i] === "--github-run-url" && args[i + 1]) {
       githubRunUrl = args[i + 1];
       i++;
+    } else if (args[i] === "--kind" && args[i + 1]) {
+      kind = args[i + 1] === "game" ? "game" : "site";
+      i++;
     } else if (!args[i].startsWith("--")) {
       outputPath = args[i];
     }
   }
   
-  return { outputPath, model, date, batchTimestamp, skipHtmlCopy, githubRunUrl };
+  return { outputPath, model, date, batchTimestamp, skipHtmlCopy, githubRunUrl, kind };
 }
 
 interface SaveBuildLogOptions {
@@ -413,10 +487,12 @@ interface SaveBuildLogOptions {
   batchTimestamp?: string | null;
   skipHtmlCopy?: boolean;
   githubRunUrl?: string | null;
+  kind?: BuildKind;
 }
 
 async function saveBuildLog(outputPath: string, options: SaveBuildLogOptions = {}): Promise<void> {
-  const { modelOverride = null, dateOverride = null, batchTimestamp = null, skipHtmlCopy = false, githubRunUrl = null } = options;
+  const { modelOverride = null, dateOverride = null, batchTimestamp = null, skipHtmlCopy = false, githubRunUrl = null, kind = "site" } = options;
+  const config = KIND_CONFIG[kind];
   
   let rawOutput: string;
   try {
@@ -438,14 +514,12 @@ async function saveBuildLog(outputPath: string, options: SaveBuildLogOptions = {
   
   // Use date override if provided (useful for CI to ensure consistent date across jobs)
   const dateStr = dateOverride || getDateString(now);
-  const dateDir = `public/builds/${dateStr}`;
+  const dateDir = `${config.publicDir}/${dateStr}`;
   
-  // New file naming: builds/{date}/{model}-{timestamp}.html
   const buildFileName = `${model}-${timestampMs}.html`;
   const buildPath = `${dateDir}/${buildFileName}`;
   
-  // Each model has its own sandbox file: generated/{model}.html
-  const generatedPath = getGeneratedPath(model);
+  const generatedPath = getGeneratedPath(model, kind);
   
   // Check if build HTML exists
   const hasGeneratedHtml = existsSync(generatedPath);
@@ -482,14 +556,14 @@ async function saveBuildLog(outputPath: string, options: SaveBuildLogOptions = {
     github_run_url: githubRunUrl || undefined,
   };
 
-  const history = await loadHistory();
+  const history = await loadHistory(config.historyPath);
   history.builds.unshift(entry);
 
   if (history.builds.length > MAX_BUILDS) {
     history.builds = history.builds.slice(0, MAX_BUILDS);
   }
 
-  await writeFile(HISTORY_PATH, JSON.stringify(history, null, 2));
+  await writeFile(config.historyPath, JSON.stringify(history, null, 2));
   console.log(`Build log saved: ${entry.id} (${finalStatus})`);
 
   // 2. Save HTML to builds/{date}/{model}-{timestamp}.html
@@ -499,9 +573,9 @@ async function saveBuildLog(outputPath: string, options: SaveBuildLogOptions = {
       await mkdir(dateDir, { recursive: true });
     }
 
-    // Inject scroll guard to ensure the archived HTML is always scrollable when embedded.
     const rawHtml = await readFile(generatedPath, "utf-8");
-    const wrappedHtml = injectScrollGuard(rawHtml);
+    // Only inject scroll guard for site builds; games manage their own viewport.
+    const wrappedHtml = kind === "site" ? injectScrollGuard(rawHtml) : rawHtml;
     await writeFile(buildPath, wrappedHtml, "utf-8");
     console.log(`Build HTML saved: ${buildPath} (from ${generatedPath})`);
   } else if (skipHtmlCopy) {
@@ -510,14 +584,14 @@ async function saveBuildLog(outputPath: string, options: SaveBuildLogOptions = {
 
   // 3. Update manifest.json (if build was successful)
   if (finalStatus === "success") {
-    const manifest = await loadManifest();
+    const manifest = await loadManifest(config);
 
     // Keep manifest models aligned with active CI models while preserving historical ones.
     const existingModels = Array.isArray(manifest.models) ? manifest.models : [];
-    const mergedModels = [...DEFAULT_MODELS, ...existingModels, model];
+    const mergedModels = [...config.defaultModels, ...existingModels, model];
     manifest.models = Array.from(new Set(mergedModels));
     if (!manifest.default_model || !manifest.models.includes(manifest.default_model)) {
-      manifest.default_model = DEFAULT_MODEL;
+      manifest.default_model = config.defaultModel;
     }
     
     // Find or create the date entry
@@ -531,23 +605,20 @@ async function saveBuildLog(outputPath: string, options: SaveBuildLogOptions = {
     let batch = dateEntry.batches.find(b => b.timestamp === timestamp);
     if (!batch) {
       // Load system prompt for new batches
-      const systemPrompt = await loadSystemPrompt();
+      const systemPrompt = await loadSystemPrompt(config.systemPromptPath);
       batch = { 
         timestamp, 
         github_run_url: githubRunUrl || undefined, 
         system_prompt: systemPrompt || undefined,
         builds: [] 
       };
-      // Insert at beginning (most recent first)
       dateEntry.batches.unshift(batch);
     } else {
-      // Update github_run_url if not set
       if (githubRunUrl && !batch.github_run_url) {
         batch.github_run_url = githubRunUrl;
       }
-      // Update system_prompt if not set (in case first model didn't have it)
       if (!batch.system_prompt) {
-        const systemPrompt = await loadSystemPrompt();
+        const systemPrompt = await loadSystemPrompt(config.systemPromptPath);
         if (systemPrompt) {
           batch.system_prompt = systemPrompt;
         }
@@ -556,8 +627,9 @@ async function saveBuildLog(outputPath: string, options: SaveBuildLogOptions = {
     
     // Add or update the build for this model in this batch
     const existingBuildIdx = batch.builds.findIndex(b => b.model === model);
-    // Path for manifest should be relative to public/ (Next.js serves public/ at root)
-    const manifestPath = `builds/${dateStr}/${buildFileName}`;
+    // Path relative to public/ (Next.js serves public/ at root)
+    const publicPrefix = kind === "game" ? "games" : "builds";
+    const manifestPath = `${publicPrefix}/${dateStr}/${buildFileName}`;
     const buildInfo: ManifestBuild = {
       model,
       status: finalStatus,
@@ -565,6 +637,15 @@ async function saveBuildLog(outputPath: string, options: SaveBuildLogOptions = {
       line_count,
       path: manifestPath,
     };
+
+    if (kind === "game" && hasGeneratedHtml) {
+      try {
+        const gameHtml = await readFile(generatedPath, "utf-8");
+        buildInfo.game_meta = extractGameMeta(gameHtml);
+      } catch {
+        // Non-critical — skip metadata extraction
+      }
+    }
     
     if (existingBuildIdx >= 0) {
       batch.builds[existingBuildIdx] = buildInfo;
@@ -581,20 +662,20 @@ async function saveBuildLog(outputPath: string, options: SaveBuildLogOptions = {
       manifest.dates = manifest.dates.slice(0, MAX_DATES);
     }
     
-    await writeFile(MANIFEST_PATH, JSON.stringify(manifest, null, 2));
+    await writeFile(config.manifestPath, JSON.stringify(manifest, null, 2));
     console.log(`Manifest updated: ${model} for ${dateStr} (batch ${timestamp})`);
   }
 }
 
 if (import.meta.url === `file://${process.argv[1]}`) {
-  const { outputPath, model, date, batchTimestamp, skipHtmlCopy, githubRunUrl } = parseArgs(process.argv.slice(2));
+  const { outputPath, model, date, batchTimestamp, skipHtmlCopy, githubRunUrl, kind } = parseArgs(process.argv.slice(2));
   
   if (!outputPath) {
-    console.error("Usage: tsx infra/save-build-log.ts <output-file> [--model <model-name>] [--date <YYYY-MM-DD>] [--batch-timestamp <ISO-timestamp>] [--skip-html-copy] [--github-run-url <url>]");
+    console.error("Usage: tsx infra/save-build-log.ts <output-file> [--model <model-name>] [--date <YYYY-MM-DD>] [--batch-timestamp <ISO-timestamp>] [--skip-html-copy] [--github-run-url <url>] [--kind site|game]");
     process.exit(1);
   }
 
-  saveBuildLog(outputPath, { modelOverride: model, dateOverride: date, batchTimestamp, skipHtmlCopy, githubRunUrl })
+  saveBuildLog(outputPath, { modelOverride: model, dateOverride: date, batchTimestamp, skipHtmlCopy, githubRunUrl, kind })
     .then(() => process.exit(0))
     .catch((err) => {
       console.error("Error:", err.message);

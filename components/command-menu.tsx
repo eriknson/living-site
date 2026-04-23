@@ -15,6 +15,7 @@ import {
   FileText,
   BookOpen,
   Activity,
+  Gamepad2,
 } from "lucide-react";
 import { SearchIcon } from "@/components/icons/search-icon";
 import { useIsMobile } from "@/lib/use-media-query";
@@ -35,6 +36,12 @@ const PAGES = [
     label: "Generate",
     icon: Sparkles,
     keywords: ["create", "build", "new"],
+  },
+  {
+    path: "/play",
+    label: "Play",
+    icon: Gamepad2,
+    keywords: ["game", "games", "play", "fun"],
   },
   {
     path: "/builds",
@@ -72,6 +79,37 @@ const AGENTS = [
   ...agent,
   label: modelDisplayNames[agent.modelId] || agent.modelId,
   path: `/agent?model=${modelSlugs[agent.modelId] || agent.modelId}`,
+}));
+
+const GAME_AGENTS = [
+  {
+    modelId: "composer-2-fast",
+    keywords: ["cursor", "composer", "2", "fast", "game", "play"],
+  },
+  {
+    modelId: "gpt-5.5-extra-high",
+    keywords: ["openai", "gpt", "5.5", "extra", "high", "1m", "game", "play"],
+  },
+  {
+    modelId: "kimi-k2.6",
+    keywords: ["kimi", "moonshot", "k2.6", "game", "play"],
+  },
+  {
+    modelId: "composer-matterhorn-training",
+    keywords: ["cursor", "composer", "matterhorn", "training", "game", "play"],
+  },
+  {
+    modelId: "google-gemma-4-31b-it",
+    keywords: ["google", "gemma", "4", "31b", "it", "game", "play"],
+  },
+  {
+    modelId: "claude-nougat-eap-thinking-max",
+    keywords: ["claude", "anthropic", "nougat", "eap", "thinking", "max", "game", "play"],
+  },
+].map((agent) => ({
+  ...agent,
+  label: modelDisplayNames[agent.modelId] || agent.modelId,
+  path: `/play?model=${modelSlugs[agent.modelId] || agent.modelId}`,
 }));
 
 const EXTERNAL_LINKS = [
@@ -266,6 +304,31 @@ export default function CommandMenuDialog({ open, onOpenChange }: CommandMenuDia
                     <span className="text-[11px] text-black/30 dark:text-white/30 font-normal ml-1.5">Built in {formatDuration(buildDuration)}</span>
                   )}
                 </span>
+                {isCurrent && (
+                  <span className="text-[11px] text-black/40 dark:text-white/40 font-normal shrink-0">Current</span>
+                )}
+              </Command.Item>
+            );
+          })}
+        </Command.Group>
+
+        {/* Game Agents Group */}
+        <Command.Group
+          heading="Games by agents"
+          className="[&_[cmdk-group-heading]]:px-2 [&_[cmdk-group-heading]]:py-1.5 [&_[cmdk-group-heading]]:text-[12px] [&_[cmdk-group-heading]]:font-medium [&_[cmdk-group-heading]]:text-black/40 [&_[cmdk-group-heading]]:dark:text-white/40 [&_[cmdk-group-heading]]:uppercase [&_[cmdk-group-heading]]:tracking-wide [&_[cmdk-group-heading]]:mt-2"
+        >
+          {GAME_AGENTS.map((agent) => {
+            const isCurrent = isCurrentPath(agent.path);
+            return (
+              <Command.Item
+                key={`game-${agent.modelId}`}
+                value={`${agent.label} game`}
+                keywords={agent.keywords}
+                onSelect={() => navigateTo(agent.path)}
+                className={`flex items-center gap-3 px-3 rounded-lg cursor-pointer text-[14px] data-[selected=true]:bg-black/[0.05] dark:data-[selected=true]:bg-white/[0.08] outline-none transition-colors active:bg-black/[0.08] dark:active:bg-white/[0.12] ${isMobile ? "py-3.5" : "py-2.5"} ${isCurrent ? "text-black dark:text-white font-medium" : "text-[#1a1a1a] dark:text-[#e5e5e5]"}`}
+              >
+                <Gamepad2 className={`h-4 w-4 ${isCurrent ? "opacity-100" : "opacity-60"}`} />
+                <span className="flex-1">{agent.label}</span>
                 {isCurrent && (
                   <span className="text-[11px] text-black/40 dark:text-white/40 font-normal shrink-0">Current</span>
                 )}

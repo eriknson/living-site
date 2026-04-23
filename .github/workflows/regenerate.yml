@@ -121,6 +121,8 @@ jobs:
             data/latest.json
             data/fetch-summary.json
             data/styled-page.html
+            data/news.json
+          if-no-files-found: warn
           retention-days: 3
 
   # Job 2: Curator agent synthesizes raw data into creative direction
@@ -159,6 +161,7 @@ jobs:
           cp artifacts/latest.json data/latest.json
           cp artifacts/fetch-summary.json data/fetch-summary.json
           cp artifacts/styled-page.html data/styled-page.html
+          cp artifacts/news.json data/news.json 2>/dev/null || true
           echo "Artifacts organized"
 
       - name: Install Cursor CLI
@@ -179,6 +182,7 @@ jobs:
           git worktree add /tmp/curator-workspace --detach HEAD
           cp data/latest.json /tmp/curator-workspace/data/latest.json
           cp data/styled-page.html /tmp/curator-workspace/data/styled-page.html
+          cp data/news.json /tmp/curator-workspace/data/news.json 2>/dev/null || true
           rm -f /tmp/curator-workspace/data/brief.json
           rm -f /tmp/curator-workspace/data/reference.html
           echo "Curator workspace created"
@@ -469,6 +473,177 @@ jobs:
             generated/${{ matrix.model }}.html
           retention-days: 3
 
+  # Job 3b: Generate games with each model (parallel matrix)
+  generate-game:
+    needs: [aggregate, curator]
+    if: inputs.dry_run != 'true'
+    runs-on: ubuntu-latest
+    continue-on-error: true
+    timeout-minutes: 30
+    strategy:
+      fail-fast: false
+      matrix:
+        model: [composer-2-fast, gpt-5.5-extra-high, kimi-k2.6, composer-matterhorn-training, google-gemma-4-31b-it, claude-nougat-eap-thinking-max]
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Setup pnpm
+        uses: pnpm/action-setup@v4
+        with:
+          version: ${{ env.PNPM_VERSION }}
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: 'pnpm'
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Download data artifact
+        uses: actions/download-artifact@v4
+        with:
+          name: aggregated-data
+          path: artifacts/aggregated/
+
+      - name: Download curator artifact
+        uses: actions/download-artifact@v4
+        with:
+          name: curator-data
+          path: artifacts/curator/
+
+      - name: Organize downloaded files
+        run: |
+          cp artifacts/aggregated/latest.json data/latest.json
+          cp artifacts/aggregated/fetch-summary.json data/fetch-summary.json
+          cp artifacts/curator/brief.json data/brief.json
+          cp artifacts/curator/reference.html data/reference.html
+          echo "Artifacts organized"
+
+      - name: Install Cursor CLI
+        run: |
+          curl https://cursor.com/install -fsS | bash
+          cursor-agent --version || echo "Failed to get cursor-agent version"
+
+      - name: Notify game model started
+        if: env.BUILD_WEBHOOK_URL != ''
+        run: |
+          curl -s -X POST "$BUILD_WEBHOOK_URL" \
+            -H "Authorization: Bearer $BUILD_WEBHOOK_SECRET" \
+            -H "Content-Type: application/json" \
+            -d '{"buildId":"'"$BUILD_ID"'","event":"game.model.started","model":"${{ matrix.model }}","timestamp":"'"$(date -u +%Y-%m-%dT%H:%M:%S.000Z)"'"}' || true
+
+      - name: Create clean worktree for game
+        run: |
+          git worktree add /tmp/clean-game --detach HEAD
+          rm -rf /tmp/clean-game/generated/games/*.html
+          mkdir -p /tmp/clean-game/generated/games
+          touch /tmp/clean-game/generated/games/.gitkeep
+          echo "=== Clean game workspace created ==="
+
+      - name: Copy fresh data to worktree
+        run: |
+          cp data/brief.json /tmp/clean-game/data/brief.json
+          echo "Copied brief.json to game worktree"
+
+      - name: Build game generation prompt
+        run: |
+          cat > /tmp/game-generation-prompt.txt << PROMPT_END
+          $(cat /tmp/clean-game/infra/prompts/games-system.md)
+
+          ---
+
+          You are model: ${{ matrix.model }}
+          Look up your assigned direction in data/brief.json under game_directions["${{ matrix.model }}"].
+
+          Today: data/brief.json
+
+          Output: generated/games/${{ matrix.model }}.html
+          PROMPT_END
+
+          echo "=== Game Generation Prompt ==="
+          cat /tmp/game-generation-prompt.txt
+
+      - name: Generate game with ${{ matrix.model }}
+        id: generate-game
+        continue-on-error: true
+        working-directory: /tmp/clean-game
+        env:
+          CURSOR_API_KEY: ${{ secrets.CURSOR_API_KEY }}
+        run: |
+          if [ -z "$CURSOR_API_KEY" ]; then
+            echo "ERROR: CURSOR_API_KEY is not set!"
+            exit 1
+          fi
+
+          set -o pipefail
+          cursor-agent -p --force --model "${{ matrix.model }}" --output-format stream-json "$(cat /tmp/game-generation-prompt.txt)" 2>&1 | tee /tmp/game-build-output.json | while IFS= read -r line; do
+            if [ -n "$BUILD_WEBHOOK_URL" ]; then
+              TYPE=$(echo "$line" | jq -r '.type // empty' 2>/dev/null)
+              if [ -n "$TYPE" ]; then
+                curl -s -X POST "$BUILD_WEBHOOK_URL" \
+                  -H "Authorization: Bearer $BUILD_WEBHOOK_SECRET" \
+                  -H "Content-Type: application/json" \
+                  -d '{"buildId":"'"$BUILD_ID"'","event":"game.model.stream","model":"${{ matrix.model }}","data":'"$line"'}' &
+              fi
+            fi
+          done
+
+      - name: Copy game result back
+        run: |
+          if [ -f "/tmp/clean-game/generated/games/${{ matrix.model }}.html" ]; then
+            mkdir -p generated/games
+            cp "/tmp/clean-game/generated/games/${{ matrix.model }}.html" "generated/games/${{ matrix.model }}.html"
+            echo "Copied generated game back"
+            echo "Line count: $(wc -l < generated/games/${{ matrix.model }}.html)"
+          else
+            echo "No generated game file found"
+          fi
+
+      - name: Notify game model complete
+        if: always() && env.BUILD_WEBHOOK_URL != ''
+        run: |
+          if [ -f "generated/games/${{ matrix.model }}.html" ]; then
+            STATUS="game.model.complete"
+          else
+            STATUS="game.model.error"
+          fi
+          curl -s -X POST "$BUILD_WEBHOOK_URL" \
+            -H "Authorization: Bearer $BUILD_WEBHOOK_SECRET" \
+            -H "Content-Type: application/json" \
+            -d '{"buildId":"'"$BUILD_ID"'","event":"'"$STATUS"'","model":"${{ matrix.model }}","timestamp":"'"$(date -u +%Y-%m-%dT%H:%M:%S.000Z)"'"}' || true
+
+      - name: Cleanup worktree
+        if: always()
+        run: |
+          git worktree remove /tmp/clean-game --force || true
+
+      - name: Prepare game build artifact
+        run: |
+          DATE="${{ needs.aggregate.outputs.date }}"
+          MODEL="${{ matrix.model }}"
+          mkdir -p "public/games/${DATE}"
+
+          if [ -f "generated/games/${MODEL}.html" ]; then
+            cp "generated/games/${MODEL}.html" "public/games/${DATE}/${MODEL}.html"
+            echo "Saved game build: public/games/${DATE}/${MODEL}.html"
+          else
+            echo "No generated/games/${MODEL}.html found"
+          fi
+
+          cp /tmp/game-build-output.json "public/games/${DATE}/${MODEL}-output.json"
+
+      - name: Upload game build artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: game-build-${{ matrix.model }}
+          path: |
+            public/games/${{ needs.aggregate.outputs.date }}/
+            generated/games/${{ matrix.model }}.html
+          retention-days: 3
+
   # Job 4: Validate and optionally polish builds
   validate:
     needs: [aggregate, curator, generate]
@@ -598,9 +773,194 @@ jobs:
             public/builds/${{ needs.aggregate.outputs.date }}/
           retention-days: 3
 
+  # Job 4b: Validate and optionally polish game builds
+  # Fail-closed: games that still fail after polish are NOT published.
+  validate-game:
+    needs: [aggregate, curator, generate-game]
+    if: inputs.dry_run != 'true'
+    runs-on: ubuntu-latest
+    continue-on-error: true
+    timeout-minutes: 20
+    strategy:
+      fail-fast: false
+      matrix:
+        model: [composer-2-fast, gpt-5.5-extra-high, kimi-k2.6, composer-matterhorn-training, google-gemma-4-31b-it, claude-nougat-eap-thinking-max]
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Setup pnpm
+        uses: pnpm/action-setup@v4
+        with:
+          version: ${{ env.PNPM_VERSION }}
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: 'pnpm'
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Install Playwright browsers
+        run: npx playwright install chromium
+
+      - name: Download game build artifact
+        uses: actions/download-artifact@v4
+        with:
+          name: game-build-${{ matrix.model }}
+          path: artifacts/
+
+      - name: Organize files
+        run: |
+          mkdir -p generated/games
+          cp artifacts/generated/games/${{ matrix.model }}.html generated/games/ 2>/dev/null || echo "No game HTML to copy"
+
+          DATE="${{ needs.aggregate.outputs.date }}"
+          mkdir -p "public/games/${DATE}"
+          cp artifacts/public/games/${DATE}/*-output.json "public/games/${DATE}/" 2>/dev/null || true
+
+      - name: Static validation
+        id: static-validate
+        run: |
+          if [ -f "generated/games/${{ matrix.model }}.html" ]; then
+            set +e
+            RESULT=$(pnpm run validate-game -- "generated/games/${{ matrix.model }}.html" 2>&1)
+            EXIT_CODE=$?
+            set -e
+
+            echo "$RESULT"
+
+            if [ $EXIT_CODE -eq 0 ]; then
+              echo "needs_polish=false" >> $GITHUB_OUTPUT
+            else
+              echo "needs_polish=true" >> $GITHUB_OUTPUT
+              ISSUES=$(echo "$RESULT" | grep -A20 "ISSUES" | head -15 || echo "$RESULT")
+              echo "issues<<EOF" >> $GITHUB_OUTPUT
+              echo "$ISSUES" >> $GITHUB_OUTPUT
+              echo "EOF" >> $GITHUB_OUTPUT
+            fi
+          else
+            echo "No game build to validate"
+            echo "needs_polish=false" >> $GITHUB_OUTPUT
+            echo "no_file=true" >> $GITHUB_OUTPUT
+          fi
+
+      - name: Install Cursor CLI
+        if: steps.static-validate.outputs.needs_polish == 'true'
+        run: |
+          curl https://cursor.com/install -fsS | bash
+          cursor-agent --version || echo "Failed to get cursor-agent version"
+
+      - name: Download curator artifact for polish
+        if: steps.static-validate.outputs.needs_polish == 'true'
+        uses: actions/download-artifact@v4
+        with:
+          name: curator-data
+          path: data/
+
+      - name: Run game polish agent
+        if: steps.static-validate.outputs.needs_polish == 'true'
+        env:
+          CURSOR_API_KEY: ${{ secrets.CURSOR_API_KEY }}
+        run: |
+          ISSUES="${{ steps.static-validate.outputs.issues }}"
+
+          PROMPT="Read infra/prompts/games-polish.md for instructions.
+
+          Validation issues to fix:
+          $ISSUES
+
+          File to fix: generated/games/${{ matrix.model }}.html
+
+          Read the file, fix the issues, write it back."
+
+          echo "=== Running game polish agent for ${{ matrix.model }} ==="
+          cursor-agent -p --force --model composer-1.5 "$PROMPT" 2>&1 || true
+
+      - name: Re-validate after polish (static)
+        id: revalidate
+        if: steps.static-validate.outputs.needs_polish == 'true'
+        run: |
+          echo "=== Re-validating game after polish ==="
+          if pnpm run validate-game -- "generated/games/${{ matrix.model }}.html"; then
+            echo "static_passed=true" >> $GITHUB_OUTPUT
+          else
+            echo "static_passed=false" >> $GITHUB_OUTPUT
+            echo "::warning::${{ matrix.model }} game still fails static validation after polish"
+          fi
+
+      - name: Runtime smoke test
+        id: smoke
+        if: steps.static-validate.outputs.no_file != 'true'
+        run: |
+          GAME_FILE="generated/games/${{ matrix.model }}.html"
+          if [ ! -f "$GAME_FILE" ]; then
+            echo "smoke_passed=false" >> $GITHUB_OUTPUT
+            exit 0
+          fi
+
+          DATE="${{ needs.aggregate.outputs.date }}"
+          SHOTS_DIR="public/games/${DATE}/screenshots"
+          mkdir -p "$SHOTS_DIR"
+
+          set +e
+          pnpm run smoke-game -- "$GAME_FILE" --screenshots-dir "$SHOTS_DIR" 2>&1
+          SMOKE_EXIT=$?
+          set -e
+
+          if [ $SMOKE_EXIT -eq 0 ]; then
+            echo "smoke_passed=true" >> $GITHUB_OUTPUT
+          else
+            echo "smoke_passed=false" >> $GITHUB_OUTPUT
+            echo "::warning::${{ matrix.model }} game failed runtime smoke test"
+          fi
+
+      - name: Determine final status
+        id: final
+        run: |
+          GAME_FILE="generated/games/${{ matrix.model }}.html"
+          if [ ! -f "$GAME_FILE" ]; then
+            echo "publish=false" >> $GITHUB_OUTPUT
+            echo "No game file — skipping publish"
+            exit 0
+          fi
+
+          # Static must pass (either initially or after polish)
+          NEEDS_POLISH="${{ steps.static-validate.outputs.needs_polish }}"
+          STATIC_AFTER="${{ steps.revalidate.outputs.static_passed }}"
+
+          if [ "$NEEDS_POLISH" = "true" ] && [ "$STATIC_AFTER" != "true" ]; then
+            echo "publish=false" >> $GITHUB_OUTPUT
+            echo "Static validation failed after polish — not publishing"
+            exit 0
+          fi
+
+          # Smoke test must pass
+          SMOKE="${{ steps.smoke.outputs.smoke_passed }}"
+          if [ "$SMOKE" = "false" ]; then
+            echo "publish=false" >> $GITHUB_OUTPUT
+            echo "Smoke test failed — not publishing"
+            exit 0
+          fi
+
+          echo "publish=true" >> $GITHUB_OUTPUT
+          echo "All checks passed — publishing game"
+
+      - name: Upload validated game artifact
+        if: steps.final.outputs.publish == 'true'
+        uses: actions/upload-artifact@v4
+        with:
+          name: validated-game-${{ matrix.model }}
+          path: |
+            generated/games/${{ matrix.model }}.html
+            public/games/${{ needs.aggregate.outputs.date }}/
+          retention-days: 3
+
   # Job 5: Commit all builds
   commit:
-    needs: [aggregate, curator, generate, validate]
+    needs: [aggregate, curator, generate, validate, generate-game, validate-game]
     if: inputs.dry_run != 'true'
     runs-on: ubuntu-latest
     timeout-minutes: 10
@@ -661,18 +1021,23 @@ jobs:
         run: |
           DATE="${{ needs.aggregate.outputs.date }}"
           mkdir -p "public/builds/${DATE}"
+          mkdir -p "public/games/${DATE}"
           mkdir -p "generated"
+          mkdir -p "generated/games"
           
-          # Copy build output JSONs from validated artifacts (for log processing)
+          # Copy site build output JSONs
           for dir in artifacts/validated-*/public/builds/${DATE}; do
             if [ -d "$dir" ]; then
               cp "$dir"/*-output.json "public/builds/${DATE}/" 2>/dev/null || true
             fi
           done
           
-          # Copy validated generated files from artifacts
+          # Copy validated site generated files
           for artifact_dir in artifacts/validated-*/; do
-            model=$(basename "$artifact_dir" | sed 's/^validated-//')
+            artifact_name=$(basename "$artifact_dir")
+            # Skip game artifacts
+            if [[ "$artifact_name" == validated-game-* ]]; then continue; fi
+            model=$(echo "$artifact_name" | sed 's/^validated-//')
             src="${artifact_dir}generated/${model}.html"
             if [ -f "$src" ]; then
               cp "$src" "generated/${model}.html"
@@ -680,41 +1045,68 @@ jobs:
             fi
           done
           
-          echo "Build outputs collected:"
+          # Copy game build output JSONs
+          for dir in artifacts/validated-game-*/public/games/${DATE}; do
+            if [ -d "$dir" ]; then
+              cp "$dir"/*-output.json "public/games/${DATE}/" 2>/dev/null || true
+            fi
+          done
+          
+          # Copy validated game generated files
+          for artifact_dir in artifacts/validated-game-*/; do
+            model=$(basename "$artifact_dir" | sed 's/^validated-game-//')
+            src="${artifact_dir}generated/games/${model}.html"
+            if [ -f "$src" ]; then
+              cp "$src" "generated/games/${model}.html"
+              echo "Copied validated generated/games/${model}.html"
+            fi
+          done
+          
+          echo "=== Site builds ==="
           ls -la "public/builds/${DATE}/"
-          echo "Validated files:"
           ls -la "generated/"
+          echo "=== Game builds ==="
+          ls -la "public/games/${DATE}/"
+          ls -la "generated/games/"
 
       - name: Process build logs and update manifest
         env:
           GITHUB_RUN_URL: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}
         run: |
           DATE="${{ needs.aggregate.outputs.date }}"
-          # Generate a shared batch timestamp for all models in this run
           BATCH_TIMESTAMP=$(date -u +%Y-%m-%dT%H:%M:%S.000Z)
           
-          # Process each model's build output
-          # Loop through validated artifacts (not build-* since we download validated-*)
-          # --date: Use the workflow date to ensure consistency across jobs
-          # --batch-timestamp: Shared timestamp for all models in this batch
-          # --github-run-url: Link to this GitHub Actions run
-          # save-build-log will copy HTML from generated/{model}.html to builds/{date}/{model}-{timestamp}.html
+          # Process site build logs
           for artifact_dir in artifacts/validated-*/; do
-            model=$(basename "$artifact_dir" | sed 's/^validated-//')
+            artifact_name=$(basename "$artifact_dir")
+            if [[ "$artifact_name" == validated-game-* ]]; then continue; fi
+            model=$(echo "$artifact_name" | sed 's/^validated-//')
             output_file="public/builds/${DATE}/${model}-output.json"
             if [ -f "$output_file" ]; then
-              echo "Processing build log for ${model}..."
-              pnpm run save-build-log -- "$output_file" --model "$model" --date "$DATE" --batch-timestamp "$BATCH_TIMESTAMP" --github-run-url "$GITHUB_RUN_URL"
+              echo "Processing site build log for ${model}..."
+              pnpm run save-build-log -- "$output_file" --model "$model" --date "$DATE" --batch-timestamp "$BATCH_TIMESTAMP" --github-run-url "$GITHUB_RUN_URL" --kind site
             else
-              echo "Warning: No output file found for ${model} at ${output_file}"
+              echo "Warning: No site output file for ${model}"
+            fi
+          done
+          
+          # Process game build logs
+          for artifact_dir in artifacts/validated-game-*/; do
+            model=$(basename "$artifact_dir" | sed 's/^validated-game-//')
+            output_file="public/games/${DATE}/${model}-output.json"
+            if [ -f "$output_file" ]; then
+              echo "Processing game build log for ${model}..."
+              pnpm run save-build-log -- "$output_file" --model "$model" --date "$DATE" --batch-timestamp "$BATCH_TIMESTAMP" --github-run-url "$GITHUB_RUN_URL" --kind game
+            else
+              echo "Warning: No game output file for ${model}"
             fi
           done
 
       - name: Cleanup build outputs
         run: |
           DATE="${{ needs.aggregate.outputs.date }}"
-          # Remove the JSON output files (logs are in history.json)
           rm -f public/builds/${DATE}/*-output.json
+          rm -f public/games/${DATE}/*-output.json
 
       - name: Copy fetch summary to public
         run: |
@@ -726,12 +1118,13 @@ jobs:
           git config --local user.email "eriks@mail.se"
           git config --local user.name "Erik Nilsson"
           
-          # Stage all build files
+          # Stage all build files (sites + games)
           git add data/latest.json
           git add data/fetch-summary.json
           git add data/brief.json
           git add public/data/
           git add public/builds/
+          git add public/games/
           git add generated/
           
           # Check if there are changes to commit
@@ -741,7 +1134,7 @@ jobs:
             TARGET_BRANCH="${GITHUB_REF_NAME:-main}"
             echo "Target branch: ${TARGET_BRANCH}"
 
-            git commit -m "Regenerate site (4 models) - $(date -u +%Y-%m-%d)"
+            git commit -m "Regenerate site + games (4 models) - $(date -u +%Y-%m-%d)"
             
             # Pull latest changes and rebase before pushing
             # This handles the case where another push happened during the workflow
@@ -793,17 +1186,29 @@ jobs:
       - name: Write job summary
         run: |
           DATE="${{ needs.aggregate.outputs.date }}"
-          echo "## 🔄 Regenerate Site Results" >> $GITHUB_STEP_SUMMARY
+          echo "## 🔄 Regenerate Site + Games Results" >> $GITHUB_STEP_SUMMARY
           echo "" >> $GITHUB_STEP_SUMMARY
           echo "**Date:** ${DATE}" >> $GITHUB_STEP_SUMMARY
           echo "" >> $GITHUB_STEP_SUMMARY
-          echo "### Model Builds (Validated)" >> $GITHUB_STEP_SUMMARY
+          echo "### Site Builds (Validated)" >> $GITHUB_STEP_SUMMARY
           for artifact_dir in artifacts/validated-*/; do
-            model=$(basename "$artifact_dir" | sed 's/^validated-//')
+            artifact_name=$(basename "$artifact_dir")
+            if [[ "$artifact_name" == validated-game-* ]]; then continue; fi
+            model=$(echo "$artifact_name" | sed 's/^validated-//')
             if [ -f "generated/${model}.html" ]; then
               echo "- ✅ ${model}" >> $GITHUB_STEP_SUMMARY
             else
               echo "- ❌ ${model} (no HTML generated)" >> $GITHUB_STEP_SUMMARY
+            fi
+          done
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "### Game Builds (Validated)" >> $GITHUB_STEP_SUMMARY
+          for artifact_dir in artifacts/validated-game-*/; do
+            model=$(basename "$artifact_dir" | sed 's/^validated-game-//')
+            if [ -f "generated/games/${model}.html" ]; then
+              echo "- ✅ ${model} (game)" >> $GITHUB_STEP_SUMMARY
+            else
+              echo "- ❌ ${model} (no game HTML generated)" >> $GITHUB_STEP_SUMMARY
             fi
           done
 

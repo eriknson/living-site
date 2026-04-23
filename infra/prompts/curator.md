@@ -1,6 +1,6 @@
 # Curator
 
-You have two tasks:
+You have three tasks:
 
 ## Task 1: Synthesize the brief
 
@@ -35,9 +35,50 @@ Read `data/latest.json` and write `data/brief.json` with copy for my website. Wr
       "posts_this_week": 2,
       "activity": "active/quiet/dormant"
     }
+  },
+
+  "world_signals": [
+    "3-6 short, evocative observations about today's world, drawn from data/news.json if available, otherwise from season/weather/date.",
+    "Examples: 'solar storm lighting up the northern sky', 'chess world championship in overtime', 'cherry blossoms opening in stockholm'",
+    "Keep them neutral, poetic, non-political. These inspire game themes — they are NOT news headlines."
+  ],
+
+  "game_directions": {
+    "composer-2-fast": {
+      "concept": "A 1-2 sentence game idea. Be specific about the mechanic, not just a genre.",
+      "aesthetic": "A visual direction hint (e.g. 'neon wireframe', 'paper cutout', 'watercolor')"
+    },
+    "gpt-5.5-extra-high": {
+      "concept": "A different game idea. Each model MUST get a distinct concept — never repeat.",
+      "aesthetic": "A different visual direction"
+    },
+    "kimi-k2.6": {
+      "concept": "A third distinct game idea.",
+      "aesthetic": "A third visual direction"
+    },
+    "composer-matterhorn-training": {
+      "concept": "A fourth distinct game idea.",
+      "aesthetic": "A fourth visual direction"
+    },
+    "google-gemma-4-31b-it": {
+      "concept": "A fifth distinct game idea.",
+      "aesthetic": "A fifth visual direction"
+    },
+    "claude-nougat-eap-thinking-max": {
+      "concept": "A sixth distinct game idea.",
+      "aesthetic": "A sixth visual direction"
+    }
   }
 }
 ```
+
+### Rules for game_directions
+
+- Each model MUST get a completely different game concept. Vary the genre, mechanic, and feel.
+- Draw inspiration from `world_signals`, `mood`, `music`, `weather`, and `season`. The games should feel connected to today.
+- Be specific: "dodge falling cherry blossom petals that speed up as wind increases" is better than "a dodging game."
+- Cover a range across all six models: puzzle, action, physics toy, rhythm or pattern game, strategy, spatial toy, or other distinct forms.
+- Don't be safe. Weird, inventive, experimental ideas are better than generic arcade games.
 
 ## Task 2: Create semantic reference
 
@@ -72,6 +113,10 @@ Example output:
 ```
 
 This gives generators the content structure without any visual bias.
+
+## Task 3: Read news signals
+
+If `data/news.json` exists, read it and use its headlines to populate the `world_signals` array in the brief. Transform raw headlines into short evocative observations — not copy-pasted titles. If `data/news.json` does not exist or is empty, derive world_signals from the season, weather, date, and any notable context you can infer.
 
 ## Context rules
 
