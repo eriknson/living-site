@@ -245,11 +245,10 @@ jobs:
               const artists = (spotify.medium_term?.artists || []).slice(0, 3).map(a => a.name);
               const gameDirections = {
                 'composer-2-fast': { concept: 'Catch brief bright signals while dodging heavier shadows in a 45-second one-thumb survival round.', mechanic: 'dodge and collect', touch_control: 'drag anywhere to steer', session_hook: 'quick score chase with near-miss bonuses', escalation: 'signal density and shadow speed increase every 10 seconds', aesthetic: 'crisp monochrome with warm accent sparks' },
-                'gpt-5.5-extra-high': { concept: 'Flick small orbiting moons into matching gates before the orbit collapses.', mechanic: 'physics flick timing', touch_control: 'hold, aim, release', session_hook: 'satisfying flicks and combo chains', escalation: 'the orbit shrinks and gates rotate faster', aesthetic: 'soft orbital diagrams on dark paper' },
-                'kimi-k2.6': { concept: 'Trace safe paths through a shifting rain map before the next weather pulse lands.', mechanic: 'path drawing', touch_control: 'draw a route with one finger', session_hook: 'tiny route-planning bursts', escalation: 'new hazards appear and old paths decay', aesthetic: 'misty map lines and glassy droplets' },
-                'composer-matterhorn-training': { concept: 'Switch lanes to sort falling notes into the right columns before the rhythm stutters.', mechanic: 'lane switching and sorting', touch_control: 'swipe left or right', session_hook: 'fast readable sorting flow', escalation: 'tempo rises and decoy notes appear', aesthetic: 'minimal music staff with bright impacts' },
-                'google-gemma-4-31b-it': { concept: 'Memorize and repeat a tiny constellation pattern as new stars flare in.', mechanic: 'memory pattern', touch_control: 'tap glowing nodes', session_hook: 'one-screen pattern mastery', escalation: 'patterns lengthen and stars fade faster', aesthetic: 'quiet sky chart with ink labels' },
-                'claude-nougat-eap-thinking-max': { concept: 'Guide a small cursor through a shrinking room, trading risky pickups for extra seconds.', mechanic: 'tiny roguelite survival', touch_control: 'drag to move, release to dash', session_hook: 'risk/reward pickups in a minute-long run', escalation: 'walls close in and pickups become more tempting', aesthetic: 'clean terminal geometry with tactile particles' }
+                'gpt-5.4-high-fast': { concept: 'Flick small orbiting moons into matching gates before the orbit collapses.', mechanic: 'physics flick timing', touch_control: 'hold, aim, release', session_hook: 'satisfying flicks and combo chains', escalation: 'the orbit shrinks and gates rotate faster', aesthetic: 'soft orbital diagrams on dark paper' },
+                'claude-opus-4-7-thinking-max': { concept: 'Trace safe paths through a shifting rain map before the next weather pulse lands.', mechanic: 'path drawing', touch_control: 'draw a route with one finger', session_hook: 'tiny route-planning bursts', escalation: 'new hazards appear and old paths decay', aesthetic: 'misty map lines and glassy droplets' },
+                'gemini-3.1-pro': { concept: 'Switch lanes to sort falling notes into the right columns before the rhythm stutters.', mechanic: 'lane switching and sorting', touch_control: 'swipe left or right', session_hook: 'fast readable sorting flow', escalation: 'tempo rises and decoy notes appear', aesthetic: 'minimal music staff with bright impacts' },
+                'kimi-k2.5': { concept: 'Memorize and repeat a tiny constellation pattern as new stars flare in.', mechanic: 'memory pattern', touch_control: 'tap glowing nodes', session_hook: 'one-screen pattern mastery', escalation: 'patterns lengthen and stars fade faster', aesthetic: 'quiet sky chart with ink labels' }
               };
               const brief = {
                 mood: latest.context?.season + ' focus',
@@ -306,7 +305,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        model: [composer-2-fast, gpt-5.5-extra-high, kimi-k2.6, composer-matterhorn-training, google-gemma-4-31b-it, claude-nougat-eap-thinking-max]
+        model: [composer-2-fast, gpt-5.4-high-fast, claude-opus-4-7-thinking-max, gemini-3.1-pro, kimi-k2.5]
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
@@ -522,7 +521,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        model: [composer-2-fast, gpt-5.5-extra-high, kimi-k2.6, composer-matterhorn-training, google-gemma-4-31b-it, claude-nougat-eap-thinking-max]
+        model: [composer-2-fast, gpt-5.4-high-fast, claude-opus-4-7-thinking-max, gemini-3.1-pro, kimi-k2.5]
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
@@ -692,7 +691,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        model: [composer-2-fast, gpt-5.5-extra-high, kimi-k2.6, composer-matterhorn-training, google-gemma-4-31b-it, claude-nougat-eap-thinking-max]
+        model: [composer-2-fast, gpt-5.4-high-fast, claude-opus-4-7-thinking-max, gemini-3.1-pro, kimi-k2.5]
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
@@ -823,7 +822,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        model: [composer-2-fast, gpt-5.5-extra-high, kimi-k2.6, composer-matterhorn-training, google-gemma-4-31b-it, claude-nougat-eap-thinking-max]
+        model: [composer-2-fast, gpt-5.4-high-fast, claude-opus-4-7-thinking-max, gemini-3.1-pro, kimi-k2.5]
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
@@ -1175,7 +1174,7 @@ jobs:
         if: always() && env.BUILD_WEBHOOK_URL != ''
         run: |
           # Determine final status
-          if [ -f "generated/composer-2-fast.html" ] || [ -f "generated/gpt-5.5-extra-high.html" ] || [ -f "generated/kimi-k2.6.html" ] || [ -f "generated/composer-matterhorn-training.html" ] || [ -f "generated/google-gemma-4-31b-it.html" ] || [ -f "generated/claude-nougat-eap-thinking-max.html" ]; then
+          if [ -f "generated/composer-2-fast.html" ] || [ -f "generated/gpt-5.4-high-fast.html" ] || [ -f "generated/claude-opus-4-7-thinking-max.html" ] || [ -f "generated/gemini-3.1-pro.html" ] || [ -f "generated/kimi-k2.5.html" ]; then
             STATUS="build.complete"
           else
             STATUS="build.error"

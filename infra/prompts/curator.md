@@ -52,7 +52,7 @@ Read `data/latest.json` and write `data/brief.json` with copy for my website. Wr
       "escalation": "How pressure increases during the round.",
       "aesthetic": "A visual direction hint (e.g. 'neon wireframe', 'paper cutout', 'watercolor')"
     },
-    "gpt-5.5-extra-high": {
+    "gpt-5.4-high-fast": {
       "concept": "A different game idea. Each model MUST get a distinct concept — never repeat.",
       "mechanic": "A different concrete core action.",
       "touch_control": "A different one-thumb gesture.",
@@ -60,7 +60,7 @@ Read `data/latest.json` and write `data/brief.json` with copy for my website. Wr
       "escalation": "A different pressure curve.",
       "aesthetic": "A different visual direction"
     },
-    "kimi-k2.6": {
+    "claude-opus-4-7-thinking-max": {
       "concept": "A third distinct game idea.",
       "mechanic": "A third core action.",
       "touch_control": "A third touch control.",
@@ -68,7 +68,7 @@ Read `data/latest.json` and write `data/brief.json` with copy for my website. Wr
       "escalation": "A third pressure curve.",
       "aesthetic": "A third visual direction"
     },
-    "composer-matterhorn-training": {
+    "gemini-3.1-pro": {
       "concept": "A fourth distinct game idea.",
       "mechanic": "A fourth core action.",
       "touch_control": "A fourth touch control.",
@@ -76,21 +76,13 @@ Read `data/latest.json` and write `data/brief.json` with copy for my website. Wr
       "escalation": "A fourth pressure curve.",
       "aesthetic": "A fourth visual direction"
     },
-    "google-gemma-4-31b-it": {
+    "kimi-k2.5": {
       "concept": "A fifth distinct game idea.",
       "mechanic": "A fifth core action.",
       "touch_control": "A fifth touch control.",
       "session_hook": "A fifth tiny-session hook.",
       "escalation": "A fifth pressure curve.",
       "aesthetic": "A fifth visual direction"
-    },
-    "claude-nougat-eap-thinking-max": {
-      "concept": "A sixth distinct game idea.",
-      "mechanic": "A sixth core action.",
-      "touch_control": "A sixth touch control.",
-      "session_hook": "A sixth tiny-session hook.",
-      "escalation": "A sixth pressure curve.",
-      "aesthetic": "A sixth visual direction"
     }
   }
 }
@@ -102,7 +94,7 @@ Read `data/latest.json` and write `data/brief.json` with copy for my website. Wr
 - Draw inspiration from `world_signals`, `mood`, `music`, `weather`, and `season`. The games should feel connected to today.
 - Be specific: "dodge falling cherry blossom petals that speed up as wind increases" is better than "a dodging game."
 - Make every idea phone-first: immediately understandable in 3 seconds, playable one-handed, and satisfying in a 30-60 second session.
-- Cover a range across all six models: dodge/collect, timing, rhythm, physics flick, path drawing, sorting, lane switching, memory/pattern, tiny roguelite survival, one-screen puzzle, or other distinct forms.
+- Cover a range across all five models: dodge/collect, timing, rhythm, physics flick, path drawing, sorting, lane switching, memory/pattern, tiny roguelite survival, one-screen puzzle, or other distinct forms.
 - Avoid generic Pong, Snake, and Flappy clones unless the remix changes the core decision loop.
 - Don't be safe. Weird, inventive, experimental ideas are better than generic arcade games.
 

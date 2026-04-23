@@ -288,23 +288,19 @@ export function createInitialBuildState(buildId: string): BuildState {
         status: "queued",
         rawLog: [],
       },
-      "gpt-5.5-extra-high": {
+      "gpt-5.4-high-fast": {
         status: "queued",
         rawLog: [],
       },
-      "kimi-k2.6": {
+      "claude-opus-4-7-thinking-max": {
         status: "queued",
         rawLog: [],
       },
-      "composer-matterhorn-training": {
+      "gemini-3.1-pro": {
         status: "queued",
         rawLog: [],
       },
-      "google-gemma-4-31b-it": {
-        status: "queued",
-        rawLog: [],
-      },
-      "claude-nougat-eap-thinking-max": {
+      "kimi-k2.5": {
         status: "queued",
         rawLog: [],
       },

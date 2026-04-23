@@ -15,11 +15,10 @@ export function TerminalView({ state, onStart, isStarting }: TerminalViewProps) 
   const showModelPanes = state?.workflow.aggregate === "complete";
   const models = [
     "composer-2-fast",
-    "gpt-5.5-extra-high",
-    "kimi-k2.6",
-    "composer-matterhorn-training",
-    "google-gemma-4-31b-it",
-    "claude-nougat-eap-thinking-max",
+    "gpt-5.4-high-fast",
+    "claude-opus-4-7-thinking-max",
+    "gemini-3.1-pro",
+    "kimi-k2.5",
   ];
 
   return (
@@ -197,6 +196,10 @@ function StatusDot({ status }: { status: string }) {
 function shortenModelName(model: string): string {
   const map: Record<string, string> = {
     "composer-2-fast": "composer-2-fast",
+    "gpt-5.4-high-fast": "gpt-5.4-fast",
+    "claude-opus-4-7-thinking-max": "opus-4.7-max",
+    "gemini-3.1-pro": "gemini-3.1-pro",
+    "kimi-k2.5": "kimi-k2.5",
     "gpt-5.5-extra-high": "gpt-5.5-xhigh",
     "kimi-k2.6": "kimi-k2.6",
     "composer-matterhorn-training": "matterhorn",
@@ -206,7 +209,6 @@ function shortenModelName(model: string): string {
     "opus-4.6-thinking": "opus-4.6",
     "claude-4.6-opus-max-thinking": "opus-4.6-max",
     "gpt-5.3-codex-xhigh": "gpt-5.3-xhigh",
-    "gemini-3.1-pro": "gemini-3.1-pro",
     "composer-1": "composer-1",
     "claude-4.5-opus-high-thinking": "opus-4.5",
     "gpt-5.1-codex": "gpt-5.1",

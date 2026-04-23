@@ -70,24 +70,20 @@ const AGENTS = [
     keywords: ["cursor", "composer", "2", "fast", "ai"],
   },
   {
-    modelId: "gpt-5.5-extra-high",
-    keywords: ["openai", "gpt", "5.5", "extra", "high", "1m", "ai"],
+    modelId: "gpt-5.4-high-fast",
+    keywords: ["openai", "gpt", "5.4", "high", "fast", "ai"],
   },
   {
-    modelId: "kimi-k2.6",
-    keywords: ["kimi", "moonshot", "k2.6", "ai"],
+    modelId: "claude-opus-4-7-thinking-max",
+    keywords: ["claude", "anthropic", "opus", "4.7", "thinking", "max", "ai"],
   },
   {
-    modelId: "composer-matterhorn-training",
-    keywords: ["cursor", "composer", "matterhorn", "training", "ai"],
+    modelId: "gemini-3.1-pro",
+    keywords: ["google", "gemini", "3.1", "pro", "ai"],
   },
   {
-    modelId: "google-gemma-4-31b-it",
-    keywords: ["google", "gemma", "4", "31b", "it", "ai"],
-  },
-  {
-    modelId: "claude-nougat-eap-thinking-max",
-    keywords: ["claude", "anthropic", "nougat", "eap", "thinking", "max", "ai"],
+    modelId: "kimi-k2.5",
+    keywords: ["kimi", "moonshot", "k2.5", "ai"],
   },
 ].map((agent) => ({
   ...agent,
@@ -101,24 +97,20 @@ const GAME_AGENTS = [
     keywords: ["cursor", "composer", "2", "fast", "game", "play"],
   },
   {
-    modelId: "gpt-5.5-extra-high",
-    keywords: ["openai", "gpt", "5.5", "extra", "high", "1m", "game", "play"],
+    modelId: "gpt-5.4-high-fast",
+    keywords: ["openai", "gpt", "5.4", "high", "fast", "game", "play"],
   },
   {
-    modelId: "kimi-k2.6",
-    keywords: ["kimi", "moonshot", "k2.6", "game", "play"],
+    modelId: "claude-opus-4-7-thinking-max",
+    keywords: ["claude", "anthropic", "opus", "4.7", "thinking", "max", "game", "play"],
   },
   {
-    modelId: "composer-matterhorn-training",
-    keywords: ["cursor", "composer", "matterhorn", "training", "game", "play"],
+    modelId: "gemini-3.1-pro",
+    keywords: ["google", "gemini", "3.1", "pro", "game", "play"],
   },
   {
-    modelId: "google-gemma-4-31b-it",
-    keywords: ["google", "gemma", "4", "31b", "it", "game", "play"],
-  },
-  {
-    modelId: "claude-nougat-eap-thinking-max",
-    keywords: ["claude", "anthropic", "nougat", "eap", "thinking", "max", "game", "play"],
+    modelId: "kimi-k2.5",
+    keywords: ["kimi", "moonshot", "k2.5", "game", "play"],
   },
 ].map((agent) => ({
   ...agent,

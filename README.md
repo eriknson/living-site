@@ -57,11 +57,10 @@ Runs daily at 6am UTC via GitHub Actions.
 │
 ├── generated/                # Agent-written HTML (one per model)
 │   ├── composer-2-fast.html  # Site builds
-│   ├── gpt-5.5-extra-high.html
-│   ├── kimi-k2.6.html
-│   ├── composer-matterhorn-training.html
-│   ├── google-gemma-4-31b-it.html
-│   ├── claude-nougat-eap-thinking-max.html
+│   ├── gpt-5.4-high-fast.html
+│   ├── claude-opus-4-7-thinking-max.html
+│   ├── gemini-3.1-pro.html
+│   ├── kimi-k2.5.html
 │   └── games/               # Game builds
 │       ├── composer-2-fast.html
 │       └── ...
