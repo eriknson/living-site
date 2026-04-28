@@ -1129,7 +1129,7 @@ jobs:
           git add data/brief.json
           git add public/data/
           git add public/builds/
-          git add generated/*.html 2>/dev/null || true
+          git add generated/
           
           # Check if there are changes to commit
           if git diff --staged --quiet; then
@@ -1145,7 +1145,7 @@ jobs:
             RETRY_DELAY=10
             for i in $(seq 1 $MAX_RETRIES); do
               echo "Sync + push attempt $i of $MAX_RETRIES..."
-              if git pull --rebase origin "${TARGET_BRANCH}" && git push origin "HEAD:${TARGET_BRANCH}"; then
+              if git pull --rebase --autostash origin "${TARGET_BRANCH}" && git push origin "HEAD:${TARGET_BRANCH}"; then
                 echo "Push succeeded on attempt $i"
                 break
               else
@@ -1315,6 +1315,7 @@ jobs:
 
           git add public/games/
           git add generated/games/
+          git add data/fetch-summary.json
 
           if git diff --staged --quiet; then
             echo "No game changes to commit"
@@ -1328,7 +1329,7 @@ jobs:
             RETRY_DELAY=10
             for i in $(seq 1 $MAX_RETRIES); do
               echo "Sync + push attempt $i of $MAX_RETRIES..."
-              if git pull --rebase origin "${TARGET_BRANCH}" && git push origin "HEAD:${TARGET_BRANCH}"; then
+              if git pull --rebase --autostash origin "${TARGET_BRANCH}" && git push origin "HEAD:${TARGET_BRANCH}"; then
                 echo "Push succeeded on attempt $i"
                 break
               else
