@@ -1,7 +1,5 @@
-Design and build a great personal website for Erik. Make it feel crafted, polished, and weird in the best way — not a template resume dump. Wild, wacky, psychedelic, loud with color: push into the P3 color space and go bold on type. World-class typography and layout; show real craft.
+Start from editorial print: ivory or newsprint energy, sharp serif, generous margins — then sneak in neon accents, micro-animations, or a single wild visual motif so it's not "safe portfolio." Tone: candid, slightly dry humor.
 
-Tone: humble, non-bragging, honest. Be someone you'd trust, not someone you're being sold.
+One self-contained HTML file with all CSS in a `<style>` tag. Google Fonts are fine if they serve the print-meets-electric idea.
 
-Works beautifully on phone and desktop. Tight reading column — max width 640px on desktop. Light and dark mode both have to sing.
-
-One self-contained HTML file: inline CSS in a `<style>` tag. Google Fonts are fine if they elevate the vibe.
+Works beautifully on phone and desktop. Tight reading column — max width 640px on desktop. Light and dark mode both feel intentional, like two editions of the same broadsheet.
