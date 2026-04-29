@@ -1,0 +1,996 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="color-scheme" content="light dark">
+<title>The Nilsson Dispatch — Erik Nilsson — Wed Apr 29, 2026</title>
+<meta name="description" content="A daily broadsheet for Erik Nilsson — compiled, mostly, by agents while the principal was elsewhere.">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:ital,opsz,wght@0,9..144,300..900;1,9..144,300..900&family=Newsreader:ital,opsz,wght@0,6..72,300..700;1,6..72,300..700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+<script>
+  (function(){
+    try {
+      var t = localStorage.getItem('dispatch-edition');
+      if (!t) t = window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light';
+      document.documentElement.dataset.theme = t;
+    } catch(e) {
+      document.documentElement.dataset.theme = 'light';
+    }
+  })();
+</script>
+<style>
+:root {
+  --paper: #f3ead4;
+  --paper-2: #ebe1c4;
+  --paper-soft: rgba(26, 20, 14, 0.04);
+  --ink: #1a140e;
+  --ink-2: #4a3f30;
+  --ink-3: #7e6e54;
+  --rule: rgba(26, 20, 14, 0.20);
+  --rule-soft: rgba(26, 20, 14, 0.10);
+  --neon: #e6004f;
+  --neon-soft: rgba(230, 0, 79, 0.16);
+
+  --sky-top: #f3ead4;
+  --sky-bot: #f7d7b1;
+  --hill-1: #aebe97;
+  --hill-2: #788c69;
+  --pod-fill: #1a140e;
+  --pod-glow: #e6004f;
+  --bloom-a: #ff7a3a;
+  --bloom-b: #e6004f;
+  --bloom-c: #f3c84a;
+  --bloom-d: #5d8a5a;
+  --fog: rgba(255, 250, 240, 1);
+
+  --serif: 'Newsreader', 'Charter', 'Iowan Old Style', Georgia, serif;
+  --display: 'Fraunces', 'Times New Roman', serif;
+  --mono: 'JetBrains Mono', ui-monospace, 'SFMono-Regular', Menlo, monospace;
+}
+
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --paper: #0c0a14;
+    --paper-2: #14121e;
+    --paper-soft: rgba(235, 226, 201, 0.04);
+    --ink: #ebe2c9;
+    --ink-2: #b3a78a;
+    --ink-3: #6e6450;
+    --rule: rgba(235, 226, 201, 0.18);
+    --rule-soft: rgba(235, 226, 201, 0.08);
+    --neon: #ff3b8a;
+    --neon-soft: rgba(255, 59, 138, 0.28);
+
+    --sky-top: #0c0a14;
+    --sky-bot: #1a1730;
+    --hill-1: #1f2a2e;
+    --hill-2: #11191c;
+    --pod-fill: #ebe2c9;
+    --pod-glow: #ff3b8a;
+    --bloom-a: #ff8a4a;
+    --bloom-b: #ff3b8a;
+    --bloom-c: #ffd966;
+    --bloom-d: #5dd8a8;
+    --fog: rgba(180, 200, 220, 0.18);
+  }
+
+  :root:not([data-theme="light"]) body::before {
+    mix-blend-mode: screen;
+    opacity: 0.04;
+  }
+}
+
+[data-theme="dark"] {
+  --paper: #0c0a14;
+  --paper-2: #14121e;
+  --paper-soft: rgba(235, 226, 201, 0.04);
+  --ink: #ebe2c9;
+  --ink-2: #b3a78a;
+  --ink-3: #6e6450;
+  --rule: rgba(235, 226, 201, 0.18);
+  --rule-soft: rgba(235, 226, 201, 0.08);
+  --neon: #ff3b8a;
+  --neon-soft: rgba(255, 59, 138, 0.28);
+
+  --sky-top: #0c0a14;
+  --sky-bot: #1a1730;
+  --hill-1: #1f2a2e;
+  --hill-2: #11191c;
+  --pod-fill: #ebe2c9;
+  --pod-glow: #ff3b8a;
+  --bloom-a: #ff8a4a;
+  --bloom-b: #ff3b8a;
+  --bloom-c: #ffd966;
+  --bloom-d: #5dd8a8;
+  --fog: rgba(180, 200, 220, 0.18);
+}
+
+* { box-sizing: border-box; }
+
+html { scroll-behavior: smooth; }
+
+body {
+  margin: 0;
+  background: var(--paper);
+  color: var(--ink);
+  font-family: var(--serif);
+  font-size: 19px;
+  line-height: 1.55;
+  font-feature-settings: "kern", "liga", "calt", "onum";
+  font-variation-settings: "opsz" 18;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  text-rendering: optimizeLegibility;
+  transition: background-color 0.45s ease, color 0.45s ease;
+  overflow-x: hidden;
+}
+
+body::before {
+  content: '';
+  position: fixed;
+  inset: 0;
+  background-image: radial-gradient(circle at 1px 1px, var(--ink) 0.5px, transparent 0.6px);
+  background-size: 4px 4px;
+  opacity: 0.06;
+  pointer-events: none;
+  z-index: 1;
+  mix-blend-mode: multiply;
+}
+
+[data-theme="dark"] body::before {
+  mix-blend-mode: screen;
+  opacity: 0.04;
+}
+
+::selection { background: var(--neon); color: var(--paper); }
+::-moz-selection { background: var(--neon); color: var(--paper); }
+
+a {
+  color: var(--ink);
+  text-decoration: none;
+  background-image: linear-gradient(to top, var(--neon) 0, var(--neon) 1.2px, transparent 1.2px, transparent 100%);
+  padding-bottom: 2px;
+  transition: color 0.2s ease, background-image 0.2s ease;
+}
+a:hover {
+  color: var(--neon);
+  background-image: linear-gradient(to top, var(--neon) 0, var(--neon) 2px, transparent 2px, transparent 100%);
+}
+a:focus-visible {
+  outline: 2px solid var(--neon);
+  outline-offset: 3px;
+}
+
+.skip {
+  position: absolute;
+  left: -9999px;
+}
+.skip:focus {
+  left: 16px;
+  top: 16px;
+  background: var(--paper);
+  padding: 8px 12px;
+  border: 1px solid var(--ink);
+  z-index: 10;
+}
+
+.page {
+  position: relative;
+  z-index: 2;
+  max-width: 640px;
+  margin: 0 auto;
+  padding: 48px 24px 72px;
+}
+
+@media (min-width: 720px) {
+  .page { padding: 80px 32px 110px; }
+}
+
+/* ---- Masthead ---- */
+
+.meta-row {
+  display: flex;
+  gap: 12px 16px;
+  align-items: center;
+  justify-content: space-between;
+  font-family: var(--mono);
+  font-size: 11px;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--ink-2);
+  margin-bottom: 14px;
+  flex-wrap: wrap;
+}
+
+.meta-row .vol,
+.meta-row .dateline { white-space: nowrap; }
+
+.edition {
+  appearance: none;
+  background: transparent;
+  border: 1px solid var(--rule);
+  color: var(--ink-2);
+  font: inherit;
+  letter-spacing: inherit;
+  text-transform: inherit;
+  cursor: pointer;
+  padding: 5px 10px 5px 8px;
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  border-radius: 999px;
+  transition: border-color 0.2s, color 0.2s, background 0.2s;
+}
+.edition:hover { border-color: var(--neon); color: var(--neon); }
+.edition:focus-visible { outline: 2px solid var(--neon); outline-offset: 2px; }
+.edition .dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: var(--neon);
+  box-shadow: 0 0 0 0 var(--neon-soft);
+  display: inline-block;
+  animation: dot-pulse 3.6s ease-in-out infinite;
+}
+@keyframes dot-pulse {
+  0%, 100% { box-shadow: 0 0 0 0 var(--neon-soft); }
+  50%      { box-shadow: 0 0 0 4px transparent; }
+}
+
+.rule-double {
+  border-top: 1px solid var(--rule);
+  border-bottom: 1px solid var(--rule);
+  height: 4px;
+  margin: 12px 0 10px;
+}
+
+h1.title {
+  font-family: var(--display);
+  font-weight: 900;
+  font-size: clamp(56px, 14vw, 108px);
+  line-height: 0.86;
+  letter-spacing: -0.025em;
+  margin: 8px 0 6px;
+  font-variation-settings: "opsz" 144;
+  text-wrap: balance;
+}
+h1.title .title-the {
+  display: block;
+  font-style: italic;
+  font-weight: 400;
+  font-size: 0.32em;
+  letter-spacing: 0;
+  color: var(--ink-2);
+  margin-bottom: 0.05em;
+  font-variation-settings: "opsz" 60;
+}
+
+.motto {
+  font-family: var(--mono);
+  font-size: 10.5px;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--ink-3);
+  margin: 8px 0 0;
+  text-align: center;
+  border-top: 1px solid var(--rule);
+  border-bottom: 1px solid var(--rule);
+  padding: 8px 0;
+  display: flex;
+  justify-content: center;
+  flex-wrap: wrap;
+  gap: 4px 12px;
+}
+.motto span { white-space: nowrap; }
+.motto .sep { color: var(--rule); }
+
+.deck {
+  font-family: var(--serif);
+  font-style: italic;
+  font-size: 19px;
+  line-height: 1.5;
+  color: var(--ink-2);
+  margin: 22px 0 18px;
+  font-variation-settings: "opsz" 24;
+  text-wrap: pretty;
+}
+.deck em {
+  color: var(--ink);
+  font-weight: 500;
+  font-style: italic;
+}
+
+.weather-row {
+  font-family: var(--mono);
+  font-size: 11px;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--ink-3);
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px 6px;
+  align-items: baseline;
+  margin-bottom: 8px;
+}
+.weather-row em {
+  font-style: italic;
+  color: var(--ink);
+  font-family: var(--serif);
+  font-size: 13.5px;
+  letter-spacing: 0;
+  text-transform: none;
+  font-variation-settings: "opsz" 18;
+  margin-right: 2px;
+}
+.weather-row .dot-sep { color: var(--ink-3); margin: 0 4px; }
+
+/* ---- Sections ---- */
+
+main { display: block; }
+main > * + * { margin-top: 44px; }
+
+.kicker {
+  font-family: var(--mono);
+  font-size: 10.5px;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+  color: var(--ink-3);
+  font-weight: 500;
+  margin: 0 0 16px;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+.kicker::before {
+  content: '';
+  display: inline-block;
+  width: 22px;
+  height: 1px;
+  background: var(--ink);
+}
+.kicker::after {
+  content: '';
+  flex: 1;
+  height: 1px;
+  background: var(--rule);
+}
+
+/* ---- Lede ---- */
+
+.lede p { margin: 0 0 14px; }
+.lede p:last-child { margin-bottom: 0; }
+
+.dropcap::first-letter {
+  font-family: var(--display);
+  font-weight: 900;
+  font-size: 4.4em;
+  float: left;
+  line-height: 0.82;
+  padding: 8px 12px 0 0;
+  margin-top: 6px;
+  font-variation-settings: "opsz" 144;
+  color: var(--ink);
+}
+
+.lede p strong { font-weight: 600; }
+.lede p em { font-style: italic; color: var(--ink); }
+
+/* ---- Motif ---- */
+
+.motif {
+  margin: 36px -8px 0;
+  padding: 0;
+}
+.motif svg {
+  display: block;
+  width: 100%;
+  height: auto;
+  border: 1px solid var(--rule);
+  background: var(--sky-top);
+}
+.motif figcaption {
+  font-family: var(--serif);
+  font-style: italic;
+  font-variation-settings: "opsz" 14;
+  font-size: 14px;
+  color: var(--ink-2);
+  margin: 10px 8px 0;
+  line-height: 1.55;
+  text-indent: 0;
+}
+.motif figcaption .cap-tag {
+  font-family: var(--mono);
+  font-style: normal;
+  font-size: 9.5px;
+  letter-spacing: 0.16em;
+  color: var(--ink-3);
+  margin-right: 10px;
+  white-space: nowrap;
+  display: inline-block;
+}
+.motif figcaption em { color: var(--ink); font-weight: 500; font-style: italic; }
+
+/* SVG style classes */
+.g-sky-top { stop-color: var(--sky-top); }
+.g-sky-bot { stop-color: var(--sky-bot); }
+.g-hill-1  { stop-color: var(--hill-1); }
+.g-hill-2  { stop-color: var(--hill-2); }
+.g-fog-edge { stop-color: var(--fog); stop-opacity: 0; }
+.g-fog-mid  { stop-color: var(--fog); stop-opacity: 1; }
+
+.pod      { fill: var(--pod-fill); }
+.pod-halo { fill: var(--pod-glow); }
+.pod-glow {
+  fill: var(--pod-glow);
+  filter: blur(6px);
+  opacity: 0.55;
+  transform-box: fill-box;
+  transform-origin: center;
+  animation: pod-pulse 4s ease-in-out infinite;
+}
+@keyframes pod-pulse {
+  0%, 100% { opacity: 0.4; transform: scale(1); }
+  50%      { opacity: 0.7; transform: scale(1.25); }
+}
+
+.seed {
+  fill: var(--ink);
+  filter: drop-shadow(0 0 3px var(--neon));
+  opacity: 0;
+  animation: seed-arc 6.4s linear infinite;
+}
+.seed-1 { offset-path: path('M 60 222 Q 110 130 200 200'); }
+.seed-2 { offset-path: path('M 60 222 Q 175 80 320 188'); animation-delay: 1.6s; }
+.seed-3 { offset-path: path('M 60 222 Q 240 50 440 192'); animation-delay: 3.2s; }
+.seed-4 { offset-path: path('M 60 222 Q 305 30 560 200'); animation-delay: 4.8s; }
+@keyframes seed-arc {
+  0%   { offset-distance: 0%;   opacity: 0; }
+  2%   { opacity: 1; }
+  23%  { offset-distance: 100%; opacity: 1; }
+  25%  { offset-distance: 100%; opacity: 0; }
+  100% { offset-distance: 100%; opacity: 0; }
+}
+
+.bloom {
+  transform-origin: center;
+  transform-box: fill-box;
+  opacity: 0;
+  animation: bloom 6.4s ease-out infinite;
+}
+.bloom-1 { animation-delay: 1.6s; }
+.bloom-2 { animation-delay: 3.2s; }
+.bloom-3 { animation-delay: 4.8s; }
+.bloom-4 { animation-delay: 0s; }
+
+@keyframes bloom {
+  0%   { transform: scale(0.2); opacity: 0; }
+  3%   { transform: scale(1.3); opacity: 1; }
+  10%  { transform: scale(1);   opacity: 0.92; }
+  60%  { opacity: 0.55; }
+  100% { transform: scale(1);   opacity: 0; }
+}
+
+.fog-band { fill: url(#fogband); }
+
+.bloom-a { fill: var(--bloom-a); }
+.bloom-b { fill: var(--bloom-b); }
+.bloom-c { fill: var(--bloom-c); }
+.bloom-d { fill: var(--bloom-d); }
+.bloom-halo { fill-opacity: 0.14; }
+.bloom-mid  { fill-opacity: 0.38; }
+.bloom-core { fill-opacity: 1; }
+
+@media (prefers-reduced-motion: reduce) {
+  .seed       { display: none; }
+  .bloom      { animation: none; opacity: 0.85; transform: scale(1); }
+  .pod-glow   { animation: none; opacity: 0.55; }
+  a, .edition, .edition .dot { transition: none !important; animation: none !important; }
+  .artists .bar > span { animation: none !important; width: var(--w) !important; }
+}
+
+/* ---- Rotation ---- */
+
+.rotation .lede-line,
+.dispatches .lede-line {
+  font-style: italic;
+  color: var(--ink-2);
+  margin: 0 0 18px;
+  font-size: 16px;
+  font-variation-settings: "opsz" 18;
+}
+
+.artists {
+  list-style: none;
+  padding: 0;
+  margin: 0 0 16px;
+  display: grid;
+  gap: 0;
+}
+.artists li {
+  display: grid;
+  grid-template-columns: 28px 1fr 90px;
+  align-items: baseline;
+  gap: 12px;
+  padding: 6px 0;
+  border-bottom: 1px dotted var(--rule);
+  font-size: 17px;
+}
+.artists li:first-child { border-top: 1px dotted var(--rule); }
+.artists .rank {
+  font-family: var(--mono);
+  font-size: 11px;
+  color: var(--ink-3);
+  letter-spacing: 0.06em;
+}
+.artists .name {
+  font-weight: 500;
+  font-variation-settings: "opsz" 18;
+}
+.artists .bar {
+  display: block;
+  height: 4px;
+  background: var(--rule-soft);
+  position: relative;
+  overflow: hidden;
+}
+.artists .bar > span {
+  display: block;
+  height: 100%;
+  width: 0;
+  background: var(--neon);
+  animation: bar-fill 1.4s cubic-bezier(.2,.7,.2,1) both;
+  animation-delay: var(--d, 0s);
+}
+@keyframes bar-fill {
+  to { width: var(--w, 0%); }
+}
+
+.genres {
+  font-style: italic;
+  font-size: 15px;
+  color: var(--ink-2);
+  margin-top: 14px;
+  line-height: 1.55;
+}
+.genres em {
+  font-style: italic;
+  color: var(--ink);
+  font-weight: 500;
+  margin-right: 4px;
+}
+
+/* ---- Wires ---- */
+
+.wire-list {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+  display: grid;
+  gap: 14px;
+}
+.wire-list li {
+  display: grid;
+  grid-template-columns: 96px 1fr;
+  gap: 16px;
+  align-items: baseline;
+  padding-top: 12px;
+  border-top: 1px solid var(--rule);
+}
+.wire-list li:first-child { border-top: 0; padding-top: 0; }
+.wire-tag {
+  font-family: var(--mono);
+  font-size: 10px;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+  color: var(--ink-3);
+  padding-top: 4px;
+}
+.wire-list p {
+  margin: 0;
+  font-size: 16.5px;
+  line-height: 1.55;
+}
+
+@media (max-width: 480px) {
+  .wire-list li { grid-template-columns: 1fr; gap: 4px; padding-top: 14px; }
+  .wire-tag { padding-top: 0; }
+  .artists li { grid-template-columns: 24px 1fr 60px; gap: 10px; }
+}
+
+/* ---- Dispatches ---- */
+
+.tweets {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+  display: grid;
+  gap: 12px;
+}
+.tweets li {
+  border: 1px solid var(--rule);
+  background: var(--paper-2);
+  position: relative;
+  transition: border-color 0.2s ease, transform 0.2s ease;
+}
+.tweets li:hover { border-color: var(--neon); }
+.tweets li::after {
+  content: '↗';
+  position: absolute;
+  top: 12px;
+  right: 14px;
+  font-family: var(--mono);
+  font-size: 14px;
+  color: var(--ink-3);
+  transition: color 0.2s, transform 0.2s;
+}
+.tweets li:hover::after { color: var(--neon); transform: translate(2px, -2px); }
+.tweets a {
+  display: block;
+  padding: 12px 36px 12px 14px;
+  background-image: none;
+  color: var(--ink);
+}
+.tweets a:hover { color: var(--ink); }
+.tweets time {
+  display: block;
+  font-family: var(--mono);
+  font-size: 10px;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--ink-3);
+  margin-bottom: 4px;
+}
+.tweets p {
+  margin: 0;
+  font-size: 17px;
+  line-height: 1.45;
+  font-style: italic;
+  font-variation-settings: "opsz" 22;
+  white-space: pre-line;
+}
+
+/* ---- Forecast ---- */
+
+.forecast p {
+  margin: 0;
+  font-size: 17px;
+  line-height: 1.55;
+  border-left: 2px solid var(--neon);
+  padding: 4px 0 4px 18px;
+}
+.forecast p em {
+  color: var(--neon);
+  font-style: italic;
+  font-weight: 500;
+}
+
+.forecast .meta {
+  font-family: var(--mono);
+  font-size: 10px;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--ink-3);
+  margin-top: 10px;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px 12px;
+  padding-left: 20px;
+}
+.forecast .meta strong { color: var(--ink-2); font-weight: 500; }
+
+/* ---- Colophon ---- */
+
+.colophon {
+  margin-top: 64px;
+  border-top: 3px double var(--rule);
+  padding-top: 24px;
+  font-size: 13.5px;
+  color: var(--ink-2);
+}
+.colophon p {
+  margin: 0 0 10px;
+  font-style: italic;
+  font-variation-settings: "opsz" 14;
+  line-height: 1.5;
+}
+.colophon p em { color: var(--ink); font-style: italic; }
+.colophon .links {
+  list-style: none;
+  padding: 0;
+  margin: 18px 0 14px;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px 18px;
+  font-family: var(--mono);
+  font-size: 11px;
+  letter-spacing: 0.10em;
+  text-transform: uppercase;
+  font-style: normal;
+}
+.colophon .links a { padding-bottom: 1px; }
+.colophon .version {
+  font-family: var(--mono);
+  font-size: 10px;
+  letter-spacing: 0.10em;
+  text-transform: uppercase;
+  color: var(--ink-3);
+  font-style: normal;
+  margin-top: 8px;
+}
+.colophon .version strong { color: var(--ink-2); font-weight: 500; }
+
+/* Reduce print stress further on tiny screens */
+@media (max-width: 380px) {
+  body { font-size: 17.5px; }
+  h1.title { font-size: clamp(46px, 14vw, 70px); }
+  .deck { font-size: 17px; }
+  .meta-row { font-size: 10px; }
+}
+</style>
+
+<style id="__living_site_scroll_guard">
+  /* Scroll guard injected at build time to ensure generated pages remain scrollable in iframes. */
+  html, body {
+    height: auto !important;
+    min-height: 100% !important;
+    max-height: none !important;
+    overflow-y: auto !important;
+    overflow-x: hidden !important;
+    position: static !important;
+    -webkit-overflow-scrolling: touch !important;
+    touch-action: pan-y !important;
+    overscroll-behavior-y: contain !important;
+  }
+  /* Avoid accidental fixed full-screen traps that break scrolling on mobile. */
+  body {
+    inset: auto !important;
+  }
+</style>
+</head>
+<body>
+<a class="skip" href="#main">Skip to today's edition</a>
+
+<div class="page">
+
+  <header class="masthead" role="banner">
+    <div class="meta-row">
+      <span class="vol">Vol. III &middot; No. 117</span>
+      <span class="dateline">San Francisco &middot; Wed Apr 29 2026</span>
+      <button class="edition" id="editionBtn" aria-label="Toggle morning / evening edition" aria-pressed="false" type="button">
+        <span class="dot" aria-hidden="true"></span>
+        <span class="label">Morning Edition</span>
+      </button>
+    </div>
+
+    <div class="rule-double" aria-hidden="true"></div>
+
+    <h1 class="title">
+      <span class="title-the">The</span>Nilsson Dispatch
+    </h1>
+
+    <p class="motto" aria-hidden="true">
+      <span>Est. 2025</span><span class="sep">/</span>
+      <span>A Living-Site Edition</span><span class="sep">/</span>
+      <span>No Paywall</span><span class="sep">/</span>
+      <span>All Rights Waived, Mostly</span>
+    </p>
+
+    <p class="deck">
+      <em>Compiled, mostly, by agents while the principal was elsewhere.</em>
+      Today's broadsheet runs short &mdash; clear sky, a dormant timeline, seventeen tasteful degrees, and a meadow somewhere still inking itself in.
+    </p>
+
+    <div class="weather-row">
+      <span>Wx</span> <em>Clear, 17&deg;C</em>
+      <span class="dot-sep">&middot;</span>
+      <span>Commits/wk</span> <em>0</em>
+      <span class="dot-sep">&middot;</span>
+      <span>Timeline</span> <em>Dormant</em>
+    </div>
+  </header>
+
+  <main id="main">
+
+    <article class="lede">
+      <h2 class="kicker"><span>From the Desk</span></h2>
+      <p class="dropcap">
+        <strong>Erik Nilsson</strong> &mdash; product designer at <a href="https://cursor.com" target="_blank" rel="noopener">Cursor</a> &mdash; files this from San Francisco, where the late-April light is doing nothing in particular. Off-hours, he tinkers with <em>living-site</em>: a small experiment whose entire point is that agents rebuild this corner of the web from fresh activity data each day. Today they had to make do with very little. He shipped no commits. He posted no posts. The clouds, it should be said, were tasteful.
+      </p>
+      <p>
+        GitHub, in case you are tracking, is <em>side projects and experiments</em> &mdash; small personal things, not the day job. The day job is at Cursor, working on how people build software with AI.
+      </p>
+    </article>
+
+    <figure class="motif" aria-label="Animated illustration: seeds flicked uphill bloom into a small hillside meadow.">
+      <svg viewBox="0 0 640 260" xmlns="http://www.w3.org/2000/svg" role="img" aria-hidden="true" preserveAspectRatio="xMidYMid slice">
+        <defs>
+          <linearGradient id="sky" x1="0" y1="0" x2="0" y2="1">
+            <stop class="g-sky-top" offset="0%"/>
+            <stop class="g-sky-bot" offset="100%"/>
+          </linearGradient>
+          <linearGradient id="hillgrad-1" x1="0" y1="0" x2="0" y2="1">
+            <stop class="g-hill-1" offset="0%" stop-opacity="0.85"/>
+            <stop class="g-hill-1" offset="100%" stop-opacity="1"/>
+          </linearGradient>
+          <linearGradient id="hillgrad-2" x1="0" y1="0" x2="0" y2="1">
+            <stop class="g-hill-2" offset="0%" stop-opacity="0.95"/>
+            <stop class="g-hill-2" offset="100%" stop-opacity="1"/>
+          </linearGradient>
+          <linearGradient id="fogband" x1="0" y1="0" x2="1" y2="0">
+            <stop class="g-fog-edge" offset="0%"/>
+            <stop class="g-fog-mid"  offset="50%" stop-opacity="0.7"/>
+            <stop class="g-fog-edge" offset="100%"/>
+          </linearGradient>
+        </defs>
+
+        <rect width="640" height="260" fill="url(#sky)"/>
+
+        <path d="M 0 195 Q 130 120 280 175 Q 400 215 540 165 Q 600 145 640 175 V 260 H 0 Z" fill="url(#hillgrad-1)"/>
+
+        <rect class="fog-band" x="-200" y="135" width="640" height="42" opacity="0.55">
+          <animate attributeName="x" values="-260;260;-260" dur="34s" repeatCount="indefinite"/>
+        </rect>
+
+        <path d="M 0 215 Q 160 175 320 210 Q 480 235 640 195 V 260 H 0 Z" fill="url(#hillgrad-2)"/>
+
+        <rect class="fog-band" x="200" y="195" width="640" height="28" opacity="0.4">
+          <animate attributeName="x" values="260;-260;260" dur="44s" repeatCount="indefinite"/>
+        </rect>
+
+        <circle class="pod-glow" cx="60" cy="222" r="14"/>
+        <circle class="pod-halo" cx="60" cy="222" r="7" opacity="0.35"/>
+        <circle class="pod"      cx="60" cy="222" r="4"/>
+
+        <g class="bloom bloom-1" transform="translate(200 200)">
+          <circle class="bloom-halo bloom-a" r="14"/>
+          <circle class="bloom-mid bloom-a"  r="6"/>
+          <circle class="bloom-core bloom-a" r="2.5"/>
+        </g>
+        <g class="bloom bloom-2" transform="translate(320 188)">
+          <circle class="bloom-halo bloom-b" r="15"/>
+          <circle class="bloom-mid bloom-b"  r="6.5"/>
+          <circle class="bloom-core bloom-b" r="2.6"/>
+        </g>
+        <g class="bloom bloom-3" transform="translate(440 192)">
+          <circle class="bloom-halo bloom-c" r="14"/>
+          <circle class="bloom-mid bloom-c"  r="6"/>
+          <circle class="bloom-core bloom-c" r="2.5"/>
+        </g>
+        <g class="bloom bloom-4" transform="translate(560 200)">
+          <circle class="bloom-halo bloom-d" r="14"/>
+          <circle class="bloom-mid bloom-d"  r="6"/>
+          <circle class="bloom-core bloom-d" r="2.5"/>
+        </g>
+
+        <circle class="seed seed-1" cx="0" cy="0" r="2.6"/>
+        <circle class="seed seed-2" cx="0" cy="0" r="2.6"/>
+        <circle class="seed seed-3" cx="0" cy="0" r="2.6"/>
+        <circle class="seed seed-4" cx="0" cy="0" r="2.6"/>
+      </svg>
+      <figcaption>
+        <span class="cap-tag">Fig.&nbsp;1</span>Today's daydream, per the agents &mdash; <em>flick seed-globes downhill through a hillside fog bank;</em> clean arcs ink the meadow into bloom. Watercolor weather throughout.
+      </figcaption>
+    </figure>
+
+    <section class="rotation">
+      <h2 class="kicker"><span>Heaviest Rotation</span></h2>
+      <p class="lede-line">In the order the algorithm insists.</p>
+      <ol class="artists">
+        <li><span class="rank">01</span><span class="name">Fred again..</span><span class="bar"><span style="--w:100%;--d:0.20s"></span></span></li>
+        <li><span class="rank">02</span><span class="name">Beach House</span><span class="bar"><span style="--w:86%;--d:0.28s"></span></span></li>
+        <li><span class="rank">03</span><span class="name">A$AP Rocky</span><span class="bar"><span style="--w:73%;--d:0.36s"></span></span></li>
+        <li><span class="rank">04</span><span class="name">Drake</span><span class="bar"><span style="--w:62%;--d:0.44s"></span></span></li>
+        <li><span class="rank">05</span><span class="name">Ben Böhmer</span><span class="bar"><span style="--w:54%;--d:0.52s"></span></span></li>
+        <li><span class="rank">06</span><span class="name">Tame Impala</span><span class="bar"><span style="--w:46%;--d:0.60s"></span></span></li>
+        <li><span class="rank">07</span><span class="name">kent</span><span class="bar"><span style="--w:39%;--d:0.68s"></span></span></li>
+        <li><span class="rank">08</span><span class="name">Dire Straits</span><span class="bar"><span style="--w:33%;--d:0.76s"></span></span></li>
+        <li><span class="rank">09</span><span class="name">The Weeknd</span><span class="bar"><span style="--w:28%;--d:0.84s"></span></span></li>
+        <li><span class="rank">10</span><span class="name">The Velvet Sundown</span><span class="bar"><span style="--w:23%;--d:0.92s"></span></span></li>
+        <li><span class="rank">11</span><span class="name">Videoclub</span><span class="bar"><span style="--w:19%;--d:1.00s"></span></span></li>
+        <li><span class="rank">12</span><span class="name">Taylor Swift</span><span class="bar"><span style="--w:16%;--d:1.08s"></span></span></li>
+      </ol>
+      <p class="genres">
+        <em>Tonight's bouquet &mdash;</em> rap &middot; stutter house &middot; swedish pop &middot; house &middot; edm &middot; dream pop &middot; melodic house &middot; melodic techno &middot; progressive house &middot; deep house &middot; neo-psychedelic &middot; indie &middot; classic rock.
+      </p>
+    </section>
+
+    <section class="wires">
+      <h2 class="kicker"><span>From the Wires</span></h2>
+      <ul class="wire-list">
+        <li><span class="wire-tag">Protocols</span><p>Three decades of handshakes behind the glass &mdash; FastCGI still ferrying replies for reverse proxies.</p></li>
+        <li><span class="wire-tag">Evals</span><p>Builders chasing identical answers out of stochastic minds &mdash; new benchmarks clock how often an LLM rhymes twice.</p></li>
+        <li><span class="wire-tag">Weather</span><p>Clear April bay air, seventeen degrees holding between low clouds and dusk past eight.</p></li>
+        <li><span class="wire-tag">Off-hours</span><p>Spring side-project quiet on GitHub &mdash; agents elsewhere, doing the nightly compile.</p></li>
+        <li><span class="wire-tag">City</span><p>Stutter-house bleeps and french indie whispers braided into the same commuting hour.</p></li>
+      </ul>
+    </section>
+
+    <section class="dispatches">
+      <h2 class="kicker"><span>Recent Dispatches</span></h2>
+      <p class="lede-line">From the timeline, before it went quiet.</p>
+      <ul class="tweets">
+        <li>
+          <a href="https://x.com/flowstated/status/2002167999353241901" target="_blank" rel="noopener">
+            <time datetime="2025-12-20">Dec 20, 2025</time>
+            <p>imagine 2026</p>
+          </a>
+        </li>
+        <li>
+          <a href="https://x.com/flowstated/status/2000889983562080578" target="_blank" rel="noopener">
+            <time datetime="2025-12-16">Dec 16, 2025</time>
+            <p>shipping by sunrise</p>
+          </a>
+        </li>
+        <li>
+          <a href="https://x.com/flowstated/status/2000691637190861180" target="_blank" rel="noopener">
+            <time datetime="2025-12-15">Dec 15, 2025</time>
+            <p>exploring ways to spin up agents from my phone
+
+iOS shortcuts × github actions × cursor cli</p>
+          </a>
+        </li>
+      </ul>
+    </section>
+
+    <section class="forecast">
+      <h2 class="kicker"><span>Tomorrow's Forecast</span></h2>
+      <p>If today's edition were a small game: pull back from a glowing pod and sling seed-globes through drifting fog bands; clean arcs ink the hillside into bloom; gust lines shift mid-flight, hillside rocks splinter into smaller hazards. Suggested aesthetic &mdash; <em>watercolor hillside with drifting fog bands.</em></p>
+      <p class="meta">
+        <span><strong>Mech</strong> physics flick</span>
+        <span><strong>Input</strong> pull, release</span>
+        <span><strong>Mood</strong> dreamy spring</span>
+      </p>
+    </section>
+
+  </main>
+
+  <footer class="colophon">
+    <p>Set in <em>Fraunces</em> &amp; <em>Newsreader</em>, with mono notes in <em>JetBrains Mono</em>. Compiled nightly by autonomous compositors. The masthead is a perpetual draft.</p>
+    <ul class="links">
+      <li><a href="https://eriks.design" target="_blank" rel="noopener">eriks.design</a></li>
+      <li><a href="https://github.com/eriknson" target="_blank" rel="noopener">GitHub</a></li>
+      <li><a href="https://x.com/flowstated" target="_blank" rel="noopener">X</a></li>
+      <li><a href="https://linkedin.com/in/eriknson" target="_blank" rel="noopener">LinkedIn</a></li>
+      <li><a href="mailto:contact@eriks.design">contact@eriks.design</a></li>
+    </ul>
+    <p class="version"><strong>Edition no. 117</strong> &middot; Filed Wed 29 Apr 2026 &middot; 17&deg;C, clear in San Francisco</p>
+  </footer>
+
+</div>
+
+<script>
+  (function(){
+    var root = document.documentElement;
+    var btn = document.getElementById('editionBtn');
+    if (!btn) return;
+    var label = btn.querySelector('.label');
+
+    function apply(theme){
+      root.dataset.theme = theme;
+      if (label) label.textContent = (theme === 'dark') ? 'Evening Edition' : 'Morning Edition';
+      btn.setAttribute('aria-pressed', theme === 'dark' ? 'true' : 'false');
+    }
+
+    apply(root.dataset.theme || 'light');
+
+    btn.addEventListener('click', function(){
+      var next = root.dataset.theme === 'dark' ? 'light' : 'dark';
+      apply(next);
+      try { localStorage.setItem('dispatch-edition', next); } catch(e) {}
+    });
+
+    var mq = window.matchMedia('(prefers-color-scheme: dark)');
+    if (mq.addEventListener) {
+      mq.addEventListener('change', function(e){
+        try {
+          if (localStorage.getItem('dispatch-edition')) return;
+        } catch(_) {}
+        apply(e.matches ? 'dark' : 'light');
+      });
+    }
+  })();
+</script>
+</body>
+</html>
