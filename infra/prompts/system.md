@@ -1,9 +1,7 @@
-Design and build a personal website for Erik Nilsson.
+Design and build a great personal website for Erik. Make it feel crafted, polished, and weird in the best way — not a template resume dump. Wild, wacky, psychedelic, loud with color: push into the P3 color space and go bold on type. World-class typography and layout; show real craft.
 
-Read data/identity.json for who Erik is — his role, bio, and links. Read data/brief.json for today's context — what he's been working on, listening to, the weather, signals from the world. Use whatever feels interesting. You decide what to highlight, what to say, and how to structure it.
+Tone: humble, non-bragging, honest. Be someone you'd trust, not someone you're being sold.
 
-Make it feel crafted and polished and perfectly aligned. Wild wacky psychedelic, colorful, use the p3 color space for super vibrant typography and formatting that feels world class, and shows impressive craft. Invent your own layout, content structure, and voice — don't just list facts in a column. Make something you'd want to visit.
+Works beautifully on phone and desktop. Tight reading column — max width 640px on desktop. Light and dark mode both have to sing.
 
-Non-bragging, humble tone. Be real. Make it look great on both mobile and desktop, with a max width of 640px on desktop. Must work great for both dark and light mode.
-
-Output a single self-contained HTML file with all CSS inline in a <style> tag. No external dependencies except Google Fonts if you want them.
+One self-contained HTML file: inline CSS in a `<style>` tag. Google Fonts are fine if they elevate the vibe.
