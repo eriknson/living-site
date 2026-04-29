@@ -118,6 +118,127 @@ function sseMessage(data: object): string {
   return `data: ${JSON.stringify(data)}\n\n`;
 }
 
+type ActivityKind = "status" | "thinking" | "assistant" | "tool" | "task";
+type ActivityStatus = "running" | "completed" | "error";
+
+interface ActivityEvent {
+  type: "activity";
+  id: string;
+  kind: ActivityKind;
+  status: ActivityStatus;
+  action: string;
+  details?: string;
+  toolName?: string;
+  timestamp: number;
+}
+
+function activity(input: Omit<ActivityEvent, "type" | "timestamp">): ActivityEvent {
+  return { type: "activity", timestamp: Date.now(), ...input };
+}
+
+/**
+ * Map a tool-call name + args to a humanized action verb and detail string.
+ * SDK tool arg shapes are not stable, so this is intentionally permissive.
+ */
+function formatToolAction(
+  toolName: string | undefined,
+  args: unknown
+): { action: string; details?: string } {
+  const lowered = (toolName || "").toLowerCase();
+  const a =
+    args && typeof args === "object" ? (args as Record<string, unknown>) : {};
+
+  const getStr = (key: string): string | undefined => {
+    const v = a[key];
+    return typeof v === "string" ? v : undefined;
+  };
+
+  const getPath = (): string | undefined => {
+    const path =
+      getStr("file_path") ||
+      getStr("path") ||
+      getStr("target_file") ||
+      getStr("relativeWorkspacePath") ||
+      getStr("filename");
+    if (!path) return undefined;
+    const segments = path.split("/").filter(Boolean);
+    return segments.length > 0 ? segments[segments.length - 1] : path;
+  };
+
+  if (
+    lowered.includes("write") ||
+    lowered === "create_file" ||
+    lowered === "edit_file" ||
+    lowered === "search_replace" ||
+    lowered === "multiedit"
+  ) {
+    return { action: "Writing", details: getPath() };
+  }
+  if (lowered.includes("read") || lowered === "open_file") {
+    return { action: "Reading", details: getPath() };
+  }
+  if (
+    lowered.includes("grep") ||
+    lowered.includes("codebase_search") ||
+    lowered.includes("semsearch") ||
+    lowered.includes("search")
+  ) {
+    const q = getStr("query") || getStr("pattern");
+    return { action: "Searching", details: q ? q.slice(0, 60) : "codebase" };
+  }
+  if (
+    lowered.includes("shell") ||
+    lowered.includes("run_terminal") ||
+    lowered === "bash"
+  ) {
+    const cmd = getStr("command") || getStr("cmd");
+    return { action: "Running", details: cmd ? cmd.slice(0, 80) : undefined };
+  }
+  if (lowered === "ls" || lowered.includes("list_dir")) {
+    return { action: "Listing", details: getPath() };
+  }
+  if (lowered === "glob" || lowered.includes("find")) {
+    return { action: "Finding", details: getStr("pattern") };
+  }
+  if (lowered === "task" || lowered.includes("subagent")) {
+    return {
+      action: "Running task",
+      details: getStr("subagent_type") || getStr("description"),
+    };
+  }
+  if (lowered.includes("fetch") || lowered.includes("http")) {
+    return { action: "Fetching", details: getStr("url") };
+  }
+
+  const humanized = (toolName || "Tool")
+    .replace(/_/g, " ")
+    .replace(/\b./, c => c.toUpperCase());
+  return { action: humanized };
+}
+
+function describeStatus(raw: string | undefined): {
+  action: string;
+  status: ActivityStatus;
+} {
+  const s = (raw || "").toUpperCase();
+  switch (s) {
+    case "CREATING":
+      return { action: "Creating cloud workspace", status: "running" };
+    case "RUNNING":
+      return { action: "Running agent", status: "running" };
+    case "FINISHED":
+      return { action: "Run finished", status: "completed" };
+    case "ERROR":
+      return { action: "Run failed", status: "error" };
+    case "CANCELLED":
+      return { action: "Run cancelled", status: "error" };
+    case "EXPIRED":
+      return { action: "Run expired", status: "error" };
+    default:
+      return { action: raw || "Working", status: "running" };
+  }
+}
+
 export async function POST(request: NextRequest) {
   if (!CURSOR_API_KEY) {
     return new Response(
@@ -172,7 +293,12 @@ export async function POST(request: NextRequest) {
 
         const prompt = await buildRemixPrompt(userDirection);
 
-        send({ type: "status", status: "launching", message: "Launching cloud agent..." });
+        send(activity({
+          id: "boot",
+          kind: "status",
+          status: "running",
+          action: "Launching cloud agent",
+        }));
 
         const { Agent } = await import("@cursor/sdk");
 
@@ -184,14 +310,15 @@ export async function POST(request: NextRequest) {
         });
         console.log("[/api/generate] Agent created:", agent.agentId);
 
-        send({
-          type: "status",
-          status: "running",
-          message: "Agent is starting...",
-          agentId: agent.agentId,
-        });
+        send(activity({
+          id: "boot",
+          kind: "status",
+          status: "completed",
+          action: "Cloud agent ready",
+        }));
 
-        let stepIdx = 0;
+        let assistantIdx = 0;
+        let thinkingIdx = 0;
         // Track the most recent HTML extracted from the agent's tool calls.
         // Used as a fallback if downloadArtifact fails after the run completes.
         let lastStreamedHtml: string | null = null;
@@ -208,9 +335,6 @@ export async function POST(request: NextRequest) {
                 }
               }
             }
-            if (update.type === "text-delta" && update.text) {
-              send({ type: "text_delta", text: update.text });
-            }
           },
         });
 
@@ -222,33 +346,64 @@ export async function POST(request: NextRequest) {
             for (const block of event.message.content) {
               if (block.type === "text" && block.text.trim().length > 10) {
                 const firstLine = block.text.split("\n")[0].trim();
-                const summary = firstLine.length > 60 ? firstLine.slice(0, 57) + "..." : firstLine;
-                send({
-                  type: "step",
-                  id: `${event.run_id}-${stepIdx++}`,
-                  text: block.text,
-                  summary,
-                });
+                const action = firstLine.length > 90 ? firstLine.slice(0, 87) + "..." : firstLine;
+                send(activity({
+                  id: `${event.run_id}-asst-${assistantIdx++}`,
+                  kind: "assistant",
+                  status: "completed",
+                  action,
+                }));
               }
             }
           }
+          if (event.type === "thinking") {
+            const text = (event.text || "").trim();
+            if (text.length > 0) {
+              const firstLine = text.split("\n")[0].trim();
+              const action = firstLine.length > 90 ? firstLine.slice(0, 87) + "..." : firstLine;
+              send(activity({
+                id: `${event.run_id}-think-${thinkingIdx++}`,
+                kind: "thinking",
+                status: "completed",
+                action,
+              }));
+            }
+          }
           if (event.type === "tool_call") {
-            const toolName = event.name || "tool";
-            send({
-              type: "step",
+            const { action, details } = formatToolAction(event.name, event.args);
+            send(activity({
               id: `${event.run_id}-tool-${event.call_id}`,
-              text: `Using ${toolName}`,
-              summary: toolName,
-            });
+              kind: "tool",
+              status:
+                event.status === "running"
+                  ? "running"
+                  : event.status === "error"
+                    ? "error"
+                    : "completed",
+              action,
+              details,
+              toolName: event.name,
+            }));
           }
           if (event.type === "status") {
-            send({
-              type: "status",
-              status: (event.status || "running").toLowerCase(),
-              message: event.message || "Working...",
-            });
+            const { action, status } = describeStatus(event.status);
+            send(activity({
+              id: "agent-status",
+              kind: "status",
+              status,
+              action: event.message || action,
+            }));
           }
         }
+
+        // Mark the persistent status row as completed once the stream ends so
+        // the client can stop showing it as the active row.
+        send(activity({
+          id: "agent-status",
+          kind: "status",
+          status: "completed",
+          action: "Run finished",
+        }));
 
         // Fetch final canonical HTML from artifact
         let finalHtml: string | undefined;
