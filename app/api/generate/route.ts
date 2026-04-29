@@ -317,8 +317,6 @@ export async function POST(request: NextRequest) {
           action: "Cloud agent ready",
         }));
 
-        let assistantIdx = 0;
-        let thinkingIdx = 0;
         // Track the most recent HTML extracted from the agent's tool calls.
         // Used as a fallback if downloadArtifact fails after the run completes.
         let lastStreamedHtml: string | null = null;
@@ -342,33 +340,10 @@ export async function POST(request: NextRequest) {
         console.log("[/api/generate] Run started:", run.id);
 
         for await (const event of run.stream()) {
-          if (event.type === "assistant") {
-            for (const block of event.message.content) {
-              if (block.type === "text" && block.text.trim().length > 10) {
-                const firstLine = block.text.split("\n")[0].trim();
-                const action = firstLine.length > 90 ? firstLine.slice(0, 87) + "..." : firstLine;
-                send(activity({
-                  id: `${event.run_id}-asst-${assistantIdx++}`,
-                  kind: "assistant",
-                  status: "completed",
-                  action,
-                }));
-              }
-            }
-          }
-          if (event.type === "thinking") {
-            const text = (event.text || "").trim();
-            if (text.length > 0) {
-              const firstLine = text.split("\n")[0].trim();
-              const action = firstLine.length > 90 ? firstLine.slice(0, 87) + "..." : firstLine;
-              send(activity({
-                id: `${event.run_id}-think-${thinkingIdx++}`,
-                kind: "thinking",
-                status: "completed",
-                action,
-              }));
-            }
-          }
+          // Note: assistant/thinking events are intentionally not surfaced —
+          // the SDK streams them in many small fragments which produces a
+          // noisy wall of partial sentences. Tool calls and status events
+          // are the high-signal items.
           if (event.type === "tool_call") {
             const { action, details } = formatToolAction(event.name, event.args);
             send(activity({

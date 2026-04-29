@@ -15,68 +15,15 @@ export interface AgentActivityItem {
   timestamp: number;
 }
 
-/**
- * Three small dots cycling in a wave — used as an ASCII-style loading glyph
- * next to the currently-running activity row.
- */
-export function AgentLoadingDots({ className = "" }: { className?: string }) {
-  return (
-    <span
-      aria-hidden
-      className={`inline-flex items-end gap-[2px] ${className}`}
-      style={{ height: 8 }}
-    >
-      <span
-        className="agent-dot block w-1 h-1 rounded-full bg-current"
-        style={{ animationDelay: "0ms" }}
-      />
-      <span
-        className="agent-dot block w-1 h-1 rounded-full bg-current"
-        style={{ animationDelay: "150ms" }}
-      />
-      <span
-        className="agent-dot block w-1 h-1 rounded-full bg-current"
-        style={{ animationDelay: "300ms" }}
-      />
-    </span>
-  );
-}
-
-/**
- * Status glyph — small fixed-size column that shows wave dots while running,
- * a soft filled dot when completed, an error dot when errored.
- */
-export function AgentStatusGlyph({ status }: { status: AgentActivityStatus }) {
-  const sizeClasses = "inline-flex items-center justify-center w-3 h-3";
-  if (status === "running") {
-    return (
-      <span className={`${sizeClasses} text-gray-500 dark:text-gray-400`}>
-        <AgentLoadingDots />
-      </span>
-    );
-  }
-  if (status === "error") {
-    return (
-      <span className={`${sizeClasses}`}>
-        <span className="block w-1.5 h-1.5 rounded-full bg-red-500/80" />
-      </span>
-    );
-  }
-  return (
-    <span className={`${sizeClasses}`}>
-      <span className="block w-1 h-1 rounded-full bg-gray-400/70 dark:bg-gray-500/60" />
-    </span>
-  );
-}
-
 interface AgentActivityRowProps {
   item: AgentActivityItem;
   isCurrent: boolean;
 }
 
 /**
- * One row of the agent buffer. The current running row uses the shine effect;
- * everything else fades to muted text.
+ * One row of the agent buffer. The current running row uses the shine
+ * effect; everything else fades to muted. No leading glyph — the typography
+ * itself signals state (shimmer / muted / red).
  */
 export function AgentActivityRow({ item, isCurrent }: AgentActivityRowProps) {
   const isRunning = item.status === "running";
@@ -92,7 +39,6 @@ export function AgentActivityRow({ item, isCurrent }: AgentActivityRowProps) {
         : isCurrent
           ? "text-gray-800 dark:text-gray-200"
           : "text-gray-400 dark:text-gray-500",
-    item.kind === "thinking" && !showShine ? "italic" : "",
   ]
     .filter(Boolean)
     .join(" ");
@@ -106,9 +52,6 @@ export function AgentActivityRow({ item, isCurrent }: AgentActivityRowProps) {
 
   return (
     <div className="flex items-center gap-2 py-1 min-w-0">
-      <span className="flex-shrink-0">
-        <AgentStatusGlyph status={item.status} />
-      </span>
       <span className={actionClass}>{item.action}</span>
       {item.details ? <span className={detailsClass}>{item.details}</span> : null}
     </div>
@@ -123,7 +66,6 @@ interface AgentActivityPanelProps {
 
 /**
  * Full-card activity panel shown before the first partial HTML arrives.
- * Mirrors Cursor Cloud Agents' simulated thinking + step stream layout.
  */
 export function AgentActivityPanel({
   items,
@@ -155,9 +97,6 @@ export function AgentActivityPanel({
             ))
           ) : (
             <div className="flex items-center gap-2 py-1 min-w-0">
-              <span className="flex-shrink-0">
-                <AgentStatusGlyph status="running" />
-              </span>
               <span className="text-[13px] leading-5 agent-shine text-gray-900 dark:text-gray-100">
                 {fallbackMessage || "Planning next moves"}
               </span>
@@ -184,8 +123,7 @@ interface AgentActivityOverlayProps {
 
 /**
  * Floating pill rendered over the live preview while the agent is still
- * working. Replaces the generic "Building... Ns" indicator with the
- * current activity action + details.
+ * working. Shows the current activity action + details + elapsed time.
  */
 export function AgentActivityOverlay({
   current,
@@ -198,10 +136,7 @@ export function AgentActivityOverlay({
 
   return (
     <div className="absolute bottom-4 left-1/2 -translate-x-1/2 max-w-[90vw]">
-      <div className="bg-white/90 dark:bg-black/80 backdrop-blur-sm rounded-full pl-3 pr-4 py-2 shadow-lg border border-black/5 dark:border-white/10 flex items-center gap-2 min-w-0">
-        <span className="flex-shrink-0">
-          <AgentStatusGlyph status={current?.status ?? "running"} />
-        </span>
+      <div className="bg-white/90 dark:bg-black/80 backdrop-blur-sm rounded-full px-4 py-2 shadow-lg border border-black/5 dark:border-white/10 flex items-center gap-2 min-w-0">
         <span
           className={[
             "text-[13px] truncate max-w-[220px]",
