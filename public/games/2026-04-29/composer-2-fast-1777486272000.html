@@ -1,0 +1,918 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <title>Pulse Merge — composer-2-fast</title>
+  <style>
+    :root {
+      --bg: #0a0e12;
+      --grid: rgba(0, 255, 213, 0.06);
+      --text: #e8f4f0;
+      --muted: #7a9088;
+      --beam: #00ffd5;
+      --shard-a: #00ffd5;
+      --shard-b: #c8ff00;
+      --shard-c: #ffaa33;
+      --danger: #ff4466;
+      --slot: rgba(255, 255, 255, 0.06);
+      --overlay: rgba(8, 12, 14, 0.92);
+    }
+    @media (prefers-color-scheme: light) {
+      :root {
+        --bg: #f0f4f2;
+        --grid: rgba(0, 120, 100, 0.08);
+        --text: #152018;
+        --muted: #5a7068;
+        --beam: #00997a;
+        --shard-a: #00997a;
+        --shard-b: #889900;
+        --shard-c: #cc7700;
+        --danger: #cc2244;
+        --slot: rgba(0, 0, 0, 0.06);
+        --overlay: rgba(240, 244, 242, 0.95);
+      }
+    }
+    * { box-sizing: border-box; }
+    html, body {
+      margin: 0;
+      height: 100%;
+      height: 100dvh;
+      width: 100%;
+      overflow: hidden;
+      background: var(--bg);
+      color: var(--text);
+      font-family: ui-monospace, 'SFMono-Regular', Menlo, monospace;
+      touch-action: none;
+      user-select: none;
+      -webkit-user-select: none;
+    }
+    #wrap {
+      position: fixed;
+      inset: 0;
+      width: 100dvw;
+      height: 100dvh;
+      display: flex;
+      flex-direction: column;
+      align-items: stretch;
+    }
+    #hud {
+      flex: 0 0 auto;
+      padding: env(safe-area-inset-top, 8px) max(12px, env(safe-area-inset-right)) 6px max(12px, env(safe-area-inset-left));
+      display: flex;
+      justify-content: space-between;
+      align-items: baseline;
+      font-size: 13px;
+      letter-spacing: 0.04em;
+      z-index: 2;
+    }
+    #hud span { color: var(--muted); }
+    #canvas-wrap {
+      flex: 1 1 auto;
+      position: relative;
+      min-height: 0;
+    }
+    canvas#game {
+      display: block;
+      width: 100%;
+      height: 100%;
+      touch-action: none;
+      cursor: grab;
+    }
+    canvas#game:active { cursor: grabbing; }
+    #screens {
+      position: absolute;
+      inset: 0;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      pointer-events: none;
+      z-index: 3;
+    }
+    .panel {
+      pointer-events: auto;
+      background: var(--overlay);
+      border: 1px solid var(--grid);
+      padding: clamp(20px, 5vw, 32px);
+      max-width: min(92vw, 420px);
+      text-align: center;
+      border-radius: 2px;
+      opacity: 0;
+      transform: translateY(12px);
+      transition: opacity 0.35s ease, transform 0.35s ease;
+    }
+    .panel.visible {
+      opacity: 1;
+      transform: translateY(0);
+    }
+    .panel h1 {
+      margin: 0 0 10px;
+      font-size: clamp(18px, 4.5vw, 22px);
+      font-weight: 600;
+      letter-spacing: 0.06em;
+    }
+    .panel p {
+      margin: 0 0 18px;
+      font-size: 13px;
+      line-height: 1.55;
+      color: var(--muted);
+    }
+    .btn {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      min-height: 48px;
+      min-width: min(280px, 85vw);
+      padding: 0 24px;
+      font: inherit;
+      font-size: 14px;
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+      background: var(--beam);
+      color: var(--bg);
+      border: none;
+      border-radius: 2px;
+      cursor: pointer;
+      touch-action: manipulation;
+    }
+    @media (prefers-color-scheme: light) {
+      .btn { color: #fff; }
+    }
+    .btn:active { transform: scale(0.98); }
+    .hint {
+      margin-top: 14px;
+      font-size: 11px;
+      color: var(--muted);
+      line-height: 1.45;
+    }
+    #go-panel.panel kbd {
+      display: inline-block;
+      padding: 2px 6px;
+      border: 1px solid var(--grid);
+      border-radius: 2px;
+      font-size: 10px;
+    }
+  </style>
+</head>
+<body>
+  <div id="wrap">
+    <header id="hud">
+      <div id="score-line">MERGES <strong id="score">0</strong> <span id="combo"></span></div>
+      <div>WINDOW <span id="bpm">128</span> BPM</div>
+      <div>TIME <strong id="time">45</strong>s</div>
+    </header>
+    <div id="canvas-wrap">
+      <canvas id="game"></canvas>
+      <div id="screens">
+        <div id="title-panel" class="panel visible">
+          <h1>PULSE MERGE</h1>
+          <p>Catch waveform shards in the band. Hold to freeze. Release over a slot. Pair matching colors on the beat.</p>
+          <button type="button" class="btn" id="btn-start">Tap to start</button>
+          <p class="hint">Touch: tap shards · hold freezes · release into slots · Space freezes · ← → moves aim</p>
+        </div>
+        <div id="go-panel" class="panel">
+          <h1 id="go-title">ROUND CLEAR</h1>
+          <p id="go-msg">Steady merges.</p>
+          <p><strong id="go-score">0</strong> merges</p>
+          <button type="button" class="btn" id="btn-again">Play again</button>
+        </div>
+      </div>
+    </div>
+  </div>
+  <script>
+(function () {
+  'use strict';
+
+  var canvas = document.getElementById('game');
+  var ctx = canvas.getContext('2d');
+
+  var W = 400;
+  var H = 700;
+  var dpr = Math.min(window.devicePixelRatio || 1, 2);
+
+  var STATE_TITLE = 0;
+  var STATE_PLAY = 1;
+  var STATE_OVER = 2;
+  var state = STATE_TITLE;
+
+  var ROUND_SEC = 45;
+  var timeLeft = ROUND_SEC;
+  var score = 0;
+  var combo = 0;
+  var maxCombo = 0;
+
+  var aimX = 0.5;
+  var keyboard = { left: false, right: false };
+
+  var bpm = 128;
+  var beatDur = 60 / bpm;
+  var beatClock = 0;
+  var nextBurstAt = 0;
+  var burstIndex = 0;
+
+  var fakeDropTimer = 0;
+
+  var shards = [];
+  var particles = [];
+  var caught = null;
+  var slots = [null, null];
+
+  var slotRects = [{ x: 0, y: 0, w: 0, h: 0 }, { x: 0, y: 0, w: 0, h: 0 }];
+  var catchBand = { y0: 0, y1: 0 };
+
+  var canvasPointerDown = false;
+  var spaceHeld = false;
+  var pointerId = null;
+  var px = 0;
+  var py = 0;
+
+  var lastFrameTime = 0;
+
+  var audioCtx = null;
+  var masterGain = null;
+  var layerGain = null;
+  var mergeLayers = 0;
+
+  function prefersDark() {
+    return window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches;
+  }
+
+  function cssVar(name, fallback) {
+    var s = getComputedStyle(document.documentElement).getPropertyValue(name).trim();
+    return s || fallback;
+  }
+
+  function resize() {
+    var rect = canvas.getBoundingClientRect();
+    W = Math.max(320, rect.width);
+    H = Math.max(400, rect.height);
+    canvas.width = Math.floor(W * dpr);
+    canvas.height = Math.floor(H * dpr);
+    ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+
+    var margin = W * 0.06;
+    var slotW = Math.min(88, W * 0.22);
+    var slotH = Math.max(52, 52);
+    var bottom = H - Math.max(56, H * 0.08);
+    slotRects[0] = { x: W / 2 - slotW - margin * 0.4, y: bottom - slotH, w: slotW, h: slotH };
+    slotRects[1] = { x: W / 2 + margin * 0.4, y: bottom - slotH, w: slotW, h: slotH };
+
+    catchBand.y0 = H * 0.34;
+    catchBand.y1 = H * 0.56;
+    aimX = W / 2;
+  }
+
+  function initAudio() {
+    if (audioCtx) return;
+    var AC = window.AudioContext || window.webkitAudioContext;
+    if (!AC) return;
+    audioCtx = new AC();
+    masterGain = audioCtx.createGain();
+    masterGain.gain.value = 0.35;
+    masterGain.connect(audioCtx.destination);
+    layerGain = audioCtx.createGain();
+    layerGain.gain.value = 0;
+    layerGain.connect(masterGain);
+  }
+
+  function resumeAudio() {
+    initAudio();
+    if (audioCtx && audioCtx.state === 'suspended') audioCtx.resume();
+  }
+
+  function vibrate(pattern) {
+    if (navigator.vibrate) navigator.vibrate(pattern);
+  }
+
+  function kick(time) {
+    if (!audioCtx) return;
+    var o = audioCtx.createOscillator();
+    var g = audioCtx.createGain();
+    o.type = 'sine';
+    o.frequency.setValueAtTime(52, time);
+    o.frequency.exponentialRampToValueAtTime(28, time + 0.08);
+    g.gain.setValueAtTime(0.55, time);
+    g.gain.exponentialRampToValueAtTime(0.001, time + 0.15);
+    o.connect(g);
+    g.connect(masterGain);
+    o.start(time);
+    o.stop(time + 0.16);
+  }
+
+  function hat(time, vel) {
+    if (!audioCtx) return;
+    var n = audioCtx.createBufferSource();
+    var buf = audioCtx.createBuffer(1, Math.floor(audioCtx.sampleRate * 0.02), audioCtx.sampleRate);
+    var data = buf.getChannelData(0);
+    for (var i = 0; i < data.length; i++) data[i] = (Math.random() * 2 - 1) * 0.35;
+    n.buffer = buf;
+    var g = audioCtx.createGain();
+    g.gain.value = vel * 0.25;
+    n.connect(g);
+    g.connect(masterGain);
+    n.start(time);
+  }
+
+  function mergeChime(time) {
+    if (!audioCtx) return;
+    var freqs = [330, 440, 554];
+    freqs.forEach(function (f, i) {
+      var o = audioCtx.createOscillator();
+      var g = audioCtx.createGain();
+      o.type = 'triangle';
+      o.frequency.value = f;
+      g.gain.setValueAtTime(0, time + i * 0.03);
+      g.gain.linearRampToValueAtTime(0.12, time + i * 0.03 + 0.02);
+      g.gain.exponentialRampToValueAtTime(0.001, time + i * 0.03 + 0.35);
+      o.connect(g);
+      g.connect(masterGain);
+      o.start(time + i * 0.03);
+      o.stop(time + i * 0.03 + 0.4);
+    });
+  }
+
+  function noiseBurst(time) {
+    if (!audioCtx) return;
+    hat(time, 1.2);
+  }
+
+  function updateAudioLayers() {
+    if (!layerGain || !audioCtx) return;
+    var t = audioCtx.currentTime;
+    layerGain.gain.cancelScheduledValues(t);
+    layerGain.gain.setValueAtTime(layerGain.gain.value, t);
+    layerGain.gain.linearRampToValueAtTime(Math.min(mergeLayers * 0.07, 0.35), t + 0.15);
+
+    var osc = layerGain._pulseOsc;
+    if (osc) {
+      try { osc.stop(); osc.disconnect(); } catch (e) {}
+    }
+    if (mergeLayers < 1) return;
+    var o = audioCtx.createOscillator();
+    var g = audioCtx.createGain();
+    o.type = 'sawtooth';
+    o.frequency.value = 55 + mergeLayers * 8;
+    g.gain.value = 0.03 + mergeLayers * 0.012;
+    o.connect(g);
+    g.connect(layerGain);
+    o.start(t);
+    layerGain._pulseOsc = o;
+  }
+
+  function spawnBurst(dt) {
+    var cols = 5;
+    var stagger = beatDur * 0.18;
+    var count = 2 + (burstIndex % 3);
+    burstIndex++;
+
+    for (var i = 0; i < count; i++) {
+      (function (delay, lane) {
+        var colorIdx = (burstIndex + lane + i) % 3;
+        var fake = Math.random() < 0.12 + (130 - bpm) / 400;
+        shards.push({
+          x: (lane + 0.5) / cols * W * 0.82 + W * 0.09,
+          y: -24 - Math.random() * 40,
+          vx: (Math.random() - 0.5) * 40,
+          vy: 120 + Math.random() * 80 + (bpm - 110) * 2,
+          colorIdx: colorIdx,
+          displayIdx: fake ? ((colorIdx + 1 + Math.floor(Math.random() * 2)) % 3) : colorIdx,
+          fake: fake,
+          r: 14 + Math.random() * 4,
+          held: false,
+          spawnDelay: delay,
+          frozen: false
+        });
+      })(i * stagger, Math.floor(Math.random() * cols));
+    }
+    while (shards.length > 42) shards.shift();
+  }
+
+  function mergeMatching() {
+    var a = slots[0];
+    var b = slots[1];
+    if (!a || !b) return false;
+    if (a.colorIdx !== b.colorIdx) {
+      combo = 0;
+      vibrate([40, 30, 40]);
+      if (audioCtx) noiseBurst(audioCtx.currentTime);
+      slots[0] = null;
+      slots[1] = null;
+      return false;
+    }
+
+    score += 1 + Math.floor(combo / 3);
+    combo++;
+    if (combo > maxCombo) maxCombo = combo;
+    mergeLayers = Math.min(mergeLayers + 1, 12);
+    updateAudioLayers();
+
+    if (audioCtx) {
+      mergeChime(audioCtx.currentTime);
+      kick(audioCtx.currentTime + 0.05);
+    }
+    vibrate([15, 40, 25]);
+
+    var mx = (slotRects[0].x + slotRects[0].w / 2 + slotRects[1].x + slotRects[1].w / 2) / 2;
+    var my = slotRects[0].y + slotRects[0].h / 2;
+    for (var i = 0; i < 28; i++) {
+      particles.push({
+        x: mx,
+        y: my,
+        vx: (Math.random() - 0.5) * 420,
+        vy: (Math.random() - 0.5) * 420 - 80,
+        life: 0.45 + Math.random() * 0.35,
+        age: 0,
+        c: a.colorIdx
+      });
+    }
+
+    slots[0] = null;
+    slots[1] = null;
+    return true;
+  }
+
+  function pointInShard(s, x, y) {
+    var dx = x - s.x;
+    var dy = y - s.y;
+    return dx * dx + dy * dy <= (s.r + 22) * (s.r + 22);
+  }
+
+  function pointInSlot(si, x, y) {
+    var r = slotRects[si];
+    return x >= r.x && x <= r.x + r.w && y >= r.y && y <= r.y + r.h;
+  }
+
+  function drawOscBackground(t) {
+    var bg = cssVar('--bg', '#0a0e12');
+    ctx.fillStyle = bg;
+    ctx.fillRect(0, 0, W, H);
+
+    var grid = cssVar('--grid', 'rgba(0,255,213,0.06)');
+    ctx.strokeStyle = grid;
+    ctx.lineWidth = 1;
+    var step = 28;
+    var off = (t * 40) % step;
+    for (var x = off; x < W; x += step) {
+      ctx.beginPath();
+      ctx.moveTo(x, 0);
+      ctx.lineTo(x, H);
+      ctx.stroke();
+    }
+    for (var y = off * 0.7; y < H; y += step) {
+      ctx.beginPath();
+      ctx.moveTo(0, y);
+      ctx.lineTo(W, y);
+      ctx.stroke();
+    }
+
+    var beamColor = cssVar('--beam', '#00ffd5');
+    ctx.strokeStyle = beamColor;
+    ctx.globalAlpha = 0.15;
+    ctx.beginPath();
+    ctx.moveTo(0, H * 0.72);
+    for (var i = 0; i <= 48; i++) {
+      var gx = (i / 48) * W;
+      var gy = H * 0.72 + Math.sin(gx * 0.04 + t * 5) * 14 + Math.sin(gx * 0.11 + t * 3) * 6;
+      ctx.lineTo(gx, gy);
+    }
+    ctx.stroke();
+    ctx.globalAlpha = 1;
+  }
+
+  function shardColors(di) {
+    var cs = [
+      cssVar('--shard-a', '#00ffd5'),
+      cssVar('--shard-b', '#c8ff00'),
+      cssVar('--shard-c', '#ffaa33')
+    ];
+    return cs[di % 3];
+  }
+
+  function drawShard(s, alpha) {
+    alpha = alpha == null ? 1 : alpha;
+    var col = shardColors(s.displayIdx);
+    ctx.save();
+    ctx.globalAlpha = alpha;
+    ctx.translate(s.x, s.y);
+    ctx.strokeStyle = col;
+    ctx.fillStyle = col;
+    ctx.lineWidth = 2;
+    ctx.beginPath();
+    var w = s.r * 1.6;
+    ctx.moveTo(-w, 0);
+    for (var i = 0; i <= 16; i++) {
+      var px = -w + (i / 16) * w * 2;
+      var py = Math.sin(px * 0.35 + s.y * 0.05) * s.r * 0.45;
+      ctx.lineTo(px, py);
+    }
+    ctx.stroke();
+    ctx.beginPath();
+    ctx.arc(0, 0, s.r * 0.35, 0, Math.PI * 2);
+    ctx.fill();
+    ctx.restore();
+  }
+
+  function drawSlots(t) {
+    var beatPhase = (beatClock % beatDur) / beatDur;
+    var danger = cssVar('--danger', '#ff4466');
+
+    for (var si = 0; si < 2; si++) {
+      var r = slotRects[si];
+      ctx.strokeStyle = shardColors(0);
+      ctx.lineWidth = 2;
+      ctx.globalAlpha = 0.5;
+      ctx.strokeRect(r.x, r.y, r.w, r.h);
+      ctx.globalAlpha = 1;
+
+      var lab = si === 0 ? 'I' : 'II';
+      ctx.fillStyle = cssVar('--muted', '#7a9088');
+      ctx.font = '11px ui-monospace, Menlo, monospace';
+      ctx.textAlign = 'center';
+      ctx.fillText(lab, r.x + r.w / 2, r.y - 6);
+
+      var sl = slots[si];
+      if (sl) {
+        sl.x = r.x + r.w / 2;
+        sl.y = r.y + r.h / 2;
+        drawShard(sl, 1);
+      }
+    }
+
+    var cx = W / 2;
+    var cy = slotRects[0].y - 36;
+    ctx.strokeStyle = beatPhase < 0.15 ? shardColors(1) : shardColors(0);
+    ctx.lineWidth = 3;
+    ctx.beginPath();
+    ctx.arc(cx, cy, 22, -Math.PI / 2, -Math.PI / 2 + beatPhase * Math.PI * 2);
+    ctx.stroke();
+    ctx.fillStyle = cssVar('--text');
+    ctx.font = '10px ui-monospace, Menlo, monospace';
+    ctx.textAlign = 'center';
+    ctx.fillText('BEAT', cx, cy + 4);
+
+    var mergeWindow = Math.max(0.08, 0.28 - (bpm - 118) * 0.002);
+    if (beatPhase > 1 - mergeWindow && slots[0] && slots[1]) {
+      var ok = slots[0].colorIdx === slots[1].colorIdx;
+      ctx.strokeStyle = ok ? shardColors(0) : danger;
+      ctx.lineWidth = 2;
+      ctx.strokeRect(slotRects[0].x - 2, slotRects[0].y - 2,
+        slotRects[1].x + slotRects[1].w - slotRects[0].x + 4, slotRects[0].h + 4);
+    }
+  }
+
+  function drawCatchBand() {
+    ctx.fillStyle = prefersDark() ? 'rgba(0,255,213,0.04)' : 'rgba(0,120,100,0.06)';
+    ctx.fillRect(0, catchBand.y0, W, catchBand.y1 - catchBand.y0);
+
+    ctx.strokeStyle = cssVar('--beam', '#00ffd5');
+    ctx.globalAlpha = 0.35;
+    ctx.setLineDash([6, 8]);
+    ctx.beginPath();
+    ctx.moveTo(0, catchBand.y0);
+    ctx.lineTo(W, catchBand.y0);
+    ctx.moveTo(0, catchBand.y1);
+    ctx.lineTo(W, catchBand.y1);
+    ctx.stroke();
+    ctx.setLineDash([]);
+    ctx.globalAlpha = 1;
+
+    ctx.fillStyle = cssVar('--muted');
+    ctx.font = '10px ui-monospace, Menlo, monospace';
+    ctx.textAlign = 'center';
+    ctx.fillText('CATCH BAND', W / 2, catchBand.y0 + 14);
+  }
+
+  function drawAim() {
+    ctx.strokeStyle = cssVar('--beam');
+    ctx.globalAlpha = 0.6;
+    ctx.lineWidth = 2;
+    ctx.beginPath();
+    ctx.arc(aimX, catchBand.y0 + (catchBand.y1 - catchBand.y0) * 0.5, 18, 0, Math.PI * 2);
+    ctx.stroke();
+    ctx.globalAlpha = 1;
+  }
+
+  function loop(now) {
+    if (!lastFrameTime) lastFrameTime = now;
+    var dt = Math.min(0.05, (now - lastFrameTime) / 1000);
+    lastFrameTime = now;
+
+    if (state === STATE_PLAY) {
+      tick(dt);
+    }
+
+    var t = now / 1000;
+    drawOscBackground(t);
+
+    if (state !== STATE_TITLE) {
+      drawCatchBand();
+      drawAim();
+    }
+
+    if (state === STATE_PLAY || state === STATE_OVER) {
+      for (var i = 0; i < shards.length; i++) drawShard(shards[i]);
+      if (caught) drawShard(caught, 1);
+
+      drawSlots(t);
+
+      for (var j = 0; j < particles.length; j++) {
+        var p = particles[j];
+        var a = 1 - p.age / p.life;
+        ctx.globalAlpha = Math.max(0, a);
+        ctx.fillStyle = shardColors(p.c);
+        ctx.beginPath();
+        ctx.arc(p.x, p.y, 3.5, 0, Math.PI * 2);
+        ctx.fill();
+        ctx.globalAlpha = 1;
+      }
+    }
+
+    requestAnimationFrame(loop);
+  }
+
+  function tick(dt) {
+    timeLeft -= dt;
+    if (timeLeft <= 0) {
+      timeLeft = 0;
+      endRound(true);
+      return;
+    }
+
+    document.getElementById('time').textContent = String(Math.ceil(timeLeft));
+
+    if (keyboard.left) aimX = Math.max(40, aimX - 280 * dt);
+    if (keyboard.right) aimX = Math.min(W - 40, aimX + 280 * dt);
+
+    beatClock += dt;
+    fakeDropTimer -= dt;
+
+    while (beatClock >= beatDur) {
+      beatClock -= beatDur;
+      if (audioCtx) {
+        kick(audioCtx.currentTime);
+        hat(audioCtx.currentTime + 0.05, 0.6 + mergeLayers * 0.05);
+      }
+
+      mergeMatching();
+
+      bpm = Math.min(158, bpm + 0.35);
+      beatDur = 60 / bpm;
+      document.getElementById('bpm').textContent = String(Math.round(bpm));
+
+      nextBurstAt += beatDur;
+      spawnBurst(dt);
+
+      if (fakeDropTimer <= 0) {
+        fakeDropTimer = 4 + Math.random() * 5;
+        for (var f = 0; f < shards.length; f++) {
+          if (!shards[f].held && Math.random() < 0.4) {
+            shards[f].displayIdx = (shards[f].displayIdx + 1) % 3;
+          }
+        }
+      }
+    }
+
+    var slowMul = canvasPointerDown || spaceHeld ? 0.22 : 1;
+
+    for (var i = shards.length - 1; i >= 0; i--) {
+      var s = shards[i];
+      if (s.spawnDelay > 0) {
+        s.spawnDelay -= dt;
+        continue;
+      }
+      if (s === caught) continue;
+      if (s.held) continue;
+
+      s.vy += 140 * dt * slowMul;
+      s.x += s.vx * dt * slowMul;
+      s.y += s.vy * dt * slowMul;
+
+      if (s.y > H + 40) {
+        shards.splice(i, 1);
+      }
+    }
+
+    if (caught && caught.follow) {
+      caught.x += (aimX - caught.x) * Math.min(1, dt * 14);
+      caught.y += (catchBand.y0 + (catchBand.y1 - catchBand.y0) * 0.45 - caught.y) * Math.min(1, dt * 12);
+    }
+
+    for (var pj = particles.length - 1; pj >= 0; pj--) {
+      var pp = particles[pj];
+      pp.age += dt;
+      pp.x += pp.vx * dt;
+      pp.y += pp.vy * dt;
+      pp.vy += 380 * dt;
+      if (pp.age >= pp.life) particles.splice(pj, 1);
+    }
+
+    document.getElementById('score').textContent = String(score);
+    var combEl = document.getElementById('combo');
+    if (combo > 1) combEl.textContent = ' · ×' + combo + ' chain';
+    else combEl.textContent = '';
+  }
+
+  function endRound(win) {
+    if (state !== STATE_PLAY) return;
+    state = STATE_OVER;
+    document.getElementById('go-title').textContent = win ? 'ROUND CLEAR' : 'STOPPED';
+    document.getElementById('go-msg').textContent = win
+      ? 'Spring-clear signal. Headlines fade to bass.'
+      : 'Pulse slipped.';
+    document.getElementById('go-score').textContent = String(score);
+    document.getElementById('go-panel').classList.add('visible');
+    document.getElementById('title-panel').classList.remove('visible');
+    shards = [];
+    particles = [];
+    caught = null;
+    slots = [null, null];
+    mergeLayers = 0;
+    updateAudioLayers();
+    if (layerGain && layerGain._pulseOsc) {
+      try { layerGain._pulseOsc.stop(); layerGain._pulseOsc.disconnect(); } catch (e) {}
+      layerGain._pulseOsc = null;
+    }
+  }
+
+  function resetGame() {
+    resumeAudio();
+    score = 0;
+    combo = 0;
+    maxCombo = 0;
+    mergeLayers = 0;
+    timeLeft = ROUND_SEC;
+    bpm = 128;
+    beatDur = 60 / bpm;
+    beatClock = 0;
+    burstIndex = 0;
+    shards = [];
+    particles = [];
+    caught = null;
+    slots = [null, null];
+    fakeDropTimer = 3;
+    nextBurstAt = 0;
+    aimX = W / 2;
+    state = STATE_PLAY;
+    updateAudioLayers();
+    document.getElementById('time').textContent = String(ROUND_SEC);
+    document.getElementById('bpm').textContent = '128';
+    document.getElementById('title-panel').classList.remove('visible');
+    document.getElementById('go-panel').classList.remove('visible');
+    spawnBurst(0);
+  }
+
+  function clientToCanvas(clientX, clientY) {
+    var rect = canvas.getBoundingClientRect();
+    return {
+      x: ((clientX - rect.left) / rect.width) * W,
+      y: ((clientY - rect.top) / rect.height) * H
+    };
+  }
+
+  function handleStart(ev) {
+    ev.preventDefault();
+    resumeAudio();
+    var x, y;
+    if (ev.touches && ev.touches.length) {
+      x = ev.touches[0].clientX;
+      y = ev.touches[0].clientY;
+      pointerId = ev.touches[0].identifier;
+    } else {
+      x = ev.clientX;
+      y = ev.clientY;
+      pointerId = -1;
+    }
+    var p = clientToCanvas(x, y);
+    px = p.x;
+    py = p.y;
+    aimX = p.x;
+    canvasPointerDown = true;
+
+    if (state !== STATE_PLAY) return;
+
+    for (var i = shards.length - 1; i >= 0; i--) {
+      var s = shards[i];
+      if (s.spawnDelay > 0) continue;
+      if (s.y >= catchBand.y0 && s.y <= catchBand.y1 && pointInShard(s, p.x, p.y)) {
+        caught = shards.splice(i, 1)[0];
+        caught.held = true;
+        caught.vx = caught.vy = 0;
+        caught.follow = true;
+        vibrate(12);
+        break;
+      }
+    }
+  }
+
+  function handleMove(ev) {
+    ev.preventDefault();
+    var x, y;
+    if (ev.touches && ev.touches.length) {
+      var found = false;
+      for (var t = 0; t < ev.touches.length; t++) {
+        if (ev.touches[t].identifier === pointerId) {
+          x = ev.touches[t].clientX;
+          y = ev.touches[t].clientY;
+          found = true;
+          break;
+        }
+      }
+      if (!found) return;
+    } else {
+      x = ev.clientX;
+      y = ev.clientY;
+    }
+    var p = clientToCanvas(x, y);
+    px = p.x;
+    py = p.y;
+    aimX = p.x;
+  }
+
+  function tryDeposit(p) {
+    if (!caught) return;
+    var deposited = false;
+    for (var si = 0; si < 2; si++) {
+      if (pointInSlot(si, p.x, p.y)) {
+        if (!slots[si]) {
+          caught.follow = false;
+          caught.x = slotRects[si].x + slotRects[si].w / 2;
+          caught.y = slotRects[si].y + slotRects[si].h / 2;
+          slots[si] = caught;
+          caught = null;
+          deposited = true;
+          vibrate(18);
+        }
+        break;
+      }
+    }
+    if (!deposited && caught) {
+      caught.follow = false;
+      caught.vy = 40;
+      caught.vx = (Math.random() - 0.5) * 80;
+      shards.push(caught);
+      caught = null;
+    }
+  }
+
+  function handleEnd(ev) {
+    ev.preventDefault();
+    canvasPointerDown = false;
+    pointerId = null;
+
+    if (state !== STATE_PLAY) return;
+
+    var x = px;
+    var y = py;
+    if (caught) tryDeposit({ x: x, y: y });
+  }
+
+  canvas.addEventListener('touchstart', handleStart, { passive: false });
+  canvas.addEventListener('touchmove', handleMove, { passive: false });
+  canvas.addEventListener('touchend', handleEnd, { passive: false });
+  canvas.addEventListener('touchcancel', handleEnd, { passive: false });
+
+  canvas.addEventListener('mousedown', handleStart);
+  canvas.addEventListener('mousemove', function (e) {
+    if (e.buttons) handleMove(e);
+    else if (state === STATE_PLAY) {
+      var p = clientToCanvas(e.clientX, e.clientY);
+      aimX = p.x;
+      px = p.x;
+      py = p.y;
+    }
+  });
+  window.addEventListener('mouseup', function (e) {
+    if (canvasPointerDown) handleEnd(e);
+  });
+
+  document.getElementById('btn-start').addEventListener('click', function () {
+    resumeAudio();
+    resetGame();
+  });
+  document.getElementById('btn-again').addEventListener('click', function () {
+    resumeAudio();
+    resetGame();
+  });
+
+  window.addEventListener('keydown', function (e) {
+    if (e.code === 'ArrowLeft') keyboard.left = true;
+    if (e.code === 'ArrowRight') keyboard.right = true;
+    if (e.code === 'Space') {
+      e.preventDefault();
+      spaceHeld = true;
+    }
+  });
+  window.addEventListener('keyup', function (e) {
+    if (e.code === 'ArrowLeft') keyboard.left = false;
+    if (e.code === 'ArrowRight') keyboard.right = false;
+    if (e.code === 'Space') spaceHeld = false;
+  });
+
+  window.addEventListener('resize', resize);
+
+  resize();
+  requestAnimationFrame(loop);
+})();
+  </script>
+</body>
+</html>
