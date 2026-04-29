@@ -177,14 +177,15 @@ export async function POST(request: NextRequest) {
 
         const { Agent } = await import("@cursor/sdk");
 
+        console.log("[/api/generate] SDK imported, creating agent...");
         agent = await Agent.create({
           apiKey: CURSOR_API_KEY,
           model: { id: "composer-2", params: [{ id: "fast", value: "true" }] },
           cloud: {
             repos: [{ url: `https://github.com/${GITHUB_REPO}`, startingRef: "main" }],
-            autoCreatePR: false,
           },
         });
+        console.log("[/api/generate] Agent created:", agent.agentId);
 
         send({
           type: "status",
@@ -195,6 +196,7 @@ export async function POST(request: NextRequest) {
 
         let stepIdx = 0;
 
+        console.log("[/api/generate] Sending prompt, length:", prompt.length);
         const run = await agent.send(prompt, {
           onDelta: ({ update }: { update: { type: string; text?: string; toolCall?: { name?: string; args?: unknown } } }) => {
             if (update.type === "partial-tool-call" || update.type === "tool-call-started") {
@@ -212,6 +214,7 @@ export async function POST(request: NextRequest) {
         });
 
         currentRunCancel = () => run.cancel();
+        console.log("[/api/generate] Run started:", run.id);
 
         for await (const event of run.stream()) {
           if (event.type === "assistant") {
@@ -261,10 +264,13 @@ export async function POST(request: NextRequest) {
           send({ type: "error", message: "Agent finished but no HTML was generated" });
         }
       } catch (error) {
-        const err = error as Error & { code?: string; cause?: unknown };
+        const err = error as Error & { code?: string; cause?: unknown; protoErrorCode?: string };
         const msg = err.message || "Generation failed";
         const detail = err.code ? `[${err.code}] ${msg}` : msg;
-        console.error("[/api/generate] Error:", detail, err.cause || "");
+        console.error("[/api/generate] Error:", detail);
+        console.error("[/api/generate] Stack:", err.stack);
+        console.error("[/api/generate] cause:", JSON.stringify(err.cause));
+        console.error("[/api/generate] protoErrorCode:", err.protoErrorCode);
         send({ type: "error", message: detail });
       } finally {
         generationInProgress = false;
