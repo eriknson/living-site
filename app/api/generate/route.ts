@@ -13,7 +13,6 @@ import { NextRequest } from "next/server";
 export const maxDuration = 300;
 
 const CURSOR_API_KEY = process.env.CURSOR_API_KEY;
-const GITHUB_REPO = process.env.GITHUB_REPO || "eriknson/living-site";
 
 // Rate limiting
 let lastGeneration = 0;
@@ -181,9 +180,7 @@ export async function POST(request: NextRequest) {
         agent = await Agent.create({
           apiKey: CURSOR_API_KEY,
           model: { id: "composer-2", params: [{ id: "fast", value: "true" }] },
-          cloud: {
-            repos: [{ url: `https://github.com/${GITHUB_REPO}`, startingRef: "main" }],
-          },
+          cloud: {},
         });
         console.log("[/api/generate] Agent created:", agent.agentId);
 
