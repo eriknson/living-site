@@ -288,7 +288,7 @@ export function createInitialBuildState(buildId: string): BuildState {
         status: "queued",
         rawLog: [],
       },
-      "gpt-5.5-high-fast": {
+      "gpt-5.5-extra-high": {
         status: "queued",
         rawLog: [],
       },

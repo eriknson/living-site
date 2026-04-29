@@ -70,8 +70,8 @@ const AGENTS = [
     keywords: ["cursor", "composer", "2", "fast", "ai"],
   },
   {
-    modelId: "gpt-5.5-high-fast",
-    keywords: ["openai", "gpt", "5.5", "high", "fast", "ai"],
+    modelId: "gpt-5.5-extra-high",
+    keywords: ["openai", "gpt", "5.5", "extra", "high", "ai"],
   },
   {
     modelId: "claude-opus-4-7-thinking-max",
@@ -93,8 +93,8 @@ const GAME_AGENTS = [
     keywords: ["cursor", "composer", "2", "fast", "game", "play"],
   },
   {
-    modelId: "gpt-5.5-high-fast",
-    keywords: ["openai", "gpt", "5.5", "high", "fast", "game", "play"],
+    modelId: "gpt-5.5-extra-high",
+    keywords: ["openai", "gpt", "5.5", "extra", "high", "game", "play"],
   },
   {
     modelId: "claude-opus-4-7-thinking-max",

@@ -42,7 +42,7 @@ Read `data/latest.json` and write `data/brief.json`. This is raw context for gen
       "escalation": "How pressure increases during the round.",
       "aesthetic": "A visual direction hint (e.g. 'neon wireframe', 'paper cutout', 'watercolor')"
     },
-    "gpt-5.5-high-fast": {
+    "gpt-5.5-extra-high": {
       "concept": "A different game idea. Each model MUST get a distinct concept — never repeat.",
       "mechanic": "A different concrete core action.",
       "touch_control": "A different one-thumb gesture.",

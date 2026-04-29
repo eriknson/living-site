@@ -57,7 +57,7 @@ Runs daily at 6am Pacific daylight time via GitHub Actions.
 │
 ├── generated/                # Agent-written HTML (one per model)
 │   ├── composer-2-fast.html  # Site builds
-│   ├── gpt-5.5-high-fast.html
+│   ├── gpt-5.5-extra-high.html
 │   ├── claude-opus-4-7-thinking-max.html
 │   ├── gemini-3.1-pro.html
 │   └── games/               # Game builds
