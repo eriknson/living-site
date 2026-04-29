@@ -179,7 +179,7 @@ export async function POST(request: NextRequest) {
 
         agent = await Agent.create({
           apiKey: CURSOR_API_KEY,
-          model: { id: "composer-2-fast" },
+          model: { id: "composer-2", params: [{ id: "fast", value: "true" }] },
           cloud: {
             repos: [{ url: `https://github.com/${GITHUB_REPO}`, startingRef: "main" }],
             autoCreatePR: false,
