@@ -68,7 +68,7 @@ ${referenceHtml}
 ${direction}
 
 ## Output Requirements
-1. Use the Write tool to create a SINGLE HTML file at \`generated/live.html\` in one shot — do NOT use edit_file or patch the file incrementally.
+1. Use the Write tool to create a SINGLE HTML file at \`artifacts/live.html\` in one shot — do NOT use edit_file or patch the file incrementally. The path MUST be under \`artifacts/\` so the file is downloadable as an artifact.
 2. Include ALL CSS inline within a <style> tag (no external stylesheets)
 3. Include any JS inline within a <script> tag if needed
 4. The site must be fully responsive and look great on mobile
@@ -90,7 +90,8 @@ ${direction}
 ## IMPORTANT
 - Create something original and distinctive
 - The output must be a valid, standalone HTML file
-- Write the entire file content in a single Write tool call`;
+- Write the entire file content in a single Write tool call
+- The file path MUST be \`artifacts/live.html\` (not \`generated/\`, not the repo root)`;
 }
 
 /**
@@ -104,8 +105,10 @@ function extractWrittenHtml(toolCall: { name?: string; args?: unknown }): string
   const args = toolCall.args as Record<string, unknown> | undefined;
   if (!args || typeof args !== "object") return null;
 
+  // Accept any .html write — the agent may pick any path under artifacts/ or
+  // even outside it. We trust the model is producing the page we asked for.
   const pathField = (args.file_path || args.path || args.target_file || "") as string;
-  if (pathField && !pathField.includes("live.html")) return null;
+  if (pathField && !pathField.toLowerCase().endsWith(".html")) return null;
 
   for (const key of ["contents", "content", "text", "file_content", "new_string"]) {
     const val = args[key];
@@ -380,18 +383,30 @@ export async function POST(request: NextRequest) {
           action: "Run finished",
         }));
 
-        // Fetch final canonical HTML from artifact
+        // Fetch final canonical HTML from artifact. Try the well-known path
+        // first, then fall back to scanning all artifacts for the largest HTML.
         let finalHtml: string | undefined;
         let downloadError: string | undefined;
-        try {
-          const buf = await agent.downloadArtifact("generated/live.html");
-          finalHtml = buf.toString("utf8");
-        } catch (e) {
-          const err = e as Error;
-          downloadError = err.message || String(err);
-          console.warn("[/api/generate] downloadArtifact('generated/live.html') failed:", downloadError);
+        const candidatePaths = ["artifacts/live.html", "live.html", "generated/live.html"];
 
-          // Try to discover what the agent actually wrote and grab the largest HTML-ish artifact.
+        for (const path of candidatePaths) {
+          try {
+            const buf = await agent.downloadArtifact(path);
+            finalHtml = buf.toString("utf8");
+            console.log("[/api/generate] Downloaded artifact:", path);
+            break;
+          } catch (e) {
+            const err = e as Error;
+            downloadError = err.message || String(err);
+            console.warn(
+              `[/api/generate] downloadArtifact('${path}') failed:`,
+              downloadError
+            );
+          }
+        }
+
+        if (!finalHtml) {
+          // Discover whatever the agent actually wrote and pick the largest HTML.
           try {
             const artifacts = await agent.listArtifacts();
             console.log(
