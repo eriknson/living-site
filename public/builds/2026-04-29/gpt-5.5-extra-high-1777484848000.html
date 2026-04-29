@@ -1,0 +1,652 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="color-scheme" content="light dark">
+  <title>Erik Nilsson - April 29, 2026</title>
+  <style>
+    @import url('https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500;700&family=Newsreader:opsz,wght@6..72,400;6..72,520;6..72,650;6..72,760&display=swap');
+
+    :root {
+      --paper: #f5eddc;
+      --paper-soft: #fff9ec;
+      --ink: #16120d;
+      --ink-muted: #615847;
+      --rule: rgba(22, 18, 13, 0.18);
+      --rule-strong: rgba(22, 18, 13, 0.52);
+      --neon: #ff2bd6;
+      --neon-2: #00e7ff;
+      --neon-3: #ccff00;
+      --shadow: rgba(22, 18, 13, 0.12);
+      --grain: rgba(86, 72, 46, 0.08);
+    }
+
+    @media (prefers-color-scheme: dark) {
+      :root {
+        --paper: #11100d;
+        --paper-soft: #1b1813;
+        --ink: #f2eadb;
+        --ink-muted: #b6aa92;
+        --rule: rgba(242, 234, 219, 0.18);
+        --rule-strong: rgba(242, 234, 219, 0.52);
+        --neon: #ff4fde;
+        --neon-2: #31eaff;
+        --neon-3: #d7ff4a;
+        --shadow: rgba(0, 0, 0, 0.42);
+        --grain: rgba(255, 244, 215, 0.05);
+      }
+    }
+
+    * {
+      box-sizing: border-box;
+    }
+
+    html {
+      background: var(--paper);
+      color: var(--ink);
+      font-family: "Newsreader", Georgia, serif;
+      font-size: 18px;
+    }
+
+    body {
+      margin: 0;
+      min-height: 100vh;
+      background:
+        radial-gradient(circle at 82% 10%, color-mix(in srgb, var(--neon) 20%, transparent), transparent 30rem),
+        radial-gradient(circle at 4% 78%, color-mix(in srgb, var(--neon-2) 17%, transparent), transparent 28rem),
+        linear-gradient(90deg, var(--grain) 1px, transparent 1px),
+        var(--paper);
+      background-size: auto, auto, 7px 7px, auto;
+      line-height: 1.45;
+      overflow-x: hidden;
+    }
+
+    a {
+      color: inherit;
+      text-decoration-thickness: 0.08em;
+      text-underline-offset: 0.18em;
+    }
+
+    a:focus-visible,
+    button:focus-visible {
+      outline: 3px solid var(--neon-2);
+      outline-offset: 4px;
+    }
+
+    .page {
+      width: min(100% - 32px, 640px);
+      margin: 0 auto;
+      padding: clamp(24px, 7vw, 64px) 0 56px;
+    }
+
+    .masthead {
+      border-top: 5px solid var(--ink);
+      border-bottom: 1px solid var(--rule-strong);
+      padding: 12px 0 16px;
+      position: relative;
+    }
+
+    .kicker,
+    .meta,
+    .eyebrow,
+    .tag,
+    .caption,
+    .button {
+      font-family: "IBM Plex Mono", ui-monospace, SFMono-Regular, Menlo, monospace;
+      letter-spacing: 0.04em;
+      text-transform: uppercase;
+    }
+
+    .kicker {
+      display: flex;
+      justify-content: space-between;
+      gap: 12px;
+      color: var(--ink-muted);
+      font-size: 0.68rem;
+      margin-bottom: 18px;
+    }
+
+    h1 {
+      font-size: clamp(3.3rem, 16vw, 7.8rem);
+      font-weight: 760;
+      line-height: 0.78;
+      letter-spacing: -0.08em;
+      margin: 0;
+      text-wrap: balance;
+    }
+
+    .accent-slash {
+      color: var(--neon);
+      text-shadow: 0 0 18px color-mix(in srgb, var(--neon) 68%, transparent);
+      animation: slashPulse 2.7s steps(2, jump-none) infinite;
+    }
+
+    .dek {
+      margin: 18px 0 0;
+      max-width: 31rem;
+      color: var(--ink-muted);
+      font-size: clamp(1.2rem, 4vw, 1.58rem);
+      line-height: 1.22;
+    }
+
+    .ticker {
+      border-bottom: 1px solid var(--rule-strong);
+      display: flex;
+      gap: 12px;
+      margin: 0 calc(50% - 50vw);
+      overflow: hidden;
+      padding: 10px 0;
+      white-space: nowrap;
+    }
+
+    .ticker span {
+      animation: crawl 26s linear infinite;
+      color: var(--ink-muted);
+      font-family: "IBM Plex Mono", ui-monospace, monospace;
+      font-size: 0.72rem;
+      letter-spacing: 0.03em;
+      text-transform: uppercase;
+    }
+
+    main {
+      display: grid;
+      gap: 34px;
+      padding-top: 34px;
+    }
+
+    .article {
+      border-bottom: 1px solid var(--rule);
+      padding-bottom: 30px;
+    }
+
+    .drop {
+      font-size: 1.2rem;
+      margin: 0;
+    }
+
+    .drop::first-letter {
+      color: var(--neon);
+      float: left;
+      font-size: 5.6rem;
+      font-weight: 760;
+      line-height: 0.74;
+      margin: 0.09em 0.08em 0 0;
+      text-shadow: 2px 2px 0 var(--neon-2);
+    }
+
+    p {
+      margin: 1rem 0 0;
+    }
+
+    .pullquote {
+      border-left: 4px solid var(--neon);
+      font-size: clamp(1.65rem, 7vw, 3.2rem);
+      font-weight: 650;
+      letter-spacing: -0.055em;
+      line-height: 0.94;
+      margin: 6px 0;
+      padding-left: 18px;
+      text-wrap: balance;
+    }
+
+    .grid {
+      display: grid;
+      gap: 14px;
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+    }
+
+    .card {
+      background: color-mix(in srgb, var(--paper-soft) 78%, transparent);
+      border: 1px solid var(--rule);
+      box-shadow: 0 18px 40px var(--shadow);
+      padding: 16px;
+    }
+
+    .metric {
+      font-size: clamp(1.8rem, 10vw, 3.8rem);
+      font-weight: 760;
+      letter-spacing: -0.08em;
+      line-height: 0.9;
+    }
+
+    .label {
+      color: var(--ink-muted);
+      font-family: "IBM Plex Mono", ui-monospace, monospace;
+      font-size: 0.7rem;
+      margin-top: 8px;
+      text-transform: uppercase;
+    }
+
+    .signal-list {
+      border-top: 1px solid var(--rule-strong);
+      list-style: none;
+      margin: 0;
+      padding: 0;
+    }
+
+    .signal-list li {
+      border-bottom: 1px solid var(--rule);
+      display: grid;
+      gap: 10px;
+      grid-template-columns: 42px 1fr;
+      padding: 13px 0;
+    }
+
+    .signal-list b {
+      color: var(--neon);
+      font-family: "IBM Plex Mono", ui-monospace, monospace;
+      font-size: 0.74rem;
+      font-weight: 700;
+      text-shadow: 0 0 12px color-mix(in srgb, var(--neon) 56%, transparent);
+    }
+
+    .signal-list span {
+      color: var(--ink-muted);
+    }
+
+    .sequencer {
+      background:
+        linear-gradient(135deg, color-mix(in srgb, var(--neon) 14%, transparent), transparent 42%),
+        linear-gradient(225deg, color-mix(in srgb, var(--neon-2) 16%, transparent), transparent 48%),
+        var(--ink);
+      border: 1px solid color-mix(in srgb, var(--neon-2) 55%, var(--rule));
+      box-shadow:
+        0 22px 60px var(--shadow),
+        inset 0 0 0 1px color-mix(in srgb, var(--paper) 14%, transparent);
+      color: var(--paper);
+      overflow: hidden;
+      padding: 18px;
+      position: relative;
+    }
+
+    .sequencer::before {
+      background: repeating-linear-gradient(0deg, transparent 0 9px, rgba(255, 255, 255, 0.08) 10px);
+      content: "";
+      inset: 0;
+      opacity: 0.24;
+      pointer-events: none;
+      position: absolute;
+    }
+
+    .sequencer-head {
+      align-items: start;
+      display: flex;
+      gap: 16px;
+      justify-content: space-between;
+      position: relative;
+      z-index: 1;
+    }
+
+    .sequencer h2 {
+      font-size: clamp(2.1rem, 10vw, 4.4rem);
+      letter-spacing: -0.085em;
+      line-height: 0.85;
+      margin: 0;
+    }
+
+    .live-dot {
+      background: var(--neon-3);
+      border-radius: 999px;
+      box-shadow: 0 0 24px var(--neon-3);
+      flex: 0 0 auto;
+      height: 14px;
+      margin-top: 7px;
+      width: 14px;
+    }
+
+    .pads {
+      display: grid;
+      gap: 9px;
+      grid-template-columns: repeat(4, 1fr);
+      margin: 24px 0 14px;
+      position: relative;
+      z-index: 1;
+    }
+
+    .pad {
+      aspect-ratio: 1;
+      background: rgba(255, 255, 255, 0.08);
+      border: 1px solid rgba(255, 255, 255, 0.18);
+      border-radius: 0;
+      color: var(--paper);
+      cursor: pointer;
+      font: 700 clamp(1.1rem, 8vw, 2rem) "IBM Plex Mono", monospace;
+      position: relative;
+      transition: transform 180ms ease, background 180ms ease, box-shadow 180ms ease;
+    }
+
+    .pad:hover {
+      transform: translateY(-2px);
+    }
+
+    .pad[data-lit="true"] {
+      background: var(--tone);
+      box-shadow: 0 0 26px var(--tone);
+      color: #11100d;
+      transform: translateY(-3px) scale(1.02);
+    }
+
+    .pad:nth-child(1) { --tone: var(--neon); }
+    .pad:nth-child(2) { --tone: var(--neon-2); }
+    .pad:nth-child(3) { --tone: var(--neon-3); }
+    .pad:nth-child(4) { --tone: #ff7a00; }
+
+    .sequencer-copy {
+      color: color-mix(in srgb, var(--paper) 72%, transparent);
+      font-family: "IBM Plex Mono", ui-monospace, monospace;
+      font-size: 0.78rem;
+      margin: 0;
+      position: relative;
+      text-transform: uppercase;
+      z-index: 1;
+    }
+
+    .button-row {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 10px;
+      margin-top: 14px;
+      position: relative;
+      z-index: 1;
+    }
+
+    .button {
+      background: var(--paper);
+      border: 1px solid var(--paper);
+      color: var(--ink);
+      cursor: pointer;
+      font-size: 0.72rem;
+      padding: 10px 12px;
+    }
+
+    .button.secondary {
+      background: transparent;
+      color: var(--paper);
+    }
+
+    .playlist {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
+    }
+
+    .tag {
+      border: 1px solid var(--rule);
+      color: var(--ink-muted);
+      font-size: 0.66rem;
+      padding: 7px 9px;
+    }
+
+    .tag.hot {
+      border-color: color-mix(in srgb, var(--neon) 58%, var(--rule));
+      color: var(--ink);
+      box-shadow: 0 0 22px color-mix(in srgb, var(--neon) 16%, transparent);
+    }
+
+    footer {
+      border-top: 4px double var(--rule-strong);
+      color: var(--ink-muted);
+      font-size: 0.86rem;
+      margin-top: 8px;
+      padding-top: 18px;
+    }
+
+    .links {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 10px 16px;
+      margin-top: 14px;
+    }
+
+    .links a {
+      font-family: "IBM Plex Mono", ui-monospace, monospace;
+      font-size: 0.74rem;
+      text-transform: uppercase;
+    }
+
+    @keyframes slashPulse {
+      0%, 58% { opacity: 1; transform: translateX(0); }
+      60% { opacity: 0.35; transform: translateX(1px); }
+      62%, 100% { opacity: 1; transform: translateX(0); }
+    }
+
+    @keyframes crawl {
+      from { transform: translateX(0); }
+      to { transform: translateX(-50%); }
+    }
+
+    @media (max-width: 560px) {
+      .page {
+        width: min(100% - 24px, 640px);
+        padding-top: 18px;
+      }
+
+      .kicker,
+      .sequencer-head {
+        display: block;
+      }
+
+      .kicker span + span {
+        display: block;
+        margin-top: 6px;
+      }
+
+      .grid {
+        grid-template-columns: 1fr;
+      }
+
+      .signal-list li {
+        grid-template-columns: 34px 1fr;
+      }
+
+      .live-dot {
+        margin: 14px 0 0;
+      }
+    }
+
+    @media (prefers-reduced-motion: reduce) {
+      *,
+      *::before,
+      *::after {
+        animation-duration: 0.001ms !important;
+        animation-iteration-count: 1 !important;
+        scroll-behavior: auto !important;
+        transition-duration: 0.001ms !important;
+      }
+    }
+  </style>
+
+<style id="__living_site_scroll_guard">
+  /* Scroll guard injected at build time to ensure generated pages remain scrollable in iframes. */
+  html, body {
+    height: auto !important;
+    min-height: 100% !important;
+    max-height: none !important;
+    overflow-y: auto !important;
+    overflow-x: hidden !important;
+    position: static !important;
+    -webkit-overflow-scrolling: touch !important;
+    touch-action: pan-y !important;
+    overscroll-behavior-y: contain !important;
+  }
+  /* Avoid accidental fixed full-screen traps that break scrolling on mobile. */
+  body {
+    inset: auto !important;
+  }
+</style>
+</head>
+<body>
+  <div class="ticker" aria-hidden="true">
+    <span>Clear air, 17 degrees, zero commits, twelve artists, one respectable excuse for a newspaper. &nbsp; Clear air, 17 degrees, zero commits, twelve artists, one respectable excuse for a newspaper. &nbsp;</span>
+    <span>Clear air, 17 degrees, zero commits, twelve artists, one respectable excuse for a newspaper. &nbsp; Clear air, 17 degrees, zero commits, twelve artists, one respectable excuse for a newspaper. &nbsp;</span>
+  </div>
+
+  <div class="page">
+    <header class="masthead">
+      <div class="kicker">
+        <span>San Francisco Morning-ish Edition</span>
+        <span>Wednesday, April 29, 2026</span>
+      </div>
+      <h1>Erik<br>Nilsson<span class="accent-slash">/</span></h1>
+      <p class="dek">Product designer at Cursor, filing from the thin strip between serious tools and questionable side quests.</p>
+    </header>
+
+    <main>
+      <section class="article" aria-labelledby="lead">
+        <p class="eyebrow" id="lead">The Desk</p>
+        <p class="drop">Erik designs product at Cursor, mostly around how people build software with AI. Off-hours, this living-site contraption gets rebuilt from fresh activity data, because apparently a normal homepage was too emotionally stable.</p>
+        <p>The GitHub ledger is quiet this week. Not ominous quiet. More like the inbox has stopped pretending to be a personality. The weather, meanwhile, is doing San Francisco spring in a very convincing clear-and-17-degrees costume.</p>
+      </section>
+
+      <section class="pullquote" aria-label="Pull quote">
+        Fresh activity, old newspaper manners, and one neon typo that refuses to settle down.
+      </section>
+
+      <section class="grid" aria-label="Today in numbers">
+        <div class="card">
+          <div class="metric">17°C</div>
+          <div class="label">Clear spring air</div>
+        </div>
+        <div class="card">
+          <div class="metric">0</div>
+          <div class="label">Commits this week</div>
+        </div>
+        <div class="card">
+          <div class="metric">0</div>
+          <div class="label">Posts this week</div>
+        </div>
+        <div class="card">
+          <div class="metric">12</div>
+          <div class="label">Artists in rotation</div>
+        </div>
+      </section>
+
+      <section aria-labelledby="signals">
+        <p class="eyebrow" id="signals">Wire Copy</p>
+        <ul class="signal-list">
+          <li><b>01</b><span>FastCGI is still doing handshakes behind the glass, which is either resilience or a very long group project.</span></li>
+          <li><b>02</b><span>Benchmarks now ask stochastic minds to rhyme twice. Somewhere, determinism is enjoying a tiny chair and a clipboard.</span></li>
+          <li><b>03</b><span>Low clouds, late dusk, and clear bay air make the evening feel typeset instead of rendered.</span></li>
+          <li><b>04</b><span>The agents are doing the nightly compile elsewhere. The public repo appears to be observing Lent.</span></li>
+        </ul>
+      </section>
+
+      <section class="sequencer" aria-labelledby="sequencer-title">
+        <div class="sequencer-head">
+          <div>
+            <p class="eyebrow">Wild Motif Department</p>
+            <h2 id="sequencer-title">Stutter<br>proof.</h2>
+          </div>
+          <span class="live-dot" aria-hidden="true"></span>
+        </div>
+        <div class="pads" aria-label="Interactive neon memory pads">
+          <button class="pad" type="button" data-pad="0">F</button>
+          <button class="pad" type="button" data-pad="1">B</button>
+          <button class="pad" type="button" data-pad="2">A</button>
+          <button class="pad" type="button" data-pad="3">D</button>
+        </div>
+        <p class="sequencer-copy" id="sequencer-status">Press play. Memorize the brief light pattern. Repeat it. This is basically product strategy with more honest latency.</p>
+        <div class="button-row">
+          <button class="button" type="button" id="play-pattern">Play pattern</button>
+          <button class="button secondary" type="button" id="reset-pattern">Reset</button>
+        </div>
+      </section>
+
+      <section aria-labelledby="listening">
+        <p class="eyebrow" id="listening">Listening Notes</p>
+        <p>Fred again.., Beach House, A$AP Rocky, Drake, Ben Böhmer, Tame Impala, kent, Dire Straits, The Weeknd, The Velvet Sundown, Videoclub, Taylor Swift. A lineup with the emotional arc of a cab ride that accidentally becomes a design crit.</p>
+        <div class="playlist" aria-label="Top genres">
+          <span class="tag hot">stutter house</span>
+          <span class="tag">rap</span>
+          <span class="tag">swedish pop</span>
+          <span class="tag">dream pop</span>
+          <span class="tag">melodic techno</span>
+          <span class="tag">classic rock</span>
+        </div>
+      </section>
+    </main>
+
+    <footer>
+      <p>Erik Nilsson is a product designer at Cursor in San Francisco. GitHub is side projects and experiments, not the day job, despite the suspicious quantity of build scripts nearby.</p>
+      <nav class="links" aria-label="Links">
+        <a href="https://eriks.design">Site</a>
+        <a href="https://cursor.com">Cursor</a>
+        <a href="https://x.com/flowstated">X</a>
+        <a href="https://github.com/eriknson">GitHub</a>
+        <a href="https://linkedin.com/in/eriknson">LinkedIn</a>
+        <a href="mailto:contact@eriks.design">Email</a>
+      </nav>
+    </footer>
+  </div>
+
+  <script>
+    const pads = Array.from(document.querySelectorAll(".pad"));
+    const playButton = document.querySelector("#play-pattern");
+    const resetButton = document.querySelector("#reset-pattern");
+    const status = document.querySelector("#sequencer-status");
+    const pattern = [0, 2, 1, 3, 2];
+    let input = [];
+    let playing = false;
+
+    function setStatus(message) {
+      status.textContent = message;
+    }
+
+    function flash(index, duration = 320) {
+      const pad = pads[index];
+      pad.dataset.lit = "true";
+      window.setTimeout(() => {
+        pad.dataset.lit = "false";
+      }, duration);
+    }
+
+    function playPattern() {
+      if (playing) return;
+      playing = true;
+      input = [];
+      setStatus("Watch closely. The fake-out pulses have excellent typography and no moral center.");
+      pattern.forEach((index, step) => {
+        window.setTimeout(() => flash(index), 260 + step * 430);
+      });
+      window.setTimeout(() => {
+        playing = false;
+        setStatus("Your turn. Tap the columns in order before the newsroom notices this is a nightclub.");
+      }, 260 + pattern.length * 430);
+    }
+
+    function handlePad(index) {
+      if (playing) return;
+      flash(index, 220);
+      input.push(index);
+      const expected = pattern[input.length - 1];
+
+      if (index !== expected) {
+        input = [];
+        setStatus("Nope. The delay got smug. Hit play and pretend that was research.");
+        return;
+      }
+
+      if (input.length === pattern.length) {
+        input = [];
+        setStatus("Full recall. The euphoria meter ruptures into color, which legal has described as 'probably fine.'");
+        pads.forEach((_, padIndex) => window.setTimeout(() => flash(padIndex, 420), padIndex * 110));
+        return;
+      }
+
+      setStatus(`${input.length}/${pattern.length} remembered. Disturbingly competent.`);
+    }
+
+    pads.forEach((pad, index) => {
+      pad.dataset.lit = "false";
+      pad.addEventListener("click", () => handlePad(index));
+    });
+
+    playButton.addEventListener("click", playPattern);
+    resetButton.addEventListener("click", () => {
+      input = [];
+      setStatus("Reset. A clean slate, or at least a cleaner-looking slate.");
+    });
+  </script>
+</body>
+</html>
