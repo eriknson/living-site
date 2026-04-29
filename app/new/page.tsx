@@ -305,7 +305,7 @@ export default function NewBuildPage() {
                     onChange={(e) => setPrompt(e.target.value)}
                     onKeyDown={handleKeyDown}
                     placeholder="Describe your remix of Erik's website"
-                    className="w-full resize-none bg-transparent text-[15px] text-gray-900 dark:text-gray-100 placeholder:text-gray-400 dark:placeholder:text-gray-500 focus:outline-none leading-relaxed"
+                    className="w-full resize-none bg-transparent text-[15px] text-gray-900 dark:text-gray-100 placeholder:text-gray-400 dark:placeholder:text-gray-500 focus:outline-none leading-relaxed [scrollbar-width:none] [&::-webkit-scrollbar]:hidden"
                     rows={1}
                     disabled={isDisabled}
                   />
