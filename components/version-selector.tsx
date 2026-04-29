@@ -3,7 +3,7 @@
 import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { track } from "@vercel/analytics";
-import { ArrowLeft, ChevronDown, Infinity } from "lucide-react";
+import { ArrowLeft, ChevronDown } from "lucide-react";
 import type { Manifest } from "@/lib/manifest";
 import {
   getSameBatchModels,
@@ -186,7 +186,6 @@ export function VersionSelector({
     >
       {/* Visual display (non-interactive) */}
       <span className="flex items-center gap-1.5 pointer-events-none">
-        <Infinity className="h-[1.15em] w-[1.15em] opacity-35" strokeWidth={2.5} />
         <span className="whitespace-nowrap">{getDisplayName()}</span>
         <ChevronDown className="h-3.5 w-3.5 opacity-50" />
       </span>
