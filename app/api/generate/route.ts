@@ -179,7 +179,7 @@ export async function POST(request: NextRequest) {
 
         agent = await Agent.create({
           apiKey: CURSOR_API_KEY,
-          model: { id: "composer-2" },
+          model: { id: "composer-2-fast" },
           cloud: {
             repos: [{ url: `https://github.com/${GITHUB_REPO}`, startingRef: "main" }],
             autoCreatePR: false,
@@ -261,8 +261,11 @@ export async function POST(request: NextRequest) {
           send({ type: "error", message: "Agent finished but no HTML was generated" });
         }
       } catch (error) {
-        const msg = error instanceof Error ? error.message : "Generation failed";
-        send({ type: "error", message: msg });
+        const err = error as Error & { code?: string; cause?: unknown };
+        const msg = err.message || "Generation failed";
+        const detail = err.code ? `[${err.code}] ${msg}` : msg;
+        console.error("[/api/generate] Error:", detail, err.cause || "");
+        send({ type: "error", message: detail });
       } finally {
         generationInProgress = false;
         currentRunCancel = null;
