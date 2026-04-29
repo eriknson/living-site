@@ -16,6 +16,11 @@ function rewriteSelectorsForShadow(css: string): string {
     .replace(/\bhtml\s*\{/g, ":host, .shadow-root {")
     // html[attr] { ... } → :host, .shadow-root[attr] { ... }
     .replace(/\bhtml(\[[^\]]+\])\s*\{/g, ":host, .shadow-root$1 {")
+    // html in comma-separated selectors: html, other → :host, other
+    // (Avoid mapping `html` onto `.shadow-root` here so combined `html, body`
+    // rules don't end up applying scroll-container properties to the wrapper
+    // and competing with the real `:host` scroll container.)
+    .replace(/\bhtml\s*,/g, ":host,")
     // body { ... } → .shadow-root { ... }
     .replace(/\bbody\s*\{/g, ".shadow-root {")
     // body.class { ... } → .shadow-root.class { ... }
@@ -102,8 +107,13 @@ export function SiteViewer({ src, htmlContent, onLoad }: SiteViewerProps) {
     const parser = new DOMParser();
     const doc = parser.parseFromString(content, "text/html");
 
-    // Extract styles and rewrite selectors for shadow DOM compatibility
+    // Extract styles and rewrite selectors for shadow DOM compatibility.
+    // Skip the build-time `__living_site_scroll_guard` block: it is meant for
+    // iframe rendering and, once rewritten, turns `.shadow-root` into a
+    // competing scroll container with `overscroll-behavior-y: contain`,
+    // which breaks desktop wheel scrolling on the real `:host` container.
     const rawStyles = Array.from(doc.querySelectorAll("style"))
+      .filter((s) => s.id !== "__living_site_scroll_guard")
       .map((s) => s.textContent || "")
       .join("\n");
     const rewrittenStyles = rewriteSelectorsForShadow(rawStyles);
@@ -150,7 +160,9 @@ export function SiteViewer({ src, htmlContent, onLoad }: SiteViewerProps) {
     inlineStyleEl.textContent = rewrittenStyles;
     shadow.appendChild(inlineStyleEl);
 
-    // Add host styles for scrolling
+    // Add host styles for scrolling. This block is appended AFTER the
+    // rewritten generated styles so its `!important` rules win on source order
+    // and pin the shadow host as the single vertical scroll container.
     const hostStyleEl = document.createElement("style");
     hostStyleEl.textContent = `
       :host {
@@ -165,6 +177,14 @@ export function SiteViewer({ src, htmlContent, onLoad }: SiteViewerProps) {
       }
       .shadow-root {
         min-height: 100%;
+        /*
+         * Keep the wrapper out of the scroll chain. Generated body styles
+         * (e.g. \`overflow-x: hidden\` or \`overscroll-behavior-y: contain\`)
+         * would otherwise force \`.shadow-root\` into its own scroll context
+         * and trap desktop wheel events before they reach \`:host\`.
+         */
+        overflow: visible !important;
+        overscroll-behavior: auto !important;
       }
     `;
     shadow.appendChild(hostStyleEl);
