@@ -1,0 +1,589 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <title>Loop Snap — Stutter Catch</title>
+  <style>
+    :root {
+      --bg: #0a0e12;
+      --fg: #e8eef2;
+      --muted: #7a9099;
+      --accent: #00e5c8;
+      --beat: #ff4d7a;
+      --ghost: #5a8a9e;
+      --hud-font: ui-monospace, 'SFMono-Regular', Menlo, monospace;
+    }
+    @media (prefers-color-scheme: dark) {
+      :root {
+        --bg: #0a0e12;
+        --fg: #e8eef2;
+        --muted: #7a9099;
+        --accent: #00e5c8;
+        --beat: #ff4d7a;
+        --ghost: #5a8a9e;
+      }
+      .panel {
+        background: rgba(10, 14, 18, 0.85);
+        border-color: rgba(0, 229, 200, 0.25);
+      }
+      button {
+        background: linear-gradient(145deg, #00c4aa, #00a896);
+        color: #041210;
+      }
+      #hud {
+        text-shadow: 0 1px 2px rgba(0,0,0,0.5);
+      }
+    }
+    @media (prefers-color-scheme: light) {
+      :root {
+        --bg: #eceff1;
+        --fg: #1a2528;
+        --muted: #5a6d75;
+        --accent: #008b7a;
+        --beat: #d42050;
+        --ghost: #6a8a96;
+      }
+    }
+    * { box-sizing: border-box; }
+    html, body {
+      margin: 0;
+      height: 100%;
+      height: 100dvh;
+      overflow: hidden;
+      background: var(--bg);
+      color: var(--fg);
+      font-family: var(--hud-font);
+      -webkit-tap-highlight-color: transparent;
+    }
+    #wrap {
+      width: 100%;
+      width: 100dvw;
+      height: 100%;
+      height: 100dvh;
+      position: relative;
+      display: flex;
+      flex-direction: column;
+      align-items: stretch;
+      justify-content: stretch;
+    }
+    canvas#game {
+      display: block;
+      width: 100%;
+      height: 100%;
+      touch-action: none;
+      user-select: none;
+      -webkit-user-select: none;
+      cursor: pointer;
+    }
+    .layer {
+      position: absolute;
+      inset: 0;
+      pointer-events: none;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      padding: env(safe-area-inset-top) env(safe-area-inset-right) env(safe-area-inset-bottom) env(safe-area-inset-left);
+    }
+    .layer.interact { pointer-events: auto; }
+    .panel {
+      background: rgba(10, 14, 18, 0.85);
+      border: 1px solid rgba(0, 229, 200, 0.25);
+      border-radius: 12px;
+      padding: 1.5rem 1.75rem;
+      max-width: 90vw;
+      text-align: center;
+      backdrop-filter: blur(8px);
+    }
+    @media (prefers-color-scheme: light) {
+      .panel {
+        background: rgba(255, 255, 255, 0.92);
+        border-color: rgba(0, 139, 122, 0.3);
+      }
+    }
+    h1 {
+      margin: 0 0 0.5rem;
+      font-size: clamp(1.1rem, 4vw, 1.35rem);
+      font-weight: 600;
+      letter-spacing: -0.02em;
+    }
+    p.sub {
+      margin: 0 0 1rem;
+      font-size: 0.8rem;
+      color: var(--muted);
+      line-height: 1.45;
+    }
+    button {
+      font-family: var(--hud-font);
+      font-size: 1rem;
+      min-height: 44px;
+      min-width: 44px;
+      padding: 0.65rem 1.4rem;
+      border-radius: 8px;
+      border: none;
+      background: linear-gradient(145deg, #00c4aa, #00a896);
+      color: #041210;
+      font-weight: 600;
+      cursor: pointer;
+      touch-action: manipulation;
+    }
+    @media (prefers-color-scheme: light) {
+      button {
+        background: linear-gradient(145deg, #008b7a, #006d5f);
+        color: #fff;
+      }
+    }
+    button:active { transform: scale(0.97); }
+    #hud {
+      position: absolute;
+      top: env(safe-area-inset-top, 8px);
+      left: 0;
+      right: 0;
+      padding: 8px 16px;
+      display: none;
+      justify-content: space-between;
+      align-items: flex-start;
+      pointer-events: none;
+      font-size: 0.75rem;
+      color: var(--fg);
+      text-shadow: 0 1px 2px rgba(0,0,0,0.5);
+      z-index: 2;
+    }
+    @media (prefers-color-scheme: light) {
+      #hud { text-shadow: 0 1px 1px rgba(255,255,255,0.8); }
+    }
+    #hud.visible { display: flex; }
+    .hidden { display: none !important; }
+  </style>
+</head>
+<body>
+  <div id="wrap">
+    <canvas id="game" aria-label="Rhythm catch game"></canvas>
+    <div id="hud" class="layer">
+      <span id="hud-score">0</span>
+      <span id="hud-streak">×1</span>
+      <span id="hud-miss">○○○</span>
+    </div>
+    <div id="screen-title" class="layer interact">
+      <div class="panel">
+        <h1>Loop Snap</h1>
+        <p class="sub">Catch the <strong style="color:var(--beat)">beats</strong> in the lane. Ignore the ghost echoes. Three misses close the loop.</p>
+        <button type="button" id="btn-start">Tap to start</button>
+      </div>
+    </div>
+    <div id="screen-over" class="layer interact hidden">
+      <div class="panel">
+        <h1>Loop snapped</h1>
+        <p class="sub" id="over-detail">Score —</p>
+        <button type="button" id="btn-again">Play again</button>
+      </div>
+    </div>
+  </div>
+  <script>
+(function () {
+  'use strict';
+  var canvas = document.getElementById('game');
+  var ctx = canvas.getContext('2d', { alpha: false });
+  var hudScore = document.getElementById('hud-score');
+  var hudStreak = document.getElementById('hud-streak');
+  var hudMiss = document.getElementById('hud-miss');
+  var screenTitle = document.getElementById('screen-title');
+  var screenOver = document.getElementById('screen-over');
+  var hud = document.getElementById('hud');
+  var overDetail = document.getElementById('over-detail');
+
+  var W = 0, H = 0, dpr = 1;
+  var prefersLight = false;
+  function syncTheme() {
+    prefersLight = window.matchMedia('(prefers-color-scheme: light)').matches;
+  }
+  syncTheme();
+  window.matchMedia('(prefers-color-scheme: light)').addEventListener('change', syncTheme);
+
+  function resize() {
+    dpr = Math.min(window.devicePixelRatio || 1, 2);
+    W = canvas.clientWidth;
+    H = canvas.clientHeight;
+    canvas.width = Math.floor(W * dpr);
+    canvas.height = Math.floor(H * dpr);
+    ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+  }
+  window.addEventListener('resize', resize);
+  resize();
+
+  var STATE = { TITLE: 0, PLAY: 1, OVER: 2 };
+  var state = STATE.TITLE;
+  var score = 0;
+  var streak = 0;
+  var misses = 0;
+  var maxStreak = 0;
+  var age = 0;
+  var bpm = 108;
+  var speedMul = 1;
+  var nextBeatAt = 0;
+  var beatIndex = 0;
+  var ghostChance = 0.12;
+  var ghostTimes = [];
+
+  var pulses = [];
+  var particles = [];
+  var laneCenter = [0.25, 0.75];
+
+  var audioCtx = null;
+  function getAudio() {
+    if (!audioCtx) {
+      var AC = window.AudioContext || window.webkitAudioContext;
+      if (AC) audioCtx = new AC();
+    }
+    return audioCtx;
+  }
+
+  function beep(freq, dur, vol) {
+    var ac = getAudio();
+    if (!ac) return;
+    var t0 = ac.currentTime;
+    var o = ac.createOscillator();
+    var g = ac.createGain();
+    o.type = 'sine';
+    o.frequency.value = freq;
+    g.gain.setValueAtTime(0, t0);
+    g.gain.linearRampToValueAtTime(vol, t0 + 0.01);
+    g.gain.exponentialRampToValueAtTime(0.001, t0 + dur);
+    o.connect(g);
+    g.connect(ac.destination);
+    o.start(t0);
+    o.stop(t0 + dur + 0.05);
+  }
+
+  function sfxCatch(perfect) {
+    beep(perfect ? 880 : 660, 0.06, perfect ? 0.12 : 0.08);
+    if (navigator.vibrate) navigator.vibrate(12);
+  }
+  function sfxGhost() {
+    beep(220, 0.08, 0.06);
+    if (navigator.vibrate) navigator.vibrate([8, 20, 8]);
+  }
+  function sfxMiss() {
+    beep(140, 0.15, 0.1);
+    if (navigator.vibrate) navigator.vibrate(45);
+  }
+
+  function streakMult() {
+    return Math.min(5, 1 + Math.floor(streak / 4));
+  }
+
+  function spawnPulse(isGhost) {
+    var lane = Math.random() < 0.5 ? 0 : 1;
+    pulses.push({
+      lane: lane,
+      ghost: isGhost,
+      y: -0.08,
+      vy: (0.42 + Math.random() * 0.06) * speedMul,
+      claimed: false,
+      hit: false
+    });
+  }
+
+  function resetGame() {
+    score = 0;
+    streak = 0;
+    misses = 0;
+    maxStreak = 0;
+    age = 0;
+    bpm = 108;
+    speedMul = 1;
+    beatIndex = 0;
+    ghostChance = 0.12;
+    ghostTimes = [];
+    pulses = [];
+    particles = [];
+    nextBeatAt = performance.now() + 600;
+  }
+
+  var CATCH_TOP = 0.72;
+  var CATCH_BOT = 0.94;
+
+  function laneFromX(clientX) {
+    return clientX < W * 0.5 ? 0 : 1;
+  }
+
+  function tryHit(lane) {
+    var best = null;
+    var bestScore = -1;
+    for (var i = 0; i < pulses.length; i++) {
+      var p = pulses[i];
+      if (p.lane !== lane || p.claimed) continue;
+      var cy = p.y;
+      if (cy < CATCH_TOP - 0.02 || cy > CATCH_BOT + 0.04) continue;
+      var center = (CATCH_TOP + CATCH_BOT) * 0.5;
+      var dist = Math.abs(cy - center);
+      if (best === null || dist < bestScore) {
+        best = p;
+        bestScore = dist;
+      }
+    }
+    if (!best) return;
+    best.claimed = true;
+    if (best.ghost) {
+      streak = 0;
+      sfxGhost();
+      return;
+    }
+    var mid = (CATCH_TOP + CATCH_BOT) * 0.5;
+    var perfect = Math.abs(best.y - mid) < (CATCH_BOT - CATCH_TOP) * 0.12;
+    best.hit = true;
+    streak++;
+    if (streak > maxStreak) maxStreak = streak;
+    var mult = streakMult();
+    score += (perfect ? 120 : 80) * mult;
+    sfxCatch(perfect);
+    for (var k = 0; k < (perfect ? 14 : 8); k++) {
+      var ang = Math.random() * Math.PI * 2;
+      var sp = 120 + Math.random() * 180;
+      particles.push({
+        x: laneCenter[lane] * W,
+        y: mid * H,
+        vx: Math.cos(ang) * sp * 0.01,
+        vy: Math.sin(ang) * sp * 0.01,
+        life: 1,
+        hot: perfect
+      });
+    }
+  }
+
+  function pulseRect(lane, yNorm, r) {
+    var x = laneCenter[lane] * W;
+    var y = yNorm * H;
+    return { cx: x, cy: y, r: r };
+  }
+
+  function update(dt, now) {
+    age += dt;
+    if (state !== STATE.PLAY) return;
+
+    bpm = 108 + Math.min(22, age * 0.018);
+    speedMul = 1 + Math.min(0.75, age * 0.00035);
+    ghostChance = Math.min(0.38, 0.12 + age * 0.00025);
+
+    while (nextBeatAt <= now + 80) {
+      var interval = 60000 / bpm;
+      if (Math.random() < ghostChance) {
+        ghostTimes.push(nextBeatAt + interval * (0.36 + Math.random() * 0.26));
+      }
+      spawnPulse(false);
+      nextBeatAt += interval;
+      beatIndex++;
+    }
+
+    for (var gg = ghostTimes.length - 1; gg >= 0; gg--) {
+      if (ghostTimes[gg] <= now) {
+        spawnPulse(true);
+        ghostTimes.splice(gg, 1);
+      }
+    }
+
+    for (var i = pulses.length - 1; i >= 0; i--) {
+      var p = pulses[i];
+      if (p.claimed) {
+        pulses.splice(i, 1);
+        continue;
+      }
+      p.y += p.vy * dt;
+      if (!p.ghost && !p.claimed && p.y > CATCH_BOT + 0.06) {
+        misses++;
+        streak = 0;
+        sfxMiss();
+        pulses.splice(i, 1);
+        if (misses >= 3) {
+          endGame();
+          return;
+        }
+        continue;
+      }
+      if (p.y > 1.15) pulses.splice(i, 1);
+    }
+
+    for (var j = particles.length - 1; j >= 0; j--) {
+      var q = particles[j];
+      q.x += q.vx * dt * 60;
+      q.y += q.vy * dt * 60;
+      q.life -= dt * 2.2;
+      if (q.life <= 0) particles.splice(j, 1);
+    }
+
+    hudScore.textContent = String(Math.floor(score));
+    hudStreak.textContent = '×' + streakMult() + '  ' + streak + ' streak';
+    var dots = '';
+    for (var m = 0; m < 3; m++) {
+      dots += m < misses ? '●' : '○';
+    }
+    hudMiss.textContent = dots;
+  }
+
+  function drawGrid() {
+    var g = prefersLight ? 'rgba(0,100,90,0.14)' : 'rgba(0, 255, 200, 0.12)';
+    ctx.strokeStyle = g;
+    ctx.lineWidth = 1;
+    var step = 40;
+    for (var x = 0; x <= W; x += step) {
+      ctx.beginPath();
+      ctx.moveTo(x + 0.5, 0);
+      ctx.lineTo(x + 0.5, H);
+      ctx.stroke();
+    }
+    for (var y = 0; y <= H; y += step) {
+      ctx.beginPath();
+      ctx.moveTo(0, y + 0.5);
+      ctx.lineTo(W, y + 0.5);
+      ctx.stroke();
+    }
+    ctx.strokeStyle = prefersLight ? 'rgba(0,0,0,0.08)' : 'rgba(255,255,255,0.06)';
+    ctx.beginPath();
+    ctx.moveTo(W * 0.5, 0);
+    ctx.lineTo(W * 0.5, H);
+    ctx.stroke();
+  }
+
+  function drawHaze() {
+    var grd = ctx.createRadialGradient(W * 0.5, H * 0.3, 0, W * 0.5, H * 0.5, H * 0.9);
+    if (prefersLight) {
+      grd.addColorStop(0, 'rgba(200, 220, 225, 0.35)');
+      grd.addColorStop(1, 'rgba(236, 239, 241, 0)');
+    } else {
+      grd.addColorStop(0, 'rgba(0, 80, 90, 0.25)');
+      grd.addColorStop(1, 'rgba(10, 14, 18, 0)');
+    }
+    ctx.fillStyle = grd;
+    ctx.fillRect(0, 0, W, H);
+  }
+
+  function drawCatchZone() {
+    var top = CATCH_TOP * H;
+    var bot = CATCH_BOT * H;
+    ctx.fillStyle = prefersLight ? 'rgba(0, 139, 122, 0.08)' : 'rgba(0, 229, 200, 0.07)';
+    ctx.fillRect(0, top, W, bot - top);
+    ctx.strokeStyle = prefersLight ? 'rgba(0, 100, 90, 0.35)' : 'rgba(0, 229, 200, 0.35)';
+    ctx.lineWidth = 2;
+    ctx.strokeRect(1, top, W - 2, bot - top);
+  }
+
+  function drawPulses() {
+    var beat = prefersLight ? '#c42048' : '#ff4d7a';
+    var ghost = prefersLight ? '#6a8a96' : '#5a8a9e';
+    for (var i = 0; i < pulses.length; i++) {
+      var p = pulses[i];
+      var rad = W * (p.ghost ? 0.038 : 0.048);
+      var pr = pulseRect(p.lane, p.y, rad);
+      ctx.beginPath();
+      ctx.arc(pr.cx, pr.cy, pr.r, 0, Math.PI * 2);
+      ctx.fillStyle = p.ghost ? ghost : beat;
+      if (p.ghost) ctx.globalAlpha = 0.55;
+      ctx.fill();
+      ctx.globalAlpha = 1;
+      if (!p.ghost) {
+        ctx.strokeStyle = prefersLight ? 'rgba(255,255,255,0.9)' : 'rgba(255,200,210,0.9)';
+        ctx.lineWidth = 2;
+        ctx.stroke();
+      }
+    }
+  }
+
+  function drawParticles() {
+    for (var i = 0; i < particles.length; i++) {
+      var p = particles[i];
+      ctx.globalAlpha = p.life;
+      ctx.fillStyle = p.hot ? (prefersLight ? '#008b7a' : '#00ffd0') : (prefersLight ? '#d42050' : '#ff8fa8');
+      ctx.beginPath();
+      ctx.arc(p.x, p.y, 3 + p.life * 3, 0, Math.PI * 2);
+      ctx.fill();
+    }
+    ctx.globalAlpha = 1;
+  }
+
+  function render() {
+    ctx.fillStyle = prefersLight ? '#eceff1' : '#0a0e12';
+    ctx.fillRect(0, 0, W, H);
+    drawGrid();
+    drawHaze();
+    drawCatchZone();
+    drawPulses();
+    drawParticles();
+  }
+
+  var last = performance.now();
+  function frame(now) {
+    var dt = Math.min(0.05, (now - last) / 1000);
+    last = now;
+    update(dt, now);
+    render();
+    requestAnimationFrame(frame);
+  }
+  requestAnimationFrame(frame);
+
+  function startGame() {
+    var ac = getAudio();
+    if (ac && ac.state === 'suspended') ac.resume();
+    resetGame();
+    nextBeatAt = performance.now() + 400;
+    state = STATE.PLAY;
+    screenTitle.classList.add('hidden');
+    screenOver.classList.add('hidden');
+    hud.classList.add('visible');
+  }
+
+  function endGame() {
+    state = STATE.OVER;
+    hud.classList.remove('visible');
+    overDetail.textContent = 'Score ' + Math.floor(score) + ' · best streak ' + maxStreak;
+    screenOver.classList.remove('hidden');
+  }
+
+  document.getElementById('btn-start').addEventListener('click', function (e) {
+    e.preventDefault();
+    startGame();
+  });
+  document.getElementById('btn-again').addEventListener('click', function (e) {
+    e.preventDefault();
+    screenOver.classList.add('hidden');
+    startGame();
+  });
+
+  function onPointer(e, isEnd) {
+    if (state !== STATE.PLAY) return;
+    if (e.cancelable) e.preventDefault();
+    var x = e.clientX !== undefined ? e.clientX : (e.changedTouches && e.changedTouches[0] ? e.changedTouches[0].clientX : 0);
+    if (!isEnd) return;
+    tryHit(laneFromX(x));
+  }
+
+  var skipNextClick = false;
+  canvas.addEventListener('touchend', function (e) {
+    skipNextClick = true;
+    onPointer(e, true);
+  }, { passive: false });
+  canvas.addEventListener('touchstart', function (e) {
+    if (e.cancelable) e.preventDefault();
+  }, { passive: false });
+  canvas.addEventListener('click', function (e) {
+    if (skipNextClick) {
+      skipNextClick = false;
+      return;
+    }
+    onPointer(e, true);
+  });
+
+  window.addEventListener('keydown', function (e) {
+    if (state !== STATE.PLAY) return;
+    if (e.code === 'ArrowLeft' || e.code === 'KeyA' || e.code === 'KeyZ') {
+      e.preventDefault();
+      tryHit(0);
+    } else if (e.code === 'ArrowRight' || e.code === 'KeyD' || e.code === 'KeyX') {
+      e.preventDefault();
+      tryHit(1);
+    }
+  });
+})();
+  </script>
+</body>
+</html>
