@@ -1,0 +1,773 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover" />
+<title>Erik Nilsson — designer at cursor</title>
+<meta name="description" content="Erik Nilsson — product designer at Cursor, in San Francisco. Iterating on living-site, where agents rebuild my corner of the web from fresh activity data." />
+<meta name="theme-color" content="#0a0810" media="(prefers-color-scheme: dark)" />
+<meta name="theme-color" content="#fbf8f1" media="(prefers-color-scheme: light)" />
+<meta name="color-scheme" content="light dark" />
+
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Instrument+Serif:ital@0;1&family=Inter:wght@400;500;600&family=JetBrains+Mono:wght@400;500&display=swap" />
+
+<style>
+  /* ──────────────────────────────────────────────────────────
+     tokens · color, type, space
+     ────────────────────────────────────────────────────────── */
+  :root {
+    color-scheme: light dark;
+
+    /* fluid type scale — clamps to the 640px column */
+    --fs-xs:   clamp(11px, 0.74vw + 9px, 12px);
+    --fs-sm:   clamp(13px, 0.45vw + 12px, 14px);
+    --fs-md:   clamp(15px, 0.30vw + 14px, 16px);
+    --fs-lg:   clamp(18px, 0.50vw + 16px, 20px);
+    --fs-h2:   clamp(11px, 0.10vw + 10.5px, 12px);
+    --fs-h1:   clamp(54px, 11vw + 8px, 96px);
+    --fs-mood: clamp(11px, 0.40vw + 10px, 12.5px);
+
+    --lh-tight: 0.94;
+    --lh-snug:  1.35;
+    --lh-body:  1.58;
+
+    --tracking-cap: 0.18em;
+
+    /* spatial scale — 4px base */
+    --s-1: 4px;  --s-2: 8px;  --s-3: 12px; --s-4: 16px;
+    --s-5: 24px; --s-6: 32px; --s-7: 48px; --s-8: 72px;
+    --s-9: 112px;
+
+    --col: 640px;
+    --gutter: clamp(20px, 5vw, 40px);
+
+    /* type families */
+    --ff-display: "Instrument Serif", "Cormorant Garamond", "Playfair Display", ui-serif, Georgia, serif;
+    --ff-body: "Inter", ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+    --ff-mono: "JetBrains Mono", ui-monospace, "SF Mono", "Menlo", "Consolas", monospace;
+
+    /* light theme · warm paper, ink, vibrant accents */
+    --paper:        oklch(98%   0.012  82);
+    --paper-tint:   oklch(96%   0.025  82);
+    --ink:          oklch(18%   0.020  290);
+    --ink-soft:     oklch(35%   0.022  290);
+    --ink-mute:     oklch(54%   0.020  280);
+    --rule:         oklch(85%   0.020  280 / 0.55);
+    --hover-veil:   oklch(0%    0       0 / 0.04);
+
+    /* psychedelic accents — set in oklch then upgraded to display-p3 below */
+    --c-magenta: oklch(70% 0.31  340);
+    --c-violet:  oklch(60% 0.30  295);
+    --c-cyan:    oklch(78% 0.18  205);
+    --c-lime:    oklch(86% 0.24  130);
+    --c-amber:   oklch(80% 0.20   65);
+    --c-rose:    oklch(74% 0.27   18);
+
+    --link:       var(--c-magenta);
+    --link-vis:   var(--c-violet);
+
+    /* motion */
+    --ease-soft: cubic-bezier(.22, .61, .36, 1);
+    --ease-spring: cubic-bezier(.34, 1.56, .64, 1);
+  }
+
+  /* upgrade to display-p3 for screens that can render it */
+  @supports (color: color(display-p3 1 0 0)) {
+    @media (color-gamut: p3) {
+      :root {
+        --c-magenta: color(display-p3 1.000 0.110 0.760);
+        --c-violet:  color(display-p3 0.640 0.180 1.000);
+        --c-cyan:    color(display-p3 0.090 0.880 1.000);
+        --c-lime:    color(display-p3 0.620 1.000 0.270);
+        --c-amber:   color(display-p3 1.000 0.660 0.080);
+        --c-rose:    color(display-p3 1.000 0.330 0.450);
+      }
+    }
+  }
+
+  @media (prefers-color-scheme: dark) {
+    :root {
+      --paper:      oklch(13%   0.020  285);
+      --paper-tint: oklch(17%   0.030  285);
+      --ink:        oklch(96%   0.015  85);
+      --ink-soft:   oklch(80%   0.020  85);
+      --ink-mute:   oklch(58%   0.025  290);
+      --rule:       oklch(75%   0.030  280 / 0.20);
+      --hover-veil: oklch(100%  0      0 / 0.05);
+    }
+  }
+
+  /* ──────────────────────────────────────────────────────────
+     reset
+     ────────────────────────────────────────────────────────── */
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+  html { -webkit-text-size-adjust: 100%; text-size-adjust: 100%; }
+  body {
+    min-height: 100svh;
+    background: var(--paper);
+    color: var(--ink);
+    font: 400 var(--fs-md)/var(--lh-body) var(--ff-body);
+    font-feature-settings: "ss01", "cv11", "ss03", "kern", "liga";
+    font-variant-ligatures: common-ligatures contextual;
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+    text-rendering: optimizeLegibility;
+    overflow-x: hidden;
+    overscroll-behavior-y: none;
+    position: relative;
+    isolation: isolate;
+  }
+  a { color: inherit; text-decoration: none; -webkit-tap-highlight-color: transparent; }
+  ul, ol { list-style: none; }
+  img, svg { display: block; max-width: 100%; }
+
+  /* selection in vibrant magenta */
+  ::selection {
+    background: var(--c-magenta);
+    color: var(--paper);
+  }
+
+  :focus-visible {
+    outline: 2px solid var(--c-cyan);
+    outline-offset: 3px;
+    border-radius: 3px;
+  }
+
+  /* ──────────────────────────────────────────────────────────
+     psychedelic atmosphere · mesh of P3 blobs + grain
+     ────────────────────────────────────────────────────────── */
+  .aurora,
+  .aurora::before,
+  .aurora::after {
+    position: fixed;
+    inset: -25%;
+    pointer-events: none;
+    z-index: -2;
+    will-change: transform;
+  }
+  .aurora {
+    background:
+      radial-gradient(38vmax 28vmax at 12% 14%,  var(--c-magenta) 0%, transparent 60%),
+      radial-gradient(34vmax 30vmax at 88% 22%,  var(--c-cyan)    0%, transparent 60%),
+      radial-gradient(40vmax 30vmax at 18% 88%,  var(--c-amber)   0%, transparent 62%),
+      radial-gradient(36vmax 28vmax at 92% 78%,  var(--c-violet)  0%, transparent 60%),
+      radial-gradient(28vmax 22vmax at 50% 52%,  var(--c-lime)    0%, transparent 60%);
+    filter: blur(46px) saturate(1.15);
+    opacity: 0.55;
+    animation: drift 32s ease-in-out infinite alternate;
+  }
+  .aurora::before {
+    content: "";
+    background:
+      radial-gradient(20vmax 18vmax at 30% 75%, var(--c-rose)   0%, transparent 65%),
+      radial-gradient(22vmax 18vmax at 78% 30%, var(--c-magenta) 0%, transparent 65%);
+    filter: blur(60px) saturate(1.2);
+    mix-blend-mode: plus-lighter;
+    opacity: 0.50;
+    animation: drift 24s ease-in-out -8s infinite alternate-reverse;
+  }
+  /* grain veil — adds the painterly tooth */
+  .grain {
+    position: fixed;
+    inset: 0;
+    pointer-events: none;
+    z-index: -1;
+    background-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='220' height='220'><filter id='n'><feTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='2' stitchTiles='stitch' seed='7'/><feColorMatrix values='0 0 0 0 0  0 0 0 0 0  0 0 0 0 0  0 0 0 0.55 0'/></filter><rect width='100%25' height='100%25' filter='url(%23n)'/></svg>");
+    background-size: 220px 220px;
+    opacity: 0.10;
+    mix-blend-mode: multiply;
+  }
+
+  /* paper tone — softens the aurora into something readable */
+  .veil {
+    position: fixed;
+    inset: 0;
+    pointer-events: none;
+    z-index: -1;
+    background:
+      radial-gradient(120vmax 100vmax at 50% 50%,
+        transparent 0%,
+        var(--paper) 70%);
+    opacity: 0.78;
+  }
+
+  @media (prefers-color-scheme: dark) {
+    .aurora { opacity: 0.42; filter: blur(52px) saturate(1.25); }
+    .aurora::before { opacity: 0.55; }
+    .grain { opacity: 0.18; mix-blend-mode: overlay; }
+    .veil  { opacity: 0.82; }
+  }
+
+  @keyframes drift {
+    0%   { transform: translate3d(0, 0, 0) rotate(0.001deg) scale(1); }
+    50%  { transform: translate3d(-3%, 2%, 0) rotate(0.001deg) scale(1.06); }
+    100% { transform: translate3d(2%, -3%, 0) rotate(0.001deg) scale(1.02); }
+  }
+  @media (prefers-reduced-motion: reduce) {
+    .aurora, .aurora::before { animation: none; }
+    .name-mark, .dot, .glyph { animation: none !important; }
+  }
+
+  /* ──────────────────────────────────────────────────────────
+     layout
+     ────────────────────────────────────────────────────────── */
+  .page {
+    width: 100%;
+    max-width: var(--col);
+    margin-inline: auto;
+    padding: clamp(40px, 9vw, 80px) var(--gutter) clamp(56px, 9vw, 96px);
+    display: grid;
+    gap: var(--s-7);
+    position: relative;
+  }
+
+  /* ──────────────────────────────────────────────────────────
+     header · name + meta
+     ────────────────────────────────────────────────────────── */
+  header { display: grid; gap: var(--s-5); }
+
+  .meta {
+    display: flex;
+    align-items: baseline;
+    gap: var(--s-3);
+    flex-wrap: wrap;
+    font: 500 var(--fs-mood)/1 var(--ff-mono);
+    color: var(--ink-mute);
+    letter-spacing: 0.04em;
+    text-transform: lowercase;
+    font-variant-numeric: tabular-nums;
+  }
+  .dot {
+    display: inline-block;
+    width: 7px; height: 7px;
+    border-radius: 50%;
+    background: var(--c-lime);
+    box-shadow: 0 0 0 2px color-mix(in oklch, var(--c-lime) 30%, transparent),
+                0 0 14px var(--c-lime);
+    transform: translateY(-1px);
+    animation: pulse 2.4s ease-in-out infinite;
+  }
+  @keyframes pulse {
+    0%, 100% { opacity: 1; transform: translateY(-1px) scale(1); }
+    50%      { opacity: 0.55; transform: translateY(-1px) scale(0.85); }
+  }
+  .meta .sep { opacity: 0.45; }
+  .meta .temp { font-variant-numeric: tabular-nums; }
+
+  .name {
+    font-family: var(--ff-display);
+    font-style: italic;
+    font-weight: 400;
+    font-size: var(--fs-h1);
+    line-height: var(--lh-tight);
+    letter-spacing: -0.025em;
+    color: var(--ink);
+    margin-left: -0.04em; /* optical kerning of the leading 'E' */
+    word-spacing: -0.02em;
+    position: relative;
+    text-wrap: balance;
+  }
+  .name .nilsson {
+    background: linear-gradient(
+      105deg,
+      var(--c-magenta) 0%,
+      var(--c-violet)  35%,
+      var(--c-cyan)    62%,
+      var(--c-lime)   100%
+    );
+    -webkit-background-clip: text;
+            background-clip: text;
+    color: transparent;
+    background-size: 220% 220%;
+    animation: hue 14s linear infinite;
+  }
+  @keyframes hue {
+    0%   { background-position:   0% 50%; }
+    50%  { background-position: 100% 50%; }
+    100% { background-position:   0% 50%; }
+  }
+
+  .greet {
+    font-family: var(--ff-display);
+    font-style: italic;
+    font-weight: 400;
+    font-size: clamp(18px, 1.2vw + 14px, 22px);
+    color: var(--ink-soft);
+    letter-spacing: -0.01em;
+    line-height: 1.2;
+  }
+
+  /* ──────────────────────────────────────────────────────────
+     intro · drop cap on the first letter
+     ────────────────────────────────────────────────────────── */
+  .intro {
+    font-size: var(--fs-lg);
+    line-height: 1.55;
+    letter-spacing: -0.005em;
+    color: var(--ink);
+    max-width: 56ch;
+    text-wrap: pretty;
+  }
+  .intro a {
+    color: inherit;
+    background-image: linear-gradient(var(--c-magenta), var(--c-magenta));
+    background-repeat: no-repeat;
+    background-position: 0 100%;
+    background-size: 100% 1.5px;
+    padding-bottom: 1px;
+    transition: background-size 250ms var(--ease-soft),
+                color 250ms var(--ease-soft);
+  }
+  .intro a:hover {
+    color: var(--c-magenta);
+    background-size: 100% 100%;
+    background-image: linear-gradient(transparent calc(100% - 4px), color-mix(in oklch, var(--c-magenta) 22%, transparent) 0);
+  }
+  .nobr { white-space: nowrap; }
+
+  /* ──────────────────────────────────────────────────────────
+     section heading
+     ────────────────────────────────────────────────────────── */
+  .sect { display: grid; gap: var(--s-4); }
+  .sect h2 {
+    display: flex;
+    align-items: center;
+    gap: var(--s-3);
+    font: 500 var(--fs-h2)/1 var(--ff-mono);
+    color: var(--ink-mute);
+    letter-spacing: var(--tracking-cap);
+    text-transform: uppercase;
+    margin-bottom: var(--s-2);
+  }
+  .sect h2::before {
+    content: "";
+    display: inline-block;
+    width: 14px; height: 1px;
+    background: currentColor;
+    opacity: 0.6;
+  }
+  .sect h2 .num {
+    color: var(--ink-mute);
+    opacity: 0.55;
+    font-variant-numeric: tabular-nums;
+  }
+
+  /* ──────────────────────────────────────────────────────────
+     row · used in now / writing / elsewhere
+     ────────────────────────────────────────────────────────── */
+  .rows { display: grid; gap: 2px; }
+
+  .row {
+    display: grid;
+    grid-template-columns: 88px 1fr auto;
+    align-items: baseline;
+    gap: var(--s-4);
+    padding: var(--s-3) 0;
+    border-top: 1px solid var(--rule);
+    transition: background 200ms var(--ease-soft);
+  }
+  .row:last-child { border-bottom: 1px solid var(--rule); }
+  .row .key {
+    font: 500 var(--fs-xs)/1 var(--ff-mono);
+    color: var(--ink-mute);
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+    font-variant-numeric: tabular-nums;
+    padding-top: 2px;
+  }
+  .row .val {
+    font-size: var(--fs-md);
+    color: var(--ink);
+    letter-spacing: -0.005em;
+    text-wrap: pretty;
+    min-width: 0;
+  }
+  .row .val em {
+    font-style: italic;
+    color: var(--ink-soft);
+    font-family: var(--ff-display);
+    font-size: 1.05em;
+  }
+  .row .end {
+    font: 500 var(--fs-xs)/1 var(--ff-mono);
+    color: var(--ink-mute);
+    font-variant-numeric: tabular-nums;
+    text-align: right;
+    white-space: nowrap;
+  }
+  .row a.val { color: var(--ink); }
+  .row a.val:hover {
+    color: var(--c-magenta);
+  }
+
+  /* writing rows have specific link styling */
+  .row.write a {
+    display: inline-flex;
+    align-items: baseline;
+    gap: 0.5ch;
+    transition: color 200ms var(--ease-soft);
+  }
+  .row.write a::after {
+    content: "↗";
+    display: inline-block;
+    color: var(--ink-mute);
+    font-size: 0.85em;
+    opacity: 0;
+    transform: translate(-4px, 0);
+    transition: opacity 200ms var(--ease-soft), transform 200ms var(--ease-soft), color 200ms var(--ease-soft);
+  }
+  .row.write a:hover::after {
+    opacity: 1;
+    transform: translate(0, 0);
+    color: var(--c-magenta);
+  }
+
+  /* hover lift + tinted background */
+  .row:hover {
+    background: var(--hover-veil);
+  }
+
+  /* ──────────────────────────────────────────────────────────
+     listening · long copy
+     ────────────────────────────────────────────────────────── */
+  .listening p {
+    font-size: var(--fs-md);
+    color: var(--ink);
+    line-height: 1.55;
+    letter-spacing: -0.005em;
+    max-width: 54ch;
+  }
+  .listening .artists b {
+    font-weight: 500;
+    color: var(--ink);
+  }
+  .listening .genres {
+    margin-top: var(--s-2);
+    font-family: var(--ff-mono);
+    font-size: var(--fs-xs);
+    color: var(--ink-mute);
+    letter-spacing: 0.04em;
+  }
+
+  /* ──────────────────────────────────────────────────────────
+     elsewhere · vibrant per-link color
+     ────────────────────────────────────────────────────────── */
+  .row.link[data-c="magenta"] { --accent: var(--c-magenta); }
+  .row.link[data-c="cyan"]    { --accent: var(--c-cyan); }
+  .row.link[data-c="amber"]   { --accent: var(--c-amber); }
+  .row.link[data-c="violet"]  { --accent: var(--c-violet); }
+
+  .row.link a.val {
+    background-image: linear-gradient(var(--accent), var(--accent));
+    background-repeat: no-repeat;
+    background-position: 0 100%;
+    background-size: 0% 1.5px;
+    transition: background-size 320ms var(--ease-soft), color 220ms var(--ease-soft);
+    padding-bottom: 1px;
+  }
+  .row.link:hover a.val,
+  .row.link a.val:hover {
+    color: var(--accent);
+    background-size: 100% 1.5px;
+  }
+
+  .row.link .key {
+    display: flex;
+    align-items: baseline;
+    gap: 8px;
+  }
+  .row.link .key .glyph {
+    display: inline-block;
+    width: 6px; height: 6px;
+    border-radius: 50%;
+    background: var(--accent);
+    transform: translateY(1px);
+    box-shadow: 0 0 0 1px color-mix(in oklch, var(--accent) 28%, transparent),
+                0 0 8px color-mix(in oklch, var(--accent) 60%, transparent);
+    transition: transform 280ms var(--ease-spring), box-shadow 280ms var(--ease-soft);
+  }
+  .row.link:hover .glyph {
+    transform: translateY(1px) scale(1.4);
+    box-shadow: 0 0 0 2px color-mix(in oklch, var(--accent) 35%, transparent),
+                0 0 14px var(--accent);
+  }
+
+  .row.link .end {
+    color: var(--ink-mute);
+    font-family: var(--ff-mono);
+    font-size: var(--fs-xs);
+    transition: transform 280ms var(--ease-spring), color 220ms var(--ease-soft);
+  }
+  .row.link:hover .end {
+    color: var(--accent);
+    transform: translateX(4px);
+  }
+
+  /* ──────────────────────────────────────────────────────────
+     pull · the recent thought
+     ────────────────────────────────────────────────────────── */
+  .pull {
+    margin-top: var(--s-3);
+    padding: var(--s-4) var(--s-5);
+    border-left: 2px solid var(--c-magenta);
+    background: linear-gradient(
+      90deg,
+      color-mix(in oklch, var(--c-magenta) 6%, transparent),
+      transparent 60%
+    );
+    border-radius: 0 8px 8px 0;
+  }
+  .pull q {
+    quotes: "\201C" "\201D";
+    font-family: var(--ff-display);
+    font-style: italic;
+    font-size: clamp(20px, 1.4vw + 14px, 24px);
+    line-height: 1.3;
+    letter-spacing: -0.01em;
+    color: var(--ink);
+  }
+  .pull q::before { content: open-quote; opacity: 0.45; }
+  .pull q::after  { content: close-quote; opacity: 0.45; }
+  .pull cite {
+    display: block;
+    margin-top: var(--s-2);
+    font: 500 var(--fs-xs)/1 var(--ff-mono);
+    color: var(--ink-mute);
+    letter-spacing: 0.05em;
+    font-style: normal;
+    font-variant-numeric: tabular-nums;
+  }
+  .pull cite a {
+    color: inherit;
+    transition: color 200ms var(--ease-soft);
+  }
+  .pull cite a:hover { color: var(--c-magenta); }
+
+  /* ──────────────────────────────────────────────────────────
+     footer
+     ────────────────────────────────────────────────────────── */
+  footer {
+    margin-top: var(--s-5);
+    padding-top: var(--s-6);
+    border-top: 1px solid var(--rule);
+    display: flex;
+    align-items: baseline;
+    justify-content: space-between;
+    flex-wrap: wrap;
+    gap: var(--s-4);
+  }
+  footer .signoff {
+    font-family: var(--ff-display);
+    font-style: italic;
+    font-size: clamp(20px, 1.4vw + 14px, 26px);
+    color: var(--ink);
+    letter-spacing: -0.01em;
+    line-height: 1.1;
+  }
+  footer .signoff .diff {
+    background: linear-gradient(
+      92deg,
+      var(--c-amber) 0%,
+      var(--c-magenta) 45%,
+      var(--c-violet) 100%
+    );
+    -webkit-background-clip: text;
+            background-clip: text;
+    color: transparent;
+  }
+  footer .stamp {
+    font: 500 var(--fs-xs)/1 var(--ff-mono);
+    color: var(--ink-mute);
+    text-transform: lowercase;
+    letter-spacing: 0.06em;
+    font-variant-numeric: tabular-nums;
+  }
+
+  /* tiny blinking cursor — gives the page a crafted, terminal-y heartbeat */
+  .caret {
+    display: inline-block;
+    width: 0.42em; height: 1em;
+    background: var(--c-magenta);
+    margin-left: 0.18em;
+    transform: translateY(0.13em);
+    border-radius: 1.5px;
+    animation: blink 1.05s steps(2, end) infinite;
+  }
+  @keyframes blink {
+    50% { opacity: 0; }
+  }
+
+  /* small responsive: keep mono keys readable on phones */
+  @media (max-width: 460px) {
+    .row { grid-template-columns: 72px 1fr auto; gap: var(--s-3); }
+    .row.write { grid-template-columns: 76px 1fr auto; }
+    .meta { gap: var(--s-2); }
+    footer { gap: var(--s-2); }
+  }
+  @media (max-width: 360px) {
+    .row .end { display: none; }
+    .row, .row.write { grid-template-columns: 70px 1fr; }
+  }
+</style>
+
+<style id="__living_site_scroll_guard">
+  /* Scroll guard injected at build time to ensure generated pages remain scrollable in iframes. */
+  html, body {
+    height: auto !important;
+    min-height: 100% !important;
+    max-height: none !important;
+    overflow-y: auto !important;
+    overflow-x: hidden !important;
+    position: static !important;
+    -webkit-overflow-scrolling: touch !important;
+    touch-action: pan-y !important;
+    overscroll-behavior-y: contain !important;
+  }
+  /* Avoid accidental fixed full-screen traps that break scrolling on mobile. */
+  body {
+    inset: auto !important;
+  }
+</style>
+</head>
+
+<body>
+  <div class="aurora" aria-hidden="true"></div>
+  <div class="grain"  aria-hidden="true"></div>
+  <div class="veil"   aria-hidden="true"></div>
+
+  <main class="page">
+    <header>
+      <p class="meta" aria-label="status">
+        <span class="dot" aria-hidden="true"></span>
+        <span>san francisco</span>
+        <span class="sep">·</span>
+        <span>clear spring evening</span>
+        <span class="sep">·</span>
+        <span class="temp">17°c</span>
+      </p>
+
+      <h1 class="name">
+        <span class="erik">Erik</span>
+        <span class="nilsson">Nilsson</span>
+      </h1>
+
+      <p class="greet">Hej<span class="caret" aria-hidden="true"></span></p>
+    </header>
+
+    <section class="intro" aria-label="about">
+      <p>
+        I'm a product designer at <a href="https://cursor.com" rel="me">Cursor</a>,
+        working on how people build software with AI. Off-hours, I'm tinkering with
+        <a href="https://github.com/eriknson/living-site" class="nobr">living‑site</a>
+        — agents rebuild this corner of the web from fresh activity data each day.
+        Small projects, slow afternoons, and a steady habit of iterating until things
+        feel right.
+      </p>
+    </section>
+
+    <section class="sect now" aria-label="now">
+      <h2><span>now</span> <span class="num">· apr 28</span></h2>
+      <div class="rows">
+        <div class="row">
+          <span class="key">work</span>
+          <span class="val">Designing AI-native dev tools at <em>Cursor</em>.</span>
+          <span class="end">sf</span>
+        </div>
+        <div class="row">
+          <span class="key">side</span>
+          <span class="val"><span class="nobr">living‑site</span> — daily regenerations from agent runs.</span>
+          <span class="end">v.now</span>
+        </div>
+        <div class="row">
+          <span class="key">github</span>
+          <span class="val">Mostly <span class="nobr">living‑site</span> commits lately; <span class="nobr">shipflow</span> &amp; <span class="nobr">terminal‑design</span> in the queue.</span>
+          <span class="end">11 / wk</span>
+        </div>
+      </div>
+
+      <blockquote class="pull">
+        <q>exploring ways to spin up agents from my phone — iOS shortcuts × github actions × cursor cli</q>
+        <cite>— <a href="https://x.com/flowstated/status/2000691637190861180">@flowstated, dec 15</a></cite>
+      </blockquote>
+    </section>
+
+    <section class="sect writing" aria-label="writing">
+      <h2><span>writing</span> <span class="num">· 6 pieces</span></h2>
+      <ol class="rows">
+        <li class="row write">
+          <span class="key">2026 · 03</span>
+          <a class="val" href="/posts/test">Test</a>
+          <span class="end">1 min</span>
+        </li>
+        <li class="row write">
+          <span class="key">2025 · 12</span>
+          <a class="val" href="/posts/a-living-site">A living site</a>
+          <span class="end">6 min</span>
+        </li>
+        <li class="row write">
+          <span class="key">2025 · 11</span>
+          <a class="val" href="/posts/surgical-edits">Surgical edits</a>
+          <span class="end">4 min</span>
+        </li>
+        <li class="row write">
+          <span class="key">2024 · 11</span>
+          <a class="val" href="/posts/familiar-differentiation">Familiar differentiation</a>
+          <span class="end">5 min</span>
+        </li>
+        <li class="row write">
+          <span class="key">2022 · 10</span>
+          <a class="val" href="/posts/hackathon-energy-but-add-users">Hackathon energy, but add users</a>
+          <span class="end">4 min</span>
+        </li>
+        <li class="row write">
+          <span class="key">2020 · 08</span>
+          <a class="val" href="https://uu.diva-portal.org/smash/record.jsf?pid=diva2:1453018">Go with the flow</a>
+          <span class="end">45 min</span>
+        </li>
+      </ol>
+    </section>
+
+    <section class="sect listening" aria-label="listening">
+      <h2><span>listening</span> <span class="num">· this season</span></h2>
+      <p class="artists">
+        <b>Fred again..</b>, <b>Beach House</b>, <b>Videoclub</b>, <b>Drake</b>, and
+        <b>Ben Böhmer</b> on most playlists right now.
+      </p>
+      <p class="genres">stutter house · dream pop · rap · french indie pop · melodic house</p>
+    </section>
+
+    <section class="sect elsewhere" aria-label="elsewhere">
+      <h2><span>elsewhere</span> <span class="num">· say hi</span></h2>
+      <div class="rows">
+        <div class="row link" data-c="magenta">
+          <span class="key"><span class="glyph" aria-hidden="true"></span>x</span>
+          <a class="val" href="https://x.com/flowstated" rel="me">@flowstated</a>
+          <span class="end">→</span>
+        </div>
+        <div class="row link" data-c="cyan">
+          <span class="key"><span class="glyph" aria-hidden="true"></span>github</span>
+          <a class="val" href="https://github.com/eriknson" rel="me">@eriknson</a>
+          <span class="end">→</span>
+        </div>
+        <div class="row link" data-c="violet">
+          <span class="key"><span class="glyph" aria-hidden="true"></span>linkedin</span>
+          <a class="val" href="https://linkedin.com/in/eriknson" rel="me">@eriknson</a>
+          <span class="end">→</span>
+        </div>
+        <div class="row link" data-c="amber">
+          <span class="key"><span class="glyph" aria-hidden="true"></span>email</span>
+          <a class="val" href="mailto:contact@eriks.design?subject=Hej">contact@eriks.design</a>
+          <span class="end">→</span>
+        </div>
+      </div>
+    </section>
+
+    <footer>
+      <p class="signoff">See you in the <span class="diff">diff</span>.</p>
+      <p class="stamp">2026 · sf · v.live</p>
+    </footer>
+  </main>
+</body>
+</html>
