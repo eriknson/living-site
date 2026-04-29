@@ -101,12 +101,6 @@ jobs:
       - name: Run smoke test
         run: pnpm run smoke
 
-      - name: Fetch live site for curator
-        run: |
-          echo "Fetching styled page for curator to process..."
-          curl -sL "https://eriks.design" -o data/styled-page.html
-          echo "Saved data/styled-page.html ($(wc -c < data/styled-page.html) bytes)"
-
       - name: Aggregate data
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
@@ -149,7 +143,6 @@ jobs:
           path: |
             data/latest.json
             data/fetch-summary.json
-            data/styled-page.html
             data/news.json
           if-no-files-found: warn
           retention-days: 3
@@ -189,7 +182,6 @@ jobs:
           # Move data files to data/
           cp artifacts/latest.json data/latest.json
           cp artifacts/fetch-summary.json data/fetch-summary.json
-          cp artifacts/styled-page.html data/styled-page.html
           cp artifacts/news.json data/news.json 2>/dev/null || true
           echo "Artifacts organized"
 
@@ -210,10 +202,8 @@ jobs:
         run: |
           git worktree add /tmp/curator-workspace --detach HEAD
           cp data/latest.json /tmp/curator-workspace/data/latest.json
-          cp data/styled-page.html /tmp/curator-workspace/data/styled-page.html
           cp data/news.json /tmp/curator-workspace/data/news.json 2>/dev/null || true
           rm -f /tmp/curator-workspace/data/brief.json
-          rm -f /tmp/curator-workspace/data/reference.html
           echo "Curator workspace created"
 
       - name: Run curator agent
@@ -223,14 +213,12 @@ jobs:
         run: |
           PROMPT="Read infra/prompts/curator.md for your instructions.
           
-          Task 1: Read data/latest.json → Write data/brief.json
-          Task 2: Read data/styled-page.html → Write data/reference.html (semantic version)"
+          Read data/latest.json → Write data/brief.json"
           
           cursor-agent -p --force --model composer-2-fast "$PROMPT" 2>&1 || true
 
       - name: Copy curator output or create fallback
         run: |
-          # Copy brief.json
           if [ -f "/tmp/curator-workspace/data/brief.json" ]; then
             cp /tmp/curator-workspace/data/brief.json data/brief.json
             echo "=== Brief Output (from curator) ==="
@@ -243,38 +231,28 @@ jobs:
               const weather = latest.sources?.weather || {};
               const repos = (gh.active_repos || []).filter(r => r.is_owned).slice(0, 2).map(r => r.name);
               const artists = (spotify.medium_term?.artists || []).slice(0, 3).map(a => a.name);
-              const gameDirections = {
-                'composer-2-fast': { concept: 'Catch brief bright signals while dodging heavier shadows in a 45-second one-thumb survival round.', mechanic: 'dodge and collect', touch_control: 'drag anywhere to steer', session_hook: 'quick score chase with near-miss bonuses', escalation: 'signal density and shadow speed increase every 10 seconds', aesthetic: 'crisp monochrome with warm accent sparks' },
-                'gpt-5.4-high-fast': { concept: 'Flick small orbiting moons into matching gates before the orbit collapses.', mechanic: 'physics flick timing', touch_control: 'hold, aim, release', session_hook: 'satisfying flicks and combo chains', escalation: 'the orbit shrinks and gates rotate faster', aesthetic: 'soft orbital diagrams on dark paper' },
-                'claude-opus-4-7-thinking-max': { concept: 'Trace safe paths through a shifting rain map before the next weather pulse lands.', mechanic: 'path drawing', touch_control: 'draw a route with one finger', session_hook: 'tiny route-planning bursts', escalation: 'new hazards appear and old paths decay', aesthetic: 'misty map lines and glassy droplets' },
-                'gemini-3.1-pro': { concept: 'Switch lanes to sort falling notes into the right columns before the rhythm stutters.', mechanic: 'lane switching and sorting', touch_control: 'swipe left or right', session_hook: 'fast readable sorting flow', escalation: 'tempo rises and decoy notes appear', aesthetic: 'minimal music staff with bright impacts' },
-                'kimi-k2.5': { concept: 'Memorize and repeat a tiny constellation pattern as new stars flare in.', mechanic: 'memory pattern', touch_control: 'tap glowing nodes', session_hook: 'one-screen pattern mastery', escalation: 'patterns lengthen and stars fade faster', aesthetic: 'quiet sky chart with ink labels' }
-              };
+              const genres = (spotify.medium_term?.genres || []).slice(0, 5);
               const brief = {
-                mood: latest.context?.season + ' focus',
-                intro: repos.length ? 'Working on ' + repos.join(' and ') + '.' : 'Building with AI.',
-                currently: [{ label: 'building', value: repos.join(', ') || 'projects' }],
-                listening: artists.join(', ') || 'music',
-                footer: latest.identity?.name?.split(' ')[0]?.toLowerCase() || 'erik',
+                date: latest.context?.date || new Date().toISOString().split('T')[0],
+                season: latest.context?.season || 'spring',
+                weather: weather,
+                github: { active_repos: repos, commits_this_week: gh.commits_this_week || 0 },
+                music: { top_artists: artists, top_genres: genres },
+                twitter: { recent_tweets: [], posts_this_week: 0, activity: 'dormant' },
                 world_signals: [latest.context?.season, weather.conditions].filter(Boolean).slice(0, 3),
-                game_directions: gameDirections
+                game_directions: {
+                  'composer-2-fast': { concept: 'Catch bright signals while dodging shadows.', mechanic: 'dodge and collect', touch_control: 'drag anywhere', session_hook: 'quick score chase', escalation: 'density increases', aesthetic: 'monochrome with accent sparks' },
+                  'gpt-5.4-high-fast': { concept: 'Flick orbiting moons into matching gates.', mechanic: 'physics flick', touch_control: 'hold, aim, release', session_hook: 'satisfying flicks', escalation: 'orbit shrinks', aesthetic: 'soft orbital diagrams' },
+                  'claude-opus-4-7-thinking-max': { concept: 'Draw paths through a shifting map.', mechanic: 'path drawing', touch_control: 'draw with finger', session_hook: 'route-planning bursts', escalation: 'new hazards appear', aesthetic: 'misty map lines' },
+                  'gemini-3.1-pro': { concept: 'Sort falling notes into columns.', mechanic: 'lane switching', touch_control: 'swipe left/right', session_hook: 'sorting flow', escalation: 'tempo rises', aesthetic: 'minimal music staff' },
+                  'kimi-k2.5': { concept: 'Repeat a constellation pattern as stars flare.', mechanic: 'memory pattern', touch_control: 'tap nodes', session_hook: 'pattern mastery', escalation: 'patterns lengthen', aesthetic: 'quiet sky chart' }
+                }
               };
               console.log(JSON.stringify(brief, null, 2));
             " > data/brief.json
             echo "=== Brief Output (fallback) ==="
           fi
           cat data/brief.json
-          
-          # Copy reference.html (semantic version)
-          if [ -f "/tmp/curator-workspace/data/reference.html" ]; then
-            cp /tmp/curator-workspace/data/reference.html data/reference.html
-            echo "=== Reference HTML (from curator) ==="
-            head -20 data/reference.html
-          else
-            echo "⚠ Curator did not create reference.html, creating minimal fallback..."
-            echo '<!DOCTYPE html><html lang="en"><head><meta charset="utf-8"><title>Erik Nilsson</title></head><body><main><p>Designer at <a href="https://cursor.com">Cursor</a>, making tools for building software with AI.</p><ul><li><a href="https://x.com/flowstated">Follow on X</a></li><li><a href="mailto:contact@eriks.design">Send an email</a></li><li><a href="https://github.com/eriknson">GitHub</a></li></ul></main></body></html>' > data/reference.html
-            echo "=== Reference HTML (fallback) ==="
-          fi
           
           git worktree remove /tmp/curator-workspace --force || true
 
@@ -292,7 +270,6 @@ jobs:
           name: curator-data
           path: |
             data/brief.json
-            data/reference.html
           retention-days: 3
 
   # Job 3: Generate with each model (parallel matrix)
@@ -338,17 +315,14 @@ jobs:
 
       - name: Organize downloaded files
         run: |
-          # Move data files to data/
           cp artifacts/aggregated/latest.json data/latest.json
           cp artifacts/aggregated/fetch-summary.json data/fetch-summary.json
           cp artifacts/curator/brief.json data/brief.json
-          cp artifacts/curator/reference.html data/reference.html
           echo "Artifacts organized"
 
       - name: Install Cursor CLI
         run: |
           curl https://cursor.com/install -fsS | bash
-          # Verify installation
           which cursor-agent || echo "cursor-agent not found in PATH"
           cursor-agent --version || echo "Failed to get cursor-agent version"
 
@@ -362,39 +336,25 @@ jobs:
 
       - name: Create clean worktree (isolated workspace)
         run: |
-          # Create isolated workspace from current commit
           git worktree add /tmp/clean-gen --detach HEAD
           
-          # Remove all build history so agent starts fresh
           rm -rf /tmp/clean-gen/generated/*.html
           rm -rf /tmp/clean-gen/public/builds/
           
-          # Ensure generated folder exists but is empty
           mkdir -p /tmp/clean-gen/generated
           touch /tmp/clean-gen/generated/.gitkeep
           
           echo "=== Clean workspace created ==="
-          echo "Generated folder contents:"
-          ls -la /tmp/clean-gen/generated/
-          echo ""
-          echo "No public/builds/ visible to agent"
 
       - name: Copy fresh data to worktree
         run: |
-          # Copy only what the generator needs: brief.json + reference.html
           cp data/brief.json /tmp/clean-gen/data/brief.json
-          cp data/reference.html /tmp/clean-gen/data/reference.html
-          echo "Copied brief.json and reference.html to worktree"
+          echo "Copied brief.json to worktree"
 
       - name: Build generation prompt
         run: |
           cat > /tmp/generation-prompt.txt << PROMPT_END
           $(cat /tmp/clean-gen/infra/prompts/system.md)
-
-          ---
-
-          Reference: data/reference.html
-          Today: data/brief.json
 
           Output: generated/${{ matrix.model }}.html
           PROMPT_END
@@ -429,7 +389,7 @@ jobs:
           echo "Checking required files..."
           ls -la infra/prompts/system.md || echo "system.md NOT FOUND"
           ls -la data/brief.json || echo "brief.json NOT FOUND"
-          ls -la data/reference.html || echo "reference.html NOT FOUND"
+          ls -la data/identity.json || echo "identity.json NOT FOUND"
           
           # Run cursor-agent and capture exit code properly
           set -o pipefail
@@ -557,7 +517,6 @@ jobs:
           cp artifacts/aggregated/latest.json data/latest.json
           cp artifacts/aggregated/fetch-summary.json data/fetch-summary.json
           cp artifacts/curator/brief.json data/brief.json
-          cp artifacts/curator/reference.html data/reference.html
           echo "Artifacts organized"
 
       - name: Install Cursor CLI
@@ -1047,7 +1006,6 @@ jobs:
           cp artifacts/aggregated/latest.json data/latest.json
           cp artifacts/aggregated/fetch-summary.json data/fetch-summary.json
           cp artifacts/curator/brief.json data/brief.json
-          cp artifacts/curator/reference.html data/reference.html
           echo "Data files organized"
 
       - name: Download all validated artifacts
