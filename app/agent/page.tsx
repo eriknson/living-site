@@ -86,7 +86,7 @@ function AgentContent() {
       />
       
       {/* Content area - fills remaining space */}
-      <div className="relative flex-1 flex flex-col min-h-0 bg-neutral-100 dark:bg-[#0a0a0a] pb-[env(safe-area-inset-bottom)]">
+      <div className="relative flex-1 flex flex-col min-h-0 pb-[env(safe-area-inset-bottom)]">
         {activePath ? (
           <>
             <AnimatedContent 
@@ -101,7 +101,7 @@ function AgentContent() {
             </AnimatedContent>
             {/* Loading overlay OUTSIDE AnimatedContent to avoid being animated away */}
             {!contentReady && (
-              <div className="absolute inset-0 bg-neutral-100 dark:bg-[#0a0a0a] pointer-events-none z-10" />
+              <div className="absolute inset-0 bg-white dark:bg-black pointer-events-none z-10" />
             )}
           </>
         ) : (

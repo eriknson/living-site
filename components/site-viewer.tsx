@@ -3,21 +3,29 @@
 import { useEffect, useRef, useState } from "react";
 
 /**
- * Rewrites CSS selectors targeting `body` to also target `.shadow-root`
- * This ensures body-level styles apply correctly in Shadow DOM
+ * Rewrites CSS selectors so styles meant for :root / html / body apply
+ * to the `.shadow-root` wrapper inside Shadow DOM.
  */
-function rewriteBodySelectors(css: string): string {
+function rewriteSelectorsForShadow(css: string): string {
   return css
-    // body { ... } → body, .shadow-root { ... }
-    .replace(/\bbody\s*\{/g, "body, .shadow-root {")
-    // body.class { ... } → body.class, .shadow-root.class { ... }
-    .replace(/\bbody(\.[a-zA-Z_-][\w-]*)\s*\{/g, "body$1, .shadow-root$1 {")
-    // body[attr] { ... } → body[attr], .shadow-root[attr] { ... }
-    .replace(/\bbody(\[[^\]]+\])\s*\{/g, "body$1, .shadow-root$1 {")
-    // body::pseudo { ... } → body::pseudo, .shadow-root::pseudo { ... }
-    .replace(/\bbody(::?[a-zA-Z-]+)\s*\{/g, "body$1, .shadow-root$1 {")
-    // body in comma-separated selectors: body, other { } → body, .shadow-root, other { }
-    .replace(/\bbody\s*,/g, "body, .shadow-root,");
+    // :root { ... } → :host, .shadow-root { ... }
+    .replace(/(?<![.\-\w]):root\s*\{/g, ":host, .shadow-root {")
+    // :root[attr] { ... } → :host, .shadow-root[attr] { ... }
+    .replace(/(?<![.\-\w]):root(\[[^\]]+\])\s*\{/g, ":host, .shadow-root$1 {")
+    // html { ... } → :host, .shadow-root { ... }
+    .replace(/\bhtml\s*\{/g, ":host, .shadow-root {")
+    // html[attr] { ... } → :host, .shadow-root[attr] { ... }
+    .replace(/\bhtml(\[[^\]]+\])\s*\{/g, ":host, .shadow-root$1 {")
+    // body { ... } → .shadow-root { ... }
+    .replace(/\bbody\s*\{/g, ".shadow-root {")
+    // body.class { ... } → .shadow-root.class { ... }
+    .replace(/\bbody(\.[a-zA-Z_-][\w-]*)\s*\{/g, ".shadow-root$1 {")
+    // body[attr] { ... } → .shadow-root[attr] { ... }
+    .replace(/\bbody(\[[^\]]+\])\s*\{/g, ".shadow-root$1 {")
+    // body::pseudo { ... } → .shadow-root::pseudo { ... }
+    .replace(/\bbody(::?[a-zA-Z-]+)\s*\{/g, ".shadow-root$1 {")
+    // body in comma-separated selectors: body, other → .shadow-root, other
+    .replace(/\bbody\s*,/g, ".shadow-root,");
 }
 
 interface SiteViewerProps {
@@ -94,14 +102,11 @@ export function SiteViewer({ src, htmlContent, onLoad }: SiteViewerProps) {
     const parser = new DOMParser();
     const doc = parser.parseFromString(content, "text/html");
 
-    // Remove nav/header elements to avoid duplicate headers with app shell
-    doc.querySelectorAll("nav, header").forEach((el) => el.remove());
-
-    // Extract styles and rewrite body selectors for shadow DOM compatibility
+    // Extract styles and rewrite selectors for shadow DOM compatibility
     const rawStyles = Array.from(doc.querySelectorAll("style"))
       .map((s) => s.textContent || "")
       .join("\n");
-    const rewrittenStyles = rewriteBodySelectors(rawStyles);
+    const rewrittenStyles = rewriteSelectorsForShadow(rawStyles);
 
     // Extract stylesheet link hrefs for loading
     const stylesheetHrefs = Array.from(doc.querySelectorAll('link[rel="stylesheet"]'))
@@ -159,18 +164,7 @@ export function SiteViewer({ src, htmlContent, onLoad }: SiteViewerProps) {
         touch-action: pan-y;
       }
       .shadow-root {
-        /* Neutralize body-level scroll traps from generated CSS. */
-        height: auto !important;
         min-height: 100%;
-        max-height: none !important;
-        overflow: visible !important;
-        position: static !important;
-        inset: auto !important;
-        max-width: 640px;
-        margin-left: auto;
-        margin-right: auto;
-        padding-left: 24px;
-        padding-right: 24px;
       }
     `;
     shadow.appendChild(hostStyleEl);
@@ -219,7 +213,7 @@ export function SiteViewer({ src, htmlContent, onLoad }: SiteViewerProps) {
   return (
     <div
       ref={containerRef}
-      className="flex-1 min-h-0 bg-white dark:bg-[#0a0a0a]"
+      className="flex-1 min-h-0"
     />
   );
 }
