@@ -192,6 +192,9 @@ export async function POST(request: NextRequest) {
         });
 
         let stepIdx = 0;
+        // Track the most recent HTML extracted from the agent's tool calls.
+        // Used as a fallback if downloadArtifact fails after the run completes.
+        let lastStreamedHtml: string | null = null;
 
         console.log("[/api/generate] Sending prompt, length:", prompt.length);
         const run = await agent.send(prompt, {
@@ -200,6 +203,7 @@ export async function POST(request: NextRequest) {
               if (update.toolCall) {
                 const html = extractWrittenHtml(update.toolCall);
                 if (html) {
+                  lastStreamedHtml = html;
                   send({ type: "partial_html", html });
                 }
               }
@@ -248,17 +252,48 @@ export async function POST(request: NextRequest) {
 
         // Fetch final canonical HTML from artifact
         let finalHtml: string | undefined;
+        let downloadError: string | undefined;
         try {
           const buf = await agent.downloadArtifact("generated/live.html");
           finalHtml = buf.toString("utf8");
-        } catch {
-          // artifact download failed — check if we streamed partial HTML
+        } catch (e) {
+          const err = e as Error;
+          downloadError = err.message || String(err);
+          console.warn("[/api/generate] downloadArtifact('generated/live.html') failed:", downloadError);
+
+          // Try to discover what the agent actually wrote and grab the largest HTML-ish artifact.
+          try {
+            const artifacts = await agent.listArtifacts();
+            console.log(
+              "[/api/generate] Available artifacts:",
+              artifacts.map((a: { path: string; sizeBytes: number }) => `${a.path} (${a.sizeBytes}b)`)
+            );
+            const htmlArtifacts = artifacts
+              .filter((a: { path: string }) => a.path.toLowerCase().endsWith(".html"))
+              .sort((a: { sizeBytes: number }, b: { sizeBytes: number }) => b.sizeBytes - a.sizeBytes);
+            if (htmlArtifacts.length > 0) {
+              const buf = await agent.downloadArtifact(htmlArtifacts[0].path);
+              finalHtml = buf.toString("utf8");
+              console.log("[/api/generate] Recovered HTML from fallback artifact:", htmlArtifacts[0].path);
+            }
+          } catch (listErr) {
+            console.warn("[/api/generate] listArtifacts fallback failed:", (listErr as Error).message);
+          }
+        }
+
+        // Last resort: use the most recent HTML we captured during streaming.
+        if (!finalHtml && lastStreamedHtml && (lastStreamedHtml as string).length > 100) {
+          console.log("[/api/generate] Falling back to last streamed HTML, length:", (lastStreamedHtml as string).length);
+          finalHtml = lastStreamedHtml;
         }
 
         if (finalHtml) {
           send({ type: "complete", html: finalHtml, message: "Generation complete!" });
         } else {
-          send({ type: "error", message: "Agent finished but no HTML was generated" });
+          const detail = downloadError
+            ? `Agent finished but no HTML was generated (artifact: ${downloadError})`
+            : "Agent finished but no HTML was generated";
+          send({ type: "error", message: detail });
         }
       } catch (error) {
         const err = error as Error & { code?: string; cause?: unknown; protoErrorCode?: string };
