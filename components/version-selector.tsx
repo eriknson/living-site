@@ -141,6 +141,14 @@ export function VersionSelector({
           </>
         );
       }
+      if (currentModel === "gpt-5.5-high-fast") {
+        return (
+          <>
+            <span className="sm:hidden">GPT-5.5</span>
+            <span className="hidden sm:inline">GPT-5.5 High Fast</span>
+          </>
+        );
+      }
       if (currentModel === "gpt-5.4-high-fast") {
         return (
           <>

@@ -33,7 +33,7 @@ type RouteType = "/" | "/agent" | "/new" | "/builds" | "/posts" | "/play";
 function getNextBuildTime(): Date {
   const now = new Date();
   const next = new Date(now);
-  next.setUTCHours(6, 0, 0, 0);
+  next.setUTCHours(13, 0, 0, 0);
   if (now >= next) next.setUTCDate(next.getUTCDate() + 1);
   return next;
 }
@@ -98,7 +98,7 @@ function IdleMobileDrawerContent({ countdown, nextBuildTime, onLinkClick }: {
         </div>
         <div className="flex justify-between items-baseline py-1">
           <span className="text-[15px] text-black/50 dark:text-white/50">Schedule</span>
-          <span className="text-[15px] text-black/90 dark:text-white/90">Daily at 6am UTC</span>
+          <span className="text-[15px] text-black/90 dark:text-white/90">Daily at 6am Pacific</span>
         </div>
       </div>
       <div className="flex gap-2">
@@ -327,7 +327,7 @@ function BuildStatus() {
                 <span className="text-black/50 dark:text-white/50">Schedule</span>
                 <span className="text-black/90 dark:text-white/90 flex items-center gap-1.5">
                   <Clock className="h-3 w-3" />
-                  Daily at 6am UTC
+                  Daily at 6am Pacific
                 </span>
               </div>
             </div>

@@ -15,10 +15,9 @@ export function TerminalView({ state, onStart, isStarting }: TerminalViewProps) 
   const showModelPanes = state?.workflow.aggregate === "complete";
   const models = [
     "composer-2-fast",
-    "gpt-5.4-high-fast",
+    "gpt-5.5-high-fast",
     "claude-opus-4-7-thinking-max",
     "gemini-3.1-pro",
-    "kimi-k2.5",
   ];
 
   return (
@@ -196,6 +195,7 @@ function StatusDot({ status }: { status: string }) {
 function shortenModelName(model: string): string {
   const map: Record<string, string> = {
     "composer-2-fast": "composer-2-fast",
+    "gpt-5.5-high-fast": "gpt-5.5-fast",
     "gpt-5.4-high-fast": "gpt-5.4-fast",
     "claude-opus-4-7-thinking-max": "opus-4.7-max",
     "gemini-3.1-pro": "gemini-3.1-pro",

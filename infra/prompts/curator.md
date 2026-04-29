@@ -42,7 +42,7 @@ Read `data/latest.json` and write `data/brief.json`. This is raw context for gen
       "escalation": "How pressure increases during the round.",
       "aesthetic": "A visual direction hint (e.g. 'neon wireframe', 'paper cutout', 'watercolor')"
     },
-    "gpt-5.4-high-fast": {
+    "gpt-5.5-high-fast": {
       "concept": "A different game idea. Each model MUST get a distinct concept — never repeat.",
       "mechanic": "A different concrete core action.",
       "touch_control": "A different one-thumb gesture.",
@@ -65,14 +65,6 @@ Read `data/latest.json` and write `data/brief.json`. This is raw context for gen
       "session_hook": "A fourth tiny-session hook.",
       "escalation": "A fourth pressure curve.",
       "aesthetic": "A fourth visual direction"
-    },
-    "kimi-k2.5": {
-      "concept": "A fifth distinct game idea.",
-      "mechanic": "A fifth core action.",
-      "touch_control": "A fifth touch control.",
-      "session_hook": "A fifth tiny-session hook.",
-      "escalation": "A fifth pressure curve.",
-      "aesthetic": "A fifth visual direction"
     }
   }
 }

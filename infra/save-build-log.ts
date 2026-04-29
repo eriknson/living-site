@@ -12,10 +12,9 @@ type BuildKind = "site" | "game";
 const DEFAULT_MODEL = "composer-2-fast";
 const DEFAULT_MODELS = [
   "composer-2-fast",
-  "gpt-5.4-high-fast",
+  "gpt-5.5-high-fast",
   "claude-opus-4-7-thinking-max",
   "gemini-3.1-pro",
-  "kimi-k2.5",
 ];
 
 const KIND_CONFIG: Record<BuildKind, {

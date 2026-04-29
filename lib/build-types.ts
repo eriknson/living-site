@@ -288,7 +288,7 @@ export function createInitialBuildState(buildId: string): BuildState {
         status: "queued",
         rawLog: [],
       },
-      "gpt-5.4-high-fast": {
+      "gpt-5.5-high-fast": {
         status: "queued",
         rawLog: [],
       },
@@ -297,10 +297,6 @@ export function createInitialBuildState(buildId: string): BuildState {
         rawLog: [],
       },
       "gemini-3.1-pro": {
-        status: "queued",
-        rawLog: [],
-      },
-      "kimi-k2.5": {
         status: "queued",
         rawLog: [],
       },

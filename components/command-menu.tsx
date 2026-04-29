@@ -70,8 +70,8 @@ const AGENTS = [
     keywords: ["cursor", "composer", "2", "fast", "ai"],
   },
   {
-    modelId: "gpt-5.4-high-fast",
-    keywords: ["openai", "gpt", "5.4", "high", "fast", "ai"],
+    modelId: "gpt-5.5-high-fast",
+    keywords: ["openai", "gpt", "5.5", "high", "fast", "ai"],
   },
   {
     modelId: "claude-opus-4-7-thinking-max",
@@ -80,10 +80,6 @@ const AGENTS = [
   {
     modelId: "gemini-3.1-pro",
     keywords: ["google", "gemini", "3.1", "pro", "ai"],
-  },
-  {
-    modelId: "kimi-k2.5",
-    keywords: ["kimi", "moonshot", "k2.5", "ai"],
   },
 ].map((agent) => ({
   ...agent,
@@ -97,8 +93,8 @@ const GAME_AGENTS = [
     keywords: ["cursor", "composer", "2", "fast", "game", "play"],
   },
   {
-    modelId: "gpt-5.4-high-fast",
-    keywords: ["openai", "gpt", "5.4", "high", "fast", "game", "play"],
+    modelId: "gpt-5.5-high-fast",
+    keywords: ["openai", "gpt", "5.5", "high", "fast", "game", "play"],
   },
   {
     modelId: "claude-opus-4-7-thinking-max",
@@ -107,10 +103,6 @@ const GAME_AGENTS = [
   {
     modelId: "gemini-3.1-pro",
     keywords: ["google", "gemini", "3.1", "pro", "game", "play"],
-  },
-  {
-    modelId: "kimi-k2.5",
-    keywords: ["kimi", "moonshot", "k2.5", "game", "play"],
   },
 ].map((agent) => ({
   ...agent,

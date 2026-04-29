@@ -30,6 +30,11 @@ const nextConfig = {
         permanent: true,
       },
       {
+        source: '/gpt-5.5-high-fast',
+        destination: '/?model=gpt-5.5-high-fast',
+        permanent: true,
+      },
+      {
         source: '/gpt-5.3-codex-high',
         destination: '/?model=gpt-5.3-codex-high',
         permanent: true,

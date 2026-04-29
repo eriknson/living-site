@@ -44,7 +44,7 @@ Cron          GitHub Actions        Cursor CLI          Repository
 
 ## The daily build
 
-Every day at 6am UTC, `regenerate.yml` kicks off:
+Every day at 6am Pacific daylight time, `regenerate.yml` kicks off:
 
 1. Context — Pull fresh data, compare against history, synthesize a brief.
 2. Generate — Four models run in parallel, each creating their own version of the site.

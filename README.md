@@ -20,7 +20,7 @@ Built with [Cursor CLI](https://cursor.com/docs/cli) running in GitHub Actions.
 5. **Generate Games** — Same 4 models each build a unique game in parallel
 6. **Deploy** — HTML committed to main, Vercel auto-deploys
 
-Runs daily at 6am UTC via GitHub Actions.
+Runs daily at 6am Pacific daylight time via GitHub Actions.
 
 ## File Structure
 
@@ -57,10 +57,9 @@ Runs daily at 6am UTC via GitHub Actions.
 │
 ├── generated/                # Agent-written HTML (one per model)
 │   ├── composer-2-fast.html  # Site builds
-│   ├── gpt-5.4-high-fast.html
+│   ├── gpt-5.5-high-fast.html
 │   ├── claude-opus-4-7-thinking-max.html
 │   ├── gemini-3.1-pro.html
-│   ├── kimi-k2.5.html
 │   └── games/               # Game builds
 │       ├── composer-2-fast.html
 │       └── ...

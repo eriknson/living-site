@@ -19,7 +19,7 @@ A self-regenerating personal website for Erik. The site regenerates daily using 
 ```
 living-site/
 ├── .github/workflows/
-│   └── regenerate.yml        # Daily cron (6am UTC) + manual trigger
+│   └── regenerate.yml        # Daily cron (6am Pacific daylight time) + manual trigger
 │
 ├── infra/                    # PROTECTED — Cursor cannot edit
 │   ├── fetchers/
