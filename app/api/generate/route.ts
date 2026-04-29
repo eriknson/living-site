@@ -1,45 +1,28 @@
 /**
- * POST /api/generate - Generate remix site via Cursor Cloud Agents API
+ * POST /api/generate - Generate remix site via Cursor SDK
  *
  * Flow:
- * 1. Launch cloud agent on the repo
- * 2. Poll for completion + conversation (streaming status + messages to client)
- * 3. Fetch generated file from branch
- * 4. Cleanup branch and agent
- * 5. Return HTML
+ * 1. Create cloud agent on the repo
+ * 2. Stream events via onDelta (partial HTML) + run.stream() (steps/status)
+ * 3. Download final artifact
+ * 4. Return HTML
  */
 
 import { NextRequest } from "next/server";
 
+export const maxDuration = 300;
+
 const CURSOR_API_KEY = process.env.CURSOR_API_KEY;
-const GITHUB_TOKEN = process.env.GITHUB_TOKEN || process.env.GITHUB_PAT;
 const GITHUB_REPO = process.env.GITHUB_REPO || "eriknson/living-site";
 
 // Rate limiting
 let lastGeneration = 0;
-const RATE_LIMIT_MS = 60 * 1000; // 1 minute between generations
+const RATE_LIMIT_MS = 60 * 1000;
 
 // In-flight generation tracking
 let generationInProgress = false;
-let currentAgentId: string | null = null;
+let currentRunCancel: (() => Promise<void>) | null = null;
 
-interface ConversationMessage {
-  id: string;
-  type: string;
-  text?: string;
-  // Tool call fields
-  name?: string;
-  input?: Record<string, unknown>;
-  // For nested content
-  content?: Array<{
-    type: string;
-    text?: string;
-    name?: string;
-    input?: Record<string, unknown>;
-  }>;
-}
-
-// Minimal fallback if live site fetch fails
 const FALLBACK_HTML = `<!DOCTYPE html>
 <html lang="en">
 <head><title>Erik</title></head>
@@ -50,14 +33,12 @@ const FALLBACK_HTML = `<!DOCTYPE html>
 </body>
 </html>`;
 
-// Default creative direction when user doesn't provide one
 const DEFAULT_DIRECTION = `Create a beautiful, modern, and unique personal website. 
 Be creative with the design - try something unexpected like a game-inspired UI, 
 a retro aesthetic, brutalist design, or an elegant minimal approach.
 Surprise me with something fresh and distinctive.`;
 
 async function loadReferenceHtml(): Promise<string> {
-  // Fetch clean reference HTML (standalone, no Next.js framework code)
   try {
     const response = await fetch("https://eriks.design/reference", {
       headers: { "User-Agent": "living-site-generator" },
@@ -66,9 +47,8 @@ async function loadReferenceHtml(): Promise<string> {
       return await response.text();
     }
   } catch {
-    // Ignore fetch errors
+    // fall through
   }
-  
   return FALLBACK_HTML;
 }
 
@@ -76,7 +56,7 @@ async function buildRemixPrompt(userDirection?: string | null): Promise<string> 
   const referenceHtml = await loadReferenceHtml();
   const direction = userDirection?.trim() || DEFAULT_DIRECTION;
 
-  const prompt = `You are an expert creative technologist and web designer.
+  return `You are an expert creative technologist and web designer.
 Your task is to create a creative "remix" of Erik's personal website based on the user's direction.
 
 ## Reference Site (source of content)
@@ -89,7 +69,7 @@ ${referenceHtml}
 ${direction}
 
 ## Output Requirements
-1. Write a SINGLE HTML file to \`generated/live.html\`
+1. Use the Write tool to create a SINGLE HTML file at \`generated/live.html\` in one shot — do NOT use edit_file or patch the file incrementally.
 2. Include ALL CSS inline within a <style> tag (no external stylesheets)
 3. Include any JS inline within a <script> tag if needed
 4. The site must be fully responsive and look great on mobile
@@ -109,147 +89,37 @@ ${direction}
 - Links: X (@flowstated), GitHub (eriknson), Email (contact@eriks.design)
 
 ## IMPORTANT
-- Do NOT read any files in generated/ or public/builds/ - start fresh
 - Create something original and distinctive
-- The output must be a valid, standalone HTML file`;
-
-  return prompt;
+- The output must be a valid, standalone HTML file
+- Write the entire file content in a single Write tool call`;
 }
 
-// Helper to make Cursor API requests
-async function cursorFetch(endpoint: string, options: RequestInit = {}) {
-  const response = await fetch(`https://api.cursor.com${endpoint}`, {
-    ...options,
-    headers: {
-      Authorization: `Bearer ${CURSOR_API_KEY}`,
-      "Content-Type": "application/json",
-      ...options.headers,
-    },
-  });
-  return response;
+/**
+ * Defensively extract HTML content from a write tool call's args.
+ * The SDK warns that tool arg shapes are not stable — be permissive.
+ */
+function extractWrittenHtml(toolCall: { name?: string; args?: unknown }): string | null {
+  const name = (toolCall.name || "").toLowerCase();
+  if (!name.includes("write")) return null;
+
+  const args = toolCall.args as Record<string, unknown> | undefined;
+  if (!args || typeof args !== "object") return null;
+
+  const pathField = (args.file_path || args.path || args.target_file || "") as string;
+  if (pathField && !pathField.includes("live.html")) return null;
+
+  for (const key of ["contents", "content", "text", "file_content", "new_string"]) {
+    const val = args[key];
+    if (typeof val === "string" && val.length > 20) return val;
+  }
+  return null;
 }
 
-// Helper to make GitHub API requests
-async function githubFetch(endpoint: string, options: RequestInit = {}) {
-  const response = await fetch(`https://api.github.com${endpoint}`, {
-    ...options,
-    headers: {
-      Authorization: `token ${GITHUB_TOKEN}`,
-      Accept: "application/vnd.github.v3+json",
-      ...options.headers,
-    },
-  });
-  return response;
-}
-
-// Create SSE message
 function sseMessage(data: object): string {
   return `data: ${JSON.stringify(data)}\n\n`;
 }
 
-// Extract a short summary from assistant message
-function summarizeMessage(text: string): string {
-  // Get first line or first 100 chars
-  const firstLine = text.split("\n")[0].trim();
-  if (firstLine.length <= 100) return firstLine;
-  return firstLine.slice(0, 97) + "...";
-}
-
-// Extract steps from a conversation message (handles nested content)
-function extractStepsFromMessage(msg: ConversationMessage): Array<{ id: string; text: string; summary: string }> {
-  const steps: Array<{ id: string; text: string; summary: string }> = [];
-  
-  // Handle direct text messages - split into paragraphs for more granular steps
-  if (msg.text) {
-    const paragraphs = msg.text.split(/\n\n+/).filter(p => p.trim().length > 10);
-    
-    if (paragraphs.length > 1) {
-      // Multiple paragraphs - create a step for each meaningful one
-      paragraphs.forEach((para, i) => {
-        // Skip code blocks
-        if (para.trim().startsWith("```")) return;
-        // Skip numbered lists continuing
-        if (/^\d+\.\s/.test(para.trim()) && i > 0) return;
-        
-        steps.push({
-          id: `${msg.id}-p${i}`,
-          text: para.trim(),
-          summary: summarizeMessage(para.trim()),
-        });
-      });
-    } else {
-      // Single paragraph or short message
-      steps.push({
-        id: msg.id,
-        text: msg.text,
-        summary: summarizeMessage(msg.text),
-      });
-    }
-  }
-  
-  // Handle tool calls at message level
-  if (msg.type === "tool_use" || msg.type === "tool_call") {
-    const toolName = msg.name || "tool";
-    const input = msg.input || {};
-    const filePath = (input.file_path || input.path || input.target_file || "") as string;
-    const summary = filePath 
-      ? `${toolName}: ${filePath.split("/").pop()}`
-      : toolName;
-    steps.push({
-      id: `${msg.id}-tool`,
-      text: `Using ${toolName}`,
-      summary,
-    });
-  }
-  
-  // Handle nested content array (common in Claude/Anthropic API responses)
-  if (msg.content && Array.isArray(msg.content)) {
-    for (let i = 0; i < msg.content.length; i++) {
-      const item = msg.content[i];
-      
-      if (item.type === "text" && item.text) {
-        // Also split nested text content
-        const paragraphs = item.text.split(/\n\n+/).filter(p => p.trim().length > 10);
-        
-        if (paragraphs.length > 1) {
-          paragraphs.forEach((para, j) => {
-            if (para.trim().startsWith("```")) return;
-            steps.push({
-              id: `${msg.id}-${i}-p${j}`,
-              text: para.trim(),
-              summary: summarizeMessage(para.trim()),
-            });
-          });
-        } else {
-          steps.push({
-            id: `${msg.id}-${i}`,
-            text: item.text,
-            summary: summarizeMessage(item.text),
-          });
-        }
-      }
-      
-      if (item.type === "tool_use" || item.type === "tool_call") {
-        const toolName = item.name || "tool";
-        const input = item.input || {};
-        const filePath = (input.file_path || input.path || input.target_file || "") as string;
-        const summary = filePath 
-          ? `${toolName}: ${filePath.split("/").pop()}`
-          : toolName;
-        steps.push({
-          id: `${msg.id}-${i}-tool`,
-          text: `Using ${toolName}`,
-          summary,
-        });
-      }
-    }
-  }
-  
-  return steps;
-}
-
 export async function POST(request: NextRequest) {
-  // Check configuration
   if (!CURSOR_API_KEY) {
     return new Response(
       JSON.stringify({ error: "CURSOR_API_KEY not configured" }),
@@ -257,29 +127,17 @@ export async function POST(request: NextRequest) {
     );
   }
 
-  if (!GITHUB_TOKEN) {
-    return new Response(
-      JSON.stringify({ error: "GITHUB_TOKEN not configured" }),
-      { status: 500, headers: { "Content-Type": "application/json" } }
-    );
-  }
-
-  // Rate limiting
   const now = Date.now();
   if (now - lastGeneration < RATE_LIMIT_MS) {
     const remainingSec = Math.ceil(
       (RATE_LIMIT_MS - (now - lastGeneration)) / 1000
     );
     return new Response(
-      JSON.stringify({
-        error: `Rate limited. Try again in ${remainingSec} seconds.`,
-        retryAfter: remainingSec,
-      }),
+      JSON.stringify({ error: `Rate limited. Try again in ${remainingSec} seconds.`, retryAfter: remainingSec }),
       { status: 429, headers: { "Content-Type": "application/json" } }
     );
   }
 
-  // Check if generation already in progress
   if (generationInProgress) {
     return new Response(
       JSON.stringify({ error: "Generation already in progress" }),
@@ -290,179 +148,139 @@ export async function POST(request: NextRequest) {
   lastGeneration = now;
   generationInProgress = true;
 
-  // Create SSE stream
   const encoder = new TextEncoder();
   const stream = new ReadableStream({
     async start(controller) {
       const send = (data: object) => {
-        controller.enqueue(encoder.encode(sseMessage(data)));
+        try {
+          controller.enqueue(encoder.encode(sseMessage(data)));
+        } catch {
+          // controller closed
+        }
       };
 
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      let agent: any = null;
+
       try {
-        // Parse user's creative direction
         let userDirection: string | null = null;
         try {
           const body = await request.json();
           userDirection = body.prompt || null;
         } catch {
-          // No body or invalid JSON
+          // no body
         }
 
         const prompt = await buildRemixPrompt(userDirection);
-        const branchName = `cursor/live-gen-${Date.now()}`;
 
         send({ type: "status", status: "launching", message: "Launching cloud agent..." });
 
-        // 1. Launch cloud agent
-        const createResponse = await cursorFetch("/v0/agents", {
-          method: "POST",
-          body: JSON.stringify({
-            prompt: { text: prompt },
-            source: {
-              repository: `https://github.com/${GITHUB_REPO}`,
-              ref: "main",
-            },
-            target: {
-              branchName,
-              autoCreatePr: false,
-            },
-          }),
+        const { Agent } = await import("@cursor/sdk");
+
+        agent = await Agent.create({
+          apiKey: CURSOR_API_KEY,
+          model: { id: "composer-2" },
+          cloud: {
+            repos: [{ url: `https://github.com/${GITHUB_REPO}`, startingRef: "main" }],
+            autoCreatePR: false,
+          },
         });
-
-        if (!createResponse.ok) {
-          const error = await createResponse.json();
-          throw new Error(error.error?.message || `Failed to create agent: ${createResponse.status}`);
-        }
-
-        const agent = await createResponse.json();
-        currentAgentId = agent.id;
 
         send({
           type: "status",
           status: "running",
           message: "Agent is starting...",
-          agentId: agent.id,
-          agentUrl: agent.target?.url,
+          agentId: agent.agentId,
         });
 
-        // 2. Poll for completion + conversation
-        let status = agent.status;
-        let pollCount = 0;
-        const maxPolls = 120; // 6 minutes max (3s intervals)
-        const seenMessageIds = new Set<string>();
+        let stepIdx = 0;
 
-        while (status === "CREATING" || status === "RUNNING") {
-          if (pollCount >= maxPolls) {
-            throw new Error("Generation timed out");
-          }
-
-          await new Promise((resolve) => setTimeout(resolve, 3000));
-          pollCount++;
-
-          // Poll status
-          const statusResponse = await cursorFetch(`/v0/agents/${agent.id}`);
-          if (!statusResponse.ok) {
-            throw new Error("Failed to get agent status");
-          }
-
-          const statusData = await statusResponse.json();
-          status = statusData.status;
-
-          // Poll conversation for new messages
-          try {
-            const convResponse = await cursorFetch(`/v0/agents/${agent.id}/conversation`);
-            if (convResponse.ok) {
-              const convData = await convResponse.json();
-              const messages = (convData.messages || []) as ConversationMessage[];
-
-              // Process all messages (not just assistant_message)
-              for (const msg of messages) {
-                // Skip user messages
-                if (msg.type === "user_message" || msg.type === "human") continue;
-                
-                // Extract all steps from this message
-                const steps = extractStepsFromMessage(msg);
-                
-                for (const step of steps) {
-                  if (!seenMessageIds.has(step.id)) {
-                    seenMessageIds.add(step.id);
-                    send({
-                      type: "step",
-                      id: step.id,
-                      text: step.text,
-                      summary: step.summary,
-                    });
-                  }
+        const run = await agent.send(prompt, {
+          onDelta: ({ update }: { update: { type: string; text?: string; toolCall?: { name?: string; args?: unknown } } }) => {
+            if (update.type === "partial-tool-call" || update.type === "tool-call-started") {
+              if (update.toolCall) {
+                const html = extractWrittenHtml(update.toolCall);
+                if (html) {
+                  send({ type: "partial_html", html });
                 }
               }
             }
-          } catch {
-            // Ignore conversation fetch errors - non-critical
-          }
-
-          // Send status update
-          send({
-            type: "status",
-            status: status.toLowerCase(),
-            message: status === "RUNNING" ? `Agent working... (${pollCount * 3}s)` : `Status: ${status}`,
-            elapsed: pollCount * 3,
-          });
-        }
-
-        if (status === "ERROR" || status === "EXPIRED") {
-          throw new Error(`Agent failed with status: ${status}`);
-        }
-
-        send({ type: "status", status: "fetching", message: "Fetching generated file..." });
-
-        // 3. Fetch generated file from branch
-        const fileResponse = await githubFetch(
-          `/repos/${GITHUB_REPO}/contents/generated/live.html?ref=${branchName}`,
-          {
-            headers: {
-              Accept: "application/vnd.github.raw",
-            },
-          }
-        );
-
-        if (!fileResponse.ok) {
-          throw new Error(`Failed to fetch generated file: ${fileResponse.status}`);
-        }
-
-        const html = await fileResponse.text();
-
-        send({ type: "status", status: "cleanup", message: "Cleaning up..." });
-
-        // 4. Cleanup: delete branch and agent (fire and forget)
-        Promise.all([
-          githubFetch(`/repos/${GITHUB_REPO}/git/refs/heads/${branchName}`, {
-            method: "DELETE",
-          }).catch(() => {}),
-          cursorFetch(`/v0/agents/${agent.id}`, {
-            method: "DELETE",
-          }).catch(() => {}),
-        ]).catch(() => {});
-
-        // 5. Send complete with HTML
-        send({ type: "complete", html, message: "Generation complete!" });
-
-      } catch (error) {
-        send({
-          type: "error",
-          message: error instanceof Error ? error.message : "Generation failed",
+            if (update.type === "text-delta" && update.text) {
+              send({ type: "text_delta", text: update.text });
+            }
+          },
         });
+
+        currentRunCancel = () => run.cancel();
+
+        for await (const event of run.stream()) {
+          if (event.type === "assistant") {
+            for (const block of event.message.content) {
+              if (block.type === "text" && block.text.trim().length > 10) {
+                const firstLine = block.text.split("\n")[0].trim();
+                const summary = firstLine.length > 60 ? firstLine.slice(0, 57) + "..." : firstLine;
+                send({
+                  type: "step",
+                  id: `${event.run_id}-${stepIdx++}`,
+                  text: block.text,
+                  summary,
+                });
+              }
+            }
+          }
+          if (event.type === "tool_call") {
+            const toolName = event.name || "tool";
+            send({
+              type: "step",
+              id: `${event.run_id}-tool-${event.call_id}`,
+              text: `Using ${toolName}`,
+              summary: toolName,
+            });
+          }
+          if (event.type === "status") {
+            send({
+              type: "status",
+              status: (event.status || "running").toLowerCase(),
+              message: event.message || "Working...",
+            });
+          }
+        }
+
+        // Fetch final canonical HTML from artifact
+        let finalHtml: string | undefined;
+        try {
+          const buf = await agent.downloadArtifact("generated/live.html");
+          finalHtml = buf.toString("utf8");
+        } catch {
+          // artifact download failed — check if we streamed partial HTML
+        }
+
+        if (finalHtml) {
+          send({ type: "complete", html: finalHtml, message: "Generation complete!" });
+        } else {
+          send({ type: "error", message: "Agent finished but no HTML was generated" });
+        }
+      } catch (error) {
+        const msg = error instanceof Error ? error.message : "Generation failed";
+        send({ type: "error", message: msg });
       } finally {
         generationInProgress = false;
-        currentAgentId = null;
+        currentRunCancel = null;
+        if (agent) {
+          try {
+            await agent[Symbol.asyncDispose]();
+          } catch {
+            // ignore disposal errors
+          }
+        }
         controller.close();
       }
     },
     cancel() {
       generationInProgress = false;
-      // Try to stop the agent if it's running
-      if (currentAgentId) {
-        cursorFetch(`/v0/agents/${currentAgentId}/stop`, { method: "POST" }).catch(() => {});
-        currentAgentId = null;
+      if (currentRunCancel) {
+        currentRunCancel().catch(() => {});
+        currentRunCancel = null;
       }
     },
   });
@@ -476,22 +294,15 @@ export async function POST(request: NextRequest) {
   });
 }
 
-// GET - Check if generation is available
 export async function GET() {
   const hasApiKey = !!CURSOR_API_KEY;
-  const hasGithubToken = !!GITHUB_TOKEN;
-
   const now = Date.now();
   const cooldownRemaining = Math.max(0, RATE_LIMIT_MS - (now - lastGeneration));
 
   return new Response(
     JSON.stringify({
-      available:
-        hasApiKey &&
-        hasGithubToken &&
-        cooldownRemaining === 0 &&
-        !generationInProgress,
-      configured: hasApiKey && hasGithubToken,
+      available: hasApiKey && cooldownRemaining === 0 && !generationInProgress,
+      configured: hasApiKey,
       cooldownRemaining: Math.ceil(cooldownRemaining / 1000),
       inProgress: generationInProgress,
     }),

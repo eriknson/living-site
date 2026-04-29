@@ -1,5 +1,6 @@
 /** @type {import('next').NextConfig} */
 const nextConfig = {
+  serverExternalPackages: ['@cursor/sdk'],
   // Redirect old model paths to query param format
   async redirects() {
     return [
