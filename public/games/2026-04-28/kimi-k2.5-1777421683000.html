@@ -1,0 +1,675 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <title>Beacon</title>
+  <style>
+    :root {
+      --amber: #F5A623;
+      --amber-glow: rgba(245, 166, 35, 0.6);
+      --amber-dim: rgba(245, 166, 35, 0.2);
+      --navy: #0A1628;
+      --navy-light: #1a2a42;
+      --text: #E8E4DC;
+      --text-dim: rgba(232, 228, 220, 0.5);
+    }
+
+    @media (prefers-color-scheme: dark) {
+      :root {
+        --amber: #F5A623;
+        --amber-glow: rgba(245, 166, 35, 0.6);
+        --amber-dim: rgba(245, 166, 35, 0.2);
+        --navy: #0A1628;
+        --navy-light: #1a2a42;
+        --text: #E8E4DC;
+        --text-dim: rgba(232, 228, 220, 0.5);
+      }
+
+      .overlay {
+        background: rgba(10, 22, 40, 0.85);
+      }
+    }
+
+    @media (prefers-color-scheme: light) {
+      :root {
+        --navy: #F5F1EB;
+        --navy-light: #E8E4DC;
+        --text: #1a2a42;
+        --text-dim: rgba(26, 42, 66, 0.5);
+      }
+    }
+
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+      -webkit-tap-highlight-color: transparent;
+    }
+
+    html, body {
+      width: 100%;
+      height: 100%;
+      height: 100dvh;
+      overflow: hidden;
+      background: var(--navy);
+      color: var(--text);
+      font-family: ui-monospace, 'SFMono-Regular', Menlo, monospace;
+      user-select: none;
+      touch-action: none;
+    }
+
+    #game-container {
+      width: 100%;
+      height: 100%;
+      position: relative;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+    }
+
+    canvas {
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      touch-action: none;
+    }
+
+    .overlay {
+      position: absolute;
+      inset: 0;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      z-index: 10;
+      background: rgba(10, 22, 40, 0.85);
+      backdrop-filter: blur(4px);
+      transition: opacity 0.4s ease;
+    }
+
+    @media (prefers-color-scheme: light) {
+      .overlay {
+        background: rgba(245, 241, 235, 0.9);
+      }
+    }
+
+    .overlay.hidden {
+      opacity: 0;
+      pointer-events: none;
+    }
+
+    .title {
+      font-size: clamp(2rem, 8vw, 4rem);
+      font-weight: 300;
+      letter-spacing: 0.2em;
+      text-transform: uppercase;
+      margin-bottom: 0.5rem;
+      color: var(--amber);
+      text-shadow: 0 0 40px var(--amber-glow);
+    }
+
+    .subtitle {
+      font-size: clamp(0.75rem, 3vw, 1rem);
+      color: var(--text-dim);
+      margin-bottom: 3rem;
+      letter-spacing: 0.15em;
+    }
+
+    .btn {
+      padding: 1rem 2.5rem;
+      font-size: 0.9rem;
+      letter-spacing: 0.2em;
+      text-transform: uppercase;
+      background: transparent;
+      border: 1px solid var(--amber);
+      color: var(--amber);
+      cursor: pointer;
+      transition: all 0.2s ease;
+      font-family: inherit;
+      min-width: 200px;
+      text-align: center;
+    }
+
+    .btn:hover, .btn:active {
+      background: var(--amber);
+      color: var(--navy);
+      box-shadow: 0 0 30px var(--amber-glow);
+    }
+
+    .hud {
+      position: absolute;
+      top: 0;
+      left: 0;
+      right: 0;
+      padding: 1.5rem;
+      display: flex;
+      justify-content: space-between;
+      align-items: flex-start;
+      z-index: 5;
+      pointer-events: none;
+    }
+
+    .hud-left, .hud-right {
+      display: flex;
+      flex-direction: column;
+      gap: 0.5rem;
+    }
+
+    .hud-label {
+      font-size: 0.65rem;
+      letter-spacing: 0.15em;
+      text-transform: uppercase;
+      color: var(--text-dim);
+    }
+
+    .hud-value {
+      font-size: 1.25rem;
+      color: var(--amber);
+    }
+
+    .lives {
+      display: flex;
+      gap: 0.5rem;
+      margin-top: 0.25rem;
+    }
+
+    .life {
+      width: 8px;
+      height: 8px;
+      background: var(--amber);
+      opacity: 1;
+      transition: opacity 0.3s ease;
+    }
+
+    .life.lost {
+      opacity: 0.2;
+    }
+
+    .game-over-score {
+      font-size: 3rem;
+      color: var(--amber);
+      margin: 1rem 0;
+      text-shadow: 0 0 40px var(--amber-glow);
+    }
+
+    .round-info {
+      font-size: 0.8rem;
+      color: var(--text-dim);
+      margin-bottom: 2rem;
+      letter-spacing: 0.1em;
+    }
+
+    .grain {
+      position: absolute;
+      inset: 0;
+      pointer-events: none;
+      z-index: 100;
+      opacity: 0.08;
+      mix-blend-mode: overlay;
+    }
+
+    .message {
+      position: absolute;
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, -50%);
+      font-size: 1.5rem;
+      color: var(--amber);
+      text-shadow: 0 0 20px var(--amber-glow);
+      opacity: 0;
+      transition: opacity 0.3s ease;
+      pointer-events: none;
+      z-index: 8;
+      text-align: center;
+    }
+
+    .message.show {
+      opacity: 1;
+    }
+
+    .instructions {
+      font-size: 0.7rem;
+      color: var(--text-dim);
+      margin-top: 2rem;
+      max-width: 280px;
+      text-align: center;
+      line-height: 1.6;
+      letter-spacing: 0.05em;
+    }
+  </style>
+</head>
+<body>
+  <div id="game-container">
+    <canvas id="game"></canvas>
+    <canvas id="grain" class="grain"></canvas>
+
+    <div class="hud" id="hud" style="opacity: 0; transition: opacity 0.4s ease;">
+      <div class="hud-left">
+        <div class="hud-label">Score</div>
+        <div class="hud-value" id="score">0</div>
+      </div>
+      <div class="hud-right">
+        <div class="hud-label">Wave</div>
+        <div class="hud-value" id="wave">1</div>
+        <div class="lives" id="lives">
+          <div class="life"></div>
+          <div class="life"></div>
+          <div class="life"></div>
+        </div>
+      </div>
+    </div>
+
+    <div class="message" id="message"></div>
+
+    <div class="overlay" id="start-screen">
+      <h1 class="title">Beacon</h1>
+      <p class="subtitle">Memory · Rotation · Light</p>
+      <button class="btn" id="start-btn">Begin</button>
+      <p class="instructions">
+        Watch the lighthouse beams flash a pattern.<br>
+        Tap the sectors in the same order.<br>
+        The ring rotates. Stay focused.
+      </p>
+    </div>
+
+    <div class="overlay hidden" id="game-over-screen">
+      <h1 class="title">Darkness</h1>
+      <div class="game-over-score" id="final-score">0</div>
+      <p class="round-info" id="final-wave">Wave 1</p>
+      <button class="btn" id="restart-btn">Light Again</button>
+    </div>
+  </div>
+
+  <script>
+    const canvas = document.getElementById('game');
+    const ctx = canvas.getContext('2d');
+    const grainCanvas = document.getElementById('grain');
+    const grainCtx = grainCanvas.getContext('2d');
+
+    const SECTORS = 6;
+    const BASE_PATTERN_DELAY = 600;
+    const BASE_FLASH_DURATION = 400;
+    const BASE_ROTATION_SPEED = 0.0005;
+
+    let gameState = 'start'; // start, playing, pattern, input, gameover
+    let score = 0;
+    let wave = 1;
+    let lives = 3;
+    let pattern = [];
+    let playerInput = [];
+    let rotation = 0;
+    let rotationSpeed = BASE_ROTATION_SPEED;
+    let lastTime = 0;
+    let patternIndex = 0;
+    let flashingSector = null;
+    let flashEndTime = 0;
+    let decoySector = null;
+    let decoyEndTime = 0;
+    let inputEnabled = false;
+    let sectorHovered = -1;
+
+    const scoreEl = document.getElementById('score');
+    const waveEl = document.getElementById('wave');
+    const livesEl = document.getElementById('lives');
+    const hudEl = document.getElementById('hud');
+    const messageEl = document.getElementById('message');
+    const startScreen = document.getElementById('start-screen');
+    const gameOverScreen = document.getElementById('game-over-screen');
+    const finalScoreEl = document.getElementById('final-score');
+    const finalWaveEl = document.getElementById('final-wave');
+
+    function resize() {
+      canvas.width = window.innerWidth;
+      canvas.height = window.innerHeight;
+      grainCanvas.width = window.innerWidth;
+      grainCanvas.height = window.innerHeight;
+      generateGrain();
+    }
+    window.addEventListener('resize', resize);
+    resize();
+
+    function generateGrain() {
+      const imgData = grainCtx.createImageData(grainCanvas.width, grainCanvas.height);
+      const data = imgData.data;
+      for (let i = 0; i < data.length; i += 4) {
+        const v = Math.random() * 255;
+        data[i] = v;
+        data[i + 1] = v;
+        data[i + 2] = v;
+        data[i + 3] = 255;
+      }
+      grainCtx.putImageData(imgData, 0, 0);
+    }
+
+    function showMessage(text, duration = 1000) {
+      messageEl.textContent = text;
+      messageEl.classList.add('show');
+      setTimeout(() => messageEl.classList.remove('show'), duration);
+    }
+
+    function vibrate(pattern) {
+      if (navigator.vibrate) navigator.vibrate(pattern);
+    }
+
+    function updateLives() {
+      const lifeEls = livesEl.querySelectorAll('.life');
+      lifeEls.forEach((el, i) => {
+        el.classList.toggle('lost', i >= lives);
+      });
+    }
+
+    function updateHUD() {
+      scoreEl.textContent = score;
+      waveEl.textContent = wave;
+      updateLives();
+    }
+
+    function generatePattern() {
+      const length = Math.min(3 + Math.floor(wave / 2), 8);
+      pattern = [];
+      for (let i = 0; i < length; i++) {
+        pattern.push(Math.floor(Math.random() * SECTORS));
+      }
+    }
+
+    function flashSector(index, isDecoy = false) {
+      if (isDecoy) {
+        decoySector = index;
+        decoyEndTime = performance.now() + 200;
+      } else {
+        flashingSector = index;
+        flashEndTime = performance.now() + BASE_FLASH_DURATION;
+        vibrate(20);
+      }
+    }
+
+    function playPattern() {
+      gameState = 'pattern';
+      inputEnabled = false;
+      patternIndex = 0;
+      playerInput = [];
+
+      const delay = Math.max(300, BASE_PATTERN_DELAY - wave * 30);
+
+      function nextFlash() {
+        if (gameState !== 'pattern') return;
+
+        if (patternIndex < pattern.length) {
+          flashSector(pattern[patternIndex]);
+          patternIndex++;
+          setTimeout(nextFlash, delay);
+        } else {
+          // Decoy flash chance (higher in later waves)
+          const decoyChance = Math.min(0.1 + wave * 0.05, 0.4);
+          if (Math.random() < decoyChance) {
+            let decoy;
+            do { decoy = Math.floor(Math.random() * SECTORS); } while (decoy === pattern[pattern.length - 1]);
+            flashSector(decoy, true);
+          }
+
+          setTimeout(() => {
+            gameState = 'input';
+            inputEnabled = true;
+            showMessage('Your turn');
+          }, 400);
+        }
+      }
+
+      setTimeout(nextFlash, 600);
+    }
+
+    function startGame() {
+      score = 0;
+      wave = 1;
+      lives = 3;
+      rotation = 0;
+      rotationSpeed = BASE_ROTATION_SPEED;
+      gameState = 'playing';
+      updateHUD();
+
+      startScreen.classList.add('hidden');
+      gameOverScreen.classList.add('hidden');
+      hudEl.style.opacity = '1';
+
+      generatePattern();
+      showMessage('Wave 1', 800);
+      setTimeout(playPattern, 1000);
+    }
+
+    function gameOver() {
+      gameState = 'gameover';
+      inputEnabled = false;
+      hudEl.style.opacity = '0';
+      finalScoreEl.textContent = score;
+      finalWaveEl.textContent = `Wave ${wave}`;
+      gameOverScreen.classList.remove('hidden');
+      vibrate([100, 100, 200]);
+    }
+
+    function nextWave() {
+      wave++;
+      rotationSpeed = Math.min(rotationSpeed + 0.0002, 0.003);
+      score += 100 * wave;
+      updateHUD();
+      showMessage(`Wave ${wave}`, 800);
+      generatePattern();
+      setTimeout(playPattern, 1000);
+    }
+
+    function handleInput(sectorIndex) {
+      if (!inputEnabled || gameState !== 'input') return;
+
+      flashSector(sectorIndex);
+
+      if (sectorIndex === pattern[playerInput.length]) {
+        playerInput.push(sectorIndex);
+        score += 10 * wave;
+        updateHUD();
+        vibrate(15);
+
+        if (playerInput.length === pattern.length) {
+          inputEnabled = false;
+          showMessage('Good');
+          setTimeout(nextWave, 600);
+        }
+      } else {
+        inputEnabled = false;
+        lives--;
+        updateLives();
+        vibrate([50, 50, 100]);
+
+        if (lives <= 0) {
+          gameOver();
+        } else {
+          showMessage('Miss');
+          setTimeout(() => {
+            playerInput = [];
+            playPattern();
+          }, 1000);
+        }
+      }
+    }
+
+    function getSectorFromPoint(x, y) {
+      const cx = canvas.width / 2;
+      const cy = canvas.height / 2;
+      const radius = Math.min(canvas.width, canvas.height) * 0.35;
+
+      const dx = x - cx;
+      const dy = y - cy;
+      const dist = Math.sqrt(dx * dx + dy * dy);
+
+      if (dist < radius * 0.3 || dist > radius * 1.1) return -1;
+
+      let angle = Math.atan2(dy, dx) - rotation;
+      while (angle < 0) angle += Math.PI * 2;
+
+      const sectorAngle = (Math.PI * 2) / SECTORS;
+      return Math.floor(angle / sectorAngle) % SECTORS;
+    }
+
+    function draw() {
+      const isLight = window.matchMedia('(prefers-color-scheme: light)').matches;
+      const bg = isLight ? '#F5F1EB' : '#0A1628';
+      const navyLight = isLight ? '#E8E4DC' : '#1a2a42';
+      const amber = '#F5A623';
+      const amberDim = 'rgba(245, 166, 35, 0.15)';
+      const amberGlow = 'rgba(245, 166, 35, 0.4)';
+      const textDim = isLight ? 'rgba(26, 42, 66, 0.3)' : 'rgba(232, 228, 220, 0.2)';
+
+      ctx.fillStyle = bg;
+      ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+      const cx = canvas.width / 2;
+      const cy = canvas.height / 2;
+      const radius = Math.min(canvas.width, canvas.height) * 0.35;
+
+      ctx.save();
+      ctx.translate(cx, cy);
+      ctx.rotate(rotation);
+
+      // Draw sectors
+      const sectorAngle = (Math.PI * 2) / SECTORS;
+
+      for (let i = 0; i < SECTORS; i++) {
+        const startAngle = i * sectorAngle - sectorAngle / 2;
+        const endAngle = (i + 1) * sectorAngle - sectorAngle / 2;
+
+        ctx.beginPath();
+        ctx.moveTo(0, 0);
+        ctx.arc(0, 0, radius, startAngle, endAngle);
+        ctx.closePath();
+
+        const isFlashing = flashingSector === i && performance.now() < flashEndTime;
+        const isDecoy = decoySector === i && performance.now() < decoyEndTime;
+        const isHovered = sectorHovered === i && inputEnabled;
+
+        if (isFlashing) {
+          ctx.fillStyle = amber;
+          ctx.shadowColor = amber;
+          ctx.shadowBlur = 40;
+          ctx.fill();
+          ctx.shadowBlur = 0;
+        } else if (isDecoy) {
+          ctx.fillStyle = 'rgba(245, 166, 35, 0.4)';
+          ctx.fill();
+        } else if (isHovered) {
+          ctx.fillStyle = amberDim;
+          ctx.fill();
+        } else {
+          ctx.strokeStyle = textDim;
+          ctx.lineWidth = 1;
+          ctx.stroke();
+        }
+
+        // Draw beacon light source at outer edge
+        const lightAngle = (startAngle + endAngle) / 2;
+        const lx = Math.cos(lightAngle) * radius * 0.85;
+        const ly = Math.sin(lightAngle) * radius * 0.85;
+
+        ctx.beginPath();
+        ctx.arc(lx, ly, 6, 0, Math.PI * 2);
+        ctx.fillStyle = isFlashing ? '#FFF' : amber;
+        ctx.fill();
+
+        // Beam glow when flashing
+        if (isFlashing) {
+          ctx.beginPath();
+          ctx.moveTo(lx, ly);
+          ctx.arc(0, 0, radius * 1.3, lightAngle - 0.15, lightAngle + 0.15);
+          ctx.closePath();
+          const grad = ctx.createRadialGradient(lx, ly, 0, 0, 0, radius * 1.3);
+          grad.addColorStop(0, amberGlow);
+          grad.addColorStop(1, 'transparent');
+          ctx.fillStyle = grad;
+          ctx.fill();
+        }
+      }
+
+      // Center hub
+      ctx.beginPath();
+      ctx.arc(0, 0, radius * 0.25, 0, Math.PI * 2);
+      ctx.fillStyle = bg;
+      ctx.fill();
+      ctx.strokeStyle = amber;
+      ctx.lineWidth = 2;
+      ctx.stroke();
+
+      ctx.restore();
+
+      // Outer ring decorative
+      ctx.beginPath();
+      ctx.arc(cx, cy, radius * 1.15, 0, Math.PI * 2);
+      ctx.strokeStyle = textDim;
+      ctx.lineWidth = 1;
+      ctx.setLineDash([10, 10]);
+      ctx.stroke();
+      ctx.setLineDash([]);
+    }
+
+    function loop(now) {
+      const dt = now - lastTime;
+      lastTime = now;
+
+      if (gameState === 'playing' || gameState === 'input' || gameState === 'pattern') {
+        rotation += rotationSpeed * dt;
+      }
+
+      // Clear expired flashes
+      if (now > flashEndTime) flashingSector = null;
+      if (now > decoyEndTime) decoySector = null;
+
+      draw();
+      requestAnimationFrame(loop);
+    }
+
+    // Input handling
+    function handlePointer(e) {
+      e.preventDefault();
+      const point = e.touches ? e.touches[0] : e;
+      const rect = canvas.getBoundingClientRect();
+      const x = point.clientX - rect.left;
+      const y = point.clientY - rect.top;
+
+      const sector = getSectorFromPoint(x, y);
+      sectorHovered = sector;
+
+      if (e.type === 'pointerdown' || e.type === 'touchstart' || e.type === 'mousedown') {
+        if (sector >= 0 && inputEnabled) {
+          handleInput(sector);
+        }
+      }
+    }
+
+    canvas.addEventListener('pointerdown', handlePointer);
+    canvas.addEventListener('pointermove', handlePointer);
+    canvas.addEventListener('touchstart', handlePointer, { passive: false });
+    canvas.addEventListener('touchmove', (e) => e.preventDefault(), { passive: false });
+
+    document.getElementById('start-btn').addEventListener('click', startGame);
+    document.getElementById('restart-btn').addEventListener('click', startGame);
+
+    // Keyboard support
+    document.addEventListener('keydown', (e) => {
+      if (!inputEnabled) return;
+
+      const keyMap = {
+        'KeyQ': 0, 'KeyW': 1, 'KeyE': 2,
+        'KeyA': 3, 'KeyS': 4, 'KeyD': 5,
+        'Digit1': 0, 'Digit2': 1, 'Digit3': 2,
+        'Digit4': 3, 'Digit5': 4, 'Digit6': 5
+      };
+
+      if (keyMap[e.code] !== undefined) {
+        handleInput(keyMap[e.code]);
+      }
+    });
+
+    requestAnimationFrame(loop);
+  </script>
+</body>
+</html>
