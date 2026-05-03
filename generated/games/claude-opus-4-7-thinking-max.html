@@ -1,0 +1,1731 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="theme-color" content="#020a05" media="(prefers-color-scheme: dark)">
+<meta name="theme-color" content="#e7e6dc" media="(prefers-color-scheme: light)">
+<title>phosphor.sh — sort the buffer</title>
+<style>
+:root {
+  --bg: #020a05;
+  --bg-deep: #000503;
+  --panel: rgba(74, 216, 140, 0.05);
+  --grid: rgba(74, 216, 140, 0.07);
+  --fg: #b8f5cb;
+  --fg-bright: #e6ffee;
+  --fg-dim: #4d7257;
+  --fg-faint: #2a4631;
+  --c-letter: #86f5b5;
+  --c-digit:  #f5c264;
+  --c-symbol: #7deaea;
+  --danger: #ff6b5a;
+  --warn: #ffb347;
+  --scanline: rgba(0,0,0,0.30);
+  --vignette: rgba(0,0,0,0.55);
+  --modal-bg: rgba(2,10,5,0.78);
+}
+@media (prefers-color-scheme: light) {
+  :root {
+    --bg: #e7e6dc;
+    --bg-deep: #d6d4c5;
+    --panel: rgba(31, 110, 70, 0.05);
+    --grid: rgba(31, 110, 70, 0.10);
+    --fg: #1f4a30;
+    --fg-bright: #0a2516;
+    --fg-dim: #6c8775;
+    --fg-faint: #aabbb0;
+    --c-letter: #1f8c54;
+    --c-digit:  #b27325;
+    --c-symbol: #2585a0;
+    --danger: #b53832;
+    --warn: #b56a16;
+    --scanline: rgba(0,0,0,0.07);
+    --vignette: rgba(120,130,110,0.30);
+    --modal-bg: rgba(231,230,220,0.80);
+  }
+}
+
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+html, body {
+  width: 100%;
+  height: 100%;
+  background: var(--bg);
+  color: var(--fg);
+  font-family: ui-monospace, "SFMono-Regular", "Menlo", "Consolas", "DejaVu Sans Mono", monospace;
+  font-feature-settings: "tnum" 1, "calt" 0;
+  overscroll-behavior: none;
+  overflow: hidden;
+  -webkit-tap-highlight-color: transparent;
+  -webkit-text-size-adjust: 100%;
+}
+
+#app {
+  position: fixed;
+  inset: 0;
+  width: 100dvw;
+  height: 100dvh;
+  user-select: none;
+  -webkit-user-select: none;
+  touch-action: none;
+}
+
+canvas#game {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  display: block;
+  touch-action: none;
+  user-select: none;
+}
+
+/* CRT scanlines + vignette overlay */
+.crt {
+  pointer-events: none;
+  position: absolute;
+  inset: 0;
+  z-index: 6;
+  background:
+    repeating-linear-gradient(
+      to bottom,
+      transparent 0,
+      transparent 2px,
+      var(--scanline) 2px,
+      var(--scanline) 3px
+    );
+  mix-blend-mode: multiply;
+  opacity: 0.85;
+}
+.vignette {
+  pointer-events: none;
+  position: absolute;
+  inset: 0;
+  z-index: 7;
+  background: radial-gradient(ellipse at center, transparent 55%, var(--vignette) 100%);
+}
+.flicker {
+  pointer-events: none;
+  position: absolute;
+  inset: 0;
+  z-index: 8;
+  background: rgba(140, 245, 180, 0.04);
+  opacity: 0;
+  mix-blend-mode: screen;
+}
+@media (prefers-color-scheme: light) {
+  .flicker { background: rgba(20, 60, 40, 0.04); mix-blend-mode: multiply; }
+}
+
+/* ---- HUD ---- */
+.hud {
+  position: absolute;
+  inset: 0 0 auto 0;
+  z-index: 10;
+  pointer-events: none;
+  font-size: 11px;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  padding: 0 14px;
+  padding-top: max(env(safe-area-inset-top, 0px), 10px);
+}
+.hud-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+  color: var(--fg-dim);
+  gap: 8px;
+}
+.hud-cell {
+  display: flex;
+  gap: 6px;
+  align-items: baseline;
+  white-space: nowrap;
+}
+.hud-cell .lbl { color: var(--fg-faint); }
+.hud-cell .val { color: var(--fg); font-variant-numeric: tabular-nums; }
+.hud-cell .val.big { color: var(--fg-bright); font-weight: 700; }
+.bar {
+  margin-top: 8px;
+  position: relative;
+  height: 5px;
+  background: rgba(120, 200, 150, 0.07);
+  border-radius: 1px;
+  overflow: hidden;
+}
+.bar > .fill {
+  position: absolute;
+  inset: 0 auto 0 0;
+  width: 0%;
+  background: linear-gradient(90deg, var(--c-letter), var(--c-digit));
+  transition: width 130ms ease-out, background 220ms;
+}
+.bar.warn > .fill {
+  background: linear-gradient(90deg, var(--c-digit), var(--danger));
+  animation: pulse 0.6s infinite alternate;
+}
+@keyframes pulse {
+  from { filter: brightness(0.9); }
+  to   { filter: brightness(1.4); }
+}
+.tag {
+  display: inline-block;
+  padding: 0 5px;
+  border: 1px solid currentColor;
+  font-size: 10px;
+  border-radius: 1px;
+}
+
+/* mute / pause buttons */
+.icon-btn {
+  pointer-events: auto;
+  position: absolute;
+  top: max(env(safe-area-inset-top, 0px), 10px);
+  width: 32px;
+  height: 32px;
+  border: 1px solid var(--fg-faint);
+  background: transparent;
+  color: var(--fg-dim);
+  font-family: inherit;
+  font-size: 14px;
+  cursor: pointer;
+  border-radius: 1px;
+  display: grid;
+  place-items: center;
+  z-index: 11;
+  transition: color 120ms, border-color 120ms;
+}
+.icon-btn:hover { color: var(--fg-bright); border-color: var(--fg); }
+.icon-btn:active { transform: scale(0.94); }
+#mute-btn  { right: 14px; top: calc(max(env(safe-area-inset-top, 0px), 10px) + 38px); display: none; }
+
+/* ---- Lane labels (bottom) ---- */
+/* Drawn in canvas — but we need a tap zone for the bottom too */
+
+/* ---- Modals (title / over) ---- */
+.modal {
+  position: absolute;
+  inset: 0;
+  z-index: 20;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-direction: column;
+  text-align: center;
+  padding: 30px 24px max(env(safe-area-inset-bottom, 0px), 30px);
+  background:
+    radial-gradient(ellipse at center, transparent 0, var(--modal-bg) 75%);
+  pointer-events: auto;
+}
+.modal.hidden { display: none; }
+
+.brand {
+  font-size: clamp(28px, 9vw, 54px);
+  letter-spacing: 0.06em;
+  color: var(--fg-bright);
+  text-shadow:
+    0 0 6px var(--c-letter),
+    0 0 22px rgba(134, 245, 181, 0.55),
+    0 0 50px rgba(134, 245, 181, 0.30);
+  margin-bottom: 6px;
+  font-weight: 600;
+  white-space: nowrap;
+  max-width: 100%;
+}
+@media (prefers-color-scheme: light) {
+  .brand { text-shadow: 0 0 1px var(--c-letter), 0 0 6px rgba(31,140,84,0.25); }
+}
+.brand .blink {
+  display: inline-block;
+  width: 0.55em;
+  margin-left: 0.04em;
+  animation: blink 1.05s steps(1, end) infinite;
+  color: var(--c-letter);
+}
+@keyframes blink { 50% { opacity: 0; } }
+
+.lede {
+  color: var(--fg-dim);
+  max-width: 340px;
+  margin: 4px auto 18px;
+  font-size: 12px;
+  line-height: 1.55;
+  letter-spacing: 0.04em;
+}
+.lede .accent { color: var(--fg); }
+
+.legend {
+  font-size: 11px;
+  color: var(--fg);
+  letter-spacing: 0.04em;
+  line-height: 1.9;
+  margin-bottom: 26px;
+  max-width: 320px;
+  width: 100%;
+  text-align: left;
+  border: 1px solid var(--fg-faint);
+  padding: 12px 14px;
+  background: var(--panel);
+  border-radius: 1px;
+}
+.legend .row { display: flex; justify-content: space-between; gap: 10px; }
+.legend .key { color: var(--fg-bright); }
+.legend .desc { color: var(--fg-dim); }
+.legend .swatch {
+  display: inline-block;
+  width: 8px; height: 8px;
+  vertical-align: 0px;
+  margin-right: 4px;
+  border-radius: 1px;
+}
+.legend .sw-l { background: var(--c-letter); box-shadow: 0 0 6px var(--c-letter); }
+.legend .sw-d { background: var(--c-digit);  box-shadow: 0 0 6px var(--c-digit); }
+.legend .sw-s { background: var(--c-symbol); box-shadow: 0 0 6px var(--c-symbol); }
+
+.btn {
+  pointer-events: auto;
+  font-family: inherit;
+  font-size: 14px;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+  background: transparent;
+  border: 1px solid var(--c-letter);
+  color: var(--fg-bright);
+  padding: 14px 28px;
+  min-width: 220px;
+  min-height: 48px;
+  cursor: pointer;
+  border-radius: 1px;
+  text-shadow: 0 0 6px var(--c-letter);
+  box-shadow:
+    inset 0 0 12px rgba(134, 245, 181, 0.18),
+    0 0 14px rgba(134, 245, 181, 0.20);
+  transition: transform 90ms ease, box-shadow 220ms, color 200ms;
+  font-weight: 600;
+  position: relative;
+}
+.btn::before { content: "› "; color: var(--c-letter); }
+.btn::after  { content: " ‹"; color: var(--c-letter); }
+.btn:active { transform: scale(0.97); }
+.btn:hover {
+  box-shadow:
+    inset 0 0 18px rgba(134, 245, 181, 0.30),
+    0 0 28px rgba(134, 245, 181, 0.45);
+}
+@media (prefers-color-scheme: light) {
+  .btn { text-shadow: none; box-shadow: inset 0 0 6px rgba(31,140,84,0.12); }
+  .btn:hover { box-shadow: inset 0 0 10px rgba(31,140,84,0.20); }
+}
+
+.over-line {
+  font-size: 12px;
+  color: var(--fg-dim);
+  margin-top: 10px;
+  letter-spacing: 0.06em;
+}
+.over-stats {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 10px;
+  width: 100%;
+  max-width: 320px;
+  margin: 18px 0 22px;
+}
+.over-stat {
+  border: 1px solid var(--fg-faint);
+  padding: 10px 6px;
+  background: var(--panel);
+}
+.over-stat .lbl { font-size: 10px; color: var(--fg-faint); letter-spacing: 0.10em; text-transform: uppercase; }
+.over-stat .val { font-size: 22px; color: var(--fg-bright); font-variant-numeric: tabular-nums; margin-top: 4px; }
+
+.over-title {
+  font-size: clamp(22px, 7vw, 40px);
+  letter-spacing: 0.08em;
+  color: var(--danger);
+  text-shadow: 0 0 12px var(--danger), 0 0 30px rgba(255, 107, 90, 0.45);
+  margin-bottom: 4px;
+  font-weight: 700;
+  animation: glitch 1.4s infinite steps(2, end);
+  white-space: nowrap;
+  max-width: 100%;
+}
+@keyframes glitch {
+  0%, 100% { transform: translateX(0); }
+  20% { transform: translateX(-1px); }
+  40% { transform: translateX(1px); }
+  60% { transform: translateX(0); letter-spacing: 0.13em; }
+}
+@media (prefers-color-scheme: light) {
+  .over-title { text-shadow: 0 0 6px rgba(181,56,50,0.35); }
+}
+
+/* hide focus ring jankiness on mobile but keep keyboard accessibility */
+:focus-visible { outline: 2px solid var(--c-letter); outline-offset: 2px; }
+button:focus { outline: none; }
+
+/* small status line shown during play (bottom, behind canvas hud) */
+.statline {
+  position: absolute;
+  bottom: max(env(safe-area-inset-bottom, 0px), 6px);
+  left: 50%;
+  transform: translateX(-50%);
+  font-size: 10px;
+  color: var(--fg-faint);
+  letter-spacing: 0.18em;
+  pointer-events: none;
+  z-index: 9;
+  text-transform: uppercase;
+  white-space: nowrap;
+}
+</style>
+</head>
+<body>
+<div id="app">
+  <canvas id="game" aria-label="phosphor.sh — sort glyphs into matching lanes"></canvas>
+
+  <div class="crt"></div>
+  <div class="vignette"></div>
+  <div class="flicker" id="flicker"></div>
+
+  <!-- HUD -->
+  <div class="hud" id="hud" aria-hidden="true" style="display:none">
+    <div class="hud-row">
+      <div class="hud-cell"><span class="lbl">scr</span><span class="val big" id="hud-score">00000</span></div>
+      <div class="hud-cell"><span class="lbl">combo</span><span class="val" id="hud-combo">x1</span></div>
+      <div class="hud-cell"><span class="lbl">flow</span><span class="val" id="hud-flow">86</span></div>
+    </div>
+    <div class="bar" id="noise-bar"><div class="fill" id="noise-fill"></div></div>
+  </div>
+
+  <button class="icon-btn" id="mute-btn" aria-label="toggle sound">♪</button>
+
+  <div class="statline" id="statline"></div>
+
+  <!-- TITLE SCREEN -->
+  <div class="modal" id="title-screen">
+    <div class="brand">phosphor.sh<span class="blink">▍</span></div>
+    <div class="lede">
+      Stutter beats and synth pads thread the night shift.<br>
+      Sort glyphs into the lane that <span class="accent">currently accepts</span> their kind —
+      before the buffer overruns.
+    </div>
+    <div class="legend">
+      <div class="row"><span class="key"><span class="swatch sw-l"></span>letter</span><span class="desc">A — Z phosphor</span></div>
+      <div class="row"><span class="key"><span class="swatch sw-d"></span>digit</span><span class="desc">0 — 9 amber</span></div>
+      <div class="row"><span class="key"><span class="swatch sw-s"></span>symbol</span><span class="desc">#@$ cyan</span></div>
+      <div class="row" style="margin-top:6px"><span class="key">drag / swipe</span><span class="desc">reroute glyphs</span></div>
+      <div class="row"><span class="key">← → / 1 2 3</span><span class="desc">keyboard</span></div>
+      <div class="row"><span class="key" style="color:var(--warn)">tags swap</span><span class="desc">labels rotate</span></div>
+    </div>
+    <button class="btn" id="start-btn" autofocus>boot shell</button>
+  </div>
+
+  <!-- GAME OVER -->
+  <div class="modal hidden" id="over-screen">
+    <div class="over-title" id="over-title">buffer overrun</div>
+    <div class="over-line" id="over-sub">// signal lost · phosphor decaying</div>
+    <div class="over-stats">
+      <div class="over-stat"><div class="lbl">score</div><div class="val" id="final-score">0</div></div>
+      <div class="over-stat"><div class="lbl">combo</div><div class="val" id="final-combo">x1</div></div>
+      <div class="over-stat"><div class="lbl">clean</div><div class="val" id="final-clean">0</div></div>
+    </div>
+    <button class="btn" id="restart-btn">reboot</button>
+    <div class="over-line" style="margin-top:18px; opacity:0.7">press R or tap reboot</div>
+  </div>
+</div>
+
+<script>
+"use strict";
+
+/* =================================================================
+ * phosphor.sh — sort phosphor glyphs into the right CRT pipeline
+ * before the shell buffer scrolls.
+ * ================================================================= */
+
+// ---------- utilities ----------
+const $ = id => document.getElementById(id);
+const TAU = Math.PI * 2;
+const rand  = (a, b) => a + Math.random() * (b - a);
+const irand = (a, b) => Math.floor(rand(a, b));
+const clamp = (v, a, b) => v < a ? a : v > b ? b : v;
+const lerp  = (a, b, t) => a + (b - a) * t;
+const choice = arr => arr[Math.floor(Math.random() * arr.length)];
+const easeOutCubic = t => 1 - Math.pow(1 - t, 3);
+const easeInQuad   = t => t * t;
+
+const cssVar = name =>
+  getComputedStyle(document.documentElement).getPropertyValue(name).trim();
+
+let palette = readPalette();
+function readPalette() {
+  return {
+    bg:        cssVar('--bg'),
+    bgDeep:    cssVar('--bg-deep'),
+    panel:     cssVar('--panel'),
+    grid:      cssVar('--grid'),
+    fg:        cssVar('--fg'),
+    fgBright:  cssVar('--fg-bright'),
+    fgDim:     cssVar('--fg-dim'),
+    fgFaint:   cssVar('--fg-faint'),
+    cLetter:   cssVar('--c-letter'),
+    cDigit:    cssVar('--c-digit'),
+    cSymbol:   cssVar('--c-symbol'),
+    danger:    cssVar('--danger'),
+    warn:      cssVar('--warn'),
+    isLight:   matchMedia('(prefers-color-scheme: light)').matches,
+  };
+}
+matchMedia('(prefers-color-scheme: light)').addEventListener?.('change', () => {
+  palette = readPalette();
+});
+
+// ---------- audio ----------
+const Audio = {
+  ctx: null,
+  master: null,
+  pad: null,
+  muted: false,
+  init() {
+    if (this.ctx) return;
+    try {
+      const C = window.AudioContext || window.webkitAudioContext;
+      if (!C) return;
+      this.ctx = new C();
+      this.master = this.ctx.createGain();
+      this.master.gain.value = 0.42;
+      this.master.connect(this.ctx.destination);
+    } catch (e) {
+      this.ctx = null;
+    }
+  },
+  resume() {
+    if (this.ctx && this.ctx.state === 'suspended') this.ctx.resume();
+  },
+  setMute(m) {
+    this.muted = m;
+    if (this.master) this.master.gain.linearRampToValueAtTime(
+      m ? 0 : 0.42, this.ctx.currentTime + 0.05
+    );
+  },
+  blip(freq = 700, dur = 0.07, type = 'sine', vol = 0.28) {
+    if (!this.ctx || this.muted) return;
+    const t = this.ctx.currentTime;
+    const o = this.ctx.createOscillator();
+    const g = this.ctx.createGain();
+    o.type = type;
+    o.frequency.setValueAtTime(freq, t);
+    g.gain.setValueAtTime(0, t);
+    g.gain.linearRampToValueAtTime(vol, t + 0.004);
+    g.gain.exponentialRampToValueAtTime(0.0001, t + dur);
+    o.connect(g).connect(this.master);
+    o.start(t); o.stop(t + dur + 0.02);
+  },
+  noise(dur = 0.18, vol = 0.18, lp = 1200) {
+    if (!this.ctx || this.muted) return;
+    const t = this.ctx.currentTime;
+    const len = Math.ceil(this.ctx.sampleRate * dur);
+    const buf = this.ctx.createBuffer(1, len, this.ctx.sampleRate);
+    const d = buf.getChannelData(0);
+    for (let i = 0; i < len; i++) d[i] = (Math.random() * 2 - 1) * (1 - i / len);
+    const src = this.ctx.createBufferSource();
+    src.buffer = buf;
+    const f = this.ctx.createBiquadFilter();
+    f.type = 'lowpass';
+    f.frequency.value = lp;
+    const g = this.ctx.createGain();
+    g.gain.setValueAtTime(vol, t);
+    g.gain.exponentialRampToValueAtTime(0.001, t + dur);
+    src.connect(f).connect(g).connect(this.master);
+    src.start(t); src.stop(t + dur);
+  },
+  pop(combo = 1) {
+    if (!this.ctx || this.muted) return;
+    // pitch climbs with combo
+    const base = 540 + Math.min(combo, 12) * 32;
+    this.blip(base, 0.05, 'sine', 0.22);
+    const t = this.ctx.currentTime;
+    const o = this.ctx.createOscillator();
+    const g = this.ctx.createGain();
+    o.type = 'triangle';
+    o.frequency.setValueAtTime(base * 1.5, t);
+    g.gain.setValueAtTime(0, t);
+    g.gain.linearRampToValueAtTime(0.10, t + 0.005);
+    g.gain.exponentialRampToValueAtTime(0.0001, t + 0.10);
+    o.connect(g).connect(this.master);
+    o.start(t); o.stop(t + 0.12);
+  },
+  buzz() {
+    if (!this.ctx || this.muted) return;
+    const t = this.ctx.currentTime;
+    const o = this.ctx.createOscillator();
+    const g = this.ctx.createGain();
+    o.type = 'sawtooth';
+    o.frequency.setValueAtTime(220, t);
+    o.frequency.exponentialRampToValueAtTime(70, t + 0.22);
+    g.gain.setValueAtTime(0.20, t);
+    g.gain.exponentialRampToValueAtTime(0.0001, t + 0.22);
+    o.connect(g).connect(this.master);
+    o.start(t); o.stop(t + 0.24);
+    this.noise(0.12, 0.10, 1800);
+  },
+  swap() {
+    if (!this.ctx || this.muted) return;
+    this.blip(520, 0.045, 'square', 0.16);
+    setTimeout(() => this.blip(720, 0.045, 'square', 0.16), 70);
+    setTimeout(() => this.blip(620, 0.045, 'square', 0.13), 140);
+  },
+  hum(notes = [196, 261, 329, 392], dur = 1.6) {
+    if (!this.ctx || this.muted) return;
+    const t = this.ctx.currentTime;
+    notes.forEach((f, i) => {
+      const o = this.ctx.createOscillator();
+      const g = this.ctx.createGain();
+      o.type = i === 0 ? 'sine' : 'triangle';
+      o.frequency.value = f;
+      g.gain.setValueAtTime(0, t + i * 0.06);
+      g.gain.linearRampToValueAtTime(0.10, t + 0.08 + i * 0.06);
+      g.gain.linearRampToValueAtTime(0.06, t + 0.6);
+      g.gain.exponentialRampToValueAtTime(0.0001, t + dur);
+      o.connect(g).connect(this.master);
+      o.start(t + i * 0.04); o.stop(t + dur + 0.04);
+    });
+    // little shimmer noise burst
+    this.noise(0.22, 0.07, 4000);
+  },
+  startPad() {
+    if (!this.ctx || this.muted || this.pad) return;
+    const t = this.ctx.currentTime;
+    const g = this.ctx.createGain();
+    g.gain.value = 0;
+    g.gain.linearRampToValueAtTime(0.045, t + 1.5);
+    g.connect(this.master);
+    const lfo = this.ctx.createOscillator();
+    const lfoG = this.ctx.createGain();
+    lfo.frequency.value = 0.18;
+    lfoG.gain.value = 0.018;
+    lfo.connect(lfoG).connect(g.gain);
+    lfo.start(t);
+    const oscs = [];
+    [110, 165, 220, 277].forEach((f, i) => {
+      const o = this.ctx.createOscillator();
+      o.type = i === 0 ? 'sine' : (i === 3 ? 'triangle' : 'sine');
+      o.frequency.value = f;
+      const og = this.ctx.createGain();
+      og.gain.value = 0.4 / (i + 1);
+      o.connect(og).connect(g);
+      o.start(t);
+      oscs.push(o);
+    });
+    this.pad = { gain: g, oscs, lfo };
+  },
+  stopPad() {
+    if (!this.pad || !this.ctx) return;
+    const t = this.ctx.currentTime;
+    this.pad.gain.gain.cancelScheduledValues(t);
+    this.pad.gain.gain.linearRampToValueAtTime(0, t + 0.4);
+    setTimeout(() => {
+      try {
+        this.pad.oscs.forEach(o => o.stop());
+        this.pad.lfo.stop();
+      } catch(e) {}
+      this.pad = null;
+    }, 500);
+  },
+  stutter() {
+    if (!this.ctx || this.muted) return;
+    this.blip(880, 0.025, 'square', 0.10);
+  }
+};
+
+// ---------- canvas / sizing ----------
+const canvas = $('game');
+const ctx = canvas.getContext('2d', { alpha: false });
+let W = 0, H = 0, dpr = 1;
+
+const LANES = [];
+const LANE_TOP_Y = 110;       // y at which glyphs spawn / appear
+let   LANE_BOT_Y = 0;          // y at which glyphs commit (set on resize)
+
+function resize() {
+  dpr = Math.min(window.devicePixelRatio || 1, 2);
+  W = window.innerWidth;
+  H = window.innerHeight;
+  canvas.width  = Math.floor(W * dpr);
+  canvas.height = Math.floor(H * dpr);
+  canvas.style.width  = W + 'px';
+  canvas.style.height = H + 'px';
+  ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+
+  // leave room at the bottom for collectors + statline + safe-area
+  LANE_BOT_Y = Math.floor(H - Math.max(130, H * 0.16));
+  LANES.length = 0;
+  const lw = W / 3;
+  for (let i = 0; i < 3; i++) {
+    LANES.push({
+      idx: i,
+      x: i * lw + lw / 2,
+      width: lw,
+      left: i * lw,
+      right: (i + 1) * lw,
+      top: LANE_TOP_Y,
+      bottom: LANE_BOT_Y,
+    });
+  }
+}
+window.addEventListener('resize', resize, { passive: true });
+window.addEventListener('orientationchange', () => setTimeout(resize, 50));
+
+// ---------- types / constants ----------
+const TYPE_LETTER = 0;
+const TYPE_DIGIT  = 1;
+const TYPE_SYMBOL = 2;
+const TYPE_NAMES = ['letter', 'digit', 'symbol'];
+const TYPE_LBLS  = ['LETTER', 'DIGIT', 'SYMBOL'];
+const LETTERS = "ABCDEFGHJKLMNPQRSTVWXYZ".split("");
+const DIGITS  = "0123456789".split("");
+const SYMBOLS = "#@$%&!?*+=/^~".split("");
+
+function typeColor(t) {
+  return t === 0 ? palette.cLetter : t === 1 ? palette.cDigit : palette.cSymbol;
+}
+function typeChar(t) {
+  if (t === 0) return choice(LETTERS);
+  if (t === 1) return choice(DIGITS);
+  return choice(SYMBOLS);
+}
+
+// ---------- state ----------
+const state = {
+  mode: 'title',         // 'title' | 'playing' | 'over'
+  t: 0,                   // total elapsed
+  score: 0,
+  combo: 0,
+  bestCombo: 0,
+  cleanCompiles: 0,
+  noise: 0,               // 0..100
+  glyphs: [],
+  particles: [],
+  rings: [],              // pulse rings
+  flashOps: [],           // text flashes
+  log: [],                // background terminal log lines
+  shake: 0,
+  hitPause: 0,
+  laneType: [TYPE_LETTER, TYPE_DIGIT, TYPE_SYMBOL], // current accepted type per lane
+  laneTypeAnim: [1, 1, 1],     // animation phase for each lane (0 = mid-swap, 1 = settled)
+  swapTimer: 0,
+  swapInterval: 9.5,
+  swapWarn: 0,
+  spawnTimer: 0.6,
+  spawnInterval: 1.5,
+  fallSpeed: 130,
+  difficulty: 0,
+  cleanCompileFlash: 0,
+  swapFlash: 0,
+  glitch: 0,
+  bufferScroll: 0,
+  bgChars: [],
+  glyphIdCounter: 0,
+  startedPlayingAt: 0,
+  // input
+  pointers: new Map(),
+  // for showing "active" pointer hints
+  hintTimer: 4,
+};
+
+// ---------- log helper ----------
+function pushLog(text, kind = 'info') {
+  state.log.unshift({ text, kind, age: 0 });
+  if (state.log.length > 40) state.log.length = 40;
+}
+
+// ---------- background chars (matrix-ish dim ASCII) ----------
+function seedBgChars() {
+  state.bgChars = [];
+  const cols = Math.ceil(W / 14);
+  for (let i = 0; i < cols; i++) {
+    state.bgChars.push({
+      x: i * 14 + rand(-2, 2),
+      y: rand(0, H),
+      vy: rand(15, 50),
+      ch: choice("01<>{}[];:.,/\\|*-+=#@$%&"),
+      flicker: Math.random() * 1.5,
+    });
+  }
+}
+
+// ---------- glyphs ----------
+function spawnGlyph() {
+  const t = irand(0, 3);
+  const lane = irand(0, 3);
+  const ch = typeChar(t);
+  state.glyphs.push({
+    id: ++state.glyphIdCounter,
+    char: ch,
+    type: t,
+    lane,
+    x: LANES[lane].x,
+    y: LANE_TOP_Y - 20,
+    vy: 0,
+    targetX: LANES[lane].x,
+    dragged: null,        // pointer id
+    grabOffset: 0,
+    age: 0,
+    scale: 0,
+    spawnPhase: 0,
+    glow: 0,
+    trail: [],
+    committed: false,
+    wiggle: rand(0, TAU),
+    wiggleSpeed: rand(2.5, 4.5),
+  });
+}
+
+// ---------- particles ----------
+function spawnBurst(x, y, color, count = 12, opts = {}) {
+  const speed = opts.speed ?? 220;
+  const life  = opts.life  ?? 0.6;
+  const upBias = opts.upBias ?? 70;
+  for (let i = 0; i < count; i++) {
+    const a = rand(0, TAU);
+    const v = rand(0.45, 1) * speed;
+    state.particles.push({
+      x, y,
+      vx: Math.cos(a) * v,
+      vy: Math.sin(a) * v - upBias,
+      life,
+      maxLife: life,
+      color,
+      size: rand(1.5, 3.2),
+      gravity: opts.gravity ?? 320,
+      drag: opts.drag ?? 1.0,
+    });
+  }
+}
+function spawnGlitchBits(x, y) {
+  for (let i = 0; i < 14; i++) {
+    state.particles.push({
+      x: x + rand(-30, 30),
+      y: y + rand(-20, 20),
+      vx: rand(-180, 180),
+      vy: rand(-260, 60),
+      life: rand(0.25, 0.55),
+      maxLife: 0.55,
+      color: palette.danger,
+      size: rand(1, 2.5),
+      gravity: 380,
+      drag: 1.3,
+      ch: choice("0\\/_|.:?#"),
+    });
+  }
+}
+function spawnRing(x, y, color, life = 0.55, max = 80) {
+  state.rings.push({ x, y, life, maxLife: life, color, max });
+}
+function flashText(text, color, life = 1.2, big = false) {
+  state.flashOps.push({ text, color, life, maxLife: life, big });
+}
+
+// ---------- input ----------
+function findGlyphAt(px, py, tol = 60) {
+  let best = null;
+  let bestD = tol * tol;
+  for (let i = state.glyphs.length - 1; i >= 0; i--) {
+    const g = state.glyphs[i];
+    if (g.committed) continue;
+    if (g.dragged !== null) continue;
+    const dx = g.x - px, dy = g.y - py;
+    const d = dx * dx + dy * dy;
+    if (d < bestD) { bestD = d; best = g; }
+  }
+  return best;
+}
+
+function pointerPos(e) {
+  const r = canvas.getBoundingClientRect();
+  return [ e.clientX - r.left, e.clientY - r.top ];
+}
+
+canvas.addEventListener('pointerdown', (e) => {
+  if (state.mode !== 'playing') return;
+  e.preventDefault();
+  Audio.init(); Audio.resume();
+  const [x, y] = pointerPos(e);
+
+  // generous touch target — the lower the glyph, the larger the pickup radius
+  const g = findGlyphAt(x, y, 90);
+  if (g) {
+    try { canvas.setPointerCapture(e.pointerId); } catch(_) {}
+    g.dragged = e.pointerId;
+    g.grabOffset = x - g.x;
+    g.scale = 1;
+    state.pointers.set(e.pointerId, {
+      glyph: g,
+      startX: x, startY: y,
+      lastX: x, lastY: y,
+      lastT: performance.now(),
+      vx: 0,
+      moved: 0,
+    });
+    Audio.blip(620 + g.type * 80, 0.025, 'triangle', 0.10);
+    state.hintTimer = 0;
+  } else {
+    // tap on empty area in the bottom half: act as a swipe-toward-edge to reroute the
+    // closest still-falling glyph one lane in that direction
+    if (y > H * 0.45) {
+      const tapped = findClosestFalling();
+      if (tapped) {
+        const dir = x < W * 0.5 ? -1 : 1;
+        moveGlyphLane(tapped, tapped.lane + dir);
+      }
+    }
+  }
+}, { passive: false });
+
+canvas.addEventListener('pointermove', (e) => {
+  const p = state.pointers.get(e.pointerId);
+  if (!p) return;
+  e.preventDefault();
+  const [x, y] = pointerPos(e);
+  const now = performance.now();
+  const dt = Math.max(1, now - p.lastT);
+  p.vx = (x - p.lastX) / dt * 1000;     // px/sec
+  p.moved += Math.abs(x - p.lastX);
+  p.lastX = x; p.lastY = y; p.lastT = now;
+
+  const g = p.glyph;
+  g.x = clamp(x - p.grabOffset, 24, W - 24);
+  // determine lane based on current x
+  const lw = W / 3;
+  const newLane = clamp(Math.floor(g.x / lw), 0, 2);
+  if (newLane !== g.lane) {
+    g.lane = newLane;
+    Audio.stutter();
+  }
+}, { passive: false });
+
+function endPointer(e, cancelled) {
+  const p = state.pointers.get(e.pointerId);
+  if (!p) return;
+  e.preventDefault?.();
+  const g = p.glyph;
+  // if a quick fling is detected at release, snap to lane in fling direction
+  if (!cancelled && Math.abs(p.vx) > 800 && p.moved > 12) {
+    const dir = p.vx > 0 ? 1 : -1;
+    moveGlyphLane(g, g.lane + dir);
+  } else {
+    // snap to current lane
+    g.targetX = LANES[g.lane].x;
+  }
+  g.dragged = null;
+  state.pointers.delete(e.pointerId);
+  try { canvas.releasePointerCapture?.(e.pointerId); } catch(_) {}
+}
+canvas.addEventListener('pointerup',     (e) => endPointer(e, false), { passive: false });
+canvas.addEventListener('pointercancel', (e) => endPointer(e, true),  { passive: false });
+canvas.addEventListener('lostpointercapture', (e) => endPointer(e, true), { passive: false });
+
+function moveGlyphLane(g, lane) {
+  const newLane = clamp(lane, 0, 2);
+  if (newLane === g.lane) return;
+  g.lane = newLane;
+  g.targetX = LANES[newLane].x;
+  Audio.blip(540 + newLane * 80, 0.04, 'triangle', 0.16);
+}
+
+function findClosestFalling() {
+  let best = null;
+  for (const g of state.glyphs) {
+    if (g.committed || g.dragged !== null) continue;
+    if (!best || g.y > best.y) best = g;
+  }
+  return best;
+}
+
+window.addEventListener('keydown', (e) => {
+  // global keys
+  if (state.mode === 'title') {
+    if (e.key === ' ' || e.key === 'Enter') { startGame(); e.preventDefault(); return; }
+  }
+  if (state.mode === 'over') {
+    if (e.key === ' ' || e.key === 'Enter' || e.key === 'r' || e.key === 'R') {
+      startGame(); e.preventDefault(); return;
+    }
+  }
+  if (e.key === 'm' || e.key === 'M') {
+    Audio.setMute(!Audio.muted);
+    $('mute-btn').textContent = Audio.muted ? 'x' : '♪';
+    e.preventDefault();
+    return;
+  }
+  if (state.mode !== 'playing') return;
+  if (e.key === 'ArrowLeft' || e.key === 'a' || e.key === 'A') {
+    const g = findClosestFalling();
+    if (g) moveGlyphLane(g, g.lane - 1);
+    e.preventDefault();
+  } else if (e.key === 'ArrowRight' || e.key === 'd' || e.key === 'D') {
+    const g = findClosestFalling();
+    if (g) moveGlyphLane(g, g.lane + 1);
+    e.preventDefault();
+  } else if (e.key === '1' || e.key === '2' || e.key === '3') {
+    const g = findClosestFalling();
+    if (g) moveGlyphLane(g, parseInt(e.key, 10) - 1);
+    e.preventDefault();
+  }
+});
+
+// ---------- lane swap ----------
+function shuffleLaneTypes() {
+  const arr = state.laneType.slice();
+  // pick: 70% swap two, 30% rotate
+  if (Math.random() < 0.7) {
+    let a = irand(0, 3), b = irand(0, 3);
+    while (b === a) b = irand(0, 3);
+    [arr[a], arr[b]] = [arr[b], arr[a]];
+    state.laneTypeAnim[a] = 0;
+    state.laneTypeAnim[b] = 0;
+  } else {
+    if (Math.random() < 0.5) arr.push(arr.shift()); else arr.unshift(arr.pop());
+    state.laneTypeAnim[0] = state.laneTypeAnim[1] = state.laneTypeAnim[2] = 0;
+  }
+  state.laneType = arr;
+  state.swapFlash = 1;
+  flashText('// pipeline rerouted', palette.warn, 1.0);
+  Audio.swap();
+  navigator.vibrate?.([8, 18, 8]);
+  pushLog("[swap] tag schema reflowed " + arr.map(i => TYPE_LBLS[i]).join("/"), 'warn');
+}
+
+// ---------- game flow ----------
+function startGame() {
+  Audio.init(); Audio.resume();
+  Object.assign(state, {
+    mode: 'playing',
+    t: 0,
+    score: 0,
+    combo: 0,
+    bestCombo: 0,
+    cleanCompiles: 0,
+    noise: 0,
+    glyphs: [],
+    particles: [],
+    rings: [],
+    flashOps: [],
+    shake: 0,
+    hitPause: 0,
+    laneType: [TYPE_LETTER, TYPE_DIGIT, TYPE_SYMBOL],
+    laneTypeAnim: [1, 1, 1],
+    swapTimer: 0,
+    swapInterval: 9.5,
+    swapWarn: 0,
+    spawnTimer: 0.5,
+    spawnInterval: 1.55,
+    fallSpeed: 125,
+    difficulty: 0,
+    cleanCompileFlash: 0,
+    swapFlash: 0,
+    glitch: 0,
+    bufferScroll: 0,
+    glyphIdCounter: 0,
+    pointers: new Map(),
+    hintTimer: 3.5,
+  });
+  state.log = [];
+  pushLog("[boot] phosphor.sh — sort buffer initialised", 'info');
+  pushLog("[link] CRT pipelines online // 3 lanes", 'info');
+  pushLog("[note] schema rotates · combos compile clean", 'info');
+
+  $('title-screen').classList.add('hidden');
+  $('over-screen').classList.add('hidden');
+  $('hud').style.display = 'block';
+  $('mute-btn').style.display = 'grid';
+  state.startedPlayingAt = performance.now();
+  Audio.startPad();
+}
+
+function endGame(reason) {
+  state.mode = 'over';
+  $('hud').style.display = 'none';
+  $('mute-btn').style.display = 'none';
+  $('final-score').textContent = String(state.score).padStart(5, '0');
+  $('final-combo').textContent = 'x' + state.bestCombo;
+  $('final-clean').textContent = String(state.cleanCompiles);
+  $('over-sub').textContent = reason || '// signal lost · phosphor decaying';
+  $('over-screen').classList.remove('hidden');
+  Audio.stopPad();
+  Audio.noise(0.6, 0.18, 700);
+  navigator.vibrate?.([20, 60, 20, 80]);
+}
+
+// ---------- core update ----------
+function commitGlyph(g) {
+  g.committed = true;
+  const accepted = state.laneType[g.lane];
+  const lane = LANES[g.lane];
+  if (accepted === g.type) {
+    state.combo += 1;
+    state.bestCombo = Math.max(state.bestCombo, state.combo);
+    const mult = 1 + Math.floor(state.combo / 4);
+    const gained = 12 * mult;
+    state.score += gained;
+    state.noise = Math.max(0, state.noise - 1.2);
+    Audio.pop(state.combo);
+    spawnBurst(lane.x, lane.bottom, typeColor(g.type), 14, { speed: 280, upBias: 90 });
+    spawnRing(lane.x, lane.bottom, typeColor(g.type), 0.55, Math.min(W, 220));
+    flashText('+' + gained, typeColor(g.type), 0.6);
+    pushLog("[ok] " + g.char + " → " + TYPE_LBLS[accepted] + " +" + gained, 'ok');
+    navigator.vibrate?.(6);
+    if (state.combo > 0 && state.combo % 6 === 0) cleanCompile();
+  } else {
+    state.combo = 0;
+    state.noise = Math.min(100, state.noise + 16);
+    state.shake = 14;
+    state.hitPause = 0.05;
+    state.glitch = 0.4;
+    Audio.buzz();
+    spawnGlitchBits(lane.x, lane.bottom);
+    flashText('// err', palette.danger, 0.5);
+    pushLog("[err] " + g.char + " → " + TYPE_LBLS[accepted] + "  " + TYPE_LBLS[g.type] + " expected", 'err');
+    navigator.vibrate?.([18, 30, 18]);
+    if (state.noise >= 100) {
+      endGame('// buffer overrun · noise saturated');
+    }
+  }
+}
+
+function cleanCompile() {
+  state.cleanCompiles += 1;
+  state.noise = Math.max(0, state.noise - 32);
+  state.cleanCompileFlash = 1;
+  state.score += 50;
+  flashText('clean compile', palette.cLetter, 1.6, true);
+  Audio.hum([196, 261, 329, 392], 1.6);
+  // huge ring + particle wash
+  spawnRing(W / 2, H * 0.6, palette.cLetter, 1.0, Math.max(W, H));
+  for (let i = 0; i < 60; i++) {
+    state.particles.push({
+      x: rand(0, W),
+      y: rand(0, H),
+      vx: rand(-30, 30),
+      vy: rand(40, 160),
+      life: rand(0.6, 1.4),
+      maxLife: 1.4,
+      color: palette.cLetter,
+      size: rand(1, 2.5),
+      gravity: 30,
+      drag: 0.6,
+      ch: choice("░▒▓█▀▄■□◆◇")
+    });
+  }
+  pushLog("[clean] compile ok · noise scrubbed", 'clean');
+  navigator.vibrate?.([20, 35, 20, 35, 60]);
+}
+
+// ---------- update ----------
+function update(dt) {
+  state.t += dt;
+
+  // spawn buffer scroll always
+  state.bufferScroll = (state.bufferScroll + dt * 18) % 1e9;
+
+  // age particles & rings & flashes
+  for (const p of state.particles) {
+    p.life -= dt;
+    p.vx *= Math.pow(0.001, dt * (p.drag || 1));
+    p.vy += (p.gravity || 0) * dt;
+    p.x += p.vx * dt;
+    p.y += p.vy * dt;
+  }
+  state.particles = state.particles.filter(p => p.life > 0);
+  for (const r of state.rings) r.life -= dt;
+  state.rings = state.rings.filter(r => r.life > 0);
+  for (const f of state.flashOps) f.life -= dt;
+  state.flashOps = state.flashOps.filter(f => f.life > 0);
+  for (const l of state.log) l.age += dt;
+  state.log = state.log.slice(0, 40);
+
+  if (state.mode !== 'playing') return;
+
+  // hit-pause holds movement updates briefly
+  if (state.hitPause > 0) {
+    state.hitPause -= dt;
+    state.shake *= Math.pow(0.001, dt);
+    return;
+  }
+  state.shake *= Math.pow(0.0001, dt);
+  state.glitch *= Math.pow(0.001, dt);
+
+  // difficulty growth
+  state.difficulty += dt * 0.55;
+  state.fallSpeed     = clamp(125 + state.difficulty * 9, 125, 320);
+  state.spawnInterval = clamp(1.55 - state.difficulty * 0.045, 0.55, 1.55);
+  state.swapInterval  = clamp(9.5 - state.difficulty * 0.18, 4.5, 9.5);
+
+  // spawn glyphs
+  state.spawnTimer -= dt;
+  if (state.spawnTimer <= 0) {
+    state.spawnTimer = state.spawnInterval * rand(0.85, 1.15);
+    spawnGlyph();
+  }
+
+  // lane swap with warning telegraph
+  state.swapTimer += dt;
+  state.swapWarn = clamp((state.swapTimer - (state.swapInterval - 1.2)) / 1.2, 0, 1);
+  if (state.swapTimer >= state.swapInterval) {
+    state.swapTimer = 0;
+    shuffleLaneTypes();
+  }
+
+  // lane type anim ease toward 1
+  for (let i = 0; i < 3; i++) {
+    state.laneTypeAnim[i] = clamp(state.laneTypeAnim[i] + dt * 4, 0, 1);
+  }
+
+  // glyph physics
+  const fall = state.fallSpeed;
+  for (const g of state.glyphs) {
+    if (g.committed) continue;
+    g.age += dt;
+    g.spawnPhase = clamp(g.spawnPhase + dt * 5, 0, 1);
+    g.scale = lerp(g.scale, 1, 1 - Math.pow(0.001, dt));
+    g.wiggle += g.wiggleSpeed * dt;
+
+    // store trail
+    g.trail.push({ x: g.x, y: g.y });
+    if (g.trail.length > 5) g.trail.shift();
+
+    if (g.dragged === null) {
+      // accelerate vy slightly with depth (creates a sense of imminent commit)
+      const depth = clamp((g.y - LANE_TOP_Y) / (LANE_BOT_Y - LANE_TOP_Y), 0, 1);
+      g.vy = fall * (1 + depth * 0.3);
+      g.y += g.vy * dt;
+      // ease toward target lane x
+      g.x = lerp(g.x, LANES[g.lane].x, 1 - Math.pow(0.0001, dt));
+      g.targetX = LANES[g.lane].x;
+    } else {
+      // when held, glyph falls more slowly (player has control)
+      g.vy = fall * 0.4;
+      g.y += g.vy * dt;
+    }
+
+    if (g.y >= LANE_BOT_Y) {
+      g.y = LANE_BOT_Y;
+      // if still being dragged, force release first
+      if (g.dragged !== null) {
+        const pid = g.dragged;
+        const p = state.pointers.get(pid);
+        if (p) state.pointers.delete(pid);
+        g.dragged = null;
+        try { canvas.releasePointerCapture?.(pid); } catch(_) {}
+      }
+      commitGlyph(g);
+    }
+  }
+  state.glyphs = state.glyphs.filter(g => !g.committed);
+
+  // background chars drift
+  for (const c of state.bgChars) {
+    c.y += c.vy * dt;
+    if (c.y > H + 12) {
+      c.y = -10;
+      c.x = rand(0, W);
+      c.ch = choice("01<>{}[];:.,/\\|*-+=#@$%&");
+    }
+    c.flicker -= dt;
+    if (c.flicker < 0) {
+      c.flicker = rand(0.4, 1.6);
+      c.ch = choice("01<>{}[];:.,/\\|*-+=#@$%&");
+    }
+  }
+
+  // hud tick
+  state.hintTimer -= dt;
+
+  // small ambient stutter blip on the beat
+  if (Math.floor(state.t * 2) !== Math.floor((state.t - dt) * 2) && Math.random() < 0.18) {
+    Audio.stutter();
+  }
+
+  // game over from noise
+  if (state.noise >= 100) endGame('// buffer overrun · noise saturated');
+
+  // flash decays
+  state.swapFlash *= Math.pow(0.001, dt);
+  state.cleanCompileFlash *= Math.pow(0.001, dt);
+}
+
+// ---------- render ----------
+function fillRect(x, y, w, h, color) {
+  ctx.fillStyle = color;
+  ctx.fillRect(x, y, w, h);
+}
+
+function drawBackground() {
+  // base
+  ctx.fillStyle = palette.bgDeep;
+  ctx.fillRect(0, 0, W, H);
+
+  // soft horizontal sweep gradient
+  const grad = ctx.createLinearGradient(0, 0, 0, H);
+  if (palette.isLight) {
+    grad.addColorStop(0, 'rgba(31,140,84,0.04)');
+    grad.addColorStop(1, 'rgba(0,0,0,0.00)');
+  } else {
+    grad.addColorStop(0, 'rgba(20,80,55,0.20)');
+    grad.addColorStop(1, 'rgba(0,0,0,0.00)');
+  }
+  ctx.fillStyle = grad;
+  ctx.fillRect(0, 0, W, H);
+
+  // dim drifting ascii in background
+  ctx.font = "12px ui-monospace, Menlo, monospace";
+  ctx.textBaseline = 'top';
+  ctx.fillStyle = palette.fgFaint;
+  ctx.globalAlpha = palette.isLight ? 0.55 : 0.55;
+  for (const c of state.bgChars) {
+    ctx.fillText(c.ch, c.x, c.y);
+  }
+  ctx.globalAlpha = 1;
+}
+
+function drawLog() {
+  const x = 14;
+  let y = 80;
+  ctx.font = "11px ui-monospace, Menlo, monospace";
+  ctx.textBaseline = 'top';
+  // we draw the latest 3-4 lines as floating phosphor in the upper third
+  const items = state.log.slice(0, 5);
+  for (let i = 0; i < items.length; i++) {
+    const l = items[i];
+    const a = clamp(1 - i * 0.22 - l.age * 0.10, 0, 1);
+    if (a <= 0.02) continue;
+    let color = palette.fgDim;
+    if (l.kind === 'ok')    color = palette.cLetter;
+    if (l.kind === 'err')   color = palette.danger;
+    if (l.kind === 'warn')  color = palette.warn;
+    if (l.kind === 'clean') color = palette.cLetter;
+    ctx.globalAlpha = a * 0.55;
+    ctx.fillStyle = color;
+    ctx.fillText(truncate(l.text, 38), x, y + i * 14);
+  }
+  ctx.globalAlpha = 1;
+}
+
+function truncate(s, n) {
+  return s.length > n ? s.slice(0, n - 1) + '…' : s;
+}
+
+function drawLanes() {
+  // determine which lane(s) currently host a held glyph (for active highlight)
+  const active = new Set();
+  for (const g of state.glyphs) {
+    if (g.dragged !== null) active.add(g.lane);
+  }
+
+  // vertical guides
+  ctx.lineWidth = 1;
+  for (let i = 0; i < 3; i++) {
+    const lane = LANES[i];
+    // lane background panel
+    if (i % 2 === 0) {
+      ctx.fillStyle = palette.panel;
+      ctx.fillRect(lane.left, LANE_TOP_Y - 30, lane.width, LANE_BOT_Y - LANE_TOP_Y + 36);
+    }
+    // active lane glow when something is being routed here
+    if (active.has(i)) {
+      const c = typeColor(state.laneType[i]);
+      const gradient = ctx.createLinearGradient(0, LANE_TOP_Y, 0, LANE_BOT_Y + 16);
+      gradient.addColorStop(0, 'rgba(0,0,0,0)');
+      gradient.addColorStop(1, c);
+      ctx.fillStyle = gradient;
+      ctx.globalAlpha = palette.isLight ? 0.10 : 0.13;
+      ctx.fillRect(lane.left + 2, LANE_TOP_Y - 24, lane.width - 4, LANE_BOT_Y - LANE_TOP_Y + 30);
+      ctx.globalAlpha = 1;
+    }
+    // dashed center line (or solid colored when active)
+    if (active.has(i)) {
+      ctx.strokeStyle = typeColor(state.laneType[i]);
+      ctx.setLineDash([]);
+    } else {
+      ctx.strokeStyle = palette.fgFaint;
+      ctx.setLineDash([2, 6]);
+    }
+    ctx.beginPath();
+    ctx.moveTo(lane.x, LANE_TOP_Y - 6);
+    ctx.lineTo(lane.x, LANE_BOT_Y - 4);
+    ctx.stroke();
+    ctx.setLineDash([]);
+
+    // top lane header (small tag)
+    ctx.font = "10px ui-monospace, Menlo, monospace";
+    ctx.textBaseline = 'alphabetic';
+    ctx.textAlign = 'center';
+    ctx.fillStyle = active.has(i) ? typeColor(state.laneType[i]) : palette.fgFaint;
+    ctx.fillText('lane.' + (i + 1), lane.x, LANE_TOP_Y - 16);
+  }
+
+  // dividers between lanes
+  ctx.strokeStyle = palette.fgFaint;
+  ctx.lineWidth = 1;
+  ctx.beginPath();
+  ctx.moveTo(LANES[0].right, LANE_TOP_Y - 24);
+  ctx.lineTo(LANES[0].right, LANE_BOT_Y + 64);
+  ctx.moveTo(LANES[1].right, LANE_TOP_Y - 24);
+  ctx.lineTo(LANES[1].right, LANE_BOT_Y + 64);
+  ctx.stroke();
+
+  // top horizontal rule
+  ctx.beginPath();
+  ctx.moveTo(0, LANE_TOP_Y - 24);
+  ctx.lineTo(W, LANE_TOP_Y - 24);
+  ctx.stroke();
+
+  // commit-line
+  ctx.strokeStyle = palette.fgFaint;
+  ctx.setLineDash([3, 3]);
+  ctx.beginPath();
+  ctx.moveTo(0, LANE_BOT_Y);
+  ctx.lineTo(W, LANE_BOT_Y);
+  ctx.stroke();
+  ctx.setLineDash([]);
+
+  // collectors at bottom of each lane
+  for (let i = 0; i < 3; i++) {
+    drawLaneCollector(i);
+  }
+}
+
+function drawLaneCollector(i) {
+  const lane = LANES[i];
+  const t = state.laneType[i];
+  const color = typeColor(t);
+  const anim = state.laneTypeAnim[i]; // 0..1
+  const cy = LANE_BOT_Y + 36;
+  const w = lane.width - 16;
+  const x = lane.left + 8;
+  const h = 50;
+
+  // glow ring around collector
+  ctx.save();
+  ctx.shadowColor = color;
+  ctx.shadowBlur = 20 + (1 - anim) * 28;
+  ctx.strokeStyle = color;
+  ctx.globalAlpha = 0.85;
+  ctx.lineWidth = 1.5;
+  ctx.strokeRect(x, cy - 18, w, h);
+  ctx.restore();
+
+  // inner soft fill
+  ctx.fillStyle = color;
+  ctx.globalAlpha = palette.isLight ? 0.05 : 0.07 + (1 - anim) * 0.10;
+  ctx.fillRect(x + 1, cy - 17, w - 2, h - 2);
+  ctx.globalAlpha = 1;
+
+  // label — supports swap "scramble" animation
+  ctx.font = "bold 14px ui-monospace, Menlo, monospace";
+  ctx.textAlign = 'center';
+  ctx.textBaseline = 'middle';
+
+  let label = TYPE_LBLS[t];
+  if (anim < 1) {
+    // scramble characters during swap
+    let scrambled = '';
+    for (let k = 0; k < label.length; k++) {
+      if (Math.random() < (1 - anim) * 0.6) {
+        scrambled += choice("§¶±¬◇◆░▒▓?#@*");
+      } else scrambled += label[k];
+    }
+    label = scrambled;
+  }
+  ctx.shadowColor = color;
+  ctx.shadowBlur  = palette.isLight ? 0 : 8;
+  ctx.fillStyle = palette.fgBright;
+  ctx.fillText(label, lane.x, cy + 6);
+  ctx.shadowBlur = 0;
+
+  // accept hint chip below
+  ctx.font = "9px ui-monospace, Menlo, monospace";
+  ctx.fillStyle = color;
+  const hint = t === 0 ? 'A·Z' : t === 1 ? '0·9' : '#·@';
+  ctx.fillText(hint, lane.x, cy + 24);
+
+  // swap warning shimmer
+  if (state.swapWarn > 0.05) {
+    ctx.globalAlpha = 0.3 + 0.4 * Math.sin(state.t * 18) * state.swapWarn;
+    ctx.strokeStyle = palette.warn;
+    ctx.lineWidth = 1;
+    ctx.setLineDash([3, 3]);
+    ctx.strokeRect(x - 2, cy - 20, w + 4, h + 4);
+    ctx.setLineDash([]);
+    ctx.globalAlpha = 1;
+  }
+}
+
+function drawGlyph(g) {
+  const color = typeColor(g.type);
+  const sp = easeOutCubic(clamp(g.spawnPhase, 0, 1));
+  const sc = sp * (g.dragged !== null ? 1.20 : 1);
+  const isDragged = g.dragged !== null;
+
+  // trail
+  if (g.trail.length > 1) {
+    ctx.font = "bold 28px ui-monospace, Menlo, monospace";
+    ctx.textAlign = 'center';
+    ctx.textBaseline = 'middle';
+    for (let i = 0; i < g.trail.length - 1; i++) {
+      const t = g.trail[i];
+      const a = (i / g.trail.length) * 0.18;
+      ctx.globalAlpha = a;
+      ctx.fillStyle = color;
+      ctx.fillText(g.char, t.x, t.y);
+    }
+    ctx.globalAlpha = 1;
+  }
+
+  // glow halo
+  ctx.save();
+  if (!palette.isLight) {
+    ctx.shadowColor = color;
+    ctx.shadowBlur = isDragged ? 28 : 14;
+  }
+  ctx.font = `bold ${Math.round(30 * sc)}px ui-monospace, Menlo, monospace`;
+  ctx.textAlign = 'center';
+  ctx.textBaseline = 'middle';
+  ctx.fillStyle = color;
+
+  // a subtle wiggle while falling
+  const wiggleX = (isDragged ? 0 : Math.sin(g.wiggle) * 0.6);
+  ctx.fillText(g.char, g.x + wiggleX, g.y);
+
+  // bracket frame around glyph (TUI vibe)
+  const fs = 18 * sc;
+  ctx.shadowBlur = 0;
+  ctx.lineWidth = 1.2;
+  ctx.strokeStyle = color;
+  ctx.globalAlpha = isDragged ? 0.95 : 0.55;
+  // corners (TUI brackets)
+  const bx = g.x - fs;
+  const by = g.y - fs;
+  const bw = fs * 2;
+  const bh = fs * 2;
+  const corner = 6;
+  ctx.beginPath();
+  ctx.moveTo(bx, by + corner);            ctx.lineTo(bx, by);            ctx.lineTo(bx + corner, by);
+  ctx.moveTo(bx + bw - corner, by);       ctx.lineTo(bx + bw, by);       ctx.lineTo(bx + bw, by + corner);
+  ctx.moveTo(bx + bw, by + bh - corner);  ctx.lineTo(bx + bw, by + bh);  ctx.lineTo(bx + bw - corner, by + bh);
+  ctx.moveTo(bx + corner, by + bh);       ctx.lineTo(bx, by + bh);       ctx.lineTo(bx, by + bh - corner);
+  ctx.stroke();
+  ctx.globalAlpha = 1;
+  ctx.restore();
+}
+
+function drawParticles() {
+  for (const p of state.particles) {
+    const a = clamp(p.life / p.maxLife, 0, 1);
+    if (p.ch) {
+      ctx.font = "12px ui-monospace, Menlo, monospace";
+      ctx.textAlign = 'center';
+      ctx.textBaseline = 'middle';
+      ctx.fillStyle = p.color;
+      ctx.globalAlpha = a;
+      ctx.fillText(p.ch, p.x, p.y);
+    } else {
+      ctx.fillStyle = p.color;
+      ctx.globalAlpha = a;
+      ctx.fillRect(p.x - p.size * 0.5, p.y - p.size * 0.5, p.size, p.size);
+    }
+  }
+  ctx.globalAlpha = 1;
+}
+
+function drawRings() {
+  for (const r of state.rings) {
+    const t = 1 - (r.life / r.maxLife);
+    const size = r.max * easeOutCubic(t);
+    ctx.strokeStyle = r.color;
+    ctx.globalAlpha = (1 - t) * 0.85;
+    ctx.lineWidth = 2;
+    ctx.beginPath();
+    ctx.arc(r.x, r.y, size, 0, TAU);
+    ctx.stroke();
+  }
+  ctx.globalAlpha = 1;
+}
+
+function drawFlashes() {
+  let i = 0;
+  for (const f of state.flashOps) {
+    const t = 1 - (f.life / f.maxLife);
+    const a = (1 - t) * 0.95;
+    ctx.globalAlpha = a;
+    ctx.fillStyle = f.color;
+    if (f.big) {
+      ctx.font = `bold ${Math.round(34 + (1 - t) * 18)}px ui-monospace, Menlo, monospace`;
+      ctx.shadowColor = f.color;
+      ctx.shadowBlur = palette.isLight ? 0 : 24;
+    } else {
+      ctx.font = "bold 18px ui-monospace, Menlo, monospace";
+      ctx.shadowBlur = 0;
+    }
+    ctx.textAlign = 'center';
+    ctx.textBaseline = 'middle';
+    const y = f.big ? H * 0.42 : H * 0.36 + i * 22 - t * 14;
+    ctx.fillText(f.text, W / 2, y);
+    ctx.shadowBlur = 0;
+    i++;
+  }
+  ctx.globalAlpha = 1;
+}
+
+function drawSwapFlash() {
+  if (state.swapFlash <= 0.02 && state.cleanCompileFlash <= 0.02) return;
+  if (state.swapFlash > 0.02) {
+    ctx.fillStyle = palette.warn;
+    ctx.globalAlpha = state.swapFlash * 0.10;
+    ctx.fillRect(0, 0, W, H);
+  }
+  if (state.cleanCompileFlash > 0.02) {
+    ctx.fillStyle = palette.cLetter;
+    ctx.globalAlpha = state.cleanCompileFlash * 0.18;
+    ctx.fillRect(0, 0, W, H);
+  }
+  ctx.globalAlpha = 1;
+}
+
+function drawHints() {
+  if (state.mode !== 'playing') return;
+  if (state.hintTimer <= 0) return;
+  if (state.glyphs.length === 0) return;
+  const a = clamp(state.hintTimer / 3.5, 0, 1);
+  ctx.globalAlpha = a * 0.7;
+  ctx.fillStyle = palette.fgDim;
+  ctx.font = "11px ui-monospace, Menlo, monospace";
+  ctx.textAlign = 'center';
+  ctx.textBaseline = 'middle';
+  ctx.fillText('drag glyphs · tap sides to nudge', W / 2, LANE_BOT_Y - 30);
+  ctx.globalAlpha = 1;
+}
+
+function drawGlitchOverlay() {
+  if (state.glitch < 0.05) return;
+  // a few horizontal slashes of garbled text
+  ctx.font = "12px ui-monospace, Menlo, monospace";
+  ctx.textAlign = 'left';
+  ctx.textBaseline = 'top';
+  ctx.fillStyle = palette.danger;
+  ctx.globalAlpha = state.glitch * 0.35;
+  for (let i = 0; i < 4; i++) {
+    const y = rand(0, H);
+    let s = '';
+    for (let k = 0; k < 60; k++) s += choice("░▒▓█▌▐▀▄.:!?/\\");
+    ctx.fillText(s, rand(-20, 0), y);
+  }
+  ctx.globalAlpha = 1;
+}
+
+function render() {
+  ctx.save();
+
+  // shake
+  if (state.shake > 0.05) {
+    ctx.translate(rand(-state.shake, state.shake), rand(-state.shake, state.shake));
+  }
+
+  drawBackground();
+  drawLog();
+  drawLanes();
+
+  // glyphs (sorted by y so back ones render first)
+  const sorted = state.glyphs.slice().sort((a, b) => a.y - b.y);
+  for (const g of sorted) drawGlyph(g);
+
+  drawRings();
+  drawParticles();
+  drawHints();
+  drawFlashes();
+  drawSwapFlash();
+  drawGlitchOverlay();
+
+  // a subtle phosphor scan that sweeps occasionally
+  const sweepY = ((state.t * 90) % (H + 200)) - 100;
+  const sweepGrad = ctx.createLinearGradient(0, sweepY - 60, 0, sweepY + 60);
+  sweepGrad.addColorStop(0, 'rgba(255,255,255,0)');
+  sweepGrad.addColorStop(0.5, palette.isLight ? 'rgba(0,0,0,0.025)' : 'rgba(180,255,210,0.04)');
+  sweepGrad.addColorStop(1, 'rgba(255,255,255,0)');
+  ctx.fillStyle = sweepGrad;
+  ctx.fillRect(0, sweepY - 60, W, 120);
+
+  ctx.restore();
+}
+
+// ---------- HUD update (DOM) ----------
+function updateHud() {
+  if (state.mode !== 'playing') return;
+  $('hud-score').textContent = String(state.score).padStart(5, '0');
+  $('hud-combo').textContent = 'x' + (state.combo > 0 ? state.combo : 1);
+  // "flow" — playful BPM-like indicator that grows with combo and difficulty
+  const flow = Math.round(86 + state.difficulty * 4 + state.combo * 1.5);
+  $('hud-flow').textContent = flow;
+  const bar = $('noise-bar');
+  $('noise-fill').style.width = state.noise.toFixed(0) + '%';
+  if (state.noise > 70) bar.classList.add('warn'); else bar.classList.remove('warn');
+
+  // statline shows current schema in bottom-edge tiny text
+  const s = `lane1=${TYPE_LBLS[state.laneType[0]]}  ·  lane2=${TYPE_LBLS[state.laneType[1]]}  ·  lane3=${TYPE_LBLS[state.laneType[2]]}`;
+  $('statline').textContent = s;
+
+  // flicker on flash
+  if (state.cleanCompileFlash > 0.2 || state.swapFlash > 0.2 || state.glitch > 0.2) {
+    const f = $('flicker');
+    f.style.opacity = '1';
+    setTimeout(() => f.style.opacity = '0', 70);
+  }
+}
+
+// ---------- main loop ----------
+let last = performance.now();
+function loop(now) {
+  let dt = Math.min(0.05, (now - last) / 1000);
+  last = now;
+  try {
+    update(dt);
+    render();
+    updateHud();
+  } catch (e) {
+    console.error(e);
+  }
+  requestAnimationFrame(loop);
+}
+
+// ---------- bootstrap ----------
+function bootstrap() {
+  resize();
+  seedBgChars();
+
+  $('start-btn').addEventListener('click', () => { startGame(); });
+  $('restart-btn').addEventListener('click', () => { startGame(); });
+  $('mute-btn').addEventListener('click', () => {
+    Audio.setMute(!Audio.muted);
+    $('mute-btn').textContent = Audio.muted ? 'x' : '♪';
+  });
+  // touch up on the title to also start
+  $('title-screen').addEventListener('touchstart', (e) => {
+    if (e.target.id === 'start-btn') return;
+  }, { passive: true });
+
+  // also resize when address bar shows/hides on mobile
+  window.addEventListener('visibilitychange', () => {
+    if (document.visibilityState === 'visible') resize();
+  });
+
+  // ensure fonts settle
+  setTimeout(resize, 80);
+
+  requestAnimationFrame((t) => { last = t; loop(t); });
+}
+
+bootstrap();
+</script>
+</body>
+</html>

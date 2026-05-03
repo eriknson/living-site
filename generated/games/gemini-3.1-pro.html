@@ -1,0 +1,628 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+    <title>Living Wall</title>
+    <style>
+        :root {
+            --bg-color: #f4ecd8;
+            --text-color: #2b2b2b;
+            --grid-color: rgba(176, 168, 150, 0.4);
+            --shadow-fill: rgba(0, 0, 0, 0.12);
+            --shadow-edge: rgba(0, 0, 0, 0.25);
+            --ui-bg: rgba(244, 236, 216, 0.95);
+            --accent: #4caf50;
+            --leaf: #81c784;
+            --seed: #2e7d32;
+            --red: #e57373;
+        }
+        @media (prefers-color-scheme: dark) {
+            :root {
+                --bg-color: #1a1c1e;
+                --text-color: #f0f0f0;
+                --grid-color: rgba(255, 255, 255, 0.1);
+                --shadow-fill: rgba(0, 0, 0, 0.6);
+                --shadow-edge: rgba(0, 0, 0, 0.9);
+                --ui-bg: rgba(26, 28, 30, 0.95);
+                --accent: #69f0ae;
+                --leaf: #69f0ae;
+                --seed: #00e676;
+                --red: #ff5252;
+            }
+        }
+        body, html {
+            margin: 0; padding: 0;
+            width: 100dvw; height: 100dvh;
+            overflow: hidden;
+            background-color: var(--bg-color);
+            color: var(--text-color);
+            font-family: ui-monospace, 'SFMono-Regular', Menlo, monospace;
+            touch-action: none;
+            user-select: none;
+            -webkit-user-select: none;
+            overscroll-behavior: none;
+        }
+        canvas {
+            display: block;
+            width: 100%; height: 100%;
+        }
+        #ui-layer {
+            position: absolute;
+            top: 0; left: 0; width: 100%; height: 100%;
+            pointer-events: none;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            z-index: 20;
+        }
+        .screen {
+            display: none;
+            flex-direction: column;
+            align-items: center;
+            background: var(--ui-bg);
+            padding: 2.5rem 2rem;
+            border: 2px solid var(--text-color);
+            box-shadow: 8px 8px 0px var(--text-color);
+            text-align: center;
+            pointer-events: auto;
+            backdrop-filter: blur(8px);
+            -webkit-backdrop-filter: blur(8px);
+        }
+        .screen.active { display: flex; }
+        
+        h1 { margin: 0 0 1rem 0; font-size: 2.5rem; text-transform: uppercase; letter-spacing: 2px; line-height: 1; }
+        p { margin: 0 0 2rem 0; font-size: 1rem; opacity: 0.8; line-height: 1.5; }
+        
+        button {
+            background: var(--bg-color);
+            color: var(--text-color);
+            border: 2px solid var(--text-color);
+            box-shadow: 4px 4px 0 var(--text-color);
+            padding: 1rem 2rem;
+            font-family: inherit;
+            font-size: 1.2rem;
+            cursor: pointer;
+            text-transform: uppercase;
+            font-weight: 700;
+            transition: all 0.1s ease;
+            border-radius: 0;
+        }
+        button:active {
+            transform: translate(4px, 4px);
+            box-shadow: 0px 0px 0 var(--text-color);
+            background: var(--text-color);
+            color: var(--bg-color);
+        }
+        
+        #sunlight-bar-container {
+            position: absolute;
+            top: 0; left: 0; width: 100%; height: 6px;
+            background: rgba(0,0,0,0.1);
+            z-index: 10;
+            opacity: 0;
+            transition: opacity 0.3s;
+        }
+        #sunlight-bar {
+            width: 100%; height: 100%;
+            background: var(--accent);
+            transition: width 0.1s linear, background-color 0.2s;
+        }
+        
+        #score-display {
+            position: absolute;
+            top: env(safe-area-inset-top, 20px);
+            left: env(safe-area-inset-left, 20px);
+            font-size: 2rem;
+            font-weight: 700;
+            letter-spacing: -1px;
+            z-index: 10;
+            opacity: 0;
+            transition: opacity 0.3s;
+        }
+        
+        body.playing #sunlight-bar-container, 
+        body.playing #score-display {
+            opacity: 1;
+        }
+    </style>
+</head>
+<body>
+    <div id="sunlight-bar-container"><div id="sunlight-bar"></div></div>
+    <div id="score-display">0 M</div>
+    
+    <canvas id="game"></canvas>
+    
+    <div id="ui-layer">
+        <div id="start-screen" class="screen active">
+            <h1>LIVING<br>WALL</h1>
+            <p>Flick swipe to plant.<br>Avoid rolling shade slabs.<br>Don't run out of light.</p>
+            <button id="start-btn">Grow</button>
+        </div>
+        <div id="game-over-screen" class="screen">
+            <h1>WITHERED</h1>
+            <p>Height: <span id="final-score">0</span> M</p>
+            <button id="restart-btn">Try Again</button>
+        </div>
+    </div>
+
+    <script>
+        const canvas = document.getElementById('game');
+        const ctx = canvas.getContext('2d');
+        
+        let width, height;
+        let dpr;
+        let theme = {};
+
+        function updateTheme() {
+            const isDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
+            const root = getComputedStyle(document.documentElement);
+            theme = {
+                bg: root.getPropertyValue('--bg-color').trim(),
+                text: root.getPropertyValue('--text-color').trim(),
+                grid: root.getPropertyValue('--grid-color').trim(),
+                shadowFill: root.getPropertyValue('--shadow-fill').trim(),
+                shadowEdge: root.getPropertyValue('--shadow-edge').trim(),
+                accent: root.getPropertyValue('--accent').trim(),
+                leaf: root.getPropertyValue('--leaf').trim(),
+                seed: root.getPropertyValue('--seed').trim(),
+                red: root.getPropertyValue('--red').trim()
+            };
+        }
+        window.matchMedia('(prefers-color-scheme: dark)').addEventListener('change', updateTheme);
+
+        let launcher = { x: 0, y: 0 };
+        function resize() {
+            width = window.innerWidth;
+            height = window.innerHeight;
+            dpr = window.devicePixelRatio || 1;
+            canvas.width = width * dpr;
+            canvas.height = height * dpr;
+            ctx.scale(dpr, dpr);
+            launcher.x = width / 2;
+            launcher.y = height - 50;
+            updateTheme();
+        }
+        window.addEventListener('resize', resize);
+        resize();
+
+        // Game State
+        let state = 'START';
+        let lastTime = performance.now();
+        let G = 0.8;
+        let timeAlive = 0;
+        let totalScroll = 0;
+        
+        let seeds = [];
+        let sprouts = [];
+        let shadows = [];
+        let particles = [];
+        let floatingTexts = [];
+        
+        let score = 0;
+        let sunlight = 100;
+        
+        let shakeTime = 0;
+        let shadowTimer = 0;
+        let lastLaunchTime = 0;
+
+        // Input
+        let input = { active: false, sx: 0, sy: 0, cx: 0, cy: 0 };
+        let pointerId = null;
+
+        window.addEventListener('pointerdown', e => {
+            if (state !== 'PLAY' || pointerId !== null) return;
+            if (e.target.tagName === 'BUTTON') return;
+            pointerId = e.pointerId;
+            input.active = true;
+            input.sx = e.clientX;
+            input.sy = e.clientY;
+            input.cx = e.clientX;
+            input.cy = e.clientY;
+        });
+        window.addEventListener('pointermove', e => {
+            if (!input.active || e.pointerId !== pointerId) return;
+            input.cx = e.clientX;
+            input.cy = e.clientY;
+        });
+        window.addEventListener('pointerup', e => {
+            if (!input.active || e.pointerId !== pointerId) return;
+            pointerId = null;
+            input.active = false;
+            
+            if (performance.now() - lastLaunchTime < 250) return;
+            
+            let dx = input.cx - input.sx;
+            let dy = input.cy - input.sy;
+            
+            let len = Math.hypot(dx, dy);
+            if (len > 200) {
+                dx = (dx / len) * 200;
+                dy = (dy / len) * 200;
+            }
+            
+            if (dy < -5) {
+                lastLaunchTime = performance.now();
+                seeds.push({
+                    x: launcher.x,
+                    y: launcher.y - 10,
+                    vx: dx * 0.16,
+                    vy: dy * 0.16,
+                    status: 'flying'
+                });
+            }
+        });
+        window.addEventListener('pointercancel', e => {
+            if (e.pointerId === pointerId) {
+                pointerId = null;
+                input.active = false;
+            }
+        });
+
+        // Audio
+        let audioCtx;
+        function initAudio() {
+            if (!audioCtx) audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+        }
+
+        const scales = [329.63, 392.00, 440.00, 523.25, 587.33, 659.25];
+        function playPlant() {
+            if (!audioCtx) return;
+            const t = audioCtx.currentTime;
+            const osc = audioCtx.createOscillator();
+            const filter = audioCtx.createBiquadFilter();
+            const gain = audioCtx.createGain();
+            
+            osc.type = 'triangle';
+            osc.frequency.setValueAtTime(scales[score % scales.length], t);
+            
+            filter.type = 'lowpass';
+            filter.frequency.setValueAtTime(2000, t);
+            filter.frequency.exponentialRampToValueAtTime(200, t + 0.3);
+            
+            gain.gain.setValueAtTime(0.4, t);
+            gain.gain.exponentialRampToValueAtTime(0.01, t + 0.3);
+            
+            osc.connect(filter);
+            filter.connect(gain);
+            gain.connect(audioCtx.destination);
+            
+            osc.start(t);
+            osc.stop(t + 0.3);
+        }
+
+        function playBounce() {
+            if (!audioCtx) return;
+            const t = audioCtx.currentTime;
+            const osc = audioCtx.createOscillator();
+            const gain = audioCtx.createGain();
+            
+            osc.type = 'square';
+            osc.frequency.setValueAtTime(100, t);
+            osc.frequency.exponentialRampToValueAtTime(40, t + 0.2);
+            
+            gain.gain.setValueAtTime(0.3, t);
+            gain.gain.exponentialRampToValueAtTime(0.01, t + 0.2);
+            
+            osc.connect(gain);
+            gain.connect(audioCtx.destination);
+            
+            osc.start(t);
+            osc.stop(t + 0.2);
+        }
+
+        // Helpers
+        function createSprout(x, y) {
+            sprouts.push({
+                x: x, y: y,
+                scale: 0, maxScale: 0.6 + Math.random() * 0.4,
+                rot: (Math.random() - 0.5) * Math.PI
+            });
+        }
+        function createParticles(x, y, color) {
+            for(let i=0; i<10; i++) {
+                particles.push({
+                    x: x, y: y,
+                    vx: (Math.random() - 0.5) * 8,
+                    vy: (Math.random() - 0.5) * 8,
+                    life: 1.0, color: color
+                });
+            }
+        }
+        function createFloatingText(txt, x, y, color) {
+            floatingTexts.push({ text: txt, x: x, y: y, life: 1.0, color: color });
+        }
+
+        // Screens
+        const UI = {
+            start: document.getElementById('start-screen'),
+            over: document.getElementById('game-over-screen'),
+            score: document.getElementById('score-display'),
+            sunlight: document.getElementById('sunlight-bar')
+        };
+
+        function setState(newState) {
+            state = newState;
+            UI.start.classList.remove('active');
+            UI.over.classList.remove('active');
+            
+            if (state === 'START') {
+                UI.start.classList.add('active');
+                document.body.classList.remove('playing');
+            } else if (state === 'PLAY') {
+                document.body.classList.add('playing');
+                startGame();
+            } else if (state === 'OVER') {
+                UI.over.classList.add('active');
+                document.body.classList.remove('playing');
+                document.getElementById('final-score').innerText = score;
+            }
+        }
+
+        function startGame() {
+            seeds = []; sprouts = []; shadows = [];
+            particles = []; floatingTexts = [];
+            score = 0; sunlight = 100;
+            timeAlive = 0; totalScroll = 0;
+            shadowTimer = 2000;
+            input.active = false;
+            pointerId = null;
+            UI.score.innerText = '0 M';
+            UI.sunlight.style.width = '100%';
+        }
+
+        function gameOver() {
+            setState('OVER');
+            playBounce();
+            if (navigator.vibrate) navigator.vibrate([50, 50, 50]);
+        }
+
+        document.getElementById('start-btn').addEventListener('click', () => {
+            initAudio();
+            if (audioCtx.state === 'suspended') audioCtx.resume();
+            setState('PLAY');
+        });
+        document.getElementById('restart-btn').addEventListener('click', () => {
+            setState('PLAY');
+        });
+
+        // Loop
+        function loop(time) {
+            requestAnimationFrame(loop);
+            let dt = time - lastTime;
+            if (dt > 100) dt = 16;
+            lastTime = time;
+
+            ctx.save();
+            ctx.fillStyle = theme.bg;
+            ctx.fillRect(0, 0, width, height);
+
+            if (shakeTime > 0) {
+                let mag = shakeTime * 0.5;
+                ctx.translate((Math.random() - 0.5) * mag, (Math.random() - 0.5) * mag);
+                shakeTime--;
+            }
+
+            let wallSpeed = 0.5;
+            let shadowSpeed = 0.5;
+
+            if (state === 'PLAY') {
+                timeAlive += dt;
+                wallSpeed = 1.5 + (timeAlive / 1000) * 0.05;
+                shadowSpeed = wallSpeed * 1.5;
+                
+                sunlight -= (8 + (timeAlive / 1000) * 0.15) * (dt / 1000);
+                if (sunlight > 100) sunlight = 100;
+                if (sunlight <= 0) gameOver();
+                
+                UI.sunlight.style.width = Math.max(0, sunlight) + '%';
+                UI.sunlight.style.backgroundColor = sunlight < 25 ? theme.red : theme.accent;
+
+                shadowTimer -= dt;
+                if (shadowTimer <= 0) {
+                    let h = 40 + Math.random() * 60 + (timeAlive/1000) * 1.5;
+                    shadows.push({ y: -h, h: h });
+                    let interval = 2000 - (timeAlive/1000) * 25;
+                    if (interval < 500) interval = 500;
+                    shadowTimer = interval + Math.random() * 500;
+                }
+            }
+            
+            totalScroll += wallSpeed;
+
+            // Grid
+            ctx.strokeStyle = theme.grid;
+            ctx.lineWidth = 1;
+            ctx.beginPath();
+            for(let x = 0; x <= width; x += 40) { ctx.moveTo(x, 0); ctx.lineTo(x, height); }
+            let yOffset = totalScroll % 40;
+            for(let y = yOffset - 40; y <= height; y += 40) { ctx.moveTo(0, y); ctx.lineTo(width, y); }
+            ctx.stroke();
+            
+            ctx.fillStyle = theme.grid;
+            for(let x = 0; x <= width; x += 40) {
+                for(let y = yOffset - 40; y <= height; y += 40) {
+                    ctx.fillRect(x - 2, y - 2, 4, 4);
+                }
+            }
+
+            // Sprouts (behind shadows)
+            for (let i = sprouts.length - 1; i >= 0; i--) {
+                let s = sprouts[i];
+                s.y += wallSpeed;
+                if (s.scale < s.maxScale) s.scale += 0.05;
+                
+                ctx.save();
+                ctx.translate(s.x, s.y);
+                ctx.scale(s.scale, s.scale);
+                ctx.rotate(s.rot);
+                
+                ctx.fillStyle = theme.leaf;
+                ctx.beginPath();
+                ctx.moveTo(0, 0);
+                ctx.bezierCurveTo(20, -10, 20, -30, 0, -40);
+                ctx.bezierCurveTo(-20, -30, -20, -10, 0, 0);
+                ctx.fill();
+                ctx.strokeStyle = theme.seed;
+                ctx.lineWidth = 2;
+                ctx.stroke();
+                ctx.restore();
+                
+                if (s.y > height + 50) sprouts.splice(i, 1);
+            }
+
+            // Shadows
+            for (let i = shadows.length - 1; i >= 0; i--) {
+                let sh = shadows[i];
+                if (state !== 'OVER') sh.y += shadowSpeed;
+                
+                ctx.fillStyle = theme.shadowFill;
+                ctx.fillRect(0, Math.floor(sh.y), width, Math.floor(sh.h));
+                ctx.fillStyle = theme.shadowEdge;
+                ctx.fillRect(0, Math.floor(sh.y + sh.h - 4), width, 4);
+                
+                if (sh.y > height) shadows.splice(i, 1);
+            }
+
+            // Seeds
+            for (let i = seeds.length - 1; i >= 0; i--) {
+                let s = seeds[i];
+                let zScale = 1.0;
+                
+                if (s.status === 'flying') {
+                    s.x += s.vx;
+                    s.y += s.vy;
+                    s.vy += G;
+                    if (s.x < 5) { s.x = 5; s.vx *= -0.8; }
+                    if (s.x > width - 5) { s.x = width - 5; s.vx *= -0.8; }
+                    
+                    zScale = 1.0 + (s.vy < 0 ? (s.vy / -30) * 0.5 : 0);
+                    
+                    if (s.vy >= 0) {
+                        let hitShadow = false;
+                        for (let sh of shadows) {
+                            if (s.y > sh.y && s.y < sh.y + sh.h) { hitShadow = true; break; }
+                        }
+                        if (hitShadow) {
+                            s.status = 'falling';
+                            s.vx = (Math.random() - 0.5) * 8;
+                            s.vy = 2;
+                            sunlight -= 35;
+                            playBounce();
+                            shakeTime = 12;
+                            if (navigator.vibrate) navigator.vibrate(100);
+                            createParticles(s.x, s.y, theme.text);
+                            createFloatingText('MISS', s.x, s.y - 20, theme.red);
+                        } else {
+                            score++;
+                            sunlight += 20;
+                            UI.score.innerText = score + ' M';
+                            playPlant();
+                            if (navigator.vibrate) navigator.vibrate(40);
+                            createSprout(s.x, s.y);
+                            createParticles(s.x, s.y, theme.accent);
+                            createFloatingText('+20', s.x, s.y - 20, theme.accent);
+                            seeds.splice(i, 1);
+                            continue;
+                        }
+                    }
+                } else if (s.status === 'falling') {
+                    s.x += s.vx;
+                    s.y += s.vy;
+                    s.vy += G;
+                }
+                
+                ctx.fillStyle = theme.seed;
+                ctx.beginPath();
+                ctx.arc(s.x, s.y, 6 * zScale, 0, Math.PI*2);
+                ctx.fill();
+                
+                if (s.y > height + 50) seeds.splice(i, 1);
+            }
+
+            // Particles
+            for (let i = particles.length - 1; i >= 0; i--) {
+                let p = particles[i];
+                p.x += p.vx;
+                p.y += p.vy;
+                p.life -= 0.03;
+                if (p.life <= 0) { particles.splice(i, 1); continue; }
+                ctx.globalAlpha = p.life;
+                ctx.fillStyle = p.color;
+                ctx.beginPath();
+                ctx.arc(p.x, p.y, 3, 0, Math.PI*2);
+                ctx.fill();
+            }
+            ctx.globalAlpha = 1.0;
+
+            // Aiming Arc
+            if (input.active && state === 'PLAY') {
+                let dx = input.cx - input.sx;
+                let dy = input.cy - input.sy;
+                let len = Math.hypot(dx, dy);
+                if (len > 200) { dx = (dx / len) * 200; dy = (dy / len) * 200; }
+                
+                if (dy < -5) {
+                    ctx.beginPath();
+                    ctx.setLineDash([6, 8]);
+                    ctx.strokeStyle = theme.text;
+                    ctx.lineWidth = 2;
+                    let simX = launcher.x;
+                    let simY = launcher.y - 10;
+                    let simVy = dy * 0.16;
+                    let simVx = dx * 0.16;
+                    ctx.moveTo(simX, simY);
+                    for (let i = 0; i < 40; i++) {
+                        simX += simVx;
+                        simY += simVy;
+                        simVy += G;
+                        if (simX < 0) { simX = 0; simVx *= -0.8; }
+                        if (simX > width) { simX = width; simVx *= -0.8; }
+                        ctx.lineTo(simX, simY);
+                        if (simVy >= 0) break;
+                    }
+                    ctx.stroke();
+                    ctx.setLineDash([]);
+                }
+            }
+
+            // Launcher Base
+            if (state === 'PLAY') {
+                ctx.fillStyle = theme.shadowFill;
+                ctx.beginPath();
+                ctx.moveTo(launcher.x - 30, height);
+                ctx.lineTo(launcher.x - 20, launcher.y - 10);
+                ctx.lineTo(launcher.x + 20, launcher.y - 10);
+                ctx.lineTo(launcher.x + 30, height);
+                ctx.fill();
+                
+                if (performance.now() - lastLaunchTime >= 250) {
+                    ctx.fillStyle = theme.seed;
+                    ctx.beginPath();
+                    ctx.arc(launcher.x, launcher.y - 10, 9, 0, Math.PI*2);
+                    ctx.fill();
+                }
+            }
+
+            // Floating Texts
+            for (let i = floatingTexts.length - 1; i >= 0; i--) {
+                let ft = floatingTexts[i];
+                ft.y -= 1;
+                ft.life -= 0.02;
+                if (ft.life <= 0) { floatingTexts.splice(i, 1); continue; }
+                ctx.globalAlpha = ft.life;
+                ctx.fillStyle = ft.color;
+                ctx.font = 'bold 16px ui-monospace, Menlo, monospace';
+                ctx.textAlign = 'center';
+                ctx.fillText(ft.text, ft.x, ft.y);
+            }
+            ctx.globalAlpha = 1.0;
+
+            ctx.restore();
+        }
+        
+        requestAnimationFrame(loop);
+    </script>
+</body>
+</html>

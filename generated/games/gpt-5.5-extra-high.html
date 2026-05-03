@@ -1,0 +1,382 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="color-scheme" content="light dark">
+<title>Dewline Bonsai</title>
+<style>
+:root{
+  --bg:#edf2ee;--ink:#18211d;--muted:#5d6e65;--panel:rgba(246,249,245,.78);
+  --line:rgba(33,50,42,.16);--moss:#4f8c5f;--dew:#6dbdc1;--soil:#c8b99c;
+  --warn:#c96d45;--gold:#d7a943;--shadow:rgba(42,58,46,.22)
+}
+@media (prefers-color-scheme: dark){
+  :root{
+    --bg:#0f1715;--ink:#edf4e9;--muted:#9daea4;--panel:rgba(17,29,26,.78);
+    --line:rgba(232,244,238,.16);--moss:#85c48f;--dew:#8fd9d5;--soil:#574d3b;
+    --warn:#e08a61;--gold:#e3bd67;--shadow:rgba(0,0,0,.38)
+  }
+}
+*{box-sizing:border-box}
+html,body{margin:0;width:100dvw;height:100dvh;overflow:hidden;background:var(--bg);color:var(--ink);font-family:Inter,system-ui,-apple-system,Segoe UI,sans-serif}
+body{position:fixed;inset:0}
+#game{position:relative;width:100dvw;height:100dvh;user-select:none;touch-action:none;background:var(--bg)}
+#stage{position:absolute;inset:0;width:100%;height:100%;display:block;touch-action:none}
+.hud{position:absolute;inset:env(safe-area-inset-top) 0 auto 0;padding:14px 16px 0;pointer-events:none}
+.top{display:grid;grid-template-columns:1fr auto 1fr;gap:10px;align-items:start}
+.pill,.card{border:1px solid var(--line);background:var(--panel);box-shadow:0 16px 42px var(--shadow);backdrop-filter:blur(14px)}
+.pill{border-radius:999px;padding:9px 12px;font:700 12px/1 ui-monospace,SFMono-Regular,Menlo,monospace;letter-spacing:.04em;text-transform:uppercase}
+.pill:nth-child(3){text-align:right}
+.meter{min-width:112px;text-align:center}
+.bar{height:6px;margin-top:7px;border-radius:999px;background:rgba(90,112,100,.22);overflow:hidden}
+.bar i{display:block;height:100%;width:100%;border-radius:inherit;background:var(--dew);transform-origin:left center}
+.hint{position:absolute;left:16px;right:16px;bottom:calc(env(safe-area-inset-bottom) + 16px);text-align:center;color:var(--muted);font:700 12px/1.4 ui-monospace,SFMono-Regular,Menlo,monospace;letter-spacing:.04em;text-transform:uppercase;pointer-events:none;text-shadow:0 1px 16px var(--bg)}
+.overlay{position:absolute;inset:0;display:grid;place-items:center;padding:20px;transition:opacity .35s ease,transform .35s ease;pointer-events:none}
+.overlay.hidden{opacity:0;transform:translateY(10px);pointer-events:none}
+.card{width:min(430px,calc(100dvw - 34px));border-radius:28px;padding:24px;text-align:left;pointer-events:auto}
+h1{margin:0 0 8px;font-size:clamp(36px,12vw,64px);line-height:.88;letter-spacing:-.07em}
+p{margin:0;color:var(--muted);font-size:15px;line-height:1.45}
+.kicker{font:800 12px/1 ui-monospace,SFMono-Regular,Menlo,monospace;letter-spacing:.12em;text-transform:uppercase;color:var(--moss);margin-bottom:14px}
+.rule{display:grid;grid-template-columns:34px 1fr;gap:10px;margin:18px 0;color:var(--muted);font-size:14px}
+.rule b{color:var(--ink)}
+.dot{width:30px;height:30px;border-radius:50%;display:grid;place-items:center;background:rgba(92,143,96,.16);font:800 14px ui-monospace,SFMono-Regular,Menlo,monospace;color:var(--moss)}
+button{appearance:none;border:0;min-height:48px;border-radius:999px;padding:0 18px;background:var(--ink);color:var(--bg);font:800 13px ui-monospace,SFMono-Regular,Menlo,monospace;letter-spacing:.06em;text-transform:uppercase;cursor:pointer}
+button:active{transform:translateY(1px)}
+.row{display:flex;gap:10px;align-items:center;margin-top:18px;flex-wrap:wrap}
+.ghost{background:transparent;color:var(--muted);border:1px solid var(--line)}
+.toast{position:absolute;left:50%;top:22%;translate:-50% 0;padding:10px 14px;border-radius:999px;background:var(--panel);border:1px solid var(--line);box-shadow:0 14px 36px var(--shadow);font:800 12px ui-monospace,SFMono-Regular,Menlo,monospace;letter-spacing:.08em;text-transform:uppercase;color:var(--warn);opacity:0;transform:translateY(-8px);transition:.25s ease;pointer-events:none}
+.toast.show{opacity:1;transform:translateY(0)}
+</style>
+</head>
+<body>
+<main id="game" aria-label="Dewline Bonsai game">
+  <canvas id="stage"></canvas>
+  <section class="hud" aria-live="polite">
+    <div class="top">
+      <div class="pill">score <span id="score">0000</span></div>
+      <div class="pill meter">dew <div class="bar"><i id="dewbar"></i></div></div>
+      <div class="pill">dawn <span id="time">55</span>s</div>
+    </div>
+  </section>
+  <div class="hint" id="hint">drag from the glowing root through every dew bead</div>
+  <div class="toast" id="toast">crosswind</div>
+  <section class="overlay" id="menu">
+    <div class="card">
+      <div class="kicker">spring fog // bonsai terminal</div>
+      <h1>Dewline Bonsai</h1>
+      <p>Trace one unbroken dew path through the miniature tree before coastal wind dries it out.</p>
+      <div class="rule"><span class="dot">1</span><span><b>Drag</b> from the glowing root and sweep through every bead.</span></div>
+      <div class="rule"><span class="dot">2</span><span><b>Release only after all nodes bloom.</b> Crosswinds erase unfinished thread.</span></div>
+      <div class="row"><button id="play">Begin Trace</button><button class="ghost" id="mute">Sound On</button></div>
+    </div>
+  </section>
+  <section class="overlay hidden" id="over">
+    <div class="card">
+      <div class="kicker" id="resultKicker">thread evaporated</div>
+      <h1 id="resultTitle">Garden Dries</h1>
+      <p id="resultText">The fog lifted before the bonsai sealed its dew rings.</p>
+      <div class="rule"><span class="dot">※</span><span id="finalStats">0 blooms // score 0</span></div>
+      <div class="row"><button id="again">Play Again</button><button class="ghost" id="back">Title</button></div>
+    </div>
+  </section>
+</main>
+<script>
+(() => {
+  "use strict";
+  const canvas = document.getElementById("stage");
+  const ctx = canvas.getContext("2d", { alpha: false });
+  const $ = id => document.getElementById(id);
+  const scoreEl = $("score"), dewEl = $("dewbar"), timeEl = $("time"), hintEl = $("hint"), toastEl = $("toast");
+  const menu = $("menu"), over = $("over"), playBtn = $("play"), againBtn = $("again"), backBtn = $("back"), muteBtn = $("mute");
+  let W = 0, H = 0, DPR = 1, last = 0, state = "title", muted = false, audio = null;
+  let score = 0, wave = 1, blooms = 0, combo = 1, dawn = 55, dew = 7, dewMax = 7, shake = 0;
+  let nodes = [], links = [], line = [], particles = [], ripples = [], fog = [], gusts = [];
+  let drawing = false, brush = {x:0,y:0}, keyBrush = {x:0,y:0}, keys = {}, current = null, toastT = 0;
+  const mq = matchMedia("(prefers-color-scheme: dark)");
+  let pal = {};
+
+  function readTheme(){
+    const s = getComputedStyle(document.documentElement);
+    pal = {
+      bg:s.getPropertyValue("--bg").trim(), ink:s.getPropertyValue("--ink").trim(),
+      muted:s.getPropertyValue("--muted").trim(), moss:s.getPropertyValue("--moss").trim(),
+      dew:s.getPropertyValue("--dew").trim(), soil:s.getPropertyValue("--soil").trim(),
+      warn:s.getPropertyValue("--warn").trim(), gold:s.getPropertyValue("--gold").trim(),
+      line:s.getPropertyValue("--line").trim(), dark:mq.matches
+    };
+  }
+  function resize(){
+    DPR = Math.min(2, devicePixelRatio || 1);
+    W = innerWidth; H = innerHeight;
+    canvas.width = Math.floor(W * DPR); canvas.height = Math.floor(H * DPR);
+    canvas.style.width = W + "px"; canvas.style.height = H + "px";
+    ctx.setTransform(DPR,0,0,DPR,0,0);
+    makeFog();
+    if(state === "playing") fitNodes();
+  }
+  function makeFog(){
+    fog = Array.from({length:18}, (_,i)=>({x:Math.random()*W,y:Math.random()*H,r:70+Math.random()*150,a:.035+Math.random()*.05,s:.15+Math.random()*.35,p:i}));
+  }
+  function rr(x,y,w,h,r){
+    ctx.beginPath();
+    ctx.moveTo(x+r,y); ctx.arcTo(x+w,y,x+w,y+h,r); ctx.arcTo(x+w,y+h,x,y+h,r);
+    ctx.arcTo(x,y+h,x,y,r); ctx.arcTo(x,y,x+w,y,r); ctx.closePath();
+  }
+  function rnd(a,b){return a + Math.random() * (b-a)}
+  function dist(a,b){return Math.hypot(a.x-b.x,a.y-b.y)}
+  function clamp(v,a,b){return Math.max(a, Math.min(b, v))}
+  function fmt(n){return String(Math.max(0,Math.floor(n))).padStart(4,"0")}
+  function pos(e){const r=canvas.getBoundingClientRect();return {x:e.clientX-r.left,y:e.clientY-r.top}}
+  function ensureAudio(){
+    if(muted || audio) return;
+    const C = window.AudioContext || window.webkitAudioContext;
+    if(C) audio = new C();
+  }
+  function sound(kind){
+    if(muted || !audio) return;
+    const t = audio.currentTime, osc = audio.createOscillator(), gain = audio.createGain();
+    const f = kind==="hit" ? 420 + combo*35 : kind==="done" ? 240 : kind==="bad" ? 110 : 720;
+    osc.type = kind==="bad" ? "sawtooth" : "sine";
+    osc.frequency.setValueAtTime(f, t);
+    osc.frequency.exponentialRampToValueAtTime(kind==="bad"?70:f*1.6, t+.18);
+    gain.gain.setValueAtTime(.0001, t);
+    gain.gain.exponentialRampToValueAtTime(kind==="bad"?.09:.055, t+.015);
+    gain.gain.exponentialRampToValueAtTime(.0001, t+.22);
+    osc.connect(gain).connect(audio.destination); osc.start(t); osc.stop(t+.24);
+  }
+  function buzz(ms){ navigator.vibrate?.(ms); }
+  function startGame(){
+    ensureAudio();
+    state = "playing"; score = 0; wave = 1; blooms = 0; combo = 1; dawn = 55; shake = 0;
+    particles = []; ripples = []; gusts = []; menu.classList.add("hidden"); over.classList.add("hidden");
+    newWave(true); updateHud(); hint("drag from the glowing root through every dew bead");
+  }
+  function endGame(won){
+    state = "over"; drawing = false; line = [];
+    $("resultKicker").textContent = won ? "dawn sealed" : "thread evaporated";
+    $("resultTitle").textContent = won ? "Microforest Awake" : "Garden Dries";
+    $("resultText").textContent = won ? "The bonsai kept its dew rings until sunrise." : "A crosswind found the unfinished path.";
+    $("finalStats").textContent = blooms + " blooms // wave " + wave + " // score " + score;
+    over.classList.remove("hidden"); sound(won ? "done" : "bad"); buzz(won ? 35 : [20,40,20]);
+  }
+  function newWave(first){
+    drawing = false; line = []; links = [];
+    dewMax = Math.max(3.2, 7.4 - wave * .28); dew = dewMax;
+    const pad = Math.max(28, Math.min(W,H)*.08), top = 118, bottom = Math.max(80, H*.13);
+    const count = Math.min(9, 4 + Math.floor(wave * .55));
+    nodes = [];
+    const root = {x:rnd(pad,W-pad), y:rnd(H*.56,H-bottom), r:16, hit:true, root:true};
+    nodes.push(root); current = root;
+    let tries = 0;
+    while(nodes.length < count && tries++ < 900){
+      const n = {x:rnd(pad,W-pad), y:rnd(top,H-bottom), r:rnd(13,17), hit:false, root:false};
+      if(nodes.every(o => dist(n,o) > Math.min(115, Math.max(58, W*.16)))) nodes.push(n);
+    }
+    while(nodes.length < count) nodes.push({x:rnd(pad,W-pad), y:rnd(top,H-bottom), r:15, hit:false, root:false});
+    keyBrush = {x:root.x,y:root.y}; brush = {...keyBrush};
+    if(!first) { hint("new moss ring: wind is faster"); sound("done"); }
+  }
+  function fitNodes(){
+    nodes.forEach(n => { n.x = clamp(n.x, 24, W-24); n.y = clamp(n.y, 105, H-70); });
+  }
+  function hint(text){ hintEl.textContent = text; }
+  function toast(text){
+    toastEl.textContent = text; toastEl.classList.add("show"); toastT = 1.05;
+  }
+  function updateHud(){
+    scoreEl.textContent = fmt(score); timeEl.textContent = Math.ceil(dawn);
+    dewEl.style.transform = "scaleX(" + clamp(dew/dewMax,0,1) + ")";
+  }
+  function spawnBloom(n){
+    ripples.push({x:n.x,y:n.y,r:4,life:.55,max:.55});
+    const colors = [pal.moss,pal.dew,pal.gold,"rgba(255,255,255,.85)"];
+    for(let i=0;i<24;i++){
+      const a = Math.random()*Math.PI*2, sp = rnd(45,160);
+      particles.push({x:n.x,y:n.y,vx:Math.cos(a)*sp,vy:Math.sin(a)*sp-rnd(8,35),r:rnd(2,5),life:rnd(.45,.9),max:.9,c:colors[i%colors.length]});
+    }
+  }
+  function completeWave(){
+    score += 120 + wave*25 + combo*18; wave++; combo++;
+    spawnBloom(current); buzz(18); newWave(false);
+  }
+  function hitNode(n){
+    n.hit = true; n.root = false; links.push({a:current,b:n,life:1}); current = n; blooms++;
+    combo = Math.min(12, combo + .35); score += Math.floor(35 * combo + wave * 8);
+    dew = Math.min(dewMax, dew + .45); spawnBloom(n); sound("hit"); buzz(8);
+    hint(nodes.every(o=>o.hit) ? "release: ring sealed" : "keep dragging: " + nodes.filter(o=>!o.hit).length + " beads left");
+    if(nodes.every(o=>o.hit)) completeWave();
+  }
+  function startDraw(p){
+    if(state !== "playing") return;
+    if(dist(p,current) > current.r + 42){ hint("start on the glowing root"); shake = .12; return; }
+    drawing = true; brush = p; line = [{x:current.x,y:current.y}, p]; hint("sweep through every dew bead");
+  }
+  function stopDraw(){
+    if(!drawing) return;
+    drawing = false;
+    if(nodes.some(n=>!n.hit)){
+      dew = Math.max(0, dew - .65); combo = 1; line = [];
+      hint("unfinished thread dried: start again at the glow"); sound("bad"); buzz(20); shake = .18;
+    } else line = [];
+  }
+  function moveBrush(p, dt){
+    brush = p;
+    if(!drawing) return;
+    const lastPt = line[line.length-1];
+    if(!lastPt || Math.hypot(p.x-lastPt.x,p.y-lastPt.y) > 5) line.push({x:p.x,y:p.y});
+    if(line.length > 180) line.shift();
+    for(const n of nodes) if(!n.hit && dist(p,n) < n.r + 18) hitNode(n);
+  }
+  function spawnGust(){
+    const ang = rnd(-.55,.55), y = rnd(120,H-90);
+    gusts.push({x:-80,y,ang,w:rnd(46,76),v:rnd(320,460)+wave*12,life:1.1,max:1.1});
+    toast("crosswind"); sound("gust");
+  }
+  function update(dt){
+    if(state === "playing"){
+      dawn -= dt; dew -= dt * (1 + wave*.045 + (gusts.length ? .22 : 0));
+      if(dawn <= 0){ endGame(true); return; }
+      if(dew <= 0){ endGame(false); return; }
+      if(Math.random() < dt * (.15 + wave*.045)) spawnGust();
+      if(drawing && gusts.length){
+        const cut = Math.ceil(dt * (10 + wave*1.4));
+        if(line.length > 2) line.splice(1, cut);
+      }
+      const sp = 240, kx = (keys.ArrowRight||keys.d?1:0) - (keys.ArrowLeft||keys.a?1:0), ky = (keys.ArrowDown||keys.s?1:0) - (keys.ArrowUp||keys.w?1:0);
+      if(kx || ky){
+        keyBrush.x = clamp(keyBrush.x + kx*sp*dt, 8, W-8); keyBrush.y = clamp(keyBrush.y + ky*sp*dt, 90, H-20);
+        moveBrush(keyBrush, dt);
+      }
+      updateHud();
+    }
+    gusts = gusts.filter(g => (g.x += g.v*dt, g.life -= dt, g.life > 0));
+    particles = particles.filter(p => (p.x+=p.vx*dt,p.y+=p.vy*dt,p.vy+=90*dt,p.life-=dt,p.life>0));
+    ripples = ripples.filter(r => (r.r += 90*dt, r.life -= dt, r.life > 0));
+    if(shake>0) shake = Math.max(0, shake-dt);
+    if(toastT>0 && (toastT-=dt)<=0) toastEl.classList.remove("show");
+  }
+  function drawBackground(t){
+    ctx.fillStyle = pal.bg; ctx.fillRect(0,0,W,H);
+    fog.forEach(f => {
+      f.x += Math.sin(t*.0002+f.p)*f.s;
+      if(f.x > W+f.r) f.x = -f.r; if(f.x < -f.r) f.x = W+f.r;
+      ctx.globalAlpha = f.a; ctx.fillStyle = pal.dark ? "#b6c8bf" : "#ffffff";
+      ctx.beginPath(); ctx.arc(f.x,f.y,f.r,0,Math.PI*2); ctx.fill();
+    });
+    ctx.globalAlpha = 1;
+    const bedX = 16, bedY = 90, bedW = W-32, bedH = H-118;
+    rr(bedX,bedY,bedW,bedH,28); ctx.fillStyle = pal.dark ? "rgba(30,45,39,.58)" : "rgba(248,250,244,.62)"; ctx.fill();
+    ctx.strokeStyle = pal.line; ctx.lineWidth = 1; ctx.stroke();
+    ctx.save(); ctx.clip();
+    for(let y=bedY+22;y<bedY+bedH;y+=26){
+      ctx.strokeStyle = pal.dark ? "rgba(255,255,255,.035)" : "rgba(70,96,74,.055)";
+      ctx.beginPath();
+      for(let x=bedX;x<bedX+bedW;x+=18){
+        const yy = y + Math.sin(x*.035 + t*.001)*5;
+        x===bedX ? ctx.moveTo(x,yy) : ctx.lineTo(x,yy);
+      }
+      ctx.stroke();
+    }
+    ctx.restore();
+  }
+  function drawGusts(){
+    gusts.forEach(g=>{
+      ctx.save(); ctx.translate(g.x,g.y); ctx.rotate(g.ang);
+      ctx.globalAlpha = Math.max(0,g.life/g.max)*.26; ctx.fillStyle = pal.warn;
+      rr(-40,-g.w/2,W*.7,g.w,22); ctx.fill();
+      ctx.globalAlpha *= .8; ctx.strokeStyle = pal.bg; ctx.lineWidth = 2;
+      for(let y=-g.w/3;y<g.w/2;y+=14){ctx.beginPath();ctx.moveTo(0,y);ctx.lineTo(W*.55,y+Math.sin(y)*8);ctx.stroke();}
+      ctx.restore(); ctx.globalAlpha = 1;
+    });
+  }
+  function drawTree(t){
+    ctx.lineCap = "round"; ctx.lineJoin = "round";
+    links.forEach(l=>{
+      ctx.strokeStyle = pal.moss; ctx.lineWidth = 8; ctx.globalAlpha = .33;
+      ctx.beginPath(); ctx.moveTo(l.a.x,l.a.y); ctx.quadraticCurveTo((l.a.x+l.b.x)/2,(l.a.y+l.b.y)/2-18,l.b.x,l.b.y); ctx.stroke();
+      ctx.strokeStyle = pal.dew; ctx.lineWidth = 2; ctx.globalAlpha = .75; ctx.stroke();
+    });
+    if(line.length > 1){
+      ctx.strokeStyle = pal.dew; ctx.lineWidth = 9; ctx.globalAlpha = .18;
+      ctx.beginPath(); line.forEach((p,i)=>i?ctx.lineTo(p.x,p.y):ctx.moveTo(p.x,p.y)); ctx.stroke();
+      ctx.strokeStyle = "rgba(255,255,255,.9)"; ctx.lineWidth = 2.5; ctx.globalAlpha = .9; ctx.stroke();
+    }
+    ctx.globalAlpha = 1;
+    nodes.forEach(n=>{
+      const pulse = 1 + Math.sin(t*.006+n.x)*.08;
+      if(n === current){
+        ctx.strokeStyle = pal.dew; ctx.lineWidth = 2; ctx.globalAlpha = .55;
+        ctx.beginPath(); ctx.arc(n.x,n.y,(n.r+15)*pulse,0,Math.PI*2); ctx.stroke(); ctx.globalAlpha = 1;
+      }
+      ctx.fillStyle = n.hit ? pal.moss : pal.dew;
+      ctx.beginPath(); ctx.arc(n.x,n.y,n.r,0,Math.PI*2); ctx.fill();
+      ctx.fillStyle = n.hit ? "rgba(255,255,255,.32)" : "rgba(255,255,255,.72)";
+      ctx.beginPath(); ctx.arc(n.x-n.r*.25,n.y-n.r*.32,n.r*.34,0,Math.PI*2); ctx.fill();
+      if(!n.hit){
+        ctx.strokeStyle = pal.line; ctx.lineWidth = 2;
+        ctx.beginPath(); ctx.arc(n.x,n.y,n.r+7,0,Math.PI*2); ctx.stroke();
+      }
+    });
+    ripples.forEach(r=>{
+      ctx.globalAlpha = r.life/r.max; ctx.strokeStyle = pal.gold; ctx.lineWidth = 3;
+      ctx.beginPath(); ctx.arc(r.x,r.y,r.r,0,Math.PI*2); ctx.stroke(); ctx.globalAlpha = 1;
+    });
+    particles.forEach(p=>{
+      ctx.globalAlpha = Math.max(0,p.life/p.max); ctx.fillStyle = p.c;
+      ctx.beginPath(); ctx.arc(p.x,p.y,p.r,0,Math.PI*2); ctx.fill(); ctx.globalAlpha = 1;
+    });
+    if(state === "playing"){
+      ctx.strokeStyle = pal.ink; ctx.globalAlpha = .28; ctx.lineWidth = 1.5;
+      ctx.beginPath(); ctx.arc(keyBrush.x,keyBrush.y,10,0,Math.PI*2); ctx.stroke(); ctx.globalAlpha = 1;
+    }
+  }
+  function drawTitleOrOver(t){
+    if(state === "title" || state === "over"){
+      const cx = W/2, cy = H*.48, r = Math.min(W,H)*.22;
+      ctx.strokeStyle = pal.moss; ctx.lineWidth = 6; ctx.globalAlpha = .18;
+      for(let i=0;i<5;i++){ctx.beginPath();ctx.arc(cx,cy,r+i*18+Math.sin(t*.002+i)*4,0,Math.PI*2);ctx.stroke();}
+      ctx.globalAlpha = 1;
+    }
+  }
+  function render(t){
+    ctx.save();
+    if(shake>0) ctx.translate(rnd(-1,1)*shake*26, rnd(-1,1)*shake*18);
+    drawBackground(t); drawGusts(); drawTree(t); drawTitleOrOver(t);
+    ctx.restore();
+  }
+  function loop(t){
+    const dt = Math.min(.033, (t-last)/1000 || .016); last = t;
+    update(dt); render(t); requestAnimationFrame(loop);
+  }
+  canvas.addEventListener("pointerdown", e=>{
+    e.preventDefault(); ensureAudio();
+    if(state === "title"){ startGame(); return; }
+    if(state !== "playing") return;
+    canvas.setPointerCapture?.(e.pointerId); startDraw(pos(e));
+  }, {passive:false});
+  canvas.addEventListener("pointermove", e=>{ e.preventDefault(); if(state==="playing") moveBrush(pos(e), .016); }, {passive:false});
+  canvas.addEventListener("pointerup", e=>{ e.preventDefault(); stopDraw(); }, {passive:false});
+  canvas.addEventListener("pointercancel", e=>{ e.preventDefault(); stopDraw(); }, {passive:false});
+  addEventListener("keydown", e=>{
+    if(["ArrowUp","ArrowDown","ArrowLeft","ArrowRight"," ","Enter"].includes(e.key)) e.preventDefault();
+    if(state === "title" && (e.key===" " || e.key==="Enter")) return startGame();
+    if(state === "over" && (e.key===" " || e.key==="Enter" || e.key.toLowerCase()==="r")) return startGame();
+    if(e.key.toLowerCase()==="r") return startGame();
+    keys[e.key] = true;
+    if(state==="playing" && e.key===" " && !drawing) startDraw(keyBrush);
+  });
+  addEventListener("keyup", e=>{ keys[e.key] = false; if(e.key===" ") stopDraw(); });
+  playBtn.addEventListener("click", startGame);
+  againBtn.addEventListener("click", startGame);
+  backBtn.addEventListener("click", ()=>{ state="title"; over.classList.add("hidden"); menu.classList.remove("hidden"); });
+  muteBtn.addEventListener("click", ()=>{
+    muted = !muted; muteBtn.textContent = muted ? "Sound Off" : "Sound On";
+    if(!muted) ensureAudio();
+  });
+  mq.addEventListener?.("change", readTheme);
+  readTheme(); resize(); addEventListener("resize", resize); requestAnimationFrame(loop);
+})();
+</script>
+</body>
+</html>

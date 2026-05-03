@@ -1,0 +1,634 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <title>Ringbed — Rhythm Planter</title>
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    html, body {
+      height: 100%;
+      height: 100dvh;
+      width: 100%;
+      overflow: hidden;
+      font-family: ui-monospace, 'SF Mono', Menlo, monospace;
+      -webkit-tap-highlight-color: transparent;
+    }
+    @media (prefers-color-scheme: light) {
+      :root {
+        --bg: #e8eae6;
+        --bg2: #d4ddd5;
+        --text: #1a2318;
+        --muted: rgba(26,35,24,0.55);
+        --accent: #0d9488;
+        --glow: #22c55e;
+        --weed: #3f6212;
+      }
+    }
+    @media (prefers-color-scheme: dark) {
+      :root {
+        --bg: #141816;
+        --bg2: #0c0f0d;
+        --text: #e8f5e9;
+        --muted: rgba(232,245,233,0.5);
+        --accent: #2dd4bf;
+        --glow: #4ade80;
+        --weed: #65a30d;
+      }
+    }
+    #wrap {
+      position: relative;
+      width: 100dvw;
+      height: 100dvh;
+      background: radial-gradient(ellipse 120% 80% at 50% 100%, var(--bg2), var(--bg));
+      touch-action: none;
+      user-select: none;
+    }
+    canvas#game {
+      display: block;
+      width: 100%;
+      height: 100%;
+      touch-action: none;
+      user-select: none;
+      cursor: pointer;
+    }
+    .overlay {
+      position: absolute;
+      inset: 0;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      padding: max(env(safe-area-inset-top), 16px) 20px max(env(safe-area-inset-bottom), 24px);
+      pointer-events: none;
+      gap: 12px;
+    }
+    .overlay.active { pointer-events: auto; }
+    .overlay h1 {
+      font-size: clamp(1.1rem, 4.5vw, 1.5rem);
+      font-weight: 600;
+      letter-spacing: 0.08em;
+      color: var(--text);
+      text-align: center;
+    }
+    .overlay p {
+      font-size: 0.82rem;
+      color: var(--muted);
+      text-align: center;
+      max-width: 280px;
+      line-height: 1.45;
+    }
+    .btn {
+      margin-top: 8px;
+      min-height: 48px;
+      min-width: 160px;
+      padding: 0 28px;
+      border: none;
+      border-radius: 999px;
+      background: var(--accent);
+      color: var(--bg);
+      font: inherit;
+      font-size: 0.85rem;
+      font-weight: 600;
+      letter-spacing: 0.06em;
+      cursor: pointer;
+      box-shadow: 0 6px 24px rgba(13,148,136,0.35);
+      transition: transform 0.12s ease, opacity 0.12s ease;
+      pointer-events: auto;
+      touch-action: manipulation;
+    }
+    @media (prefers-color-scheme: dark) {
+      .btn { box-shadow: 0 6px 28px rgba(45,212,191,0.25); color: #0c0f0d; }
+    }
+    .btn:active { transform: scale(0.97); opacity: 0.92; }
+    .hud {
+      position: absolute;
+      top: max(env(safe-area-inset-top), 12px);
+      left: 0;
+      right: 0;
+      display: flex;
+      justify-content: space-between;
+      padding: 0 16px;
+      pointer-events: none;
+      font-size: 0.75rem;
+      color: var(--muted);
+      z-index: 2;
+    }
+    .hud span { color: var(--text); }
+    #titleOv, #goOv { opacity: 0; transition: opacity 0.35s ease; }
+    #titleOv.show, #goOv.show { opacity: 1; }
+    #hudPlay { opacity: 0; transition: opacity 0.25s ease; }
+    #hudPlay.show { opacity: 1; }
+  </style>
+</head>
+<body>
+<div id="wrap">
+  <canvas id="game" aria-label="Ringbed rhythm game"></canvas>
+  <div class="hud" id="hudPlay">
+    <div>phrase <span id="phraseProg">0</span>/16</div>
+    <div>combo <span id="comboN">0</span></div>
+    <div><span id="timeN">52</span>s</div>
+  </div>
+  <div class="overlay active" id="titleOv">
+    <h1>Ringbed</h1>
+    <p>Tap when the bright ring kisses the hoop—<strong>sixteenth-note</strong> pocket. Chain <strong>16</strong> clean hits to sprout another seedling ring; ghost echoes and drifting tempo lie.</p>
+    <p style="margin-top:-4px">Desktop: <strong>Space</strong> or click. Three missed beats kill the groove.</p>
+    <button type="button" class="btn" id="btnStart">Plant the beat</button>
+  </div>
+  <div class="overlay" id="goOv">
+    <h1 id="goTitle">Chain snapped</h1>
+    <p id="goStat">Score 0 · Phrase 1</p>
+    <button type="button" class="btn" id="btnAgain">Grow again</button>
+  </div>
+</div>
+<script>
+(function () {
+  'use strict';
+  var canvas = document.getElementById('game');
+  var ctx = canvas.getContext('2d', { alpha: false });
+  var DPR = Math.min(window.devicePixelRatio || 1, 2);
+
+  var dark = window.matchMedia('(prefers-color-scheme: dark)').matches;
+  function palette() {
+    return dark
+      ? { bg: '#141816', soil: '#0a0d0c', ring: '#2dd4bf', stem: '#4ade80', pulse: '#fbbf24',
+          ghost: 'rgba(45,212,191,0.2)', weed: '#65a30d', text: '#e8f5e9', grid: 'rgba(232,245,233,0.06)', hoop: 'rgba(250,251,249,0.35)' }
+      : { bg: '#e8eae6', soil: '#cdd8cc', ring: '#0d9488', stem: '#15803d', pulse: '#b45309',
+          ghost: 'rgba(13,148,136,0.24)', weed: '#3f6212', text: '#1a2318', grid: 'rgba(26,35,24,0.08)', hoop: 'rgba(26,35,24,0.28)' };
+  }
+
+  var state = 'title';
+  var W, H, cx, cy, hitR;
+  var BPM0 = 103;
+  var bpm = BPM0;
+  var bpmAccum = 0;
+  var runT = 0;
+  var roundMax = 52;
+  var microIdx = 0;
+  var nextSpawnAt = 0;
+  var pending = [];
+  var pulses = [];
+  var flairs = [];
+  var ghosts = [];
+  var seedlings = [];
+  var weeds = [];
+  var combo = 0;
+  var bestCombo = 0;
+  var score = 0;
+  var phraseClears = 0;
+  var phraseProgress = 0;
+  var misses = 0;
+  var flash = 0;
+  var shake = 0;
+  var audioCtx = null;
+  var lastFrame = performance.now();
+  var ended = false;
+
+  function microMs() { return 60000 / bpm / 4; }
+
+  function resize() {
+    W = canvas.clientWidth;
+    H = canvas.clientHeight;
+    canvas.width = Math.floor(W * DPR);
+    canvas.height = Math.floor(H * DPR);
+    ctx.setTransform(DPR, 0, 0, DPR, 0, 0);
+    var m = Math.min(W, H);
+    cx = W * 0.5;
+    cy = H * 0.48;
+    hitR = m * 0.38;
+  }
+  resize();
+  window.addEventListener('resize', resize);
+
+  window.matchMedia('(prefers-color-scheme: dark)').addEventListener('change', function (e) {
+    dark = e.matches;
+  });
+
+  function ensureAudio() {
+    if (!audioCtx) {
+      audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+    }
+    if (audioCtx.state === 'suspended') {
+      audioCtx.resume();
+    }
+  }
+
+  function beep(freq, t, dur, vol, type) {
+    if (!audioCtx) return;
+    var o = audioCtx.createOscillator();
+    var g = audioCtx.createGain();
+    o.type = type || 'sine';
+    o.frequency.value = freq;
+    g.gain.setValueAtTime(0, t);
+    g.gain.linearRampToValueAtTime(vol, t + 0.008);
+    g.gain.exponentialRampToValueAtTime(0.001, t + dur);
+    o.connect(g);
+    g.connect(audioCtx.destination);
+    o.start(t);
+    o.stop(t + dur + 0.05);
+  }
+
+  function playHit(ok, perfect) {
+    if (!audioCtx) return;
+    var t = audioCtx.currentTime;
+    if (ok) {
+      beep(perfect ? 587 : 440, t, 0.06, perfect ? 0.12 : 0.07, 'triangle');
+      if (perfect) beep(880, t + 0.02, 0.05, 0.05, 'sine');
+    } else {
+      beep(120, t, 0.15, 0.14, 'sawtooth');
+    }
+  }
+
+  function vibrate(pat) {
+    if (navigator.vibrate) navigator.vibrate(pat);
+  }
+
+  function scheduleGhosts() {
+    ghosts = [];
+    var n = phraseClears >= 1 ? 1 + (phraseClears % 4) : 0;
+    if (phraseClears >= 3) n = Math.min(4, n + 1);
+    var i;
+    for (i = 0; i < n; i++) {
+      ghosts.push({
+        off: (i % 2 === 0 ? 1 : -1) * (0.07 + (i * 0.017)),
+        a: 0.28 + i * 0.07
+      });
+    }
+  }
+
+  function resetGame() {
+    runT = 0;
+    bpm = BPM0;
+    bpmAccum = 0;
+    microIdx = 0;
+    nextSpawnAt = 0;
+    pending = [];
+    pulses = [];
+    flairs = [];
+    seedlings = [{ r: hitR * 0.72, count: 6, rot: 0 }];
+    weeds = [];
+    combo = 0;
+    bestCombo = 0;
+    score = 0;
+    phraseClears = 0;
+    phraseProgress = 0;
+    misses = 0;
+    flash = 0;
+    shake = 0;
+    ended = false;
+    scheduleGhosts();
+    document.getElementById('phraseProg').textContent = '0';
+    document.getElementById('comboN').textContent = '0';
+    document.getElementById('timeN').textContent = String(roundMax);
+  }
+
+  function syncJitter(when) {
+    var g = ghosts.length;
+    var amp = 10 + phraseClears * 4 + g * 14;
+    return Math.sin(when * 0.0021) * amp + Math.cos(when * 0.0017 + g) * (6 + g * 3);
+  }
+
+  function driftBpm(dt) {
+    bpmAccum += dt * 1000;
+    bpm = BPM0 + Math.sin(bpmAccum * 0.00038) * 9 + ghosts.length * 2.5;
+    bpm = Math.max(90, Math.min(119, bpm));
+  }
+
+  function spawnOne(slot, scheduledT) {
+    var dur = microMs();
+    var t0 = scheduledT;
+    pulses.push({ t0: t0, dur: dur, slot: slot, hue: slot === 0 ? 2 : slot === 2 ? 1 : 0 });
+    pending.push({ ideal: t0 + dur, slot: slot });
+    if (audioCtx) {
+      var t = audioCtx.currentTime;
+      var f = slot === 0 ? 156 : slot === 2 ? 196 : 110;
+      beep(f, t, slot === 0 ? 0.045 : 0.022, slot === 0 ? 0.085 : 0.04, slot === 0 ? 'square' : 'sine');
+    }
+  }
+
+  function resolveMisses(now) {
+    var late = microMs() * 0.48;
+    while (pending.length && now > pending[0].ideal + late + Math.abs(syncJitter(now))) {
+      pending.shift();
+      pulses.shift();
+      registerMiss();
+      if (ended) return;
+    }
+  }
+
+  function registerMiss() {
+    if (ended) return;
+    misses++;
+    combo = 0;
+    phraseProgress = 0;
+    document.getElementById('comboN').textContent = '0';
+    document.getElementById('phraseProg').textContent = '0';
+    weeds.push({ rx: (Math.random() - 0.5) * hitR * 1.1, ry: (Math.random() - 0.5) * hitR * 1.1, s: 0, life: 1 });
+    vibrate([0, 35, 45, 35]);
+    playHit(false);
+    shake = 12;
+    if (misses >= 3) {
+      endGame(true, 'Weeds swallowed the groove.');
+    }
+  }
+
+  function phraseComplete() {
+    phraseClears++;
+    seedlings.push({
+      r: hitR * (0.5 + Math.min(seedlings.length, 10) * 0.036),
+      count: 6 + phraseClears * 2,
+      rot: Math.random() * Math.PI * 2
+    });
+    scheduleGhosts();
+    flash = Math.max(flash, 0.88);
+    vibrate([18, 28, 18]);
+    if (audioCtx) {
+      var t = audioCtx.currentTime;
+      beep(330, t, 0.08, 0.06, 'sine');
+      beep(493, t + 0.07, 0.1, 0.06, 'sine');
+    }
+  }
+
+  function registerTap(when) {
+    if (state !== 'play' || ended || !pending.length) return;
+    var p0 = pending[0];
+    var ideal = p0.ideal + syncJitter(when);
+    var win = microMs() * 0.34;
+    var perf = microMs() * 0.11;
+    if (when < ideal - win * 1.35) return;
+    var diff = Math.abs(when - ideal);
+    if (diff <= win) {
+      var perfect = diff <= perf;
+      pending.shift();
+      pulses.shift();
+      combo++;
+      bestCombo = Math.max(bestCombo, combo);
+      phraseProgress++;
+      score += 12 + (perfect ? 10 : 0) + Math.min(combo, 40);
+      document.getElementById('comboN').textContent = String(combo);
+      document.getElementById('phraseProg').textContent = String(phraseProgress);
+      flairs.push({ t: 0, hue: perfect ? 1 : 0 });
+      playHit(true, perfect);
+      vibrate(perfect ? [8, 14, 8] : 6);
+      if (phraseProgress >= 16) {
+        phraseProgress = 0;
+        document.getElementById('phraseProg').textContent = '0';
+        phraseComplete();
+      }
+    } else if (when > ideal + win) {
+      pending.shift();
+      pulses.shift();
+      registerMiss();
+    }
+  }
+
+  function endGame(fail, tag) {
+    if (ended) return;
+    ended = true;
+    state = 'over';
+    document.getElementById('hudPlay').classList.remove('show');
+    document.getElementById('goTitle').textContent = fail ? 'Chain snapped' : 'Round fades';
+    document.getElementById('goStat').textContent =
+      'score ' + Math.floor(score) + ' · rings ' + phraseClears + ' · best combo ' + bestCombo + ' — ' + tag;
+    document.getElementById('goOv').classList.add('active', 'show');
+  }
+
+  function startGame() {
+    ensureAudio();
+    document.getElementById('titleOv').classList.remove('active', 'show');
+    document.getElementById('goOv').classList.remove('active', 'show');
+    document.getElementById('hudPlay').classList.add('show');
+    resetGame();
+    var t = performance.now();
+    nextSpawnAt = t + 720;
+    state = 'play';
+    lastFrame = t;
+    requestAnimationFrame(loop);
+  }
+
+  function tickRhythm(now) {
+    var md;
+    while (now >= nextSpawnAt && state === 'play' && !ended) {
+      md = microMs();
+      spawnOne(microIdx % 4, nextSpawnAt);
+      microIdx++;
+      nextSpawnAt += md;
+    }
+  }
+
+  function pointerDown(ev) {
+    ev.preventDefault();
+    if (state === 'title' || state === 'over') return;
+    registerTap(ev.timeStamp || performance.now());
+  }
+
+  canvas.addEventListener('touchstart', pointerDown, { passive: false });
+  canvas.addEventListener('mousedown', function (e) {
+    if (e.button !== 0) return;
+    e.preventDefault();
+    pointerDown(e);
+  });
+
+  document.getElementById('btnStart').addEventListener('click', function (e) {
+    e.preventDefault();
+    ensureAudio();
+    document.getElementById('titleOv').classList.remove('show');
+    document.getElementById('titleOv').classList.remove('active');
+    setTimeout(startGame, 160);
+  });
+  document.getElementById('btnAgain').addEventListener('click', function (e) {
+    e.preventDefault();
+    document.getElementById('goOv').classList.remove('show');
+    document.getElementById('goOv').classList.remove('active');
+    setTimeout(startGame, 120);
+  });
+
+  window.addEventListener('keydown', function (e) {
+    if (e.code === 'Space') {
+      e.preventDefault();
+      if (state === 'title') {
+        ensureAudio();
+        document.getElementById('titleOv').classList.remove('show', 'active');
+        setTimeout(startGame, 80);
+      } else if (state === 'over') {
+        document.getElementById('goOv').classList.remove('show', 'active');
+        setTimeout(startGame, 80);
+      } else if (state === 'play') {
+        registerTap(e.timeStamp || performance.now());
+      }
+    }
+  });
+
+  function stemWidth(si, sj) {
+    return 2 + ((si * 17 + sj * 9) % 5) * 0.22;
+  }
+
+  function drawStem(x, y, ang, len, pal, lw) {
+    ctx.save();
+    ctx.translate(x, y);
+    ctx.rotate(ang);
+    ctx.strokeStyle = pal.stem;
+    ctx.lineWidth = lw;
+    ctx.lineCap = 'round';
+    ctx.beginPath();
+    ctx.moveTo(0, 0);
+    ctx.quadraticCurveTo(len * 0.08, -len * 0.35, len * 0.02, -len * 0.85);
+    ctx.stroke();
+    ctx.restore();
+  }
+
+  function drawWeed(wx, wy, s, pal) {
+    ctx.strokeStyle = pal.weed;
+    ctx.lineWidth = 2;
+    ctx.globalAlpha = 0.85;
+    var k;
+    for (k = -1; k <= 1; k++) {
+      ctx.beginPath();
+      ctx.arc(wx, wy, s + k * 4, Math.PI * 0.85, Math.PI * 2.05);
+      ctx.stroke();
+    }
+    ctx.globalAlpha = 1;
+  }
+
+  function pulseRadius(p, now) {
+    var u = (now - p.t0) / p.dur;
+    if (u < 0) u = 0;
+    return Math.min(hitR + 30, u * hitR);
+  }
+
+  function drawScene(now, dt, pal) {
+    ctx.fillStyle = pal.bg;
+    ctx.fillRect(0, 0, W, H);
+    ctx.save();
+    var sx = (Math.random() - 0.5) * shake;
+    var sy = (Math.random() - 0.5) * shake * 0.55;
+    if (shake > 0.4) shake *= 0.86;
+    else shake = 0;
+    ctx.translate(cx + sx, cy + sy);
+    ctx.fillStyle = pal.soil;
+    ctx.beginPath();
+    ctx.arc(0, 0, hitR * 1.22, 0, Math.PI * 2);
+    ctx.fill();
+
+    ctx.strokeStyle = pal.grid;
+    ctx.lineWidth = 1;
+    var g;
+    for (g = -3; g <= 3; g++) {
+      ctx.beginPath();
+      ctx.moveTo(-hitR * 1.35, g * hitR * 0.42);
+      ctx.lineTo(hitR * 1.35, g * hitR * 0.42);
+      ctx.stroke();
+    }
+
+    var si, sj, rr, nc, rot, sd, aa;
+    for (si = 0; si < seedlings.length; si++) {
+      sd = seedlings[si];
+      rr = sd.r * (dark ? 1 : 0.98 + si * 0.008);
+      nc = sd.count;
+      rot = sd.rot + now * 0.000055 * (si + 1);
+      for (sj = 0; sj < nc; sj++) {
+        aa = rot + (Math.PI * 2 / nc) * sj;
+        drawStem(Math.cos(aa) * rr, Math.sin(aa) * rr, aa + Math.PI * 0.5, hitR * 0.055, pal, stemWidth(si, sj));
+      }
+    }
+
+    for (sj = 0; sj < weeds.length; sj++) {
+      var w = weeds[sj];
+      w.s += dt * (78 + sj * 6);
+      w.life -= dt * 0.14;
+      if (w.s > hitR * 0.4) { w.life -= dt * 0.45; w.s *= 0.98; }
+      drawWeed(w.rx, w.ry, w.s, pal);
+      if (w.life <= 0) weeds.splice(sj--, 1);
+    }
+
+    ctx.strokeStyle = pal.hoop;
+    ctx.lineWidth = 4;
+    ctx.beginPath();
+    ctx.arc(0, 0, hitR, 0, Math.PI * 2);
+    ctx.stroke();
+
+    function strokeRing(r, hue, alpha, lw) {
+      var col = hue >= 2 ? pal.pulse : pal.ring;
+      ctx.strokeStyle = col;
+      ctx.globalAlpha = alpha;
+      ctx.lineWidth = lw;
+      ctx.beginPath();
+      ctx.arc(0, 0, Math.max(2, r), 0, Math.PI * 2);
+      ctx.stroke();
+      ctx.globalAlpha = 1;
+    }
+
+    var pi, pj, pr, age, al;
+    for (pi = 0; pi < pulses.length; pi++) {
+      pr = pulseRadius(pulses[pi], now);
+      age = pr / hitR;
+      al = Math.max(0.12, 0.95 - age * 0.12);
+      strokeRing(pr, pulses[pi].hue, al, pulses[pi].hue >= 2 ? 5 : 3);
+      for (pj = 0; pj < ghosts.length; pj++) {
+        var gh = ghosts[pj];
+        strokeRing(pr * (1 + gh.off), pulses[pi].hue, al * gh.a * 0.55, 2);
+      }
+    }
+
+    for (pi = 0; pi < flairs.length; pi++) {
+      var f = flairs[pi];
+      f.t += dt;
+      var fr = hitR + f.t * 120;
+      strokeRing(fr, f.hue, Math.max(0, 0.55 - f.t * 1.6), 3);
+      if (f.t > 0.45) flairs.splice(pi--, 1);
+    }
+
+    if (flash > 0) {
+      ctx.globalAlpha = flash * 0.32;
+      ctx.strokeStyle = pal.ring;
+      ctx.lineWidth = 10;
+      ctx.beginPath();
+      ctx.arc(0, 0, hitR + 26, 0, Math.PI * 2);
+      ctx.stroke();
+      ctx.globalAlpha = 1;
+      flash -= dt * 2.6;
+      if (flash < 0) flash = 0;
+    }
+
+    ctx.restore();
+
+    ctx.font = '0.72rem ui-monospace, Menlo, monospace';
+    ctx.fillStyle = pal.text;
+    ctx.globalAlpha = 0.45;
+    ctx.fillText(Math.round(bpm) + ' bpm', W - 68, H - Math.max(envBottom(), 20));
+    ctx.globalAlpha = 1;
+  }
+
+  function envBottom() {
+    try {
+      return Math.max(12, typeof window.visualViewport !== 'undefined' && window.visualViewport
+        ? (window.innerHeight - window.visualViewport.height) : 20);
+    } catch (er) {
+      return 20;
+    }
+  }
+
+  function loop(now) {
+    if (state !== 'play' || ended) return;
+    requestAnimationFrame(loop);
+    var dt = Math.min(0.048, (now - lastFrame) / 1000);
+    lastFrame = now;
+    runT += dt;
+    driftBpm(dt);
+    tickRhythm(now);
+    resolveMisses(now);
+
+    document.getElementById('timeN').textContent = String(Math.max(0, Math.ceil(roundMax - runT)));
+
+    if (!ended && runT >= roundMax) {
+      endGame(false, 'Fog lifts—you held the grove.');
+    }
+
+    drawScene(now, dt, palette());
+  }
+
+  document.getElementById('titleOv').classList.add('show');
+})();
+</script>
+</body>
+</html>
