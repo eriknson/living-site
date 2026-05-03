@@ -39,6 +39,10 @@ env:
   BUILD_ID: ${{ inputs.build_id || github.run_id }}
   BUILD_WEBHOOK_URL: ${{ secrets.BUILD_WEBHOOK_URL }}
   BUILD_WEBHOOK_SECRET: ${{ secrets.BUILD_WEBHOOK_SECRET }}
+  # Pinned cursor-agent version. The latest installer (2026.05.01-eea359f) hangs
+  # silently on Ubuntu runners in -p text mode, which broke the daily curator
+  # job starting May 1 2026. Bump deliberately after testing a new build.
+  CURSOR_AGENT_VERSION: '2026.04.29-c83a488'
 
 jobs:
   cursor-models-diagnostic:
@@ -49,7 +53,10 @@ jobs:
     steps:
       - name: Install Cursor CLI
         run: |
-          curl https://cursor.com/install -fsS | bash
+          mkdir -p ~/.local/share/cursor-agent/versions/${CURSOR_AGENT_VERSION} ~/.local/bin
+          curl -fsSL "https://downloads.cursor.com/lab/${CURSOR_AGENT_VERSION}/linux/x64/agent-cli-package.tar.gz" -o /tmp/cursor-agent.tar.gz
+          tar xzf /tmp/cursor-agent.tar.gz -C ~/.local/share/cursor-agent/versions/${CURSOR_AGENT_VERSION} --strip-components=1
+          ln -sf ~/.local/share/cursor-agent/versions/${CURSOR_AGENT_VERSION}/cursor-agent ~/.local/bin/cursor-agent
           cursor-agent --version || echo "Failed to get cursor-agent version"
 
       - name: Print available Cursor models
@@ -187,7 +194,10 @@ jobs:
 
       - name: Install Cursor CLI
         run: |
-          curl https://cursor.com/install -fsS | bash
+          mkdir -p ~/.local/share/cursor-agent/versions/${CURSOR_AGENT_VERSION} ~/.local/bin
+          curl -fsSL "https://downloads.cursor.com/lab/${CURSOR_AGENT_VERSION}/linux/x64/agent-cli-package.tar.gz" -o /tmp/cursor-agent.tar.gz
+          tar xzf /tmp/cursor-agent.tar.gz -C ~/.local/share/cursor-agent/versions/${CURSOR_AGENT_VERSION} --strip-components=1
+          ln -sf ~/.local/share/cursor-agent/versions/${CURSOR_AGENT_VERSION}/cursor-agent ~/.local/bin/cursor-agent
           cursor-agent --version || echo "Failed to get cursor-agent version"
 
       - name: Notify curator started
@@ -321,7 +331,10 @@ jobs:
 
       - name: Install Cursor CLI
         run: |
-          curl https://cursor.com/install -fsS | bash
+          mkdir -p ~/.local/share/cursor-agent/versions/${CURSOR_AGENT_VERSION} ~/.local/bin
+          curl -fsSL "https://downloads.cursor.com/lab/${CURSOR_AGENT_VERSION}/linux/x64/agent-cli-package.tar.gz" -o /tmp/cursor-agent.tar.gz
+          tar xzf /tmp/cursor-agent.tar.gz -C ~/.local/share/cursor-agent/versions/${CURSOR_AGENT_VERSION} --strip-components=1
+          ln -sf ~/.local/share/cursor-agent/versions/${CURSOR_AGENT_VERSION}/cursor-agent ~/.local/bin/cursor-agent
           which cursor-agent || echo "cursor-agent not found in PATH"
           cursor-agent --version || echo "Failed to get cursor-agent version"
 
@@ -525,7 +538,10 @@ jobs:
 
       - name: Install Cursor CLI
         run: |
-          curl https://cursor.com/install -fsS | bash
+          mkdir -p ~/.local/share/cursor-agent/versions/${CURSOR_AGENT_VERSION} ~/.local/bin
+          curl -fsSL "https://downloads.cursor.com/lab/${CURSOR_AGENT_VERSION}/linux/x64/agent-cli-package.tar.gz" -o /tmp/cursor-agent.tar.gz
+          tar xzf /tmp/cursor-agent.tar.gz -C ~/.local/share/cursor-agent/versions/${CURSOR_AGENT_VERSION} --strip-components=1
+          ln -sf ~/.local/share/cursor-agent/versions/${CURSOR_AGENT_VERSION}/cursor-agent ~/.local/bin/cursor-agent
           cursor-agent --version || echo "Failed to get cursor-agent version"
 
       - name: Notify game model started
@@ -730,7 +746,10 @@ jobs:
       - name: Install Cursor CLI
         if: steps.validate.outputs.needs_polish == 'true'
         run: |
-          curl https://cursor.com/install -fsS | bash
+          mkdir -p ~/.local/share/cursor-agent/versions/${CURSOR_AGENT_VERSION} ~/.local/bin
+          curl -fsSL "https://downloads.cursor.com/lab/${CURSOR_AGENT_VERSION}/linux/x64/agent-cli-package.tar.gz" -o /tmp/cursor-agent.tar.gz
+          tar xzf /tmp/cursor-agent.tar.gz -C ~/.local/share/cursor-agent/versions/${CURSOR_AGENT_VERSION} --strip-components=1
+          ln -sf ~/.local/share/cursor-agent/versions/${CURSOR_AGENT_VERSION}/cursor-agent ~/.local/bin/cursor-agent
           cursor-agent --version || echo "Failed to get cursor-agent version"
 
       - name: Download curator artifact for polish
@@ -852,7 +871,10 @@ jobs:
       - name: Install Cursor CLI
         if: steps.static-validate.outputs.needs_polish == 'true'
         run: |
-          curl https://cursor.com/install -fsS | bash
+          mkdir -p ~/.local/share/cursor-agent/versions/${CURSOR_AGENT_VERSION} ~/.local/bin
+          curl -fsSL "https://downloads.cursor.com/lab/${CURSOR_AGENT_VERSION}/linux/x64/agent-cli-package.tar.gz" -o /tmp/cursor-agent.tar.gz
+          tar xzf /tmp/cursor-agent.tar.gz -C ~/.local/share/cursor-agent/versions/${CURSOR_AGENT_VERSION} --strip-components=1
+          ln -sf ~/.local/share/cursor-agent/versions/${CURSOR_AGENT_VERSION}/cursor-agent ~/.local/bin/cursor-agent
           cursor-agent --version || echo "Failed to get cursor-agent version"
 
       - name: Download curator artifact for polish
