@@ -1,0 +1,669 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover">
+<title>Chrome Fog</title>
+<style>
+  :root {
+    --bg: #e0e5ec;
+    --fg: #1a1c23;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root {
+      --bg: #1a1c23;
+      --fg: #e0e5ec;
+    }
+  }
+  body, html {
+    margin: 0; padding: 0; width: 100vw; height: 100vh; height: 100dvh;
+    overflow: hidden; touch-action: none; user-select: none;
+    font-family: ui-monospace, 'SFMono-Regular', Menlo, monospace;
+    background: var(--bg); color: var(--fg);
+    transition: background 0.5s, color 0.5s;
+  }
+  body.inverted {
+    background: var(--fg); color: var(--bg);
+  }
+  canvas {
+    display: block; width: 100%; height: 100%; touch-action: none; user-select: none;
+  }
+  #ui {
+    position: absolute; top: 0; left: 0; width: 100%; height: 100%;
+    pointer-events: none; display: flex; flex-direction: column;
+    justify-content: center; align-items: center; z-index: 10;
+  }
+  .hud {
+    position: absolute; top: 0; left: 0; width: 100%; padding: env(safe-area-inset-top, 40px) 30px 0;
+    box-sizing: border-box; display: flex; justify-content: space-between;
+    font-size: 1.4rem; font-weight: 800; text-transform: uppercase; letter-spacing: 0.1em;
+    text-shadow: 0 0 10px rgba(255,255,255,0.5);
+  }
+  .center-msg {
+    text-align: center; margin-top: -20vh; pointer-events: auto; padding: 0 20px;
+  }
+  .title { font-size: 2.2rem; margin-bottom: 10px; letter-spacing: 0.15em; font-weight: 800; }
+  .subtitle { font-size: 0.9rem; opacity: 0.8; max-width: 320px; line-height: 1.5; margin: 0 auto 30px;}
+  button {
+    pointer-events: auto; background: var(--fg); color: var(--bg);
+    border: none; padding: 15px 30px; font-size: 1.1rem; border-radius: 8px;
+    font-family: inherit; font-weight: bold; text-transform: uppercase; letter-spacing: 0.1em;
+    cursor: pointer; box-shadow: 0 4px 15px rgba(0,0,0,0.2); transition: transform 0.1s;
+  }
+  button:active { transform: scale(0.95); }
+  .hidden { display: none !important; }
+</style>
+</head>
+<body>
+<canvas id="game"></canvas>
+<div id="ui">
+  <div class="hud hidden" id="hud">
+    <div id="score">000</div>
+    <div id="multiplier">x1</div>
+  </div>
+  <div class="center-msg" id="start-screen">
+    <div class="title">CHROME FOG</div>
+    <div class="subtitle">MEMORIZE THE SEQUENCE.<br><br>TAP ORBS TO REPEAT.<br>LONG-PRESS CENTER TO REVERSE FOR 2X SCORE.</div>
+    <button id="start-btn">BEGIN</button>
+  </div>
+  <div class="center-msg hidden" id="game-over-screen">
+    <div class="title">SIGNAL LOST</div>
+    <div class="subtitle" id="final-score">SCORE: 0</div>
+    <button id="restart-btn">RESTART</button>
+  </div>
+</div>
+<script>
+const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+let unlocked = false;
+
+// Pentatonic scale
+const freqs = [261.63, 293.66, 329.63, 392.00, 440.00, 523.25]; // C4, D4, E4, G4, A4, C5
+
+function playNote(index, isStutter) {
+  if (!unlocked) return;
+  const osc = audioCtx.createOscillator();
+  const gain = audioCtx.createGain();
+  osc.connect(gain);
+  gain.connect(audioCtx.destination);
+  osc.type = 'sine';
+  osc.frequency.value = freqs[index];
+  
+  const now = audioCtx.currentTime;
+  osc.start(now);
+  
+  if (isStutter) {
+    gain.gain.setValueAtTime(0, now);
+    gain.gain.linearRampToValueAtTime(0.5, now + 0.01);
+    gain.gain.linearRampToValueAtTime(0, now + 0.05);
+    gain.gain.setValueAtTime(0, now + 0.08);
+    gain.gain.linearRampToValueAtTime(0.5, now + 0.09);
+    gain.gain.linearRampToValueAtTime(0, now + 0.2);
+    osc.stop(now + 0.2);
+  } else {
+    gain.gain.setValueAtTime(0, now);
+    gain.gain.linearRampToValueAtTime(0.8, now + 0.05);
+    gain.gain.exponentialRampToValueAtTime(0.01, now + 0.5);
+    osc.stop(now + 0.5);
+  }
+}
+
+function playErrorSound() {
+  if (!unlocked) return;
+  const osc = audioCtx.createOscillator();
+  const gain = audioCtx.createGain();
+  osc.connect(gain);
+  gain.connect(audioCtx.destination);
+  osc.type = 'sawtooth';
+  osc.frequency.setValueAtTime(100, audioCtx.currentTime);
+  osc.frequency.exponentialRampToValueAtTime(50, audioCtx.currentTime + 0.3);
+  gain.gain.setValueAtTime(0.3, audioCtx.currentTime);
+  gain.gain.exponentialRampToValueAtTime(0.01, audioCtx.currentTime + 0.3);
+  osc.start(audioCtx.currentTime);
+  osc.stop(audioCtx.currentTime + 0.3);
+}
+
+function playSuccessSound() {
+  if (!unlocked) return;
+  const osc = audioCtx.createOscillator();
+  const gain = audioCtx.createGain();
+  osc.connect(gain);
+  gain.connect(audioCtx.destination);
+  osc.type = 'sine';
+  osc.frequency.setValueAtTime(523.25, audioCtx.currentTime); 
+  osc.frequency.setValueAtTime(659.25, audioCtx.currentTime + 0.1); 
+  gain.gain.setValueAtTime(0, audioCtx.currentTime);
+  gain.gain.linearRampToValueAtTime(0.2, audioCtx.currentTime + 0.05);
+  gain.gain.exponentialRampToValueAtTime(0.01, audioCtx.currentTime + 0.3);
+  osc.start(audioCtx.currentTime);
+  osc.stop(audioCtx.currentTime + 0.3);
+}
+
+function playMegaPulseSound() {
+  if (!unlocked) return;
+  const osc = audioCtx.createOscillator();
+  const gain = audioCtx.createGain();
+  osc.connect(gain);
+  gain.connect(audioCtx.destination);
+  osc.type = 'square';
+  osc.frequency.setValueAtTime(261.63, audioCtx.currentTime);
+  osc.frequency.exponentialRampToValueAtTime(1046.50, audioCtx.currentTime + 0.2);
+  gain.gain.setValueAtTime(0.2, audioCtx.currentTime);
+  gain.gain.exponentialRampToValueAtTime(0.01, audioCtx.currentTime + 0.5);
+  osc.start(audioCtx.currentTime);
+  osc.stop(audioCtx.currentTime + 0.5);
+}
+
+function playReverseToggle() {
+  if (!unlocked) return;
+  const osc = audioCtx.createOscillator();
+  const gain = audioCtx.createGain();
+  osc.connect(gain);
+  gain.connect(audioCtx.destination);
+  osc.type = 'triangle';
+  osc.frequency.setValueAtTime(800, audioCtx.currentTime);
+  osc.frequency.exponentialRampToValueAtTime(400, audioCtx.currentTime + 0.2);
+  gain.gain.setValueAtTime(0.3, audioCtx.currentTime);
+  gain.gain.exponentialRampToValueAtTime(0.01, audioCtx.currentTime + 0.2);
+  osc.start(audioCtx.currentTime);
+  osc.stop(audioCtx.currentTime + 0.2);
+}
+
+const cvs = document.getElementById('game');
+const ctx = cvs.getContext('2d');
+
+let state = 'START'; 
+let level = 1;
+let score = 0;
+let sequence = [];
+let flatSequence = [];
+let inputIndex = 0;
+let reverseMode = false;
+let inverted = false;
+
+let cx = 0, cy = 0, ringRadius = 0, centerRadius = 0;
+let width = 0, height = 0;
+
+let centerButtonHoldTime = 0;
+let centerHoldPointerId = null;
+
+let screenShake = 0;
+let pulseAmount = 0;
+let particles = [];
+
+const numOrbs = 6;
+// Cyan, Pink, Yellow, Spring Green, Orange, Ice Blue
+const orbColors = ['#00f3ff', '#ff2a5f', '#ffe600', '#00f060', '#ff5500', '#aaddff'];
+
+function hexToRgb(hex) {
+  const result = /^#?([a-f\d]{2})([a-f\d]{2})([a-f\d]{2})$/i.exec(hex);
+  return result ? { r: parseInt(result[1], 16), g: parseInt(result[2], 16), b: parseInt(result[3], 16) } : {r:255,g:255,b:255};
+}
+
+class Orb {
+  constructor(i) {
+    this.index = i;
+    this.angle = i * (Math.PI * 2) / numOrbs - Math.PI/2;
+    this.radius = 0;
+    this.x = 0;
+    this.y = 0;
+    this.flashAmount = 0;
+  }
+  update(dt) {
+    this.flashAmount -= dt * 3; 
+    if (this.flashAmount < 0) this.flashAmount = 0;
+  }
+}
+
+const orbs = [];
+for(let i=0; i<numOrbs; i++) orbs.push(new Orb(i));
+
+function resize() {
+  width = window.innerWidth;
+  height = window.innerHeight;
+  const dpr = window.devicePixelRatio || 1;
+  cvs.width = width * dpr;
+  cvs.height = height * dpr;
+  ctx.scale(dpr, dpr);
+  
+  cx = width / 2;
+  cy = height / 2;
+  ringRadius = Math.min(width, height) * 0.35;
+  if (ringRadius < 100) ringRadius = 100;
+  centerRadius = ringRadius * 0.3;
+  
+  for(let i=0; i<numOrbs; i++) {
+    let o = orbs[i];
+    o.radius = ringRadius * 0.22;
+    o.x = cx + Math.cos(o.angle) * ringRadius;
+    o.y = cy + Math.sin(o.angle) * ringRadius;
+  }
+}
+window.addEventListener('resize', resize);
+resize();
+
+function isDarkTheme() {
+  const prefersDark = window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches;
+  return prefersDark ? !inverted : inverted;
+}
+
+let seqTimer = 0;
+let seqIndex = 0;
+let seqSubState = 0; 
+
+function generateSequence() {
+  const len = Math.floor(3 + level * 0.5);
+  sequence = [];
+  let lastIndex = -1;
+  for(let i=0; i<len; i++) {
+    let index;
+    do {
+      index = Math.floor(Math.random() * numOrbs);
+    } while(index === lastIndex); 
+    lastIndex = index;
+    
+    let isStutter = false;
+    if (level >= 3 && Math.random() < 0.25) {
+      isStutter = true;
+    }
+    sequence.push({ index, stutter: isStutter });
+  }
+  seqIndex = 0;
+  seqTimer = 1.0; 
+  seqSubState = 0;
+  state = 'SEQ';
+}
+
+function updateExpectedSequence() {
+  flatSequence = [];
+  if (reverseMode) {
+    for (let i = sequence.length - 1; i >= 0; i--) {
+      flatSequence.push(sequence[i].index);
+      if (sequence[i].stutter) flatSequence.push(sequence[i].index);
+    }
+  } else {
+    for (let i = 0; i < sequence.length; i++) {
+      flatSequence.push(sequence[i].index);
+      if (sequence[i].stutter) flatSequence.push(sequence[i].index);
+    }
+  }
+}
+
+function updateSeq(dt) {
+  seqTimer -= dt;
+  if (seqTimer <= 0) {
+    if (seqIndex >= sequence.length) {
+      state = 'INPUT';
+      inputIndex = 0;
+      reverseMode = false;
+      document.getElementById('multiplier').innerText = 'x1';
+      document.getElementById('multiplier').style.color = '';
+      updateExpectedSequence();
+      return;
+    }
+    
+    const step = sequence[seqIndex];
+    
+    if (level >= 5 && seqSubState === 0) {
+      if (Math.random() < 0.15) {
+        inverted = !inverted;
+        document.body.classList.toggle('inverted', inverted);
+      }
+    }
+    
+    if (step.stutter) {
+      if (seqSubState === 0) {
+        orbs[step.index].flashAmount = 1.0;
+        playNote(step.index, false);
+        seqTimer = 0.15;
+        seqSubState = 1;
+      } else if (seqSubState === 1) {
+        seqTimer = 0.1;
+        seqSubState = 2;
+      } else if (seqSubState === 2) {
+        orbs[step.index].flashAmount = 1.0;
+        playNote(step.index, false);
+        seqTimer = 0.4;
+        seqSubState = 0;
+        seqIndex++;
+      }
+    } else {
+      orbs[step.index].flashAmount = 1.0;
+      playNote(step.index, false);
+      seqTimer = 0.6;
+      seqIndex++;
+    }
+  }
+
+  if (level >= 4 && Math.random() < 0.02) {
+    let ghostIndex = Math.floor(Math.random() * numOrbs);
+    const currentStep = sequence[seqIndex];
+    if (!currentStep || currentStep.index !== ghostIndex) {
+      if (orbs[ghostIndex].flashAmount <= 0) {
+        orbs[ghostIndex].flashAmount = 0.3;
+      }
+    }
+  }
+}
+
+function createParticles(x, y, color) {
+  for(let i=0; i<15; i++) {
+    particles.push({
+      x: x, y: y,
+      vx: (Math.random() - 0.5) * 400,
+      vy: (Math.random() - 0.5) * 400,
+      life: 1.0,
+      color: color
+    });
+  }
+}
+
+function handleOrbTap(orb) {
+  if (state !== 'INPUT') return;
+  orb.flashAmount = 1.0;
+  
+  const expectedIndex = flatSequence[inputIndex];
+  if (orb.index === expectedIndex) {
+    playNote(orb.index, false);
+    navigator.vibrate?.(20);
+    inputIndex++;
+    
+    createParticles(orb.x, orb.y, orbColors[orb.index]);
+    
+    if (inputIndex === flatSequence.length) {
+      finishRound();
+    }
+  } else {
+    playErrorSound();
+    navigator.vibrate?.([50, 50, 50]);
+    state = 'OVER';
+    screenShake = 0.5;
+    document.getElementById('game-over-screen').classList.remove('hidden');
+    document.getElementById('final-score').innerText = `SCORE: ${score}`;
+    document.getElementById('hud').classList.add('hidden');
+  }
+}
+
+function finishRound() {
+  state = 'SUCCESS';
+  let pts = sequence.length;
+  if (reverseMode) {
+    pts *= 2;
+    pulseAmount = 1.0;
+    playMegaPulseSound();
+    navigator.vibrate?.([30, 50, 30, 50]);
+  } else {
+    playSuccessSound();
+    navigator.vibrate?.(40);
+  }
+  score += pts;
+  document.getElementById('score').innerText = String(score).padStart(3, '0');
+  
+  level++;
+  setTimeout(() => {
+    generateSequence();
+  }, 1000);
+}
+
+function updateJuice(dt) {
+  if (screenShake > 0) screenShake -= dt;
+  if (screenShake < 0) screenShake = 0;
+  
+  if (pulseAmount > 0) pulseAmount -= dt * 1.5;
+  if (pulseAmount < 0) pulseAmount = 0;
+  
+  for(let i=particles.length-1; i>=0; i--) {
+    let p = particles[i];
+    p.x += p.vx * dt;
+    p.y += p.vy * dt;
+    p.life -= dt * 2;
+    if (p.life <= 0) particles.splice(i, 1);
+  }
+}
+
+function update(dt) {
+  if (state === 'SEQ') {
+    updateSeq(dt);
+  } else if (state === 'INPUT') {
+    if (centerHoldPointerId !== null && inputIndex === 0) {
+      centerButtonHoldTime += dt;
+      if (centerButtonHoldTime >= 0.4) {
+        reverseMode = !reverseMode;
+        centerHoldPointerId = null;
+        centerButtonHoldTime = 0;
+        playReverseToggle();
+        navigator.vibrate?.(50);
+        updateExpectedSequence();
+        document.getElementById('multiplier').innerText = reverseMode ? 'x2' : 'x1';
+        document.getElementById('multiplier').style.color = reverseMode ? '#ff2a5f' : '';
+      }
+    }
+  }
+  
+  for(let o of orbs) o.update(dt);
+  updateJuice(dt);
+}
+
+function drawFog(ctx, time) {
+  const dark = isDarkTheme();
+  const bg = dark ? '#1a1c23' : '#e0e5ec';
+  const fog2 = dark ? 'rgba(255,255,255,0.04)' : 'rgba(0,0,0,0.04)';
+  
+  ctx.fillStyle = bg;
+  ctx.fillRect(0,0,width,height);
+  
+  for(let i=0; i<3; i++) {
+    let x = cx + Math.sin(time*0.5 + i) * width * 0.3;
+    let y = cy + Math.cos(time*0.3 + i*2) * height * 0.3;
+    let r = width * 0.6;
+    let grad = ctx.createRadialGradient(x, y, 0, x, y, r);
+    grad.addColorStop(0, fog2);
+    grad.addColorStop(1, 'rgba(0,0,0,0)');
+    ctx.fillStyle = grad;
+    ctx.fill();
+  }
+}
+
+function createChromeGradient(ctx, x, y, r) {
+  const dark = isDarkTheme();
+  const grad = ctx.createLinearGradient(x - r*0.7, y - r*0.7, x + r*0.7, y + r*0.7);
+  if (dark) {
+    grad.addColorStop(0, '#555');
+    grad.addColorStop(0.4, '#111');
+    grad.addColorStop(0.5, '#eee');
+    grad.addColorStop(0.55, '#888');
+    grad.addColorStop(1, '#222');
+  } else {
+    grad.addColorStop(0, '#fff');
+    grad.addColorStop(0.4, '#aaa');
+    grad.addColorStop(0.5, '#444');
+    grad.addColorStop(0.55, '#ddd');
+    grad.addColorStop(1, '#888');
+  }
+  return grad;
+}
+
+function draw(time) {
+  drawFog(ctx, time);
+  const dark = isDarkTheme();
+  
+  ctx.save();
+  if (screenShake > 0) {
+    const amp = screenShake * 20;
+    ctx.translate((Math.random()-0.5)*amp, (Math.random()-0.5)*amp);
+  }
+
+  // Draw ring
+  ctx.beginPath();
+  ctx.arc(cx, cy, ringRadius, 0, Math.PI*2);
+  ctx.lineWidth = Math.max(10, ringRadius * 0.15);
+  const ringGrad = ctx.createLinearGradient(cx - ringRadius, cy - ringRadius, cx + ringRadius, cy + ringRadius);
+  if (dark) {
+    ringGrad.addColorStop(0, '#444'); ringGrad.addColorStop(0.5, '#111'); ringGrad.addColorStop(0.55, '#ccc'); ringGrad.addColorStop(1, '#333');
+  } else {
+    ringGrad.addColorStop(0, '#fff'); ringGrad.addColorStop(0.5, '#555'); ringGrad.addColorStop(0.55, '#eee'); ringGrad.addColorStop(1, '#999');
+  }
+  ctx.strokeStyle = ringGrad;
+  ctx.stroke();
+
+  if (reverseMode) {
+    ctx.globalCompositeOperation = 'lighter';
+    ctx.beginPath();
+    ctx.arc(cx, cy, ringRadius, 0, Math.PI*2);
+    ctx.lineWidth = Math.max(10, ringRadius * 0.15);
+    ctx.strokeStyle = 'rgba(255, 42, 95, 0.5)';
+    ctx.stroke();
+    ctx.lineWidth = Math.max(4, ringRadius * 0.05);
+    ctx.strokeStyle = 'rgba(255, 42, 95, 1)';
+    ctx.stroke();
+    ctx.globalCompositeOperation = 'source-over';
+  }
+
+  // Center button
+  ctx.beginPath();
+  ctx.arc(cx, cy, centerRadius, 0, Math.PI*2);
+  ctx.fillStyle = createChromeGradient(ctx, cx, cy, centerRadius);
+  ctx.fill();
+  
+  if (centerButtonHoldTime > 0) {
+    ctx.beginPath();
+    ctx.arc(cx, cy, centerRadius + 8, -Math.PI/2, -Math.PI/2 + (centerButtonHoldTime / 0.4) * Math.PI*2);
+    ctx.strokeStyle = dark ? '#fff' : '#000';
+    ctx.lineWidth = 4;
+    ctx.stroke();
+  }
+
+  ctx.fillStyle = dark ? '#ddd' : '#222';
+  ctx.font = `bold ${Math.max(10, centerRadius * 0.25)}px ui-monospace, monospace`;
+  ctx.textAlign = 'center';
+  ctx.textBaseline = 'middle';
+  if (state === 'INPUT' && inputIndex === 0 && !reverseMode) {
+    ctx.fillText("HOLD", cx, cy - centerRadius*0.2);
+    ctx.fillText("REVERSE", cx, cy + centerRadius*0.2);
+  } else if (reverseMode) {
+    ctx.fillStyle = '#ff2a5f';
+    ctx.fillText("REVERSE", cx, cy);
+  } else if (state === 'SEQ') {
+    ctx.fillText("WATCH", cx, cy);
+  } else if (state === 'INPUT') {
+    ctx.fillText("TAP", cx, cy);
+  }
+
+  for(let i=0; i<numOrbs; i++) {
+    let o = orbs[i];
+    ctx.beginPath();
+    ctx.arc(o.x, o.y, o.radius, 0, Math.PI*2);
+    ctx.fillStyle = createChromeGradient(ctx, o.x, o.y, o.radius);
+    ctx.fill();
+    
+    const rgb = hexToRgb(orbColors[i]);
+    ctx.fillStyle = `rgba(${rgb.r}, ${rgb.g}, ${rgb.b}, 0.15)`;
+    ctx.fill();
+
+    if (o.flashAmount > 0) {
+      ctx.globalCompositeOperation = 'lighter';
+      const flashGrad = ctx.createRadialGradient(o.x, o.y, 0, o.x, o.y, o.radius*1.5);
+      flashGrad.addColorStop(0, `rgba(${rgb.r}, ${rgb.g}, ${rgb.b}, ${o.flashAmount})`);
+      flashGrad.addColorStop(0.6, `rgba(${rgb.r}, ${rgb.g}, ${rgb.b}, ${o.flashAmount * 0.5})`);
+      flashGrad.addColorStop(1, `rgba(${rgb.r}, ${rgb.g}, ${rgb.b}, 0)`);
+      ctx.fillStyle = flashGrad;
+      
+      ctx.beginPath();
+      ctx.arc(o.x, o.y, o.radius*1.5, 0, Math.PI*2);
+      ctx.fill();
+      ctx.globalCompositeOperation = 'source-over';
+    }
+  }
+
+  for(let p of particles) {
+    ctx.fillStyle = p.color;
+    ctx.globalAlpha = Math.max(0, p.life);
+    ctx.beginPath();
+    ctx.arc(p.x, p.y, 4 + p.life*2, 0, Math.PI*2);
+    ctx.fill();
+  }
+  ctx.globalAlpha = 1.0;
+
+  if (pulseAmount > 0) {
+    ctx.globalCompositeOperation = 'lighter';
+    ctx.fillStyle = `rgba(255, 255, 255, ${pulseAmount * 0.3})`;
+    ctx.fillRect(0,0,width,height);
+    ctx.globalCompositeOperation = 'source-over';
+  }
+
+  ctx.restore();
+}
+
+let lastTime = performance.now();
+function loop(time) {
+  requestAnimationFrame(loop);
+  const dt = Math.min((time - lastTime) / 1000, 0.1);
+  lastTime = time;
+  update(dt);
+  draw(time / 1000);
+}
+requestAnimationFrame(loop);
+
+cvs.addEventListener('pointerdown', (e) => {
+  if (state !== 'INPUT') return;
+  const rect = cvs.getBoundingClientRect();
+  const x = e.clientX - rect.left;
+  const y = e.clientY - rect.top;
+  
+  const dist = Math.hypot(x - cx, y - cy);
+  if (dist < centerRadius && inputIndex === 0) {
+    centerHoldPointerId = e.pointerId;
+    centerButtonHoldTime = 0;
+  } else {
+    for (let o of orbs) {
+      if (Math.hypot(x - o.x, y - o.y) < o.radius + 20) {
+        handleOrbTap(o);
+        break;
+      }
+    }
+  }
+});
+
+window.addEventListener('pointerup', (e) => {
+  if (e.pointerId === centerHoldPointerId) {
+    centerHoldPointerId = null;
+    centerButtonHoldTime = 0;
+  }
+});
+window.addEventListener('pointercancel', (e) => {
+  if (e.pointerId === centerHoldPointerId) {
+    centerHoldPointerId = null;
+    centerButtonHoldTime = 0;
+  }
+});
+
+function resetGame() {
+  level = 1;
+  score = 0;
+  inverted = false;
+  document.body.classList.remove('inverted');
+  document.getElementById('score').innerText = '000';
+  document.getElementById('multiplier').innerText = 'x1';
+  document.getElementById('multiplier').style.color = '';
+  particles = [];
+  screenShake = 0;
+  pulseAmount = 0;
+  reverseMode = false;
+  generateSequence();
+}
+
+document.getElementById('start-btn').addEventListener('click', () => {
+  if (audioCtx.state === 'suspended') audioCtx.resume();
+  unlocked = true;
+  document.getElementById('start-screen').classList.add('hidden');
+  document.getElementById('hud').classList.remove('hidden');
+  resetGame();
+});
+
+document.getElementById('restart-btn').addEventListener('click', () => {
+  document.getElementById('game-over-screen').classList.add('hidden');
+  document.getElementById('hud').classList.remove('hidden');
+  resetGame();
+});
+</script>
+</body>
+</html>
