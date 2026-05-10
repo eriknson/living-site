@@ -1,0 +1,577 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=0, viewport-fit=cover">
+<title>Fog Crossing</title>
+<style>
+:root {
+  --bg: #e6e9e9;
+  --fg: #111;
+  --fog-rgb: 230, 233, 233;
+  --obstacle: #c0c8c8;
+  --lane: rgba(0,0,0,0.05);
+  --accent: #00cccc;
+}
+@media (prefers-color-scheme: dark) {
+  :root {
+    --bg: #0e1111;
+    --fg: #eee;
+    --fog-rgb: 14, 17, 17;
+    --obstacle: #2c3535;
+    --lane: rgba(255,255,255,0.05);
+    --accent: #00ffcc;
+  }
+}
+body {
+  margin: 0;
+  overflow: hidden;
+  background: var(--bg);
+  color: var(--fg);
+  font-family: ui-monospace, 'SFMono-Regular', Menlo, monospace;
+  touch-action: none;
+  user-select: none;
+  -webkit-user-select: none;
+}
+canvas {
+  display: block;
+  width: 100vw;
+  height: 100dvh;
+}
+#ui {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  pointer-events: none;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  box-sizing: border-box;
+}
+.screen {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  pointer-events: auto;
+  background: rgba(var(--fog-rgb), 0.85);
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
+  transition: opacity 0.4s ease;
+}
+.hidden {
+  opacity: 0;
+  pointer-events: none;
+}
+button {
+  background: transparent;
+  border: 1px solid var(--fg);
+  color: var(--fg);
+  padding: 14px 28px;
+  font-size: 1.2rem;
+  font-family: inherit;
+  cursor: pointer;
+  border-radius: 4px;
+  text-transform: uppercase;
+  letter-spacing: 2px;
+  transition: 0.2s;
+}
+button:active {
+  background: var(--fg);
+  color: var(--bg);
+}
+.hud-layer {
+  position: absolute;
+  top: env(safe-area-inset-top, 20px);
+  left: 0;
+  width: 100%;
+  padding: 20px;
+  box-sizing: border-box;
+  display: flex;
+  justify-content: space-between;
+  font-size: 1.2rem;
+  text-shadow: 0 0 4px var(--bg);
+}
+.title {
+  font-size: 2rem;
+  font-weight: bold;
+  letter-spacing: 4px;
+  margin-bottom: 20px;
+  text-transform: uppercase;
+}
+.subtitle {
+  font-size: 0.9rem;
+  opacity: 0.7;
+  margin-bottom: 40px;
+  text-align: center;
+  max-width: 80%;
+  line-height: 1.6;
+}
+.accent-text {
+  color: var(--accent);
+}
+</style>
+</head>
+<body>
+<canvas id="game"></canvas>
+<div id="ui">
+  <div class="hud-layer hidden" id="hud">
+    <div id="score">0</div>
+    <div id="clarity-ui">50%</div>
+  </div>
+  
+  <div class="screen" id="start-screen">
+    <div class="title">Fog Crossing</div>
+    <div class="subtitle">Switch lanes.<br>Dodge fronts, scoop <span class="accent-text">clarity shards</span>.<br>Swipe or tap.</div>
+    <button id="btn-start">Start</button>
+  </div>
+  
+  <div class="screen hidden" id="game-over-screen">
+    <div class="title">Lost in Fog</div>
+    <div class="subtitle" id="final-score">Score: 0</div>
+    <button id="btn-restart">Cross Again</button>
+  </div>
+</div>
+
+<script>
+const canvas = document.getElementById('game');
+const ctx = canvas.getContext('2d', { alpha: false });
+const uiStart = document.getElementById('start-screen');
+const uiOver = document.getElementById('game-over-screen');
+const uiHud = document.getElementById('hud');
+const scoreEl = document.getElementById('score');
+const clarityEl = document.getElementById('clarity-ui');
+const btnStart = document.getElementById('btn-start');
+const btnRestart = document.getElementById('btn-restart');
+
+let width, height;
+let state = 'start'; // start, playing, gameover
+let reqId;
+let lastTime = 0;
+
+let styleConfig = {
+  bg: '#e6e9e9',
+  fg: '#111',
+  fogRGB: '230, 233, 233',
+  obstacle: '#c0c8c8',
+  lane: 'rgba(0,0,0,0.05)',
+  accent: '#00cccc'
+};
+
+function updateStyles() {
+  const rs = getComputedStyle(document.documentElement);
+  styleConfig.bg = rs.getPropertyValue('--bg').trim();
+  styleConfig.fg = rs.getPropertyValue('--fg').trim();
+  styleConfig.fogRGB = rs.getPropertyValue('--fog-rgb').trim();
+  styleConfig.obstacle = rs.getPropertyValue('--obstacle').trim();
+  styleConfig.lane = rs.getPropertyValue('--lane').trim();
+  styleConfig.accent = rs.getPropertyValue('--accent').trim();
+}
+
+function resize() {
+  width = window.innerWidth;
+  height = window.innerHeight;
+  canvas.width = width;
+  canvas.height = height;
+  updateStyles();
+}
+window.addEventListener('resize', resize);
+window.matchMedia('(prefers-color-scheme: dark)').addEventListener('change', updateStyles);
+
+// Game State
+let timeElapsed = 0;
+let score = 0;
+let baseSpeed = 0;
+let clarity = 100;
+let windShear = 0.2; // Lerp factor
+let objects = [];
+let particles = [];
+let auroras = [];
+
+const trackMaxW = 450;
+let trackW, trackL, laneW;
+
+const player = {
+  lane: 1,
+  targetLane: 1,
+  x: 0,
+  y: 0,
+  size: 20,
+  shakeTime: 0
+};
+
+// Input
+let touchStartX = 0;
+let isSwipe = false;
+
+function moveLane(dir) {
+  let next = player.targetLane + dir;
+  if (next >= 0 && next <= 2) {
+    player.targetLane = next;
+    navigator.vibrate?.(15);
+  }
+}
+
+function setLane(lane) {
+  if (player.targetLane !== lane) {
+    player.targetLane = lane;
+    navigator.vibrate?.(15);
+  }
+}
+
+window.addEventListener('touchstart', e => {
+  if (state !== 'playing') return;
+  touchStartX = e.changedTouches[0].clientX;
+  isSwipe = false;
+}, {passive: false});
+
+window.addEventListener('touchmove', e => {
+  if (state !== 'playing') return;
+  e.preventDefault();
+  let dx = e.changedTouches[0].clientX - touchStartX;
+  if (!isSwipe && Math.abs(dx) > 40) {
+    isSwipe = true;
+    if (dx > 0) moveLane(1);
+    else moveLane(-1);
+  }
+}, {passive: false});
+
+window.addEventListener('touchend', e => {
+  if (state !== 'playing') return;
+  if (!isSwipe) {
+    let x = e.changedTouches[0].clientX;
+    if (x < trackL + laneW) setLane(0);
+    else if (x < trackL + 2*laneW) setLane(1);
+    else setLane(2);
+  }
+});
+
+window.addEventListener('keydown', e => {
+  if (state !== 'playing') return;
+  if (e.key === 'ArrowLeft' || e.key === 'a') moveLane(-1);
+  if (e.key === 'ArrowRight' || e.key === 'd') moveLane(1);
+});
+
+btnStart.addEventListener('click', startGame);
+btnRestart.addEventListener('click', startGame);
+
+function startGame() {
+  uiStart.classList.add('hidden');
+  uiOver.classList.add('hidden');
+  uiHud.classList.remove('hidden');
+  
+  resize(); // ensure vars are fresh
+  
+  state = 'playing';
+  timeElapsed = 0;
+  score = 0;
+  baseSpeed = height * 0.6; // px per second
+  clarity = 80;
+  windShear = 0.25;
+  objects = [];
+  particles = [];
+  auroras = [];
+  
+  player.targetLane = 1;
+  player.lane = 1;
+  trackW = Math.min(width, trackMaxW);
+  laneW = trackW / 3;
+  trackL = (width - trackW) / 2;
+  player.x = trackL + laneW * 1.5;
+  player.y = height * 0.8;
+  
+  lastTime = performance.now();
+  if (reqId) cancelAnimationFrame(reqId);
+  reqId = requestAnimationFrame(loop);
+}
+
+function gameOver() {
+  state = 'gameover';
+  navigator.vibrate?.([200, 50, 200]);
+  uiHud.classList.add('hidden');
+  uiOver.classList.remove('hidden');
+  document.getElementById('final-score').innerText = `Score: ${Math.floor(score)}`;
+}
+
+let spawnTimer = 0;
+function spawnObject() {
+  // spawn logic based on escalation
+  let difficulty = Math.min(1, timeElapsed / 60); // Max diff at 60s
+  
+  // Is it a shard or an obstacle?
+  // 25% chance of shard, more if clarity is low
+  let shardChance = 0.25;
+  if (clarity < 30) shardChance = 0.4;
+  
+  if (Math.random() < shardChance) {
+    // Shard
+    objects.push({
+      type: 'shard',
+      lane: Math.floor(Math.random() * 3),
+      y: -50,
+      size: 15,
+      active: true,
+      wobble: Math.random() * Math.PI * 2
+    });
+  } else {
+    // Obstacle front
+    // Can span 1 or 2 lanes
+    let widthLanes = (Math.random() < 0.4 + difficulty * 0.3) ? 2 : 1;
+    let startLane = Math.floor(Math.random() * (4 - widthLanes));
+    objects.push({
+      type: 'front',
+      lane: startLane,
+      width: widthLanes,
+      y: -100,
+      h: 40 + Math.random() * 60,
+      active: true,
+      nearMissed: false
+    });
+  }
+}
+
+function spawnParticles(x, y, color, count) {
+  for(let i=0; i<count; i++) {
+    let angle = Math.random() * Math.PI * 2;
+    let spd = Math.random() * 300 + 50;
+    particles.push({
+      x, y,
+      vx: Math.cos(angle) * spd,
+      vy: Math.sin(angle) * spd,
+      life: 1,
+      color,
+      size: Math.random() * 3 + 2
+    });
+  }
+}
+
+function loop(time) {
+  if (state !== 'playing') return;
+  
+  let dt = (time - lastTime) / 1000;
+  if (dt > 0.1) dt = 0.016;
+  lastTime = time;
+  
+  update(dt);
+  draw();
+  
+  reqId = requestAnimationFrame(loop);
+}
+
+function update(dt) {
+  timeElapsed += dt;
+  let difficulty = Math.min(1, timeElapsed / 60);
+  
+  // Escalation
+  baseSpeed = height * (0.6 + difficulty * 0.8);
+  windShear = Math.max(0.08, 0.25 - difficulty * 0.17);
+  
+  score += baseSpeed * dt * 0.05;
+  scoreEl.innerText = Math.floor(score);
+  
+  clarity -= 4 * dt * (1 + difficulty); // faster decay over time
+  if (clarity < 0) clarity = 0;
+  if (clarity > 100) clarity = 100;
+  clarityEl.innerText = `${Math.floor(clarity)}%`;
+  
+  // Player movement
+  trackW = Math.min(width, trackMaxW);
+  laneW = trackW / 3;
+  trackL = (width - trackW) / 2;
+  
+  let targetX = trackL + player.targetLane * laneW + laneW / 2;
+  player.x += (targetX - player.x) * (windShear * 60 * dt);
+  if (player.shakeTime > 0) player.shakeTime -= dt;
+  
+  // Spawning
+  spawnTimer -= dt;
+  let spawnInterval = 1.0 - difficulty * 0.6; // gets faster
+  if (spawnTimer <= 0) {
+    spawnObject();
+    spawnTimer = spawnInterval + Math.random() * 0.3;
+  }
+  
+  // Objects
+  let hitDist = player.size + 15;
+  for (let i = objects.length - 1; i >= 0; i--) {
+    let o = objects[i];
+    o.y += baseSpeed * dt;
+    
+    if (o.type === 'shard' && o.active) {
+      o.wobble += dt * 5;
+      let ox = trackL + o.lane * laneW + laneW / 2;
+      let dx = player.x - ox;
+      let dy = player.y - o.y;
+      if (Math.hypot(dx, dy) < hitDist + 10) {
+        o.active = false;
+        clarity = Math.min(100, clarity + 15);
+        navigator.vibrate?.(40);
+        spawnParticles(ox, o.y, styleConfig.accent, 15);
+      }
+    }
+    
+    if (o.type === 'front' && o.active) {
+      // Hitbox
+      let frontL = trackL + o.lane * laneW;
+      let frontR = frontL + o.width * laneW;
+      let frontT = o.y - o.h/2;
+      let frontB = o.y + o.h/2;
+      
+      let pL = player.x - player.size;
+      let pR = player.x + player.size;
+      let pT = player.y - player.size;
+      let pB = player.y + player.size;
+      
+      // Collision
+      if (pR > frontL && pL < frontR && pB > frontT && pT < frontB) {
+        // Crash!
+        spawnParticles(player.x, player.y, styleConfig.fg, 30);
+        gameOver();
+        return;
+      }
+      
+      // Near miss check
+      if (!o.nearMissed && pT < frontB && pB > frontT) {
+        // We are vertically aligned. Are we close horizontally?
+        let distL = Math.abs(pR - frontL);
+        let distR = Math.abs(pL - frontR);
+        if (distL < 30 || distR < 30) {
+          o.nearMissed = true;
+          score += 50;
+          clarity = Math.min(100, clarity + 2);
+          auroras.push({ x: player.x, life: 1, color: styleConfig.accent });
+          player.shakeTime = 0.2; // slight juice
+        }
+      }
+    }
+    
+    if (o.y > height + 200) {
+      objects.splice(i, 1);
+    }
+  }
+  
+  // Particles
+  for (let i = particles.length - 1; i >= 0; i--) {
+    let p = particles[i];
+    p.x += p.vx * dt;
+    p.y += p.vy * dt;
+    p.life -= dt * 2;
+    if (p.life <= 0) particles.splice(i, 1);
+  }
+  
+  // Auroras
+  for (let i = auroras.length - 1; i >= 0; i--) {
+    auroras[i].life -= dt * 2;
+    if (auroras[i].life <= 0) auroras.splice(i, 1);
+  }
+}
+
+function draw() {
+  ctx.fillStyle = styleConfig.bg;
+  ctx.fillRect(0, 0, width, height);
+  
+  ctx.save();
+  if (player.shakeTime > 0) {
+    let amt = player.shakeTime * 20;
+    ctx.translate((Math.random()-0.5)*amt, (Math.random()-0.5)*amt);
+  }
+  
+  // Lanes
+  ctx.fillStyle = styleConfig.lane;
+  ctx.fillRect(trackL, 0, laneW, height);
+  ctx.fillRect(trackL + laneW * 2, 0, laneW, height);
+  
+  // Auroras
+  ctx.globalCompositeOperation = 'screen';
+  for (let a of auroras) {
+    let grad = ctx.createLinearGradient(a.x - 30, 0, a.x + 30, 0);
+    grad.addColorStop(0, 'transparent');
+    // Convert hex accent to rgba for opacity (naive fallback, assume hex or named)
+    // We can just use globalAlpha
+    ctx.globalAlpha = a.life * 0.5;
+    ctx.fillStyle = a.color;
+    ctx.fillRect(a.x - 30, 0, 60, height);
+  }
+  ctx.globalAlpha = 1;
+  ctx.globalCompositeOperation = 'source-over';
+  
+  // Objects
+  for (let o of objects) {
+    if (!o.active) continue;
+    if (o.type === 'front') {
+      ctx.fillStyle = styleConfig.obstacle;
+      let ox = trackL + o.lane * laneW;
+      let ow = o.width * laneW;
+      // draw soft rect
+      ctx.beginPath();
+      ctx.roundRect(ox + 4, o.y - o.h/2, ow - 8, o.h, 8);
+      ctx.fill();
+    } else if (o.type === 'shard') {
+      ctx.fillStyle = styleConfig.accent;
+      let ox = trackL + o.lane * laneW + laneW / 2;
+      let s = o.size * (0.8 + 0.2 * Math.sin(o.wobble));
+      ctx.beginPath();
+      ctx.moveTo(ox, o.y - s);
+      ctx.lineTo(ox + s*0.7, o.y);
+      ctx.lineTo(ox, o.y + s);
+      ctx.lineTo(ox - s*0.7, o.y);
+      ctx.closePath();
+      ctx.fill();
+      
+      // Glow
+      ctx.shadowColor = styleConfig.accent;
+      ctx.shadowBlur = 10;
+      ctx.fill();
+      ctx.shadowBlur = 0;
+    }
+  }
+  
+  // Particles
+  for (let p of particles) {
+    ctx.globalAlpha = p.life;
+    ctx.fillStyle = p.color;
+    ctx.beginPath();
+    ctx.arc(p.x, p.y, p.size, 0, Math.PI*2);
+    ctx.fill();
+  }
+  ctx.globalAlpha = 1;
+  
+  // Player
+  ctx.fillStyle = styleConfig.fg;
+  ctx.beginPath();
+  ctx.moveTo(player.x, player.y - player.size);
+  ctx.lineTo(player.x + player.size*0.8, player.y + player.size);
+  ctx.lineTo(player.x, player.y + player.size*0.5);
+  ctx.lineTo(player.x - player.size*0.8, player.y + player.size);
+  ctx.closePath();
+  ctx.fill();
+  
+  ctx.restore();
+  
+  // Fog overlay
+  // clarity 100 -> fog ends at top 20%
+  // clarity 0 -> fog ends at 100% (covers everything)
+  let fogExtent = 0.2 + 0.8 * (1 - clarity / 100);
+  let grad = ctx.createLinearGradient(0, 0, 0, height);
+  grad.addColorStop(0, `rgba(${styleConfig.fogRGB}, 1)`);
+  grad.addColorStop(Math.min(1, fogExtent * 0.8), `rgba(${styleConfig.fogRGB}, 1)`);
+  grad.addColorStop(Math.min(1, fogExtent + 0.2), `rgba(${styleConfig.fogRGB}, 0)`);
+  
+  ctx.fillStyle = grad;
+  ctx.fillRect(0, 0, width, height);
+}
+
+// Initial paint
+resize();
+ctx.fillStyle = styleConfig.bg;
+ctx.fillRect(0, 0, canvas.width, canvas.height);
+</script>
+</body>
+</html>
