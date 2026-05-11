@@ -1,0 +1,1288 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="theme-color" content="#0c1014">
+<title>Circuit Trace</title>
+<style>
+:root{
+  color-scheme: dark light;
+  --bg:#0c1014;
+  --paper:#11161b;
+  --paper-2:#161c22;
+  --fg:#e8eee9;
+  --dim:#6c7770;
+  --line:#1f262c;
+  --line-2:#2b333a;
+  --mint:#4dffb7;
+  --mint-soft:#2a8a69;
+  --warn:#ff7066;
+}
+@media (prefers-color-scheme: light){
+  :root{
+    --bg:#f3ecdf;
+    --paper:#ece4d2;
+    --paper-2:#e0d6c0;
+    --fg:#1a201c;
+    --dim:#7d8478;
+    --line:#cdc3ac;
+    --line-2:#b8ae96;
+    --mint:#067456;
+    --mint-soft:#7dc9ad;
+    --warn:#bf3e2c;
+  }
+}
+*{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent}
+html,body{width:100%;height:100%}
+body{
+  height:100dvh;
+  background:var(--bg);
+  color:var(--fg);
+  overflow:hidden;
+  font-family: ui-monospace, 'SFMono-Regular', Menlo, 'Cascadia Code', 'Roboto Mono', monospace;
+  -webkit-font-smoothing:antialiased;
+  letter-spacing:0.02em;
+  font-feature-settings: "ss01", "tnum";
+}
+#app{
+  position:fixed;
+  inset:0;
+  width:100dvw;
+  height:100dvh;
+  display:flex;
+  flex-direction:column;
+  touch-action:none;
+  user-select:none;
+  -webkit-user-select:none;
+  overscroll-behavior:none;
+}
+#hud{
+  flex:0 0 auto;
+  display:grid;
+  grid-template-columns:1fr 1fr 1fr;
+  align-items:start;
+  padding: max(14px, env(safe-area-inset-top, 0px)) 18px 0 18px;
+  color:var(--dim);
+  pointer-events:none;
+  gap:8px;
+  z-index:2;
+}
+#hud .col{display:flex;flex-direction:column;gap:3px;min-width:0}
+#hud .col.center{align-items:center}
+#hud .col.right{align-items:flex-end}
+#hud .label{
+  font-size:9px;
+  color:var(--dim);
+  letter-spacing:0.32em;
+  text-transform:uppercase;
+}
+#hud .value{
+  font-size:18px;
+  color:var(--fg);
+  font-weight:500;
+  letter-spacing:0.06em;
+  font-variant-numeric: tabular-nums;
+}
+#hud .value.mint{color:var(--mint)}
+
+#canvas-wrap{
+  flex:1 1 auto;
+  position:relative;
+  overflow:hidden;
+  min-height:0;
+}
+canvas{
+  position:absolute;
+  inset:0;
+  width:100%;
+  height:100%;
+  display:block;
+  touch-action:none;
+  cursor:crosshair;
+}
+
+#footer{
+  flex:0 0 auto;
+  padding: 6px 18px max(12px, env(safe-area-inset-bottom, 0px)) 18px;
+  display:flex;
+  flex-direction:column;
+  align-items:center;
+  gap:6px;
+  pointer-events:none;
+  z-index:2;
+}
+.ink-bar{
+  width: min(64%, 260px);
+  height:3px;
+  background:var(--line);
+  border-radius:1.5px;
+  overflow:hidden;
+  position:relative;
+}
+.ink-fill{
+  position:absolute;
+  top:0; left:0; right:0; bottom:0;
+  transform-origin: left center;
+  background:linear-gradient(90deg, var(--mint-soft), var(--mint));
+  transform: scaleX(1);
+  transition: transform 0.32s cubic-bezier(0.2,0.7,0.2,1), background 0.2s linear;
+}
+.ink-label{
+  font-size:9px;
+  letter-spacing:0.32em;
+  color:var(--dim);
+  text-transform:uppercase;
+}
+
+.overlay{
+  position:absolute;
+  inset:0;
+  display:flex;
+  flex-direction:column;
+  align-items:center;
+  justify-content:center;
+  padding:28px 24px;
+  gap:14px;
+  background: color-mix(in oklab, var(--bg) 82%, transparent 18%);
+  backdrop-filter: blur(12px) saturate(140%);
+  -webkit-backdrop-filter: blur(12px) saturate(140%);
+  text-align:center;
+  pointer-events:auto;
+  transition: opacity 0.4s cubic-bezier(0.2,0.7,0.2,1), transform 0.4s cubic-bezier(0.2,0.7,0.2,1);
+  z-index:5;
+}
+.overlay.hidden{
+  opacity:0;
+  pointer-events:none;
+  transform: translateY(-6px);
+  visibility: hidden;
+  transition: opacity 0.4s cubic-bezier(0.2,0.7,0.2,1),
+              transform 0.4s cubic-bezier(0.2,0.7,0.2,1),
+              visibility 0s 0.4s;
+}
+.ovl-tag{
+  font-size:10px;
+  letter-spacing:0.42em;
+  color:var(--mint);
+  text-transform:uppercase;
+  margin-bottom:6px;
+  font-weight:500;
+}
+.ovl-title{
+  font-size: clamp(28px, 9vw, 44px);
+  font-weight:500;
+  letter-spacing:0.02em;
+  line-height:1.04;
+  color:var(--fg);
+  text-transform:lowercase;
+}
+.ovl-title .accent{ color: var(--mint); }
+.ovl-sub{
+  font-size:13px;
+  color:var(--dim);
+  max-width:340px;
+  line-height:1.7;
+  letter-spacing:0.02em;
+  margin-top:6px;
+}
+.ovl-stats{
+  display:grid;
+  grid-template-columns:1fr 1fr;
+  gap:36px;
+  margin:8px 0 4px 0;
+}
+.ovl-stats .stat{
+  display:flex;
+  flex-direction:column;
+  align-items:center;
+  gap:6px;
+}
+.ovl-stats .stat .label{
+  font-size:9px;
+  color:var(--dim);
+  letter-spacing:0.32em;
+  text-transform:uppercase;
+}
+.ovl-stats .stat .value{
+  font-size:32px;
+  color:var(--fg);
+  font-weight:500;
+  font-variant-numeric: tabular-nums;
+}
+.ovl-stats .stat .value.mint{ color: var(--mint); }
+.play{
+  margin-top:14px;
+  background:transparent;
+  color:var(--fg);
+  border:1px solid var(--mint);
+  border-radius:999px;
+  padding:14px 32px;
+  font:inherit;
+  font-size:12px;
+  letter-spacing:0.36em;
+  text-transform:uppercase;
+  cursor:pointer;
+  min-height:48px;
+  min-width:200px;
+  transition: background 0.18s, color 0.18s, transform 0.12s, box-shadow 0.2s;
+  pointer-events:auto;
+  touch-action: manipulation;
+  position:relative;
+}
+.play:hover{
+  background: color-mix(in oklab, var(--mint) 12%, transparent 88%);
+  box-shadow: 0 0 32px color-mix(in oklab, var(--mint) 30%, transparent 70%);
+}
+.play:active{
+  background: var(--mint);
+  color: var(--paper);
+  transform: scale(0.98);
+}
+.hint-row{
+  display:flex;
+  gap:18px;
+  color:var(--dim);
+  font-size:10px;
+  letter-spacing:0.24em;
+  text-transform:uppercase;
+  margin-top:10px;
+  flex-wrap:wrap;
+  justify-content:center;
+}
+.hint-row .grp{
+  display:inline-flex;
+  align-items:center;
+}
+.hint-row .k{
+  color:var(--fg);
+  border:1px solid var(--line-2);
+  padding:4px 8px;
+  border-radius:4px;
+  margin-right:8px;
+  font-size:10px;
+  background: color-mix(in oklab, var(--paper-2) 80%, transparent 20%);
+}
+.foot-tag{
+  position:absolute;
+  bottom:14px;
+  font-size:8px;
+  letter-spacing:0.4em;
+  color:var(--dim);
+  opacity:0.55;
+  text-transform:uppercase;
+}
+</style>
+</head>
+<body>
+<div id="app">
+  <header id="hud">
+    <div class="col"><span class="label">graph</span><span class="value" id="hud-level">001</span></div>
+    <div class="col center"><span class="label">compiled</span><span class="value" id="hud-score">00</span></div>
+    <div class="col right"><span class="label">ink</span><span class="value mint" id="hud-ink">--</span></div>
+  </header>
+  <div id="canvas-wrap">
+    <canvas id="cv"></canvas>
+    <div id="overlay-title" class="overlay">
+      <div class="ovl-tag">// circuit trace</div>
+      <h1 class="ovl-title">trace<br>the <span class="accent">whole</span><br>signal</h1>
+      <p class="ovl-sub">Drag from a node and cross every line exactly once. Land on the last node to compile a clean pulse of mint light.</p>
+      <button class="play" id="btn-start">begin →</button>
+      <div class="hint-row">
+        <span class="grp"><span class="k">space</span>begin</span>
+        <span class="grp"><span class="k">r</span>redo</span>
+        <span class="grp"><span class="k">drag</span>trace</span>
+      </div>
+      <div class="foot-tag">// hex.eulerian.path</div>
+    </div>
+    <div id="overlay-over" class="overlay hidden">
+      <div class="ovl-tag" id="over-tag">// signal lost</div>
+      <h1 class="ovl-title" id="over-title">disconnect</h1>
+      <div class="ovl-stats">
+        <div class="stat"><span class="label">compiled</span><span class="value mint" id="over-score">0</span></div>
+        <div class="stat"><span class="label">depth</span><span class="value" id="over-level">0</span></div>
+      </div>
+      <button class="play" id="btn-again" aria-label="restart">trace again →</button>
+      <div class="hint-row">
+        <span class="grp"><span class="k">space</span>retry</span>
+      </div>
+    </div>
+  </div>
+  <footer id="footer">
+    <div class="ink-bar"><div class="ink-fill" id="ink-fill"></div></div>
+    <span class="ink-label" id="ink-label">ink reserve</span>
+  </footer>
+</div>
+<script>
+(function(){
+'use strict';
+
+/* =========================================================
+   DOM REFS
+   ========================================================= */
+const canvas = document.getElementById('cv');
+const ctx = canvas.getContext('2d');
+const overlayTitle = document.getElementById('overlay-title');
+const overlayOver = document.getElementById('overlay-over');
+const btnStart = document.getElementById('btn-start');
+const btnAgain = document.getElementById('btn-again');
+const hudLevel = document.getElementById('hud-level');
+const hudScore = document.getElementById('hud-score');
+const hudInk = document.getElementById('hud-ink');
+const inkFill = document.getElementById('ink-fill');
+const inkLabel = document.getElementById('ink-label');
+const overScore = document.getElementById('over-score');
+const overLevel = document.getElementById('over-level');
+const overTitle = document.getElementById('over-title');
+const overTag = document.getElementById('over-tag');
+
+/* =========================================================
+   CANVAS / DPR
+   ========================================================= */
+let W = 0, H = 0, DPR = 1;
+function resize(){
+  DPR = Math.min(window.devicePixelRatio || 1, 2.5);
+  const r = canvas.getBoundingClientRect();
+  W = Math.max(1, r.width);
+  H = Math.max(1, r.height);
+  canvas.width  = Math.round(W * DPR);
+  canvas.height = Math.round(H * DPR);
+  ctx.setTransform(DPR, 0, 0, DPR, 0, 0);
+  if (state.puzzle) state.puzzle.layout();
+  initPaper();
+}
+window.addEventListener('resize', resize, { passive: true });
+window.addEventListener('orientationchange', () => setTimeout(resize, 80), { passive: true });
+
+/* =========================================================
+   THEME
+   ========================================================= */
+const css = n => getComputedStyle(document.documentElement).getPropertyValue(n).trim();
+let colors = {};
+function refreshColors(){
+  colors = {
+    bg:       css('--bg'),
+    paper:    css('--paper'),
+    paper2:   css('--paper-2'),
+    fg:       css('--fg'),
+    dim:      css('--dim'),
+    line:     css('--line'),
+    line2:    css('--line-2'),
+    mint:     css('--mint'),
+    mintSoft: css('--mint-soft'),
+    warn:     css('--warn'),
+  };
+}
+refreshColors();
+const darkMQ = window.matchMedia('(prefers-color-scheme: dark)');
+const onSchemeChange = () => { refreshColors(); initPaper(); };
+if (darkMQ.addEventListener) darkMQ.addEventListener('change', onSchemeChange);
+else if (darkMQ.addListener) darkMQ.addListener(onSchemeChange);
+function isDark(){ return darkMQ.matches; }
+
+/* =========================================================
+   HEX MATH
+   ========================================================= */
+const SQ3 = Math.sqrt(3);
+const HEX_DIRS = [
+  { q: 1, r:  0 }, { q: 1, r: -1 }, { q: 0, r: -1 },
+  { q:-1, r:  0 }, { q:-1, r:  1 }, { q: 0, r:  1 },
+];
+const hexKey = h => h.q + ',' + h.r;
+function edgeKey(a, b){
+  const ka = hexKey(a), kb = hexKey(b);
+  return ka < kb ? ka + '|' + kb : kb + '|' + ka;
+}
+function hexToPixel(h, size){
+  return { x: size * (SQ3 * h.q + SQ3 / 2 * h.r),
+           y: size * (3/2 * h.r) };
+}
+
+/* =========================================================
+   PUZZLE GENERATOR (non-backtracking random walk → guaranteed
+   Eulerian-traversable subgraph; walker's path IS one solution)
+   ========================================================= */
+function randomWalk(targetEdges, radius){
+  const start = { q: 0, r: 0 };
+  const nodes = new Map([[hexKey(start), start]]);
+  const edges = [];
+  const edgeSet = new Set();
+  const walkPath = [start];
+  let cur = start;
+  let safety = 0;
+  while (edges.length < targetEdges && safety < 500){
+    safety++;
+    const choices = [];
+    for (let i = 0; i < HEX_DIRS.length; i++){
+      const d = HEX_DIRS[i];
+      const next = { q: cur.q + d.q, r: cur.r + d.r };
+      const dist = Math.max(Math.abs(next.q), Math.abs(next.r), Math.abs(-next.q - next.r));
+      if (dist > radius) continue;
+      const ek = edgeKey(cur, next);
+      if (edgeSet.has(ek)) continue;
+      choices.push({ next, ek });
+    }
+    if (choices.length === 0) break;
+    const choice = choices[Math.floor(Math.random() * choices.length)];
+    edges.push({ a: cur, b: choice.next });
+    edgeSet.add(choice.ek);
+    const nk = hexKey(choice.next);
+    if (!nodes.has(nk)) nodes.set(nk, choice.next);
+    walkPath.push(choice.next);
+    cur = choice.next;
+  }
+  return { nodes: Array.from(nodes.values()), edges, walkPath };
+}
+
+function targetEdgesFor(level){
+  // 4 at L1 → 13 at L13+
+  return Math.min(4 + Math.ceil((level - 1) * 0.75), 13);
+}
+
+function generatePuzzle(level){
+  const target = targetEdgesFor(level);
+  const radius = level < 5 ? 2 : 3;
+  const wantBranch = level >= 3;
+  const minEdges = Math.max(3, target - 1);
+  let best = null;
+  for (let t = 0; t < 120; t++){
+    const r = randomWalk(target, radius);
+    if (r.edges.length < minEdges) continue;
+    const deg = new Map();
+    for (const e of r.edges){
+      deg.set(hexKey(e.a), (deg.get(hexKey(e.a)) || 0) + 1);
+      deg.set(hexKey(e.b), (deg.get(hexKey(e.b)) || 0) + 1);
+    }
+    let hasBranch = false;
+    for (const d of deg.values()){ if (d >= 3){ hasBranch = true; break; } }
+    if (wantBranch && !hasBranch) continue;
+    if (!best || r.edges.length > best.edges.length) best = r;
+    if (best && best.edges.length >= target) break;
+  }
+  if (!best){
+    for (let t = 0; t < 60; t++){
+      const r = randomWalk(target, radius);
+      if (r.edges.length < 3) continue;
+      if (!best || r.edges.length > best.edges.length) best = r;
+    }
+  }
+  return best || randomWalk(4, 2);
+}
+
+/* =========================================================
+   PUZZLE CLASS
+   ========================================================= */
+class Puzzle {
+  constructor(level){
+    this.level = level;
+    const raw = generatePuzzle(level);
+    this.nodes = raw.nodes.map(n => ({ q: n.q, r: n.r, x: 0, y: 0, pulse: 0 }));
+    this.nodeMap = new Map();
+    for (const n of this.nodes) this.nodeMap.set(hexKey(n), n);
+
+    this.edges = raw.edges.map(e => ({
+      a: this.nodeMap.get(hexKey(e.a)),
+      b: this.nodeMap.get(hexKey(e.b)),
+      key: edgeKey(e.a, e.b),
+      used: false,
+      flash: 0,
+    }));
+
+    this.adjacency = new Map();
+    for (const e of this.edges){
+      const ka = hexKey(e.a), kb = hexKey(e.b);
+      if (!this.adjacency.has(ka)) this.adjacency.set(ka, []);
+      if (!this.adjacency.has(kb)) this.adjacency.set(kb, []);
+      this.adjacency.get(ka).push(e);
+      this.adjacency.get(kb).push(e);
+    }
+
+    this.validStarts = [];
+    for (const [k, es] of this.adjacency){
+      if (es.length % 2 === 1) this.validStarts.push(this.nodeMap.get(k));
+    }
+
+    this.walkPath = raw.walkPath.map(n => this.nodeMap.get(hexKey(n)));
+
+    this.path = [];
+    this.pathEdges = [];
+    this.startNode = null;
+    this.curNode = null;
+
+    this.layout();
+  }
+  isValidStart(node){
+    if (this.validStarts.length === 0) return true;
+    return this.validStarts.indexOf(node) >= 0;
+  }
+  layout(){
+    const padTop = 26, padBottom = 26, padX = 32;
+    const tW = Math.max(W - padX * 2, 220);
+    const tH = Math.max(H - padTop - padBottom, 220);
+    let minX = Infinity, minY = Infinity, maxX = -Infinity, maxY = -Infinity;
+    for (const n of this.nodes){
+      const p = hexToPixel(n, 1);
+      n._tx = p.x; n._ty = p.y;
+      if (p.x < minX) minX = p.x;
+      if (p.y < minY) minY = p.y;
+      if (p.x > maxX) maxX = p.x;
+      if (p.y > maxY) maxY = p.y;
+    }
+    const bbW = (maxX - minX) || 1;
+    const bbH = (maxY - minY) || 1;
+    let size = Math.min(tW / (bbW + 1.3), tH / (bbH + 1.4), 80);
+    size = Math.max(size, 38);
+    const ox = W / 2 - (minX + maxX) / 2 * size;
+    const oy = padTop + tH / 2 - (minY + maxY) / 2 * size;
+    for (const n of this.nodes){
+      n.x = n._tx * size + ox;
+      n.y = n._ty * size + oy;
+    }
+    this.hexSize = size;
+    this.nodeRadius = Math.max(11, Math.min(18, size * 0.26));
+  }
+  startFrom(n){
+    this.path = [n];
+    this.pathEdges = [];
+    this.startNode = n;
+    this.curNode = n;
+  }
+  extendTo(other){
+    const adj = this.adjacency.get(hexKey(this.curNode)) || [];
+    for (const e of adj){
+      if (e.used) continue;
+      const t = (e.a === this.curNode) ? e.b : e.a;
+      if (t === other){
+        e.used = true;
+        e.flash = 1;
+        this.pathEdges.push(e);
+        this.path.push(other);
+        this.curNode = other;
+        other.pulse = 1;
+        return e;
+      }
+    }
+    return null;
+  }
+  backtrack(){
+    if (this.pathEdges.length === 0) return null;
+    const e = this.pathEdges.pop();
+    e.used = false;
+    const removed = this.path.pop();
+    if (removed) removed.pulse = 0;
+    this.curNode = this.path[this.path.length - 1];
+    return e;
+  }
+  reset(){
+    for (const e of this.edges){ e.used = false; e.flash = 0; }
+    for (const n of this.nodes) n.pulse = 0;
+    this.path = [];
+    this.pathEdges = [];
+    this.startNode = null;
+    this.curNode = null;
+  }
+  isCompiled(){
+    for (const e of this.edges){ if (!e.used) return false; }
+    return true;
+  }
+  centroid(){
+    let cx = 0, cy = 0;
+    for (const n of this.nodes){ cx += n.x; cy += n.y; }
+    return { x: cx / this.nodes.length, y: cy / this.nodes.length };
+  }
+}
+
+/* =========================================================
+   STATE
+   ========================================================= */
+const state = {
+  mode: 'title',
+  level: 1,
+  score: 0,
+  puzzle: null,
+  ink: 18,
+  inkMaxDisplay: 22,
+  dragging: false,
+  pointerX: 0,
+  pointerY: 0,
+  pulses: [],
+  floatTexts: [],
+  compiling: false,
+  compileT: 0,
+  paperPattern: null,
+  shake: 0,
+  titleDemoStart: 0,
+  lastBonus: 0,
+};
+
+/* =========================================================
+   AUDIO  (Web Audio)
+   ========================================================= */
+let audioCtx = null;
+let masterGain = null;
+function ensureAudio(){
+  if (!audioCtx){
+    try {
+      const Ctor = window.AudioContext || window.webkitAudioContext;
+      if (!Ctor) return null;
+      audioCtx = new Ctor();
+      masterGain = audioCtx.createGain();
+      masterGain.gain.value = 0.32;
+      masterGain.connect(audioCtx.destination);
+    } catch(e){ audioCtx = null; }
+  }
+  if (audioCtx && audioCtx.state === 'suspended'){
+    try { audioCtx.resume(); } catch(e){}
+  }
+  return audioCtx;
+}
+function tone(freq, dur, vol, type, attack, glide){
+  const ac = ensureAudio();
+  if (!ac) return;
+  attack = attack || 0.005;
+  glide = glide || 0;
+  const t = ac.currentTime;
+  const osc = ac.createOscillator();
+  osc.type = type || 'sine';
+  osc.frequency.value = freq;
+  if (glide) osc.frequency.exponentialRampToValueAtTime(Math.max(1, freq + glide), t + dur);
+  const g = ac.createGain();
+  g.gain.setValueAtTime(0, t);
+  g.gain.linearRampToValueAtTime(vol, t + attack);
+  g.gain.exponentialRampToValueAtTime(0.0001, t + dur);
+  osc.connect(g).connect(masterGain);
+  osc.start(t);
+  osc.stop(t + dur + 0.02);
+}
+const STEPS = [261.63, 293.66, 329.63, 392.00, 440.00, 523.25, 587.33, 659.26, 783.99];
+function snd_step(idx){
+  const oct = Math.floor(idx / STEPS.length);
+  const f = STEPS[idx % STEPS.length] * Math.pow(2, oct / 3);
+  tone(f,      0.18, 0.07, 'triangle', 0.004);
+  tone(f * 2,  0.08, 0.025, 'sine',    0.002);
+}
+function snd_start(){ tone(220, 0.13, 0.06, 'sine', 0.005); tone(330, 0.16, 0.035, 'triangle', 0.01); }
+function snd_undo(){  tone(174, 0.09, 0.05, 'sine', 0.003, -40); }
+function snd_compile(){
+  const notes = [392, 523.25, 783.99, 1046.5];
+  notes.forEach((f, i) => setTimeout(() => tone(f, 0.5, 0.08, 'triangle', 0.005), i * 38));
+  tone(196, 0.7, 0.04, 'sine', 0.01);
+}
+function snd_fail(){
+  [220, 174.61, 146.83, 110].forEach((f, i) => setTimeout(() => tone(f, 0.22, 0.065, 'sawtooth', 0.005), i * 70));
+}
+function snd_deny(){ tone(110, 0.08, 0.06, 'sawtooth', 0.005); }
+
+/* =========================================================
+   HAPTICS
+   ========================================================= */
+function vibe(pattern){
+  try { if (navigator.vibrate) navigator.vibrate(pattern); } catch(e){}
+}
+
+/* =========================================================
+   PAPER GRAIN
+   ========================================================= */
+function initPaper(){
+  const sz = 220;
+  const c = document.createElement('canvas');
+  c.width = sz; c.height = sz;
+  const cx = c.getContext('2d');
+  const id = cx.createImageData(sz, sz);
+  const dark = isDark();
+  for (let i = 0; i < id.data.length; i += 4){
+    const r = Math.random();
+    let a;
+    if (dark){
+      a = r < 0.012 ? 55 + Math.random() * 30 :
+          r < 0.35  ? Math.random() * 14 :
+                      Math.random() * 5;
+    } else {
+      a = r < 0.018 ? 50 + Math.random() * 35 :
+          r < 0.55  ? Math.random() * 24 :
+                      Math.random() * 10;
+    }
+    id.data[i]   = dark ? 255 : 0;
+    id.data[i+1] = dark ? 255 : 0;
+    id.data[i+2] = dark ? 255 : 0;
+    id.data[i+3] = a;
+  }
+  cx.putImageData(id, 0, 0);
+  state.paperPattern = ctx.createPattern(c, 'repeat');
+}
+
+/* =========================================================
+   RENDER
+   ========================================================= */
+function drawHexDots(){
+  if (!state.puzzle) return;
+  const p = state.puzzle;
+  const size = p.hexSize;
+  const origin = p.nodeMap.get('0,0') || p.nodes[0];
+  const ox = origin.x, oy = origin.y;
+  const oq = origin.q, or = origin.r;
+  ctx.save();
+  ctx.fillStyle = colors.line2;
+  ctx.globalAlpha = isDark() ? 0.5 : 0.4;
+  const R = 8;
+  for (let q = -R; q <= R; q++){
+    for (let r = -R; r <= R; r++){
+      if (Math.abs(-q - r) > R) continue;
+      const px = ox + size * (SQ3 * (q - oq) + SQ3 / 2 * (r - or));
+      const py = oy + size * (3/2 * (r - or));
+      if (px < -8 || px > W + 8 || py < -8 || py > H + 8) continue;
+      let onNode = false;
+      for (const n of p.nodes){
+        if (Math.abs(n.x - px) < 0.5 && Math.abs(n.y - py) < 0.5){ onNode = true; break; }
+      }
+      if (onNode) continue;
+      ctx.beginPath();
+      ctx.arc(px, py, 1.2, 0, Math.PI * 2);
+      ctx.fill();
+    }
+  }
+  ctx.restore();
+}
+
+function drawTitleDemo(now){
+  if (state.mode !== 'title' || !state.puzzle) return;
+  const p = state.puzzle;
+  if (!p.walkPath || p.walkPath.length < 2) return;
+  const loopMs = 5400;
+  const pauseMs = 900;
+  const cycleT = (now - state.titleDemoStart) % loopMs;
+  const traceMs = loopMs - pauseMs;
+
+  ctx.save();
+  ctx.lineCap = 'round';
+  ctx.lineJoin = 'round';
+  ctx.strokeStyle = colors.mint;
+  ctx.globalAlpha = 0.55;
+  ctx.shadowColor = colors.mint;
+  ctx.shadowBlur = 14;
+  ctx.lineWidth = 5;
+
+  let edgesToShow;
+  if (cycleT < traceMs){
+    const progress = cycleT / traceMs;
+    const eased = progress < 0.5 ? 2 * progress * progress : 1 - Math.pow(-2 * progress + 2, 2) / 2;
+    edgesToShow = eased * (p.walkPath.length - 1);
+  } else {
+    edgesToShow = p.walkPath.length - 1;
+    ctx.globalAlpha *= Math.max(0, 1 - (cycleT - traceMs) / pauseMs);
+  }
+
+  ctx.beginPath();
+  ctx.moveTo(p.walkPath[0].x, p.walkPath[0].y);
+  for (let i = 1; i < p.walkPath.length; i++){
+    const segFrac = Math.min(1, Math.max(0, edgesToShow - (i - 1)));
+    if (segFrac <= 0) break;
+    const a = p.walkPath[i - 1];
+    const b = p.walkPath[i];
+    const x = a.x + (b.x - a.x) * segFrac;
+    const y = a.y + (b.y - a.y) * segFrac;
+    ctx.lineTo(x, y);
+    if (segFrac < 1) break;
+  }
+  ctx.stroke();
+  ctx.restore();
+}
+
+function drawPuzzle(now){
+  const p = state.puzzle;
+  if (!p) return;
+
+  // Inactive edges
+  ctx.save();
+  ctx.lineCap = 'round';
+  ctx.lineJoin = 'round';
+  for (const e of p.edges){
+    if (e.used) continue;
+    ctx.strokeStyle = colors.line2;
+    ctx.lineWidth = 3.4;
+    ctx.beginPath();
+    ctx.moveTo(e.a.x, e.a.y);
+    ctx.lineTo(e.b.x, e.b.y);
+    ctx.stroke();
+  }
+  ctx.restore();
+
+  // Active path edges with glow
+  ctx.save();
+  ctx.lineCap = 'round';
+  ctx.lineJoin = 'round';
+  for (let i = 0; i < p.pathEdges.length; i++){
+    const e = p.pathEdges[i];
+    const w = 5.6 + e.flash * 3.4;
+    const glow = 9 + e.flash * 26;
+    ctx.save();
+    ctx.shadowColor = colors.mint;
+    ctx.shadowBlur = glow;
+    ctx.strokeStyle = colors.mint;
+    ctx.lineWidth = w;
+    ctx.beginPath();
+    ctx.moveTo(e.a.x, e.a.y);
+    ctx.lineTo(e.b.x, e.b.y);
+    ctx.stroke();
+    ctx.restore();
+    if (e.flash > 0.01) e.flash *= 0.86;
+    else e.flash = 0;
+  }
+  ctx.restore();
+
+  // Drag preview (only during active play)
+  if (state.dragging && p.curNode && state.mode === 'play' && !state.compiling){
+    ctx.save();
+    ctx.setLineDash([3, 6]);
+    ctx.lineDashOffset = -now * 0.04;
+    ctx.strokeStyle = colors.mint;
+    ctx.globalAlpha = 0.6;
+    ctx.lineWidth = 2.5;
+    ctx.beginPath();
+    ctx.moveTo(p.curNode.x, p.curNode.y);
+    ctx.lineTo(state.pointerX, state.pointerY);
+    ctx.stroke();
+    ctx.restore();
+  }
+
+  // Nodes
+  const baseR = p.nodeRadius;
+  for (const n of p.nodes){
+    const isInPath = p.path.indexOf(n) >= 0;
+    const isCur = n === p.curNode;
+    const isValidStartHint = state.mode === 'play' && p.path.length === 0 && p.validStarts.length > 0 && p.validStarts.indexOf(n) >= 0;
+    if (n.pulse > 0.01) n.pulse *= 0.87;
+    else n.pulse = 0;
+    const pr = baseR + n.pulse * 6;
+
+    // Backdrop circle (knocks paper grain out of the node)
+    ctx.fillStyle = colors.paper;
+    ctx.beginPath();
+    ctx.arc(n.x, n.y, pr + 1.6, 0, Math.PI * 2);
+    ctx.fill();
+
+    if (isInPath){
+      ctx.save();
+      ctx.shadowColor = colors.mint;
+      ctx.shadowBlur = isCur ? 26 : 11;
+      ctx.fillStyle = colors.mint;
+      ctx.beginPath();
+      ctx.arc(n.x, n.y, pr * 0.85, 0, Math.PI * 2);
+      ctx.fill();
+      ctx.restore();
+      // inner knockout for "pad" look
+      ctx.fillStyle = colors.paper;
+      ctx.beginPath();
+      ctx.arc(n.x, n.y, pr * 0.32, 0, Math.PI * 2);
+      ctx.fill();
+    } else {
+      ctx.lineWidth = 1.8;
+      ctx.strokeStyle = colors.dim;
+      ctx.beginPath();
+      ctx.arc(n.x, n.y, pr * 0.85, 0, Math.PI * 2);
+      ctx.stroke();
+    }
+
+    if (isValidStartHint){
+      const blink = 0.5 + 0.5 * Math.sin(now * 0.005);
+      ctx.save();
+      ctx.globalAlpha = 0.55 + 0.4 * blink;
+      ctx.fillStyle = colors.mint;
+      ctx.beginPath();
+      ctx.arc(n.x, n.y, 2.6, 0, Math.PI * 2);
+      ctx.fill();
+      ctx.restore();
+    }
+
+    // Idle halo on cur node (when not dragging)
+    if (isCur && !state.dragging && state.mode === 'play' && !state.compiling){
+      const pulse = 0.35 + 0.3 * Math.sin(now * 0.005);
+      ctx.save();
+      ctx.strokeStyle = colors.mint;
+      ctx.globalAlpha = pulse;
+      ctx.lineWidth = 1.4;
+      ctx.beginPath();
+      ctx.arc(n.x, n.y, pr * 1.75, 0, Math.PI * 2);
+      ctx.stroke();
+      ctx.restore();
+    }
+  }
+}
+
+function drawPulses(now){
+  for (let i = state.pulses.length - 1; i >= 0; i--){
+    const pu = state.pulses[i];
+    const age = (now - pu.t) / pu.dur;
+    if (age >= 1){ state.pulses.splice(i, 1); continue; }
+    if (age < 0) continue;
+    const ease = 1 - Math.pow(1 - age, 3);
+    const radius = pu.radius0 + pu.radius1 * ease;
+    const alpha = (1 - age) * pu.alpha;
+    ctx.save();
+    ctx.strokeStyle = pu.color;
+    ctx.globalAlpha = alpha;
+    ctx.lineWidth = pu.lineWidth * (1 - age * 0.7);
+    ctx.shadowColor = pu.color;
+    ctx.shadowBlur = 20;
+    ctx.beginPath();
+    ctx.arc(pu.x, pu.y, radius, 0, Math.PI * 2);
+    ctx.stroke();
+    ctx.restore();
+  }
+}
+
+function drawFloatTexts(now){
+  ctx.save();
+  ctx.textAlign = 'center';
+  ctx.textBaseline = 'middle';
+  ctx.font = '500 17px ui-monospace, SFMono-Regular, Menlo, monospace';
+  for (let i = state.floatTexts.length - 1; i >= 0; i--){
+    const f = state.floatTexts[i];
+    const age = (now - f.t) / f.dur;
+    if (age >= 1){ state.floatTexts.splice(i, 1); continue; }
+    if (age < 0) continue;
+    const ease = 1 - Math.pow(1 - age, 2);
+    const y = f.y - ease * 52;
+    const alpha = age < 0.7 ? 1 : Math.max(0, (1 - age) / 0.3);
+    ctx.globalAlpha = alpha;
+    ctx.fillStyle = f.color;
+    ctx.shadowColor = f.color;
+    ctx.shadowBlur = 14;
+    ctx.fillText(f.text, f.x, y);
+  }
+  ctx.restore();
+}
+
+function render(now){
+  // Background
+  ctx.fillStyle = colors.paper;
+  ctx.fillRect(0, 0, W, H);
+
+  // Grain
+  if (state.paperPattern){
+    ctx.save();
+    ctx.fillStyle = state.paperPattern;
+    ctx.fillRect(0, 0, W, H);
+    ctx.restore();
+  }
+
+  // Camera shake
+  let sx = 0, sy = 0;
+  if (state.shake > 0){
+    sx = (Math.random() - 0.5) * state.shake;
+    sy = (Math.random() - 0.5) * state.shake;
+    state.shake *= 0.85;
+    if (state.shake < 0.15) state.shake = 0;
+  }
+  if (sx || sy){ ctx.save(); ctx.translate(sx, sy); }
+
+  drawHexDots();
+  if (state.mode === 'title') drawTitleDemo(now);
+  drawPuzzle(now);
+  drawPulses(now);
+  drawFloatTexts(now);
+
+  if (sx || sy) ctx.restore();
+}
+
+/* =========================================================
+   GAME FLOW
+   ========================================================= */
+function setOverlay(el, show){
+  if (show) el.classList.remove('hidden');
+  else el.classList.add('hidden');
+}
+function updateHUD(){
+  hudLevel.textContent = String(state.level).padStart(3, '0');
+  hudScore.textContent = String(state.score).padStart(2, '0');
+  let frac;
+  if (state.mode === 'play'){
+    hudInk.textContent = String(state.ink).padStart(2, '0');
+    frac = state.ink / state.inkMaxDisplay;
+  } else if (state.mode === 'over'){
+    hudInk.textContent = '00';
+    frac = 0;
+  } else {
+    hudInk.textContent = '--';
+    frac = 1;
+  }
+  frac = Math.max(0, Math.min(1, frac));
+  inkFill.style.transform = 'scaleX(' + frac + ')';
+  const low = state.mode === 'play' && state.ink <= 3;
+  inkFill.style.background = low
+    ? 'linear-gradient(90deg, var(--warn), var(--mint))'
+    : 'linear-gradient(90deg, var(--mint-soft), var(--mint))';
+  inkLabel.textContent = low ? 'reserve low' : 'ink reserve';
+  hudInk.style.color = low ? 'var(--warn)' : 'var(--mint)';
+}
+function bonusFor(level, edges){
+  return Math.max(3, edges + 4 - Math.floor((level - 1) * 0.65));
+}
+function newRound(){
+  state.level = 1;
+  state.score = 0;
+  state.ink = 18;
+  state.inkMaxDisplay = 22;
+  state.puzzle = new Puzzle(state.level);
+  state.compiling = false;
+  state.dragging = false;
+  state.pulses.length = 0;
+  state.floatTexts.length = 0;
+  state.shake = 0;
+  state.mode = 'play';
+  setOverlay(overlayTitle, false);
+  setOverlay(overlayOver, false);
+  updateHUD();
+}
+function advanceLevel(){
+  state.level += 1;
+  state.puzzle = new Puzzle(state.level);
+  state.dragging = false;
+  if (state.puzzle.edges.length > state.ink){
+    gameOver('ink dry');
+    return;
+  }
+  state.inkMaxDisplay = Math.max(state.inkMaxDisplay, state.ink + 4);
+  updateHUD();
+}
+function compileSuccess(){
+  if (state.compiling) return;
+  state.compiling = true;
+  state.dragging = false;
+  state.compileT = performance.now();
+  const p = state.puzzle;
+  const c = p.centroid();
+
+  // Light up all nodes
+  for (const n of p.nodes) n.pulse = Math.max(n.pulse, 1);
+  // Flare all path edges
+  for (const e of p.pathEdges) e.flash = 1;
+
+  // Layered pulses for satisfying compile
+  state.pulses.push({
+    x: c.x, y: c.y, t: state.compileT,
+    dur: 880, radius0: 8, radius1: p.hexSize * 2.8,
+    alpha: 1, lineWidth: 4.5, color: colors.mint,
+  });
+  state.pulses.push({
+    x: c.x, y: c.y, t: state.compileT + 90,
+    dur: 720, radius0: 5, radius1: p.hexSize * 1.9,
+    alpha: 0.7, lineWidth: 2.5, color: colors.mint,
+  });
+  state.pulses.push({
+    x: c.x, y: c.y, t: state.compileT + 180,
+    dur: 620, radius0: 2, radius1: p.hexSize * 1.25,
+    alpha: 0.55, lineWidth: 1.6, color: colors.mint,
+  });
+
+  const bonus = bonusFor(state.level, p.edges.length);
+  state.ink += bonus;
+  state.lastBonus = bonus;
+  state.score += 1;
+  state.floatTexts.push({
+    x: c.x, y: c.y - 24, t: state.compileT + 60,
+    dur: 1100, color: colors.mint, text: '+' + bonus + ' ink'
+  });
+
+  snd_compile();
+  vibe([14, 28, 22]);
+  updateHUD();
+
+  setTimeout(() => {
+    state.compiling = false;
+    advanceLevel();
+  }, 720);
+}
+function gameOver(reason){
+  state.mode = 'over';
+  state.compiling = false;
+  state.dragging = false;
+  overScore.textContent = state.score;
+  overLevel.textContent = state.level;
+  overTitle.textContent = reason || 'disconnect';
+  overTag.textContent = '// ' + (reason === 'ink dry' ? 'reserve drained' : 'signal lost');
+  snd_fail();
+  vibe([60, 30, 60, 30, 90]);
+  state.shake = 9;
+  setOverlay(overlayOver, true);
+  updateHUD();
+}
+
+/* =========================================================
+   INPUT
+   ========================================================= */
+function getPointer(e){
+  const r = canvas.getBoundingClientRect();
+  const t = e.touches ? (e.touches[0] || e.changedTouches[0]) : e;
+  return { x: t.clientX - r.left, y: t.clientY - r.top };
+}
+function findNearbyNode(x, y, maxDist){
+  if (!state.puzzle) return null;
+  let best = null, bestD = maxDist;
+  for (const n of state.puzzle.nodes){
+    const d = Math.hypot(x - n.x, y - n.y);
+    if (d < bestD){ bestD = d; best = n; }
+  }
+  return best;
+}
+function onDown(e){
+  if (state.mode !== 'play' || state.compiling) return;
+  if (e.button !== undefined && e.button !== 0) return;
+  if (e.preventDefault) e.preventDefault();
+  ensureAudio();
+  const p = getPointer(e);
+  state.pointerX = p.x; state.pointerY = p.y;
+  const pz = state.puzzle;
+  if (!pz) return;
+  const SNAP = Math.max(pz.nodeRadius * 2.6, 44);
+
+  if (pz.path.length === 0){
+    const n = findNearbyNode(p.x, p.y, SNAP);
+    if (n){
+      pz.startFrom(n);
+      state.dragging = true;
+      snd_start();
+      vibe(6);
+    }
+    return;
+  }
+
+  const dCur = Math.hypot(p.x - pz.curNode.x, p.y - pz.curNode.y);
+  if (dCur < SNAP * 1.5){
+    state.dragging = true;
+    return;
+  }
+
+  // Otherwise, treat tap on a node as "restart from this node"
+  const nn = findNearbyNode(p.x, p.y, SNAP);
+  if (nn){
+    pz.reset();
+    pz.startFrom(nn);
+    state.dragging = true;
+    snd_start();
+    vibe(6);
+  }
+}
+function onMove(e){
+  if (state.mode !== 'play' || state.compiling) return;
+  const p = getPointer(e);
+  state.pointerX = p.x; state.pointerY = p.y;
+  if (!state.dragging) return;
+  if (e.preventDefault) e.preventDefault();
+  const pz = state.puzzle;
+  if (!pz || !pz.curNode) return;
+
+  const SNAP_FWD = Math.max(pz.nodeRadius * 2.2, 38);
+  const SNAP_BACK = Math.max(pz.nodeRadius * 1.55, 28);
+
+  // Find best forward target among adjacent unused edges
+  const adj = pz.adjacency.get(hexKey(pz.curNode)) || [];
+  let bestFwd = null, bestFwdD = SNAP_FWD;
+  for (const e2 of adj){
+    if (e2.used) continue;
+    const other = (e2.a === pz.curNode) ? e2.b : e2.a;
+    const d = Math.hypot(p.x - other.x, p.y - other.y);
+    if (d < bestFwdD){ bestFwdD = d; bestFwd = other; }
+  }
+
+  // Backtrack check (drag back toward previous node)
+  if (pz.pathEdges.length > 0){
+    const prev = pz.path[pz.path.length - 2];
+    if (prev){
+      const dPrev = Math.hypot(p.x - prev.x, p.y - prev.y);
+      const dCur = Math.hypot(p.x - pz.curNode.x, p.y - pz.curNode.y);
+      if (dPrev < SNAP_BACK && dPrev < dCur && (!bestFwd || dPrev < bestFwdD)){
+        pz.backtrack();
+        snd_undo();
+        vibe(4);
+        const remaining = pz.edges.length - pz.pathEdges.length;
+        if (state.ink < remaining){
+          gameOver('ink dry');
+          return;
+        }
+        updateHUD();
+        return;
+      }
+    }
+  }
+
+  if (bestFwd){
+    if (state.ink > 0){
+      pz.extendTo(bestFwd);
+      state.ink -= 1;
+      snd_step(pz.pathEdges.length - 1);
+      vibe(8);
+      updateHUD();
+      if (pz.isCompiled()){
+        compileSuccess();
+        return;
+      }
+      const remaining = pz.edges.length - pz.pathEdges.length;
+      if (state.ink < remaining){
+        gameOver('ink dry');
+        return;
+      }
+    } else {
+      snd_deny();
+      vibe(20);
+      state.shake = Math.max(state.shake, 5);
+    }
+  }
+}
+function onUp(){
+  state.dragging = false;
+}
+
+canvas.addEventListener('touchstart', onDown, { passive: false });
+canvas.addEventListener('touchmove',  onMove, { passive: false });
+canvas.addEventListener('touchend',   onUp,   { passive: false });
+canvas.addEventListener('touchcancel',onUp,   { passive: false });
+canvas.addEventListener('mousedown',  onDown);
+window.addEventListener('mousemove',  onMove);
+window.addEventListener('mouseup',    onUp);
+window.addEventListener('blur',       onUp);
+canvas.addEventListener('contextmenu', e => e.preventDefault());
+
+btnStart.addEventListener('click', () => { ensureAudio(); newRound(); });
+btnAgain.addEventListener('click', () => { ensureAudio(); newRound(); });
+
+window.addEventListener('keydown', e => {
+  if (e.key === ' ' || e.key === 'Enter'){
+    if (state.mode === 'title' || state.mode === 'over'){
+      e.preventDefault();
+      ensureAudio();
+      newRound();
+    }
+  } else if ((e.key === 'r' || e.key === 'R') && state.mode === 'play' && state.puzzle && state.puzzle.path.length > 0){
+    e.preventDefault();
+    state.puzzle.reset();
+    state.dragging = false;
+    snd_undo();
+    vibe(8);
+  }
+});
+
+/* =========================================================
+   LOOP
+   ========================================================= */
+function loop(t){
+  render(t);
+  requestAnimationFrame(loop);
+}
+
+/* =========================================================
+   INIT
+   ========================================================= */
+refreshColors();
+resize();
+initPaper();
+state.puzzle = new Puzzle(3); // pre-build a nice preview puzzle for the title
+state.mode = 'title';
+state.titleDemoStart = performance.now();
+updateHUD();
+requestAnimationFrame(loop);
+
+})();
+</script>
+</body>
+</html>

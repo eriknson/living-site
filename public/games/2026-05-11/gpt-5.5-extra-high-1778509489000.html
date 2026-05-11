@@ -1,0 +1,1059 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <meta name="color-scheme" content="light dark">
+  <title>Fog Mote Radio</title>
+  <style>
+    :root {
+      --bg-a: #f3efe4;
+      --bg-b: #dce9e6;
+      --bg-c: #f1c4a9;
+      --panel: rgba(255, 252, 243, .78);
+      --panel-strong: rgba(255, 252, 243, .94);
+      --ink: #1f2522;
+      --muted: rgba(31, 37, 34, .62);
+      --line: rgba(31, 37, 34, .16);
+      --good: #2aa6b2;
+      --warn: #df724c;
+      --shadow: 0 26px 80px rgba(46, 42, 31, .18);
+    }
+    @media (prefers-color-scheme: dark) {
+      :root {
+        --bg-a: #071116;
+        --bg-b: #10252a;
+        --bg-c: #34231f;
+        --panel: rgba(11, 20, 24, .74);
+        --panel-strong: rgba(14, 25, 29, .92);
+        --ink: #f3efe5;
+        --muted: rgba(243, 239, 229, .66);
+        --line: rgba(243, 239, 229, .18);
+        --good: #7dd8d7;
+        --warn: #ff9a70;
+        --shadow: 0 30px 90px rgba(0, 0, 0, .42);
+      }
+    }
+    * { box-sizing: border-box; }
+    html, body {
+      margin: 0;
+      width: 100%;
+      height: 100%;
+      overflow: hidden;
+      background: linear-gradient(155deg, var(--bg-a), var(--bg-b) 56%, var(--bg-c));
+      color: var(--ink);
+      font-family: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+    }
+    body {
+      min-height: 100dvh;
+    }
+    button {
+      min-height: 48px;
+      min-width: 48px;
+      border: 1px solid var(--line);
+      border-radius: 999px;
+      padding: 0 22px;
+      color: var(--ink);
+      background: var(--panel-strong);
+      font: 700 13px/1 ui-monospace, "SFMono-Regular", Menlo, monospace;
+      letter-spacing: .08em;
+      text-transform: uppercase;
+      box-shadow: var(--shadow);
+      cursor: pointer;
+    }
+    button:active { transform: translateY(1px) scale(.99); }
+    #gameWrap {
+      position: fixed;
+      inset: 0;
+      width: 100dvw;
+      height: 100dvh;
+      user-select: none;
+      -webkit-user-select: none;
+      touch-action: none;
+      overflow: hidden;
+    }
+    canvas {
+      position: absolute;
+      inset: 0;
+      display: block;
+      width: 100dvw;
+      height: 100dvh;
+      touch-action: none;
+    }
+    #hud {
+      position: absolute;
+      top: calc(12px + env(safe-area-inset-top));
+      left: 14px;
+      right: 14px;
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
+      gap: 8px;
+      pointer-events: none;
+      z-index: 4;
+    }
+    .chip {
+      min-height: 44px;
+      border: 1px solid var(--line);
+      border-radius: 18px;
+      padding: 8px 9px;
+      background: var(--panel);
+      backdrop-filter: blur(18px);
+      -webkit-backdrop-filter: blur(18px);
+      box-shadow: 0 12px 30px rgba(0, 0, 0, .08);
+    }
+    .chip b, .chip span {
+      display: block;
+      font-family: ui-monospace, "SFMono-Regular", Menlo, monospace;
+    }
+    .chip b {
+      color: var(--muted);
+      font-size: 10px;
+      letter-spacing: .08em;
+      font-weight: 700;
+    }
+    .chip span {
+      margin-top: 3px;
+      font-size: clamp(14px, 4.3vw, 20px);
+      font-weight: 800;
+      line-height: 1;
+    }
+    .overlay {
+      position: absolute;
+      inset: 0;
+      z-index: 6;
+      display: grid;
+      place-items: center;
+      padding: max(18px, env(safe-area-inset-top)) 18px max(18px, env(safe-area-inset-bottom));
+      background: radial-gradient(circle at 50% 35%, rgba(255,255,255,.18), transparent 42%);
+    }
+    .panel {
+      width: min(520px, 100%);
+      border: 1px solid var(--line);
+      border-radius: 32px;
+      padding: clamp(22px, 6vw, 36px);
+      background: var(--panel);
+      backdrop-filter: blur(24px) saturate(1.1);
+      -webkit-backdrop-filter: blur(24px) saturate(1.1);
+      box-shadow: var(--shadow);
+      text-align: left;
+    }
+    .eyebrow {
+      margin: 0 0 14px;
+      color: var(--muted);
+      font: 800 12px/1 ui-monospace, "SFMono-Regular", Menlo, monospace;
+      letter-spacing: .15em;
+      text-transform: uppercase;
+    }
+    h1 {
+      margin: 0;
+      max-width: 10ch;
+      font-size: clamp(48px, 14vw, 84px);
+      letter-spacing: -.08em;
+      line-height: .84;
+    }
+    h2 {
+      margin: 0;
+      font-size: clamp(34px, 10vw, 62px);
+      letter-spacing: -.07em;
+      line-height: .88;
+    }
+    p {
+      margin: 18px 0 0;
+      color: var(--muted);
+      font-size: 16px;
+      line-height: 1.5;
+    }
+    .keyline {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
+      margin: 20px 0 22px;
+    }
+    .pill {
+      border: 1px solid var(--line);
+      border-radius: 999px;
+      padding: 8px 11px;
+      background: rgba(255,255,255,.2);
+      color: var(--ink);
+      font: 800 11px/1 ui-monospace, "SFMono-Regular", Menlo, monospace;
+      letter-spacing: .07em;
+    }
+    .actions {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      flex-wrap: wrap;
+      margin-top: 8px;
+    }
+    .tiny {
+      margin: 0;
+      color: var(--muted);
+      font: 700 11px/1.45 ui-monospace, "SFMono-Regular", Menlo, monospace;
+      letter-spacing: .05em;
+      text-transform: uppercase;
+    }
+    [hidden] { display: none !important; }
+    @media (max-width: 420px) {
+      #hud { grid-template-columns: repeat(2, 1fr); }
+      .chip { min-height: 38px; padding: 7px 9px; }
+      .chip span { font-size: 17px; }
+    }
+  </style>
+</head>
+<body>
+  <main id="gameWrap" aria-label="Fog Mote Radio game">
+    <canvas id="game" aria-hidden="true"></canvas>
+    <section id="hud" hidden>
+      <div class="chip"><b>Score</b><span id="score">0</span></div>
+      <div class="chip"><b>Buffer</b><span id="buffer">4/4</span></div>
+      <div class="chip"><b>Wave</b><span id="wave">1</span></div>
+      <div class="chip"><b>Time</b><span id="time">55</span></div>
+    </section>
+    <section id="title" class="overlay">
+      <div class="panel">
+        <p class="eyebrow">Overcast dream-pop sorter</p>
+        <h1>Fog Mote Radio</h1>
+        <p>Drag from a glowing mote, aim at its matching temperature cone, release to flick. Clear waves before the fuse rings bloom into static.</p>
+        <div class="keyline">
+          <span class="pill">Cold A</span>
+          <span class="pill">Hush S</span>
+          <span class="pill">Warm D</span>
+          <span class="pill">R Restart</span>
+        </div>
+        <div class="actions">
+          <button id="startBtn">Start sorting</button>
+          <p class="tiny">One thumb. 55 seconds. Keep the glass clean.</p>
+        </div>
+      </div>
+    </section>
+    <section id="over" class="overlay" hidden>
+      <div class="panel">
+        <p class="eyebrow" id="resultTag">Signal folded</p>
+        <h2 id="resultTitle">Glass went static</h2>
+        <p id="resultCopy">The motes bloomed faster than the buffer could breathe.</p>
+        <div class="keyline">
+          <span class="pill" id="finalScore">Score 0</span>
+          <span class="pill" id="bestWave">Wave 1</span>
+          <span class="pill" id="finalCombo">Best combo 0</span>
+        </div>
+        <button id="againBtn">Play again</button>
+      </div>
+    </section>
+  </main>
+  <script>
+    (() => {
+      "use strict";
+
+      const canvas = document.getElementById("game");
+      const ctx = canvas.getContext("2d", { alpha: false });
+      const hud = document.getElementById("hud");
+      const title = document.getElementById("title");
+      const over = document.getElementById("over");
+      const scoreEl = document.getElementById("score");
+      const bufferEl = document.getElementById("buffer");
+      const waveEl = document.getElementById("wave");
+      const timeEl = document.getElementById("time");
+      const startBtn = document.getElementById("startBtn");
+      const againBtn = document.getElementById("againBtn");
+      const resultTag = document.getElementById("resultTag");
+      const resultTitle = document.getElementById("resultTitle");
+      const resultCopy = document.getElementById("resultCopy");
+      const finalScore = document.getElementById("finalScore");
+      const bestWave = document.getElementById("bestWave");
+      const finalCombo = document.getElementById("finalCombo");
+      const darkQuery = matchMedia("(prefers-color-scheme: dark)");
+
+      const view = { w: 1, h: 1, dpr: 1 };
+      const rnd = (a, b) => a + Math.random() * (b - a);
+      const clamp = (v, a, b) => Math.max(a, Math.min(b, v));
+      const dist = (a, b, c, d) => Math.hypot(a - c, b - d);
+      const TAU = Math.PI * 2;
+
+      const types = [
+        { id: "cold", name: "COLD", key: "A", mark: "C", base: "#78d7ef", dark: "#82e5f4" },
+        { id: "hush", name: "HUSH", key: "S", mark: "H", base: "#cad99f", dark: "#d4e8aa" },
+        { id: "warm", name: "WARM", key: "D", mark: "W", base: "#ff9a70", dark: "#ffad7c" }
+      ];
+
+      const state = {
+        mode: "title",
+        score: 0,
+        combo: 0,
+        bestCombo: 0,
+        buffer: 4,
+        maxBuffer: 4,
+        wave: 1,
+        timeLeft: 55,
+        elapsed: 0,
+        spawnTimer: 0,
+        spawnedInWave: 0,
+        resolvedInWave: 0,
+        waveTotal: 7,
+        motes: [],
+        particles: [],
+        smears: [],
+        bins: [],
+        drag: null,
+        shake: 0,
+        hitStop: 0,
+        collapse: 0,
+        flash: 0,
+        ambient: []
+      };
+
+      let audio = null;
+      function ensureAudio() {
+        if (audio) return;
+        const Ctx = window.AudioContext || window.webkitAudioContext;
+        if (!Ctx) return;
+        audio = new Ctx();
+      }
+      function tone(freq, dur, gain = .035, type = "sine", slide = 0) {
+        if (!audio) return;
+        const t = audio.currentTime;
+        const osc = audio.createOscillator();
+        const g = audio.createGain();
+        osc.type = type;
+        osc.frequency.setValueAtTime(freq, t);
+        if (slide) osc.frequency.exponentialRampToValueAtTime(Math.max(40, freq + slide), t + dur);
+        g.gain.setValueAtTime(0, t);
+        g.gain.linearRampToValueAtTime(gain, t + .008);
+        g.gain.exponentialRampToValueAtTime(.0001, t + dur);
+        osc.connect(g).connect(audio.destination);
+        osc.start(t);
+        osc.stop(t + dur + .02);
+      }
+      function sound(kind, idx = 0) {
+        if (!audio) return;
+        if (kind === "ok") {
+          tone([520, 610, 720][idx], .09, .035, "triangle", 90);
+          tone([780, 860, 940][idx], .12, .018, "sine", 160);
+        } else if (kind === "bad") {
+          tone(180, .14, .045, "sawtooth", -70);
+        } else if (kind === "wave") {
+          [420, 560, 720, 920].forEach((f, i) => setTimeout(() => tone(f, .12, .03, "triangle", 80), i * 42));
+        } else {
+          tone(320, .08, .025, "square", 30);
+        }
+      }
+
+      function colors() {
+        const dark = darkQuery.matches;
+        return {
+          dark,
+          bg0: dark ? "#071116" : "#f3efe4",
+          bg1: dark ? "#10252a" : "#dce9e6",
+          bg2: dark ? "#34231f" : "#f1c4a9",
+          ink: dark ? "#f3efe5" : "#1f2522",
+          muted: dark ? "rgba(243,239,229,.56)" : "rgba(31,37,34,.5)",
+          line: dark ? "rgba(243,239,229,.14)" : "rgba(31,37,34,.13)",
+          glass: dark ? "rgba(255,255,255,.055)" : "rgba(255,255,255,.34)",
+          panel: dark ? "rgba(8,18,22,.34)" : "rgba(255,251,239,.34)",
+          static: dark ? "rgba(245,239,218,.78)" : "rgba(44,47,43,.62)"
+        };
+      }
+      function hexToRgb(hex) {
+        const n = parseInt(hex.slice(1), 16);
+        return [n >> 16 & 255, n >> 8 & 255, n & 255];
+      }
+      function mixHex(a, b, t) {
+        const A = hexToRgb(a), B = hexToRgb(b);
+        const v = A.map((x, i) => Math.round(x + (B[i] - x) * t));
+        return "#" + v.map(x => x.toString(16).padStart(2, "0")).join("");
+      }
+
+      function resize() {
+        const rect = canvas.getBoundingClientRect();
+        view.w = Math.max(1, rect.width);
+        view.h = Math.max(1, rect.height);
+        view.dpr = Math.min(2, window.devicePixelRatio || 1);
+        canvas.width = Math.floor(view.w * view.dpr);
+        canvas.height = Math.floor(view.h * view.dpr);
+        ctx.setTransform(view.dpr, 0, 0, view.dpr, 0, 0);
+        makeAmbient();
+        updateBins(0);
+      }
+
+      function makeAmbient() {
+        state.ambient = [];
+        for (let i = 0; i < 26; i++) {
+          state.ambient.push({
+            x: rnd(0, view.w), y: rnd(0, view.h), r: rnd(1.5, 4.5),
+            s: rnd(.08, .38), a: rnd(.08, .25), p: rnd(0, TAU)
+          });
+        }
+      }
+
+      function startGame() {
+        ensureAudio();
+        if (audio && audio.state === "suspended") audio.resume().catch(() => {});
+        Object.assign(state, {
+          mode: "playing",
+          score: 0,
+          combo: 0,
+          bestCombo: 0,
+          buffer: 4,
+          wave: 1,
+          timeLeft: 55,
+          elapsed: 0,
+          spawnTimer: .25,
+          spawnedInWave: 0,
+          resolvedInWave: 0,
+          waveTotal: 7,
+          motes: [],
+          particles: [],
+          smears: [],
+          drag: null,
+          shake: 0,
+          hitStop: 0,
+          collapse: 0,
+          flash: 0
+        });
+        title.hidden = true;
+        over.hidden = true;
+        hud.hidden = false;
+        updateHud();
+        sound("tap");
+      }
+
+      function endGame(won) {
+        if (state.mode !== "playing") return;
+        state.mode = "over";
+        state.drag = null;
+        hud.hidden = true;
+        over.hidden = false;
+        resultTag.textContent = won ? "Clean exhale" : "Signal folded";
+        resultTitle.textContent = won ? "Glass stayed clear" : "Glass went static";
+        resultCopy.textContent = won
+          ? "The final motes collapsed into a soft spring signal."
+          : "The bloom outran the buffer. Flick earlier, and trust the cone labels.";
+        finalScore.textContent = "Score " + Math.floor(state.score);
+        bestWave.textContent = "Wave " + state.wave;
+        finalCombo.textContent = "Best combo " + state.bestCombo;
+        navigator.vibrate?.(won ? [18, 40, 18] : [60]);
+      }
+
+      function difficulty() {
+        const e = state.elapsed, w = state.wave;
+        return {
+          spawn: Math.max(.43, 1.42 - e * .017 - w * .045),
+          fuse: Math.max(2.55, 6.1 - e * .05 - w * .12),
+          maxMotes: Math.min(8, 3 + Math.floor(e / 12) + Math.floor(w / 3)),
+          spin: w < 3 ? 0 : (w - 2) * .11 + e * .007,
+          duplicate: clamp((e - 22) / 34, 0, .58)
+        };
+      }
+
+      function updateBins(t) {
+        const d = difficulty();
+        const cx = view.w * .5;
+        const cy = view.h * .69;
+        const rad = Math.min(view.w * .34, view.h * .25, 170);
+        const base = [-Math.PI * .82, -Math.PI * .5, -Math.PI * .18];
+        const spin = Math.sin(t * d.spin) * clamp(d.spin * .32, 0, .75);
+        state.bins = types.map((type, i) => {
+          const a = base[i] + spin;
+          return {
+            type: type.id,
+            i,
+            name: type.name,
+            key: type.key,
+            mark: type.mark,
+            color: darkQuery.matches ? type.dark : type.base,
+            x: cx + Math.cos(a) * rad,
+            y: cy + Math.sin(a) * rad + view.h * .15,
+            angle: a + Math.PI,
+            hit: clamp(Math.min(view.w, view.h) * .085, 42, 62)
+          };
+        });
+      }
+
+      function spawnMote() {
+        const d = difficulty();
+        const type = types[Math.floor(Math.random() * types.length)];
+        const base = darkQuery.matches ? type.dark : type.base;
+        const fog = darkQuery.matches ? "#d6d0bd" : "#d2cab5";
+        const tint = mixHex(base, fog, d.duplicate * rnd(.55, 1));
+        const r = clamp(Math.min(view.w, view.h) * rnd(.028, .038), 16, 25);
+        state.motes.push({
+          type: type.id,
+          mark: type.mark,
+          tint,
+          x: view.w * .5 + rnd(-view.w * .19, view.w * .19),
+          y: view.h * .32 + rnd(-view.h * .08, view.h * .08),
+          vx: rnd(-42, 42),
+          vy: rnd(-28, 36),
+          r,
+          life: d.fuse * rnd(.9, 1.12),
+          maxLife: d.fuse,
+          age: 0,
+          picked: false,
+          wobble: rnd(0, TAU)
+        });
+        state.spawnedInWave++;
+      }
+
+      function resolveMote(m, ok, binIndex) {
+        const idx = state.motes.indexOf(m);
+        if (idx >= 0) state.motes.splice(idx, 1);
+        state.resolvedInWave++;
+        state.drag = state.drag && state.drag.mote === m ? null : state.drag;
+        if (ok) {
+          const left = clamp(m.life / m.maxLife, 0, 1);
+          state.combo++;
+          state.bestCombo = Math.max(state.bestCombo, state.combo);
+          state.score += 120 + state.combo * 14 + Math.round(left * 80);
+          state.shake = Math.max(state.shake, 4);
+          state.hitStop = .028;
+          burst(m.x, m.y, m.tint, 18 + Math.min(16, state.combo), 1);
+          sound("ok", binIndex);
+          navigator.vibrate?.(12);
+        } else {
+          state.combo = 0;
+          state.buffer--;
+          state.shake = 14;
+          state.hitStop = .08;
+          state.flash = .32;
+          smear(m.x, m.y, m.r * 3.7);
+          burst(m.x, m.y, darkQuery.matches ? "#eee5d4" : "#3d3f39", 28, -1);
+          sound("bad");
+          navigator.vibrate?.([35, 28, 35]);
+          if (state.buffer <= 0) endGame(false);
+        }
+      }
+
+      function waveClear() {
+        state.score += 320 + state.wave * 80 + state.combo * 18;
+        state.wave++;
+        state.waveTotal = 5 + state.wave * 2;
+        state.spawnedInWave = 0;
+        state.resolvedInWave = 0;
+        state.spawnTimer = .8;
+        state.collapse = 1;
+        state.shake = 8;
+        if (state.wave % 2 === 0 && state.buffer < state.maxBuffer) state.buffer++;
+        const cx = view.w / 2, cy = view.h * .48;
+        for (let i = 0; i < 68; i++) {
+          const type = types[i % 3];
+          const a = i / 68 * TAU + rnd(-.08, .08);
+          const s = rnd(90, 360);
+          state.particles.push({
+            x: cx, y: cy, vx: Math.cos(a) * s, vy: Math.sin(a) * s,
+            r: rnd(3, 10), life: rnd(.5, 1.2), max: 1.2,
+            color: darkQuery.matches ? type.dark : type.base,
+            shape: "shard", rot: rnd(0, TAU), spin: rnd(-5, 5)
+          });
+        }
+        sound("wave");
+        navigator.vibrate?.([12, 35, 12]);
+      }
+
+      function burst(x, y, color, n, lift) {
+        for (let i = 0; i < n; i++) {
+          const a = rnd(0, TAU), s = rnd(45, lift > 0 ? 230 : 150);
+          state.particles.push({
+            x, y,
+            vx: Math.cos(a) * s,
+            vy: Math.sin(a) * s + (lift > 0 ? -55 : 15),
+            r: rnd(1.5, 5.5),
+            life: rnd(.35, .9),
+            max: .9,
+            color,
+            shape: lift > 0 ? "dot" : "static",
+            rot: rnd(0, TAU),
+            spin: rnd(-8, 8)
+          });
+        }
+      }
+
+      function smear(x, y, r) {
+        state.smears.push({
+          x, y, r,
+          life: 8,
+          rot: rnd(0, TAU),
+          lines: Array.from({ length: 9 }, () => [rnd(-1, 1), rnd(-1, 1), rnd(.25, .95)])
+        });
+        if (state.smears.length > 8) state.smears.shift();
+      }
+
+      function update(dt, realDt, t) {
+        updateBins(t);
+        state.particles = state.particles.filter(p => {
+          p.life -= realDt;
+          p.x += p.vx * realDt;
+          p.y += p.vy * realDt;
+          p.vx *= Math.pow(.04, realDt);
+          p.vy = p.vy * Math.pow(.05, realDt) + 60 * realDt;
+          p.rot += p.spin * realDt;
+          return p.life > 0;
+        });
+        state.smears.forEach(s => s.life -= realDt * .28);
+        state.smears = state.smears.filter(s => s.life > 0);
+        state.flash = Math.max(0, state.flash - realDt);
+        state.shake = Math.max(0, state.shake - realDt * 24);
+        state.collapse = Math.max(0, state.collapse - realDt * .8);
+
+        if (state.mode !== "playing") return;
+        if (state.hitStop > 0) {
+          state.hitStop -= realDt;
+          return;
+        }
+
+        state.elapsed += dt;
+        state.timeLeft -= dt;
+        if (state.timeLeft <= 0) {
+          state.timeLeft = 0;
+          updateHud();
+          endGame(true);
+          return;
+        }
+
+        const d = difficulty();
+        state.spawnTimer -= dt;
+        while (state.spawnTimer <= 0 && state.spawnedInWave < state.waveTotal && state.motes.length < d.maxMotes) {
+          spawnMote();
+          state.spawnTimer += d.spawn * rnd(.78, 1.22);
+        }
+
+        for (let i = state.motes.length - 1; i >= 0; i--) {
+          const m = state.motes[i];
+          m.age += dt;
+          m.life -= dt * (m.picked ? .72 : 1);
+          if (m.life <= 0) {
+            resolveMote(m, false, -1);
+            continue;
+          }
+          if (!m.picked) {
+            m.vy += 38 * dt;
+            m.x += m.vx * dt;
+            m.y += m.vy * dt;
+            m.vx *= Math.pow(.58, dt);
+            m.vy *= Math.pow(.64, dt);
+            const pad = m.r + 8;
+            if (m.x < pad) { m.x = pad; m.vx = Math.abs(m.vx) * .72; }
+            if (m.x > view.w - pad) { m.x = view.w - pad; m.vx = -Math.abs(m.vx) * .72; }
+            if (m.y < view.h * .17) { m.y = view.h * .17; m.vy = Math.abs(m.vy) * .72; }
+            if (m.y > view.h - pad) { m.y = view.h - pad; m.vy = -Math.abs(m.vy) * .72; }
+          }
+          for (const b of state.bins) {
+            if (dist(m.x, m.y, b.x, b.y) < b.hit + m.r * .55) {
+              resolveMote(m, b.type === m.type, b.i);
+              break;
+            }
+          }
+        }
+
+        if (state.spawnedInWave >= state.waveTotal && state.resolvedInWave >= state.waveTotal && state.motes.length === 0) {
+          waveClear();
+        }
+        updateHud();
+      }
+
+      function updateHud() {
+        scoreEl.textContent = Math.floor(state.score);
+        bufferEl.textContent = state.buffer + "/" + state.maxBuffer;
+        waveEl.textContent = state.wave;
+        timeEl.textContent = Math.ceil(state.timeLeft);
+      }
+
+      function canvasPoint(e) {
+        const r = canvas.getBoundingClientRect();
+        return { x: e.clientX - r.left, y: e.clientY - r.top };
+      }
+
+      function nearestMote(x, y) {
+        let best = null, bestD = Infinity;
+        for (const m of state.motes) {
+          const d = dist(x, y, m.x, m.y);
+          if (d < Math.max(64, m.r * 2.9) && d < bestD) {
+            best = m; bestD = d;
+          }
+        }
+        return best;
+      }
+
+      function onPointerDown(e) {
+        if (state.mode !== "playing") return;
+        e.preventDefault();
+        ensureAudio();
+        if (audio && audio.state === "suspended") audio.resume().catch(() => {});
+        const p = canvasPoint(e);
+        const m = nearestMote(p.x, p.y);
+        if (!m) return;
+        try { canvas.setPointerCapture(e.pointerId); } catch (_) {}
+        m.picked = true;
+        m.vx *= .25;
+        m.vy *= .25;
+        state.drag = { id: e.pointerId, mote: m, sx: p.x, sy: p.y, x: p.x, y: p.y };
+      }
+
+      function onPointerMove(e) {
+        if (!state.drag || state.drag.id !== e.pointerId) return;
+        e.preventDefault();
+        const p = canvasPoint(e);
+        state.drag.x = p.x;
+        state.drag.y = p.y;
+      }
+
+      function releaseDrag(e) {
+        if (!state.drag || state.drag.id !== e.pointerId) return;
+        e.preventDefault();
+        const p = canvasPoint(e);
+        state.drag.x = p.x;
+        state.drag.y = p.y;
+        const d = state.drag;
+        const m = d.mote;
+        const dx = d.x - d.sx, dy = d.y - d.sy;
+        const len = Math.hypot(dx, dy);
+        if (len > 8) {
+          const power = clamp(len * 5.2, 260, 980);
+          m.vx = dx / len * power;
+          m.vy = dy / len * power;
+          sound("tap");
+        }
+        m.picked = false;
+        state.drag = null;
+      }
+
+      function keyboardLaunch(binIndex) {
+        if (state.mode !== "playing") return;
+        let m = null;
+        for (const candidate of state.motes) {
+          if (!m || candidate.life < m.life) m = candidate;
+        }
+        const b = state.bins[binIndex];
+        if (!m || !b) return;
+        const dx = b.x - m.x, dy = b.y - m.y;
+        const len = Math.max(1, Math.hypot(dx, dy));
+        m.picked = false;
+        m.vx = dx / len * 760;
+        m.vy = dy / len * 760;
+        sound("tap");
+      }
+
+      function onKey(e) {
+        const k = e.key.toLowerCase();
+        if (state.mode !== "playing" && (k === "enter" || k === " ")) {
+          e.preventDefault();
+          startGame();
+          return;
+        }
+        if (k === "r") {
+          e.preventDefault();
+          startGame();
+          return;
+        }
+        const map = { a: 0, arrowleft: 0, "1": 0, s: 1, arrowdown: 1, "2": 1, d: 2, arrowright: 2, "3": 2 };
+        if (map[k] !== undefined) {
+          e.preventDefault();
+          keyboardLaunch(map[k]);
+        }
+      }
+
+      function roundRect(x, y, w, h, r) {
+        const rr = Math.min(r, w / 2, h / 2);
+        ctx.beginPath();
+        ctx.moveTo(x + rr, y);
+        ctx.arcTo(x + w, y, x + w, y + h, rr);
+        ctx.arcTo(x + w, y + h, x, y + h, rr);
+        ctx.arcTo(x, y + h, x, y, rr);
+        ctx.arcTo(x, y, x + w, y, rr);
+        ctx.closePath();
+      }
+
+      function drawBackground(t, c) {
+        const g = ctx.createLinearGradient(0, 0, view.w, view.h);
+        g.addColorStop(0, c.bg0);
+        g.addColorStop(.55, c.bg1);
+        g.addColorStop(1, c.bg2);
+        ctx.fillStyle = g;
+        ctx.fillRect(0, 0, view.w, view.h);
+
+        ctx.save();
+        ctx.translate(view.w * .5, view.h * .48);
+        for (let i = 0; i < 4; i++) {
+          ctx.save();
+          ctx.rotate(Math.sin(t * .08 + i) * .05 + (i - 1.5) * .08);
+          ctx.globalAlpha = c.dark ? .14 : .2;
+          ctx.fillStyle = i % 2 ? "rgba(255,255,255,.18)" : "rgba(202,217,159,.18)";
+          roundRect(-view.w * .44 + i * 9, -view.h * .3 + i * 18, view.w * .88, view.h * .58, 28);
+          ctx.fill();
+          ctx.restore();
+        }
+        ctx.restore();
+
+        ctx.save();
+        ctx.globalAlpha = c.dark ? .25 : .34;
+        ctx.strokeStyle = c.dark ? "rgba(255,255,255,.08)" : "rgba(64,71,65,.09)";
+        for (let y = view.h * .18; y < view.h; y += 30) {
+          ctx.beginPath();
+          const wob = Math.sin(t * .35 + y * .02) * 8;
+          ctx.moveTo(0, y + wob);
+          ctx.bezierCurveTo(view.w * .25, y - 12, view.w * .68, y + 13, view.w, y + Math.sin(t + y) * 8);
+          ctx.stroke();
+        }
+        ctx.restore();
+
+        for (const a of state.ambient) {
+          ctx.globalAlpha = a.a + Math.sin(t * a.s + a.p) * .04;
+          ctx.fillStyle = c.dark ? "#e9dec8" : "#ffffff";
+          ctx.beginPath();
+          ctx.arc(a.x + Math.sin(t * a.s + a.p) * 12, a.y + Math.cos(t * a.s + a.p) * 8, a.r, 0, TAU);
+          ctx.fill();
+        }
+        ctx.globalAlpha = 1;
+      }
+
+      function drawBins(c) {
+        for (const b of state.bins) {
+          ctx.save();
+          ctx.translate(b.x, b.y);
+          ctx.rotate(b.angle);
+          const cone = ctx.createLinearGradient(-b.hit, 0, b.hit, 0);
+          cone.addColorStop(0, "rgba(255,255,255,.05)");
+          cone.addColorStop(.5, b.color);
+          cone.addColorStop(1, "rgba(255,255,255,.05)");
+          ctx.globalAlpha = .88;
+          ctx.fillStyle = cone;
+          ctx.beginPath();
+          ctx.moveTo(0, -b.hit * 1.35);
+          ctx.lineTo(b.hit * .9, b.hit * .6);
+          ctx.quadraticCurveTo(0, b.hit * .98, -b.hit * .9, b.hit * .6);
+          ctx.closePath();
+          ctx.fill();
+          ctx.globalAlpha = 1;
+          ctx.strokeStyle = c.dark ? "rgba(255,255,255,.25)" : "rgba(31,37,34,.24)";
+          ctx.lineWidth = 1.5;
+          ctx.stroke();
+          ctx.restore();
+
+          ctx.save();
+          ctx.translate(b.x, b.y);
+          ctx.fillStyle = c.dark ? "rgba(8,18,22,.52)" : "rgba(255,252,243,.62)";
+          ctx.strokeStyle = b.color;
+          ctx.lineWidth = 2;
+          ctx.beginPath();
+          ctx.arc(0, 0, b.hit * .62, 0, TAU);
+          ctx.fill();
+          ctx.stroke();
+          ctx.fillStyle = c.ink;
+          ctx.textAlign = "center";
+          ctx.textBaseline = "middle";
+          ctx.font = "800 12px ui-monospace, SFMono-Regular, Menlo, monospace";
+          ctx.fillText(b.name, 0, -2);
+          ctx.fillStyle = c.muted;
+          ctx.font = "800 10px ui-monospace, SFMono-Regular, Menlo, monospace";
+          ctx.fillText(b.key, 0, 14);
+          ctx.restore();
+        }
+      }
+
+      function drawMotes(t, c) {
+        for (const m of state.motes) {
+          const fuse = clamp(m.life / m.maxLife, 0, 1);
+          const pulse = Math.sin(t * 7 + m.wobble) * 1.5;
+          ctx.save();
+          ctx.translate(m.x, m.y);
+          ctx.rotate(Math.sin(t * 1.8 + m.wobble) * .12);
+          ctx.shadowColor = m.tint;
+          ctx.shadowBlur = m.picked ? 22 : 13;
+          ctx.fillStyle = m.tint;
+          ctx.globalAlpha = .95;
+          ctx.beginPath();
+          ctx.arc(0, 0, m.r + pulse, 0, TAU);
+          ctx.fill();
+          ctx.shadowBlur = 0;
+          ctx.globalAlpha = c.dark ? .28 : .38;
+          ctx.fillStyle = "#ffffff";
+          ctx.beginPath();
+          ctx.arc(-m.r * .28, -m.r * .32, m.r * .36, 0, TAU);
+          ctx.fill();
+          ctx.globalAlpha = 1;
+          ctx.strokeStyle = fuse < .24 ? "#ffffff" : c.ink;
+          ctx.lineWidth = 3;
+          ctx.beginPath();
+          ctx.arc(0, 0, m.r + 7, -Math.PI / 2, -Math.PI / 2 + TAU * fuse);
+          ctx.stroke();
+          ctx.fillStyle = c.dark ? "#071116" : "#18201d";
+          ctx.font = "900 " + Math.max(13, m.r * .82) + "px ui-monospace, SFMono-Regular, Menlo, monospace";
+          ctx.textAlign = "center";
+          ctx.textBaseline = "middle";
+          ctx.fillText(m.mark, 0, 1);
+          ctx.restore();
+        }
+      }
+
+      function drawDrag(c) {
+        const d = state.drag;
+        if (!d) return;
+        const m = d.mote;
+        const dx = d.x - d.sx, dy = d.y - d.sy;
+        const len = Math.hypot(dx, dy);
+        ctx.save();
+        ctx.strokeStyle = c.dark ? "rgba(255,255,255,.74)" : "rgba(31,37,34,.62)";
+        ctx.lineWidth = 3;
+        ctx.lineCap = "round";
+        ctx.beginPath();
+        ctx.moveTo(m.x, m.y);
+        ctx.lineTo(d.x, d.y);
+        ctx.stroke();
+        ctx.globalAlpha = .35;
+        ctx.setLineDash([7, 9]);
+        ctx.beginPath();
+        ctx.moveTo(m.x, m.y);
+        for (let i = 1; i <= 8; i++) {
+          const k = i / 8;
+          ctx.lineTo(m.x + dx * k * 2.2, m.y + dy * k * 2.2 + 34 * k * k);
+        }
+        ctx.stroke();
+        ctx.setLineDash([]);
+        if (len > 10) {
+          ctx.fillStyle = c.ink;
+          ctx.beginPath();
+          ctx.arc(d.x, d.y, 6, 0, TAU);
+          ctx.fill();
+        }
+        ctx.restore();
+      }
+
+      function drawParticles(c) {
+        for (const p of state.particles) {
+          const a = clamp(p.life / p.max, 0, 1);
+          ctx.save();
+          ctx.translate(p.x, p.y);
+          ctx.rotate(p.rot);
+          ctx.globalAlpha = a;
+          ctx.fillStyle = p.color;
+          if (p.shape === "shard") {
+            ctx.beginPath();
+            ctx.moveTo(0, -p.r * 1.4);
+            ctx.lineTo(p.r * .9, p.r);
+            ctx.lineTo(-p.r * .8, p.r * .7);
+            ctx.closePath();
+            ctx.fill();
+          } else if (p.shape === "static") {
+            ctx.strokeStyle = p.color;
+            ctx.lineWidth = 1.5;
+            ctx.beginPath();
+            ctx.moveTo(-p.r, 0);
+            ctx.lineTo(p.r, 0);
+            ctx.moveTo(0, -p.r);
+            ctx.lineTo(0, p.r);
+            ctx.stroke();
+          } else {
+            ctx.beginPath();
+            ctx.arc(0, 0, p.r, 0, TAU);
+            ctx.fill();
+          }
+          ctx.restore();
+        }
+      }
+
+      function drawSmears(c) {
+        for (const s of state.smears) {
+          const a = clamp(s.life / 8, 0, 1);
+          ctx.save();
+          ctx.translate(s.x, s.y);
+          ctx.rotate(s.rot);
+          ctx.globalAlpha = a * .35;
+          ctx.fillStyle = c.static;
+          ctx.beginPath();
+          ctx.ellipse(0, 0, s.r * 1.05, s.r * .58, 0, 0, TAU);
+          ctx.fill();
+          ctx.globalAlpha = a * .65;
+          ctx.strokeStyle = c.dark ? "rgba(245,239,218,.6)" : "rgba(28,30,27,.5)";
+          ctx.lineWidth = 2;
+          for (const l of s.lines) {
+            ctx.beginPath();
+            ctx.moveTo(l[0] * s.r * .2, l[1] * s.r * .2);
+            ctx.lineTo(l[0] * s.r * l[2], l[1] * s.r * l[2]);
+            ctx.stroke();
+          }
+          ctx.restore();
+        }
+      }
+
+      function drawTitleMotes(t, c) {
+        const cx = view.w * .5, cy = view.h * .45;
+        types.forEach((type, i) => {
+          const a = t * .55 + i * TAU / 3;
+          const x = cx + Math.cos(a) * Math.min(105, view.w * .25);
+          const y = cy + Math.sin(a * 1.2) * 52;
+          ctx.save();
+          ctx.globalAlpha = .42;
+          ctx.shadowBlur = 24;
+          ctx.shadowColor = darkQuery.matches ? type.dark : type.base;
+          ctx.fillStyle = darkQuery.matches ? type.dark : type.base;
+          ctx.beginPath();
+          ctx.arc(x, y, 18 + Math.sin(t * 2 + i) * 2, 0, TAU);
+          ctx.fill();
+          ctx.restore();
+        });
+      }
+
+      function render(t) {
+        ctx.setTransform(view.dpr, 0, 0, view.dpr, 0, 0);
+        const c = colors();
+        drawBackground(t, c);
+        const sx = (Math.random() - .5) * state.shake;
+        const sy = (Math.random() - .5) * state.shake;
+        ctx.save();
+        ctx.translate(sx, sy);
+        drawSmears(c);
+        drawBins(c);
+        if (state.mode === "title") drawTitleMotes(t, c);
+        drawMotes(t, c);
+        drawDrag(c);
+        drawParticles(c);
+        ctx.restore();
+
+        if (state.collapse > 0) {
+          ctx.save();
+          ctx.globalAlpha = state.collapse * .18;
+          ctx.fillStyle = c.dark ? "#ffffff" : "#fff8e8";
+          ctx.fillRect(0, 0, view.w, view.h);
+          ctx.restore();
+        }
+        if (state.flash > 0) {
+          ctx.save();
+          ctx.globalAlpha = state.flash * .28;
+          ctx.fillStyle = c.dark ? "#f0e8d8" : "#1d211f";
+          ctx.fillRect(0, 0, view.w, view.h);
+          ctx.restore();
+        }
+
+        if (state.mode === "playing" && state.motes.length === 0 && state.spawnedInWave === 0) {
+          ctx.save();
+          ctx.fillStyle = c.muted;
+          ctx.font = "800 11px ui-monospace, SFMono-Regular, Menlo, monospace";
+          ctx.textAlign = "center";
+          ctx.fillText("DRAG A MOTE TOWARD ITS MATCHING CONE", view.w / 2, view.h * .58);
+          ctx.restore();
+        }
+      }
+
+      let last = performance.now();
+      function frame(now) {
+        const realDt = Math.min(.05, (now - last) / 1000 || .016);
+        last = now;
+        const dt = Math.min(.033, realDt);
+        update(dt, realDt, now / 1000);
+        render(now / 1000);
+        requestAnimationFrame(frame);
+      }
+
+      startBtn.addEventListener("click", startGame);
+      againBtn.addEventListener("click", startGame);
+      canvas.addEventListener("pointerdown", onPointerDown, { passive: false });
+      canvas.addEventListener("pointermove", onPointerMove, { passive: false });
+      canvas.addEventListener("pointerup", releaseDrag, { passive: false });
+      canvas.addEventListener("pointercancel", releaseDrag, { passive: false });
+      window.addEventListener("keydown", onKey);
+      window.addEventListener("resize", resize);
+      darkQuery.addEventListener?.("change", () => updateBins(performance.now() / 1000));
+      resize();
+      requestAnimationFrame(frame);
+    })();
+  </script>
+</body>
+</html>

@@ -1,0 +1,658 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <title>Stutterline — Marine Run</title>
+  <style>
+    :root {
+      --bg0: #0a1014;
+      --bg1: #0e181e;
+      --glass: rgba(255,255,255,.06);
+      --line: rgba(120,220,255,.45);
+      --line2: rgba(80,200,190,.35);
+      --accent: #ffcc66;
+      --courier: #7af0ff;
+      --phantom: rgba(255,200,120,.2);
+      --hud: rgba(255,255,255,.88);
+      --danger: #ff5a4a;
+      --safe: #5ce38a;
+    }
+    @media (prefers-color-scheme: dark) {
+      :root {
+        --bg0: #0a1014;
+        --bg1: #0e181e;
+        --glass: rgba(255,255,255,.06);
+        --line: rgba(120,220,255,.45);
+        --line2: rgba(80,200,190,.35);
+        --accent: #ffcc66;
+        --courier: #7af0ff;
+        --phantom: rgba(255,200,120,.2);
+        --hud: rgba(255,255,255,.88);
+        --danger: #ff5a4a;
+        --safe: #5ce38a;
+      }
+      button.primary {
+        background: linear-gradient(180deg, var(--courier), #3aa8bc);
+        color: #061018;
+        box-shadow: 0 4px 20px rgba(0,180,200,.25);
+      }
+    }
+    @media (prefers-color-scheme: light) {
+      :root {
+        --bg0: #e8eef2;
+        --bg1: #dce6ec;
+        --glass: rgba(0,30,45,.08);
+        --line: rgba(0,90,110,.5);
+        --line2: rgba(0,120,130,.38);
+        --accent: #c45a00;
+        --courier: #007890;
+        --phantom: rgba(200,100,30,.18);
+        --hud: rgba(12,22,28,.9);
+        --danger: #c62828;
+        --safe: #1b7a4a;
+      }
+    }
+    * { box-sizing: border-box; }
+    html, body {
+      margin: 0;
+      height: 100%;
+      height: 100dvh;
+      background: var(--bg0);
+      font-family: ui-sans-serif, system-ui, sans-serif;
+      overflow: hidden;
+      -webkit-tap-highlight-color: transparent;
+    }
+    #wrap {
+      position: fixed;
+      inset: 0;
+      width: 100dvw;
+      height: 100dvh;
+      display: flex;
+      flex-direction: column;
+      background: linear-gradient(180deg, var(--bg1) 0%, var(--bg0) 100%);
+    }
+    canvas#game {
+      flex: 1;
+      width: 100%;
+      min-height: 0;
+      touch-action: none;
+      user-select: none;
+      -webkit-user-select: none;
+      display: block;
+    }
+    .hud-bar {
+      flex-shrink: 0;
+      padding: calc(8px + env(safe-area-inset-top, 0px)) 16px 8px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      gap: 12px;
+      font-family: ui-monospace, 'SFMono-Regular', Menlo, monospace;
+      font-size: 12px;
+      color: var(--hud);
+      letter-spacing: 0.02em;
+    }
+    .hud-bar span { opacity: .85; }
+    .overlay {
+      position: absolute;
+      left: 0; right: 0;
+      bottom: calc(24px + env(safe-area-inset-bottom, 0px));
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 14px;
+      pointer-events: none;
+      padding: 0 20px;
+    }
+    .overlay .panel {
+      pointer-events: auto;
+      background: var(--glass);
+      backdrop-filter: blur(10px);
+      -webkit-backdrop-filter: blur(10px);
+      border: 1px solid var(--line2);
+      border-radius: 14px;
+      padding: 20px 22px;
+      max-width: 340px;
+      text-align: center;
+      color: var(--hud);
+    }
+    .overlay h1 {
+      margin: 0 0 6px;
+      font-size: 1.15rem;
+      font-weight: 650;
+      letter-spacing: -0.02em;
+    }
+    .overlay p {
+      margin: 0 0 14px;
+      font-size: 0.85rem;
+      line-height: 1.45;
+      opacity: .9;
+    }
+    .overlay kbd {
+      font-family: ui-monospace, Menlo, monospace;
+      font-size: 0.75rem;
+      padding: 2px 6px;
+      border-radius: 4px;
+      border: 1px solid var(--line2);
+      background: var(--glass);
+    }
+    .btn-row { display: flex; gap: 10px; justify-content: center; flex-wrap: wrap; }
+    button.primary {
+      min-height: 48px;
+      min-width: 140px;
+      padding: 0 22px;
+      font-size: 0.95rem;
+      font-weight: 600;
+      border: none;
+      border-radius: 999px;
+      background: linear-gradient(180deg, var(--courier), #3aa8bc);
+      color: #061018;
+      cursor: pointer;
+      font-family: inherit;
+      box-shadow: 0 4px 20px rgba(0,180,200,.25);
+    }
+    @media (prefers-color-scheme: light) {
+      button.primary {
+        color: #fff;
+        background: linear-gradient(180deg, #0088a0, #006878);
+        box-shadow: 0 4px 16px rgba(0,100,120,.2);
+      }
+    }
+    button.primary:active { transform: scale(0.98); }
+    .hint { font-size: 0.72rem; opacity: .75; font-family: ui-monospace, Menlo, monospace; }
+  </style>
+</head>
+<body>
+  <div id="wrap">
+    <div class="hud-bar" id="hud">
+      <span id="score-lbl">CHAIN 0</span>
+      <span id="bpm-lbl">92 BPM</span>
+      <span id="time-lbl">0:00</span>
+    </div>
+    <canvas id="game"></canvas>
+    <div class="overlay" id="overlay">
+      <div class="panel" id="panel">
+        <h1 id="title">Stutterline</h1>
+        <p id="blurb">Swipe <strong>left / right</strong> to swap basslanes. Barriers <em>teleport on off-beats</em> — thread the wireframe gap before they solidify.</p>
+        <p class="hint">Off-beat pulse = stutter · Survive one run (~45s) · Keyboard: ← →</p>
+        <div class="btn-row">
+          <button type="button" class="primary" id="btn-play">Enter the tunnel</button>
+        </div>
+      </div>
+    </div>
+  </div>
+  <script>
+(function () {
+  'use strict';
+
+  const canvas = document.getElementById('game');
+  const ctx = canvas.getContext('2d');
+  const hudScore = document.getElementById('score-lbl');
+  const hudBpm = document.getElementById('bpm-lbl');
+  const hudTime = document.getElementById('time-lbl');
+  const overlay = document.getElementById('overlay');
+  const titleEl = document.getElementById('title');
+  const blurbEl = document.getElementById('blurb');
+  const btnPlay = document.getElementById('btn-play');
+
+  const DPR = Math.min(window.devicePixelRatio || 1, 2);
+  let W = 0, H = 0, LANE_W = 0, BASE_Y = 0;
+
+  const LANES = 3;
+  let lane = 1;
+  let laneVisual = 1;
+  const LANE_SMOOTH = 12;
+
+  let state = 'title';
+  let now = 0;
+  let runTime = 0;
+  let bpm = 92;
+  let bpmStart = 92;
+  let bpmEnd = 138;
+  let roundTarget = 48;
+  let beatPhase = 0;
+  let halfPhase = 0;
+  let prevHalf = 0;
+
+  let score = 0;
+  let chain = 0;
+  let shake = 0;
+  let hitFlash = 0;
+
+  const obstacles = [];
+  const particles = [];
+
+  let audioCtx = null;
+  function getAudio() {
+    if (!audioCtx) {
+      try { audioCtx = new (window.AudioContext || window.webkitAudioContext)(); } catch (e) { audioCtx = null; }
+    }
+    return audioCtx;
+  }
+
+  function beep(freq, dur, vol, type) {
+    const ac = getAudio();
+    if (!ac) return;
+    const o = ac.createOscillator();
+    const g = ac.createGain();
+    o.type = type || 'sine';
+    o.frequency.value = freq;
+    g.gain.value = vol;
+    o.connect(g);
+    g.connect(ac.destination);
+    const t = ac.currentTime;
+    g.gain.setValueAtTime(vol, t);
+    g.gain.exponentialRampToValueAtTime(0.001, t + dur);
+    o.start(t);
+    o.stop(t + dur + 0.02);
+  }
+
+  function pulseKick(sub) {
+    const ac = getAudio();
+    if (!ac) return;
+    const o = ac.createOscillator();
+    const g = ac.createGain();
+    o.type = 'triangle';
+    o.frequency.value = sub ? 55 : 140;
+    g.gain.value = sub ? 0.14 : 0.06;
+    o.connect(g);
+    g.connect(ac.destination);
+    const t = ac.currentTime;
+    g.gain.setValueAtTime(g.gain.value, t);
+    g.gain.exponentialRampToValueAtTime(0.001, t + (sub ? 0.12 : 0.05));
+    o.start(t);
+    o.stop(t + 0.15);
+  }
+
+  function haptic(ms) {
+    if (typeof navigator !== 'undefined' && navigator.vibrate) {
+      try { navigator.vibrate(ms); } catch (e) {}
+    }
+  }
+
+  function resize() {
+    const r = canvas.getBoundingClientRect();
+    W = Math.max(1, Math.floor(r.width * DPR));
+    H = Math.max(1, Math.floor(r.height * DPR));
+    canvas.width = W;
+    canvas.height = H;
+    LANE_W = W / LANES;
+    BASE_Y = H * 0.78;
+  }
+  window.addEventListener('resize', resize);
+  resize();
+
+  function beatDur() { return 60 / bpm; }
+  function scrollSpeed() {
+    const pinch = pinchT();
+    return (LANE_W * 2.1 * (0.85 + (bpm / 160))) * pinch;
+  }
+
+  function pinchT() {
+    const p = Math.min(1, runTime / roundTarget);
+    return 1 - p * 0.22;
+  }
+
+  function playerLaneX(l) {
+    const pinch = state === 'play' ? pinchT() : 1;
+    const lx0 = W * (1 - pinch) * 0.5;
+    const lx1 = W - lx0;
+    return lx0 + (lx1 - lx0) * ((l + 0.5) / LANES);
+  }
+
+  function spawnRow() {
+    const openDown = Math.floor(Math.random() * LANES);
+    const openUp = (openDown + (Math.random() < 0.5 ? 1 : -1) + LANES * 3) % LANES;
+    const usePhantom = Math.random() < 0.35 + runTime / roundTarget * 0.2;
+    obstacles.push({
+      y: -LANE_W * 1.2,
+      openDown,
+      openUp,
+      hit: false,
+      passed: false,
+      phantom: usePhantom,
+      phantomBeatOfs: Math.random() < 0.5 ? 1 : 2,
+      wobble: Math.random() * Math.PI * 2
+    });
+  }
+
+  function openLaneFor(obs) {
+    return halfPhase < 0.5 ? obs.openDown : obs.openUp;
+  }
+
+  function laneBlocked(obs, l) {
+    const o = openLaneFor(obs);
+    return l !== o;
+  }
+
+  function addBurst(x, y, col, n) {
+    for (let i = 0; i < n; i++) {
+      const a = Math.random() * Math.PI * 2;
+      const s = (0.4 + Math.random() * 1.2) * LANE_W * 0.04;
+      particles.push({ x, y, vx: Math.cos(a) * s, vy: Math.sin(a) * s, life: 1, col });
+    }
+  }
+
+  function resetGame() {
+    obstacles.length = 0;
+    particles.length = 0;
+    lane = laneVisual = 1;
+    runTime = 0;
+    bpm = bpmStart;
+    score = chain = 0;
+    beatPhase = halfPhase = prevHalf = 0;
+    shake = hitFlash = 0;
+    state = 'play';
+    overlay.style.opacity = '0';
+    overlay.style.pointerEvents = 'none';
+    const ac = getAudio();
+    if (ac && ac.state === 'suspended') ac.resume();
+    spawnRow();
+  }
+
+  function gameOver() {
+    state = 'over';
+    overlay.style.opacity = '1';
+    overlay.style.pointerEvents = 'auto';
+    titleEl.textContent = 'Signal lost';
+    blurbEl.innerHTML = 'Chain <strong>' + chain + '</strong> · Score <strong>' + Math.floor(score) + '</strong>. The tunnel squeezed your line — ride the off-beat tighter next run.';
+    btnPlay.textContent = 'Play again';
+    haptic([30, 40, 30]);
+  }
+
+  function winRound() {
+    state = 'over';
+    overlay.style.opacity = '1';
+    overlay.style.pointerEvents = 'auto';
+    titleEl.textContent = 'You surfaced';
+    blurbEl.innerHTML = 'Clean run through the marine layer. Chain <strong>' + chain + '</strong> · Score <strong>' + Math.floor(score) + '</strong>.';
+    btnPlay.textContent = 'Surf again';
+    beep(520, 0.15, 0.06, 'square');
+    haptic(25);
+  }
+
+  btnPlay.addEventListener('click', function () {
+    if (state === 'title' || state === 'over') resetGame();
+  });
+
+  let touchStartX = 0, touchStartY = 0, touchActive = false;
+  function onTouchStart(e) {
+    if (e.touches.length !== 1) return;
+    e.preventDefault();
+    touchActive = true;
+    touchStartX = e.touches[0].clientX;
+    touchStartY = e.touches[0].clientY;
+  }
+  function onTouchEnd(e) {
+    if (!touchActive) return;
+    e.preventDefault();
+    touchActive = false;
+    const t = e.changedTouches[0];
+    const dx = t.clientX - touchStartX;
+    const dy = t.clientY - touchStartY;
+    touchStartX = touchStartY = 0;
+    if (state !== 'play') return;
+    if (Math.abs(dx) < 34 && Math.abs(dy) < 34) return;
+    if (Math.abs(dx) >= Math.abs(dy)) {
+      if (dx < 0 && lane > 0) { lane--; swipeJuice(-1); }
+      else if (dx > 0 && lane < LANES - 1) { lane++; swipeJuice(1); }
+    }
+  }
+  canvas.addEventListener('touchstart', onTouchStart, { passive: false });
+  canvas.addEventListener('touchend', onTouchEnd, { passive: false });
+
+  function swipeJuice(dir) {
+    pulseKick(false);
+    haptic(8);
+    const cx = playerLaneX(lane);
+    addBurst(cx, BASE_Y, getComputedStyle(document.documentElement).getPropertyValue('--courier').trim() || '#7af0ff', 8);
+  }
+
+  window.addEventListener('keydown', function (e) {
+    if (state !== 'play') return;
+    if (e.key === 'ArrowLeft' && lane > 0) { lane--; swipeJuice(-1); e.preventDefault(); }
+    else if (e.key === 'ArrowRight' && lane < LANES - 1) { lane++; swipeJuice(1); e.preventDefault(); }
+  });
+
+  function tick(ts) {
+    now = ts;
+    if (state === 'play') {
+      const dt = Math.min(0.05, (ts - (tick._l || ts)) / 1000);
+      tick._l = ts;
+      runTime += dt;
+      const prog = Math.min(1, runTime / roundTarget);
+      bpm = bpmStart + (bpmEnd - bpmStart) * prog;
+      beatPhase += dt / beatDur();
+      const beat = beatPhase;
+      halfPhase = beat % 1;
+      const isFlip = Math.floor(beat * 2) !== Math.floor(prevHalf);
+      if (isFlip) {
+        const isDown = halfPhase < 0.5;
+        pulseKick(isDown);
+        if (isDown) beep(180, 0.04, 0.035, 'sine');
+        else beep(320, 0.035, 0.028, 'triangle');
+      }
+      prevHalf = Math.floor(beat * 2);
+
+      const spd = scrollSpeed() * dt;
+      let near = false;
+      for (let i = 0; i < obstacles.length; i++) obstacles[i].y += spd;
+      for (let i = obstacles.length - 1; i >= 0; i--) {
+        const o = obstacles[i];
+        const oy = o.y;
+        if (!o.passed && oy > BASE_Y - LANE_W * 0.2) {
+          o.passed = true;
+          if (!laneBlocked(o, lane)) {
+            chain++;
+            score += 12 + chain * 0.6;
+            haptic(5);
+          } else {
+            chain = 0;
+          }
+        }
+        if (!o.hit && oy > BASE_Y - LANE_W * 0.35 && oy < BASE_Y + LANE_W * 0.35) {
+          const dist = Math.abs(oy - BASE_Y);
+          if (dist < LANE_W * 0.42 && !o.phantom && laneBlocked(o, lane)) {
+            o.hit = true;
+            shake = 0.4;
+            hitFlash = 1;
+            addBurst(playerLaneX(lane), BASE_Y, '#ff5540', 18);
+            gameOver();
+          } else if (dist < LANE_W * 0.5 && !laneBlocked(o, lane)) {
+            near = true;
+          }
+        }
+        if (oy > H + LANE_W) obstacles.splice(i, 1);
+      }
+
+      if (state === 'play') {
+        if (near) score += dt * 28;
+
+        const minGap = (0.95 - prog * 0.35) * beatDur();
+        if (!obstacles.length || obstacles[obstacles.length - 1].y > minGap * scrollSpeed() * 1.2) {
+          if (Math.random() < 0.14 + prog * 0.2) spawnRow();
+        }
+
+        laneVisual += (lane - laneVisual) * Math.min(1, LANE_SMOOTH * dt * 60);
+
+        if (runTime >= roundTarget) winRound();
+      }
+    } else {
+      tick._l = ts;
+    }
+
+    for (let i = particles.length - 1; i >= 0; i--) {
+      const p = particles[i];
+      p.x += p.vx;
+      p.y += p.vy;
+      p.life -= state === 'play' ? 0.08 : 0.05;
+      if (p.life <= 0) particles.splice(i, 1);
+    }
+    if (shake > 0) shake *= 0.88;
+    if (hitFlash > 0) hitFlash *= 0.85;
+    draw();
+    requestAnimationFrame(tick);
+  }
+
+  function cssVar(name, fallback) {
+    const v = getComputedStyle(document.documentElement).getPropertyValue(name).trim();
+    return v || fallback;
+  }
+
+  function draw() {
+    const dark = window.matchMedia('(prefers-color-scheme: light)').matches ? false : true;
+    const line = cssVar('--line', '#7ad8ff');
+    const line2 = cssVar('--line2', '#50c8be');
+    const courier = cssVar('--courier', '#7af0ff');
+    const acc = cssVar('--accent', '#fc6');
+
+    ctx.save();
+    if (shake > 0.01) {
+      ctx.translate((Math.random() - 0.5) * shake * LANE_W * 0.3, (Math.random() - 0.5) * shake * LANE_W * 0.2);
+    }
+    ctx.fillStyle = dark ? '#0a1216' : '#dde8ee';
+    ctx.fillRect(0, 0, W, H);
+
+    const grd = ctx.createLinearGradient(0, 0, 0, H);
+    if (dark) {
+      grd.addColorStop(0, 'rgba(30,80,90,0.15)');
+      grd.addColorStop(0.5, 'rgba(10,20,28,0)');
+      grd.addColorStop(1, 'rgba(8,40,50,0.12)');
+    } else {
+      grd.addColorStop(0, 'rgba(180,210,220,0.35)');
+      grd.addColorStop(0.5, 'rgba(230,238,242,0)');
+      grd.addColorStop(1, 'rgba(200,220,228,0.25)');
+    }
+    ctx.fillStyle = grd;
+    ctx.fillRect(0, 0, W, H);
+
+    ctx.strokeStyle = dark ? 'rgba(255,255,255,0.04)' : 'rgba(0,40,60,0.06)';
+    ctx.lineWidth = 1;
+    for (let gy = (now * 0.04) % 40; gy < H; gy += 40) {
+      ctx.beginPath();
+      ctx.moveTo(0, gy);
+      ctx.lineTo(W, gy + 18);
+      ctx.stroke();
+    }
+
+    const pinch = state === 'play' ? pinchT() : 1;
+    const lx0 = W * (1 - pinch) * 0.5;
+    const lx1 = W - lx0;
+
+    if (state === 'play') {
+      const pulse = halfPhase < 0.5 ? halfPhase * 2 : (1 - halfPhase) * 2;
+      ctx.fillStyle = dark ? 'rgba(122,240,255,0.45)' : 'rgba(0,100,115,0.55)';
+      ctx.fillRect(lx0, 6 * DPR, (lx1 - lx0) * (0.08 + pulse * 0.28), 3 * DPR);
+    }
+
+    ctx.strokeStyle = line2;
+    ctx.globalAlpha = 0.35;
+    ctx.lineWidth = 1 * DPR;
+    for (let i = 1; i < LANES; i++) {
+      const x = lx0 + (lx1 - lx0) * (i / LANES);
+      ctx.beginPath();
+      ctx.setLineDash([6 * DPR, 10 * DPR]);
+      ctx.moveTo(x, 0);
+      ctx.lineTo(x, H);
+      ctx.stroke();
+    }
+    ctx.setLineDash([]);
+    ctx.globalAlpha = 1;
+
+    ctx.strokeStyle = line;
+    ctx.lineWidth = 2 * DPR;
+    ctx.beginPath();
+    ctx.moveTo(lx0, 0);
+    ctx.lineTo(lx0, H);
+    ctx.moveTo(lx1, 0);
+    ctx.lineTo(lx1, H);
+    ctx.stroke();
+
+    function laneXWorld(l) {
+      return lx0 + (lx1 - lx0) * ((l + 0.5) / LANES);
+    }
+
+    for (const o of obstacles) {
+      const pad = LANE_W * (0.1 + (1 - pinch) * 0.04);
+      const top = o.y - LANE_W * 0.55;
+      const bot = o.y + LANE_W * 0.35;
+      const open = openLaneFor(o);
+      const ph = o.phantom && (Math.floor(beatPhase * 2 + o.phantomBeatOfs) % 2 === 0);
+
+      ctx.save();
+      ctx.globalAlpha = ph ? 0.22 : 0.92;
+      for (let l = 0; l < LANES; l++) {
+        if (l === open) continue;
+        const x0 = laneXWorld(l) - LANE_W * pinch / 2 + pad * 0.5;
+        const x1 = laneXWorld(l) + LANE_W * pinch / 2 - pad * 0.5;
+        ctx.strokeStyle = ph ? cssVar('--phantom', 'rgba(255,180,100,0.3)') : line;
+        ctx.fillStyle = dark ? 'rgba(20,60,70,0.25)' : 'rgba(255,255,255,0.35)';
+        ctx.lineWidth = 1.5 * DPR;
+        ctx.beginPath();
+        ctx.rect(x0, top, x1 - x0, bot - top);
+        ctx.fill();
+        ctx.stroke();
+        const skew = Math.sin(now * 0.006 + o.wobble + l) * LANE_W * 0.05;
+        ctx.strokeStyle = acc;
+        ctx.globalAlpha = ph ? 0.15 : 0.55;
+        ctx.beginPath();
+        ctx.moveTo(x0 + skew, top + 4 * DPR);
+        ctx.lineTo(x1 + skew * 0.5, bot - 6 * DPR);
+        ctx.stroke();
+      }
+      ctx.restore();
+    }
+
+    const px = laneXWorld(laneVisual);
+    ctx.save();
+    ctx.shadowColor = courier;
+    ctx.shadowBlur = 18 * DPR;
+    ctx.fillStyle = courier;
+    ctx.beginPath();
+    ctx.arc(px, BASE_Y, LANE_W * 0.12 * pinch, 0, Math.PI * 2);
+    ctx.fill();
+    ctx.shadowBlur = 0;
+    ctx.fillStyle = dark ? 'rgba(255,255,255,0.9)' : 'rgba(255,255,255,0.95)';
+    ctx.beginPath();
+    ctx.arc(px - LANE_W * 0.03, BASE_Y - LANE_W * 0.02, LANE_W * 0.035 * pinch, 0, Math.PI * 2);
+    ctx.fill();
+    ctx.restore();
+
+    for (const p of particles) {
+      ctx.globalAlpha = p.life;
+      ctx.fillStyle = p.col;
+      ctx.beginPath();
+      ctx.arc(p.x, p.y, 3 * DPR * p.life, 0, Math.PI * 2);
+      ctx.fill();
+    }
+    ctx.globalAlpha = 1;
+
+    if (hitFlash > 0.05) {
+      ctx.fillStyle = 'rgba(255,80,60,' + (hitFlash * 0.35) + ')';
+      ctx.fillRect(0, 0, W, H);
+    }
+
+    ctx.restore();
+
+    if (state === 'play') {
+      hudScore.textContent = 'CHAIN ' + chain;
+      hudBpm.textContent = Math.round(bpm) + ' BPM';
+      const s = Math.floor(runTime);
+      hudTime.textContent = Math.floor(s / 60) + ':' + String(s % 60).padStart(2, '0');
+    } else if (state === 'title') {
+      hudScore.textContent = 'LANES · 3';
+      hudBpm.textContent = 'BEAT';
+      hudTime.textContent = '···';
+    } else {
+      hudScore.textContent = 'CHAIN ' + chain;
+      hudBpm.textContent = Math.round(bpm) + ' BPM';
+      hudTime.textContent = 'END';
+    }
+  }
+
+  requestAnimationFrame(tick);
+})();
+  </script>
+</body>
+</html>
