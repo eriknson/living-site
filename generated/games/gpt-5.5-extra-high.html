@@ -1,0 +1,446 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Petal Noon</title>
+<style>
+:root{
+  color-scheme: light dark;
+  --paper:#f7f2e7;--ink:#1e2a25;--muted:#63746b;--panel:rgba(255,251,242,.78);
+  --line:rgba(55,78,67,.18);--accent:#e9a529;--good:#16867d;--bad:#c85f35;
+}
+@media (prefers-color-scheme: dark){
+  :root{--paper:#071412;--ink:#eaf4e8;--muted:#9bb4a8;--panel:rgba(9,24,22,.78);--line:rgba(231,244,232,.16);--accent:#f2b744;--good:#56c9bb;--bad:#f18a5f}
+}
+*{box-sizing:border-box}
+html,body{margin:0;width:100dvw;height:100dvh;overflow:hidden;background:var(--paper);color:var(--ink);font-family:Inter,system-ui,-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif}
+#game{position:fixed;inset:0;width:100dvw;height:100dvh;overflow:hidden;user-select:none;background:
+ radial-gradient(circle at 50% 12%,rgba(255,211,98,.20),transparent 28%),
+ linear-gradient(180deg,var(--paper),color-mix(in srgb,var(--paper) 78%,#8cc8b8 22%));}
+@media (prefers-color-scheme: dark){
+  #game{background:radial-gradient(circle at 50% 8%,rgba(242,183,68,.16),transparent 25%),linear-gradient(180deg,#071412,#0d2d28 72%,#0a1d1a)}
+}
+canvas{position:absolute;inset:0;width:100dvw;height:100dvh;touch-action:none;display:block}
+#hud{position:absolute;inset:env(safe-area-inset-top) 0 auto 0;display:flex;align-items:flex-start;justify-content:space-between;gap:12px;padding:14px 16px;pointer-events:none;font-family:ui-monospace,"SFMono-Regular",Menlo,monospace}
+.stat{min-width:72px;padding:9px 10px;border:1px solid var(--line);border-radius:18px;background:var(--panel);backdrop-filter:blur(14px);box-shadow:0 10px 30px rgba(0,0,0,.08)}
+.stat b{display:block;font-size:18px;line-height:1}.stat span{display:block;margin-top:3px;color:var(--muted);font-size:10px;letter-spacing:.08em;text-transform:uppercase}
+#heatBox{flex:1;max-width:210px;padding:9px 10px;border:1px solid var(--line);border-radius:18px;background:var(--panel);backdrop-filter:blur(14px)}
+#heatLabel{display:flex;justify-content:space-between;font-size:10px;color:var(--muted);letter-spacing:.08em;text-transform:uppercase}
+#heatTrack{height:8px;margin-top:7px;border-radius:99px;background:rgba(80,105,91,.18);overflow:hidden}
+#heat{height:100%;width:0%;border-radius:99px;background:linear-gradient(90deg,var(--accent),var(--bad));transition:width .16s ease}
+#tip{position:absolute;left:50%;bottom:calc(18px + env(safe-area-inset-bottom));transform:translateX(-50%);max-width:min(520px,calc(100dvw - 28px));padding:10px 14px;border:1px solid var(--line);border-radius:99px;background:var(--panel);backdrop-filter:blur(14px);font-family:ui-monospace,"SFMono-Regular",Menlo,monospace;font-size:12px;color:var(--muted);text-align:center;pointer-events:none;transition:opacity .25s ease}
+#overlay{position:absolute;inset:0;display:grid;place-items:center;padding:24px;background:rgba(7,18,16,.18);backdrop-filter:blur(4px);transition:opacity .35s ease}
+#overlay.hidden{opacity:0;pointer-events:none}
+#card{width:min(460px,calc(100dvw - 32px));border:1px solid var(--line);border-radius:30px;background:var(--panel);backdrop-filter:blur(20px);box-shadow:0 24px 80px rgba(0,0,0,.18);padding:28px;text-align:left}
+h1{margin:0 0 10px;font-size:clamp(40px,12vw,68px);line-height:.86;letter-spacing:-.07em}
+p{margin:0;color:var(--muted);line-height:1.45}
+.mini{margin-top:18px;padding-top:16px;border-top:1px solid var(--line);font-family:ui-monospace,"SFMono-Regular",Menlo,monospace;font-size:12px;color:var(--muted)}
+button{margin-top:22px;width:100%;min-height:48px;border:0;border-radius:18px;background:var(--ink);color:var(--paper);font-weight:800;font-size:15px;letter-spacing:.01em;cursor:pointer}
+button:active{transform:translateY(1px)}
+#restart{position:absolute;right:14px;bottom:calc(14px + env(safe-area-inset-bottom));width:auto;min-width:86px;min-height:44px;margin:0;padding:0 16px;border:1px solid var(--line);border-radius:18px;background:var(--panel);color:var(--ink);backdrop-filter:blur(14px);font-family:ui-monospace,"SFMono-Regular",Menlo,monospace;font-size:12px;opacity:.82}
+#restart.hide{display:none}
+</style>
+</head>
+<body>
+<main id="game" aria-label="Petal Noon game">
+  <canvas id="c"></canvas>
+  <section id="hud" aria-live="polite">
+    <div class="stat"><b id="score">0</b><span>score</span></div>
+    <div id="heatBox"><div id="heatLabel"><span>edge heat</span><span id="heatNum">0%</span></div><div id="heatTrack"><div id="heat"></div></div></div>
+    <div class="stat"><b id="time">45</b><span>noon</span></div>
+  </section>
+  <div id="tip">Drag a glowing path from the sun. Release to light pollen before timers burst.</div>
+  <button id="restart" class="hide" type="button">restart</button>
+  <section id="overlay">
+    <div id="card">
+      <h1 id="title">Petal<br>Noon</h1>
+      <p id="copy">Draw sun corridors across a magnolia petal. Ignite every pollen clock before virtual noon, but keep the light off the fragile edge.</p>
+      <div class="mini" id="mini">Touch: drag, release. Keyboard: arrows sketch, space releases.</div>
+      <button id="play" type="button">Begin at dawn</button>
+    </div>
+  </section>
+</main>
+<script>
+(() => {
+  "use strict";
+  const canvas = document.getElementById("c");
+  const ctx = canvas.getContext("2d", { alpha: true });
+  const $ = id => document.getElementById(id);
+  const scoreEl = $("score"), timeEl = $("time"), heatEl = $("heat"), heatNumEl = $("heatNum");
+  const tipEl = $("tip"), overlay = $("overlay"), titleEl = $("title"), copyEl = $("copy"), miniEl = $("mini");
+  const playBtn = $("play"), restartBtn = $("restart");
+  const mq = matchMedia("(prefers-color-scheme: dark)");
+  let dark = mq.matches;
+  mq.addEventListener?.("change", e => { dark = e.matches; });
+
+  let W = 0, H = 0, DPR = 1, petal, last = performance.now(), state = "title";
+  let pollen = [], dew = [], particles = [], drawing = false, traveling = false;
+  let path = [], travelPath = [], ray = null, lastSafe = null, keyboardDrawing = false, cursor = null;
+  let timeLeft = 45, score = 0, combo = 0, heat = 0, cleared = 0, missed = 0, spawned = 0, spawnClock = 0;
+  let target = 24, shake = 0, globalT = 0, audio = null;
+
+  const palette = () => dark ? {
+    bg:"#071412", petal:"#183530", petal2:"#244b40", vein:"rgba(154,206,187,.17)",
+    rim:"rgba(232,244,230,.20)", ink:"#f1b94a", ink2:"#ffe8a3", pollen:"#ffd36c",
+    dew:"#72ded0", text:"#eaf4e8", bad:"#f18a5f", shadow:"rgba(0,0,0,.34)"
+  } : {
+    bg:"#f7f2e7", petal:"#fff3e6", petal2:"#f2d7c4", vein:"rgba(179,120,83,.17)",
+    rim:"rgba(116,74,48,.20)", ink:"#eaa329", ink2:"#fff0a7", pollen:"#f0b33e",
+    dew:"#48b9b1", text:"#1f2a24", bad:"#c85f35", shadow:"rgba(78,51,30,.14)"
+  };
+
+  function resize(){
+    DPR = Math.min(2, window.devicePixelRatio || 1);
+    W = innerWidth; H = innerHeight;
+    canvas.width = Math.floor(W * DPR); canvas.height = Math.floor(H * DPR);
+    ctx.setTransform(DPR,0,0,DPR,0,0);
+    petal = { cx: W * .5, cy: H * .55, rx: Math.min(W * .45, H * .27), ry: H * .41, a: -0.08 };
+    if (state === "title") {
+      const p = pointInPetal(.5, .74);
+      ray = { x:p.x, y:p.y };
+    }
+  }
+
+  function pointInPetal(nx, ny){
+    return { x: petal.cx + (nx - .5) * petal.rx * 2, y: petal.cy + (ny - .5) * petal.ry * 2 };
+  }
+  function local(x,y){
+    const ca = Math.cos(-petal.a), sa = Math.sin(-petal.a);
+    const dx = x - petal.cx, dy = y - petal.cy;
+    return { x: dx * ca - dy * sa, y: dx * sa + dy * ca };
+  }
+  function insidePetal(x,y){
+    const p = local(x,y);
+    const taper = 1 + Math.max(0, -p.y / petal.ry) * .18;
+    return (p.x*p.x)/(petal.rx*petal.rx*taper) + (p.y*p.y)/(petal.ry*petal.ry) <= 1;
+  }
+  function rand(a,b){ return a + Math.random() * (b - a); }
+  function dist(a,b){ return Math.hypot(a.x-b.x, a.y-b.y); }
+  function clamp(v,a,b){ return Math.max(a, Math.min(b, v)); }
+  function randomPetalPoint(margin = 0){
+    for(let i=0;i<300;i++){
+      const x = rand(petal.cx - petal.rx + margin, petal.cx + petal.rx - margin);
+      const y = rand(petal.cy - petal.ry + margin, petal.cy + petal.ry - margin);
+      if(insidePetal(x,y)) return {x,y};
+    }
+    return {x:petal.cx,y:petal.cy};
+  }
+
+  function start(){
+    ensureAudio();
+    state = "playing"; overlay.classList.add("hidden"); restartBtn.classList.add("hide");
+    timeLeft = 45; score = 0; combo = 0; heat = 0; cleared = 0; missed = 0; spawned = 0; spawnClock = .25;
+    pollen = []; dew = []; particles = []; drawing = false; traveling = false; path = []; travelPath = [];
+    ray = pointInPetal(.5,.74); lastSafe = {...ray}; keyboardDrawing = false; cursor = null; shake = 0; globalT = 0;
+    for(let i=0;i<5;i++) spawnPollen(true);
+    for(let i=0;i<3;i++) dew.push(makeDew(i));
+    setTip("Drag a glowing path. Release through pollen clocks before they pop.");
+    beep(392,.05,"sine",.05); setTimeout(()=>beep(594,.06,"sine",.05),70);
+    updateHud();
+  }
+
+  function makeDew(i){
+    const p = randomPetalPoint(28);
+    return { x:p.x, y:p.y, baseY:p.y, r:rand(10,16), vx:rand(22,40) * (i%2?1:-1), phase:rand(0,6.28), wake:rand(8,17) };
+  }
+  function spawnPollen(initial=false){
+    if(spawned >= target) return;
+    let p = randomPetalPoint(34);
+    for(let tries=0; tries<80 && (dist(p, ray) < 72 || pollen.some(o=>dist(o,p)<52)); tries++) p = randomPetalPoint(34);
+    const pressure = 1 - timeLeft / 45;
+    const life = initial ? rand(7,9) : rand(4.4,7.2) - pressure*.9;
+    pollen.push({ x:p.x, y:p.y, r:rand(12,16), max: life, t: life, pulse:rand(0,9), dead:false });
+    spawned++;
+  }
+
+  function ensureAudio(){
+    if(audio) return;
+    try{ audio = new (window.AudioContext || window.webkitAudioContext)(); }catch(e){ audio = null; }
+  }
+  function beep(freq, dur=.08, type="triangle", gain=.04){
+    if(!audio) return;
+    try{
+      const o = audio.createOscillator(), g = audio.createGain();
+      o.type = type; o.frequency.value = freq; g.gain.value = gain;
+      g.gain.exponentialRampToValueAtTime(.0001, audio.currentTime + dur);
+      o.connect(g); g.connect(audio.destination); o.start(); o.stop(audio.currentTime + dur);
+    }catch(e){}
+  }
+  function vibrate(ms){ navigator.vibrate?.(ms); }
+  function setTip(text){ tipEl.textContent = text; tipEl.style.opacity = "1"; clearTimeout(setTip.to); setTip.to = setTimeout(()=>{ if(state==="playing") tipEl.style.opacity = ".72"; }, 2200); }
+
+  function addParticles(x,y,color,count=14,burst=1){
+    for(let i=0;i<count;i++){
+      const a = rand(0,Math.PI*2), s = rand(35,160) * burst;
+      particles.push({x,y,vx:Math.cos(a)*s,vy:Math.sin(a)*s,life:rand(.35,.8),max:.8,r:rand(1.8,4.4),c:color});
+    }
+  }
+  function beginDraw(x,y){
+    if(state !== "playing" || traveling) return;
+    drawing = true; keyboardDrawing = false; cursor = {x,y};
+    path = [{x:ray.x,y:ray.y},{x,y}];
+  }
+  function addPathPoint(x,y){
+    if(!drawing) return;
+    const p = {x,y}, lastP = path[path.length-1];
+    if(dist(p,lastP) > 7) path.push(p);
+    if(path.length > 100) path.splice(1,1);
+  }
+  function commitPath(){
+    if(!drawing || path.length < 2){ drawing = false; return; }
+    drawing = false; keyboardDrawing = false;
+    const simplified = [path[0]];
+    for(let i=1;i<path.length;i++) if(dist(path[i], simplified[simplified.length-1]) > 9) simplified.push({...path[i]});
+    if(pathLength(simplified) < 22){ path = []; return; }
+    let outside = 0;
+    for(const p of simplified) if(!insidePetal(p.x,p.y)) outside++;
+    if(outside){
+      heat = Math.min(100, heat + 4 + outside * .8);
+      shake = Math.max(shake, 5); addParticles(simplified[simplified.length-1].x, simplified[simplified.length-1].y, palette().bad, 10);
+      beep(120,.07,"sawtooth",.035); vibrate(18);
+    }
+    const len = pathLength(simplified);
+    if(len > Math.min(W,H) * .82) heat = Math.min(100, heat + (len - Math.min(W,H)*.82) / 18);
+    travelPath = simplified; traveling = true; path = []; ray = {...simplified[0]}; lastSafe = {...ray};
+    travelPath.seg = 0; travelPath.u = 0; travelPath.speed = 720 + combo * 18;
+    updateHud();
+  }
+  function pathLength(arr){ let n=0; for(let i=1;i<arr.length;i++) n += dist(arr[i-1],arr[i]); return n; }
+
+  function update(dt){
+    globalT += dt; shake = Math.max(0, shake - dt * 18);
+    for(let i=particles.length-1;i>=0;i--){
+      const p = particles[i]; p.life -= dt; p.x += p.vx * dt; p.y += p.vy * dt; p.vx *= .97; p.vy *= .97; p.vy += 18 * dt;
+      if(p.life <= 0) particles.splice(i,1);
+    }
+    if(state !== "playing") return;
+    timeLeft -= dt;
+    if(timeLeft <= 0){ end(cleared >= target, cleared >= target ? "Petal Clear" : "Noon arrived"); return; }
+
+    const pressure = 1 - timeLeft / 45;
+    spawnClock -= dt;
+    const interval = clamp(1.45 - pressure * .55, .72, 1.45);
+    if(spawnClock <= 0 && spawned < target){
+      spawnPollen(false);
+      if(pressure > .58 && Math.random() < .28) spawnPollen(false);
+      spawnClock = interval;
+    }
+    for(let i=pollen.length-1;i>=0;i--){
+      const p = pollen[i]; p.t -= dt; p.pulse += dt * 7;
+      if(p.t <= 0){
+        pollen.splice(i,1); missed++; combo = 0; heat = Math.min(100, heat + 17);
+        addParticles(p.x,p.y,palette().bad,18,1.2); beep(92,.09,"sawtooth",.04); vibrate(28); shake = Math.max(shake,8);
+        setTip("A pollen clock burst. Shorter paths keep the edge cool.");
+      }
+    }
+    if(cleared >= target){ end(true, "Petal Clear"); return; }
+    if(heat >= 100){ end(false, "Edge scorched"); return; }
+    if(spawned >= target && pollen.length === 0 && cleared < target){ end(false, "Too many clocks burst"); return; }
+
+    for(const d of dew){
+      if(globalT < d.wake) continue;
+      d.x += d.vx * dt * (1 + pressure * .45);
+      d.y = d.baseY + Math.sin(globalT * 1.7 + d.phase) * (16 + pressure * 18);
+      if(!insidePetal(d.x,d.y) || d.x < petal.cx - petal.rx || d.x > petal.cx + petal.rx){ d.vx *= -1; d.x += d.vx * dt * 3; }
+    }
+    if(drawing){
+      const sx = Math.sin(globalT * 1.9) * (10 + pressure * 24);
+      const sy = Math.cos(globalT * 1.25) * (4 + pressure * 10);
+      for(let i=1;i<path.length;i++){
+        const k = i / path.length;
+        path[i].x += sx * dt * k;
+        path[i].y += sy * dt * k * .55;
+      }
+    }
+    if(traveling) updateTravel(dt);
+    updateHud();
+  }
+
+  function updateTravel(dt){
+    const a = travelPath[travelPath.seg], b = travelPath[travelPath.seg+1];
+    if(!a || !b){ finishTravel(); return; }
+    const segLen = Math.max(1, dist(a,b));
+    travelPath.u += travelPath.speed * dt / segLen;
+    while(travelPath.u >= 1){
+      travelPath.u -= 1; travelPath.seg++;
+      if(travelPath.seg >= travelPath.length - 1){ finishTravel(); return; }
+    }
+    const c = travelPath[travelPath.seg], d = travelPath[travelPath.seg+1], u = travelPath.u;
+    ray = { x:c.x + (d.x-c.x)*u, y:c.y + (d.y-c.y)*u };
+    if(insidePetal(ray.x,ray.y)) lastSafe = {...ray};
+    for(const bead of dew){
+      if(globalT > bead.wake && dist(ray, bead) < bead.r + 13){
+        heat = Math.min(100, heat + 7); combo = 0; traveling = false; ray = {...lastSafe}; shake = Math.max(shake,7);
+        addParticles(bead.x,bead.y,palette().dew,22,1.1); beep(180,.07,"square",.03); vibrate(22);
+        setTip("Dew broke the light. Slip around rolling beads.");
+        return;
+      }
+    }
+    for(let i=pollen.length-1;i>=0;i--){
+      const p = pollen[i];
+      if(dist(ray,p) < p.r + 18){
+        pollen.splice(i,1); cleared++;
+        const bonus = Math.floor(60 * (p.t / p.max));
+        score += 120 + combo * 35 + bonus; combo++;
+        heat = Math.max(0, heat - 2.5);
+        addParticles(p.x,p.y,palette().pollen,24,1.25); beep(460 + combo*35,.065,"triangle",.045); vibrate(combo > 3 ? 18 : 8);
+        if(combo === 4) setTip("Chain glow: every clean pollen cools the edge.");
+      }
+    }
+  }
+  function finishTravel(){ traveling = false; ray = {...lastSafe}; }
+
+  function end(win, label){
+    state = "over"; drawing = false; traveling = false; restartBtn.classList.add("hide");
+    overlay.classList.remove("hidden");
+    titleEl.innerHTML = win ? "Petal<br>Clear" : label.replace(" ","<br>");
+    copyEl.textContent = win ? "You carried sunrise across the petal before noon. The last pollen clocks opened cleanly." : "The petal kept some light, but the wind and dew won this round.";
+    miniEl.textContent = `Score ${score} · pollen ${cleared}/${target} · edge heat ${Math.round(heat)}%`;
+    playBtn.textContent = "Play again";
+    setTip(win ? "Clean dawn." : "Try shorter strokes and release before wind smears the ink.");
+    beep(win ? 660 : 130,.12,win?"sine":"sawtooth",.05); if(win) setTimeout(()=>beep(880,.13,"sine",.04),120);
+    vibrate(win ? 35 : 55);
+  }
+
+  function updateHud(){
+    scoreEl.textContent = score.toString();
+    timeEl.textContent = Math.max(0, Math.ceil(timeLeft)).toString();
+    heatEl.style.width = `${clamp(heat,0,100)}%`;
+    heatNumEl.textContent = `${Math.round(clamp(heat,0,100))}%`;
+    restartBtn.classList.toggle("hide", state !== "playing");
+  }
+
+  function draw(){
+    const p = palette();
+    ctx.save();
+    const sx = shake ? rand(-shake,shake) : 0, sy = shake ? rand(-shake,shake) : 0;
+    ctx.translate(sx, sy);
+    ctx.clearRect(-20,-20,W+40,H+40);
+    drawPetal(p);
+    drawDew(p);
+    drawPollen(p);
+    if(drawing) drawPath(path, p, true);
+    if(traveling) drawPath(travelPath, p, false);
+    drawRay(p);
+    drawParticles();
+    drawNoonArc(p);
+    ctx.restore();
+  }
+  function drawPetal(p){
+    ctx.save();
+    ctx.translate(petal.cx, petal.cy); ctx.rotate(petal.a);
+    const g = ctx.createRadialGradient(-petal.rx*.25,-petal.ry*.3,10,0,0,petal.ry*1.05);
+    g.addColorStop(0, p.ink2); g.addColorStop(.16, p.petal); g.addColorStop(1, p.petal2);
+    ctx.fillStyle = g; ctx.strokeStyle = p.rim; ctx.lineWidth = 2;
+    ctx.beginPath(); ctx.ellipse(0,0,petal.rx,petal.ry,0,0,Math.PI*2); ctx.fill(); ctx.stroke();
+    ctx.globalAlpha = dark ? .5 : .75;
+    for(let i=-5;i<=5;i++){
+      ctx.beginPath(); ctx.strokeStyle = p.vein; ctx.lineWidth = i===0 ? 1.6 : .9;
+      ctx.moveTo(0, petal.ry*.86);
+      ctx.bezierCurveTo(i*petal.rx*.08, petal.ry*.24, i*petal.rx*.16, -petal.ry*.18, i*petal.rx*.13, -petal.ry*.82);
+      ctx.stroke();
+    }
+    ctx.globalAlpha = .18;
+    for(let i=0;i<16;i++){
+      ctx.fillStyle = i%2 ? p.ink : p.dew;
+      ctx.beginPath(); ctx.ellipse(rand(-petal.rx*.85,petal.rx*.85), rand(-petal.ry*.8,petal.ry*.75), rand(20,70), rand(2,8), rand(-.6,.6),0,Math.PI*2); ctx.fill();
+    }
+    ctx.restore();
+  }
+  function drawPollen(p){
+    for(const o of pollen){
+      const ratio = clamp(o.t/o.max,0,1), beat = 1 + Math.sin(o.pulse) * .08;
+      ctx.save(); ctx.translate(o.x,o.y);
+      ctx.globalAlpha = .16 + (1-ratio)*.22; ctx.fillStyle = p.bad; ctx.beginPath(); ctx.arc(0,0,o.r*2.35*beat,0,Math.PI*2); ctx.fill();
+      ctx.globalAlpha = .95; ctx.strokeStyle = ratio < .32 ? p.bad : p.ink; ctx.lineWidth = 3;
+      ctx.beginPath(); ctx.arc(0,0,o.r*1.45,-Math.PI/2,-Math.PI/2+Math.PI*2*ratio); ctx.stroke();
+      ctx.fillStyle = p.pollen; ctx.beginPath(); ctx.arc(0,0,o.r*beat,0,Math.PI*2); ctx.fill();
+      ctx.fillStyle = dark ? "#2b2210" : "#714c12";
+      for(let i=0;i<5;i++){ const a=i*1.256+o.pulse*.04; ctx.beginPath(); ctx.arc(Math.cos(a)*o.r*.48,Math.sin(a)*o.r*.48,1.5,0,Math.PI*2); ctx.fill(); }
+      ctx.restore();
+    }
+  }
+  function drawDew(p){
+    for(const d of dew){
+      if(globalT < d.wake) continue;
+      ctx.save(); ctx.translate(d.x,d.y);
+      const g = ctx.createRadialGradient(-d.r*.35,-d.r*.45,1,0,0,d.r*1.4);
+      g.addColorStop(0,"rgba(255,255,255,.95)"); g.addColorStop(.28,p.dew); g.addColorStop(1,"rgba(72,185,177,.12)");
+      ctx.fillStyle = g; ctx.globalAlpha = .72; ctx.beginPath(); ctx.arc(0,0,d.r,0,Math.PI*2); ctx.fill();
+      ctx.strokeStyle = "rgba(255,255,255,.48)"; ctx.lineWidth = 1; ctx.stroke();
+      ctx.restore();
+    }
+  }
+  function drawPath(arr,p,preview){
+    if(!arr || arr.length < 2) return;
+    ctx.save(); ctx.lineCap = "round"; ctx.lineJoin = "round";
+    ctx.shadowColor = p.ink; ctx.shadowBlur = preview ? 12 : 22;
+    ctx.strokeStyle = preview ? "rgba(244,179,55,.68)" : p.ink2; ctx.lineWidth = preview ? 11 : 15;
+    ctx.beginPath(); ctx.moveTo(arr[0].x,arr[0].y); for(let i=1;i<arr.length;i++) ctx.lineTo(arr[i].x,arr[i].y); ctx.stroke();
+    ctx.shadowBlur = 0; ctx.strokeStyle = preview ? "rgba(255,249,202,.86)" : "#fff7b8"; ctx.lineWidth = preview ? 3 : 5;
+    ctx.beginPath(); ctx.moveTo(arr[0].x,arr[0].y); for(let i=1;i<arr.length;i++) ctx.lineTo(arr[i].x,arr[i].y); ctx.stroke();
+    ctx.restore();
+  }
+  function drawRay(p){
+    if(!ray) return;
+    ctx.save(); ctx.translate(ray.x,ray.y);
+    const pulse = 1 + Math.sin(globalT*8)*.08;
+    ctx.shadowColor = p.ink; ctx.shadowBlur = 24; ctx.fillStyle = p.ink2;
+    ctx.beginPath(); ctx.arc(0,0,12*pulse,0,Math.PI*2); ctx.fill();
+    ctx.shadowBlur = 0; ctx.strokeStyle = p.ink; ctx.lineWidth = 2;
+    for(let i=0;i<8;i++){ const a = i*Math.PI/4 + globalT*.8; ctx.beginPath(); ctx.moveTo(Math.cos(a)*17,Math.sin(a)*17); ctx.lineTo(Math.cos(a)*25,Math.sin(a)*25); ctx.stroke(); }
+    ctx.restore();
+  }
+  function drawParticles(){
+    for(const q of particles){
+      ctx.globalAlpha = clamp(q.life/q.max,0,1); ctx.fillStyle = q.c;
+      ctx.beginPath(); ctx.arc(q.x,q.y,q.r,0,Math.PI*2); ctx.fill();
+    }
+    ctx.globalAlpha = 1;
+  }
+  function drawNoonArc(p){
+    if(state === "title") return;
+    const ratio = clamp(timeLeft/45,0,1), x = W * (.1 + .8 * (1-ratio)), y = H * .105 + Math.sin((1-ratio)*Math.PI) * -18;
+    ctx.save(); ctx.globalAlpha = .82; ctx.fillStyle = p.ink; ctx.beginPath(); ctx.arc(x,y,5,0,Math.PI*2); ctx.fill();
+    ctx.strokeStyle = "rgba(128,142,122,.24)"; ctx.lineWidth = 1; ctx.beginPath(); ctx.moveTo(W*.1,H*.11); ctx.quadraticCurveTo(W*.5,H*.02,W*.9,H*.11); ctx.stroke(); ctx.restore();
+  }
+
+  function frame(now){
+    const dt = Math.min(.033, (now - last) / 1000 || 0); last = now;
+    update(dt); draw(); requestAnimationFrame(frame);
+  }
+
+  function pointerPos(e){
+    const r = canvas.getBoundingClientRect();
+    return { x:e.clientX - r.left, y:e.clientY - r.top };
+  }
+  canvas.addEventListener("pointerdown", e => {
+    e.preventDefault(); ensureAudio(); canvas.setPointerCapture?.(e.pointerId);
+    if(state !== "playing"){ start(); return; }
+    const p = pointerPos(e); beginDraw(p.x,p.y);
+  }, {passive:false});
+  canvas.addEventListener("pointermove", e => { if(!drawing) return; e.preventDefault(); const p = pointerPos(e); addPathPoint(p.x,p.y); }, {passive:false});
+  canvas.addEventListener("pointerup", e => { if(!drawing) return; e.preventDefault(); commitPath(); }, {passive:false});
+  canvas.addEventListener("pointercancel", e => { e.preventDefault(); drawing = false; path = []; }, {passive:false});
+  playBtn.addEventListener("click", start);
+  restartBtn.addEventListener("click", start);
+  addEventListener("keydown", e => {
+    if(e.key === "r" || e.key === "R"){ start(); return; }
+    if(state !== "playing" && (e.key === "Enter" || e.key === " ")){ e.preventDefault(); start(); return; }
+    if(state !== "playing") return;
+    const dirs = {ArrowLeft:[-1,0],ArrowRight:[1,0],ArrowUp:[0,-1],ArrowDown:[0,1],a:[-1,0],d:[1,0],w:[0,-1],s:[0,1]};
+    if(dirs[e.key]){
+      e.preventDefault(); if(traveling) return;
+      if(!drawing){ cursor = {...ray}; beginDraw(cursor.x,cursor.y); keyboardDrawing = true; }
+      cursor.x += dirs[e.key][0] * 30; cursor.y += dirs[e.key][1] * 30; addPathPoint(cursor.x,cursor.y);
+    } else if((e.key === " " || e.key === "Enter") && drawing){ e.preventDefault(); commitPath(); }
+    else if(e.key === "Escape"){ drawing = false; path = []; }
+  });
+
+  resize(); addEventListener("resize", resize);
+  updateHud(); requestAnimationFrame(frame);
+})();
+</script>
+</body>
+</html>
