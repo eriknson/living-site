@@ -1,0 +1,712 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Salvage Sling</title>
+<style>
+  :root {
+    --bg-top: #fceabb;
+    --bg-bottom: #f8b500;
+    --text: #111;
+    --pad: rgba(0,0,0,0.1);
+  }
+  @media (prefers-color-scheme: dark) {
+    :root {
+      --bg-top: #0f2027;
+      --bg-bottom: #203a43;
+      --text: #eee;
+      --pad: rgba(255,255,255,0.1);
+    }
+  }
+  body {
+    margin: 0;
+    padding: 0;
+    width: 100dvw;
+    height: 100dvh;
+    overflow: hidden;
+    background: linear-gradient(135deg, var(--bg-top), var(--bg-bottom));
+    font-family: ui-monospace, 'SFMono-Regular', Menlo, monospace;
+    color: var(--text);
+    touch-action: none;
+    user-select: none;
+    -webkit-user-select: none;
+  }
+  canvas {
+    display: block;
+    width: 100%;
+    height: 100%;
+  }
+  #ui {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    pointer-events: none;
+    display: flex;
+    flex-direction: column;
+    justify-content: space-between;
+    padding: 30px;
+    box-sizing: border-box;
+  }
+  .hud {
+    display: flex;
+    justify-content: space-between;
+    font-size: 1rem;
+    font-weight: bold;
+    text-transform: uppercase;
+    letter-spacing: 0.1em;
+  }
+  .hud > div {
+    background: rgba(128, 128, 128, 0.2);
+    backdrop-filter: blur(4px);
+    -webkit-backdrop-filter: blur(4px);
+    padding: 8px 16px;
+    border-radius: 20px;
+  }
+  .screens {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    background: rgba(0,0,0,0.1);
+    backdrop-filter: blur(8px);
+    -webkit-backdrop-filter: blur(8px);
+    pointer-events: auto;
+    transition: opacity 0.3s;
+  }
+  .hidden {
+    opacity: 0;
+    pointer-events: none;
+  }
+  h1 {
+    font-size: 3rem;
+    margin: 0 0 10px 0;
+    letter-spacing: -0.02em;
+    text-align: center;
+    line-height: 1.1;
+  }
+  p {
+    font-size: 1rem;
+    margin: 0 0 40px 0;
+    opacity: 0.8;
+    text-align: center;
+    max-width: 280px;
+    line-height: 1.4;
+  }
+  button {
+    appearance: none;
+    background: var(--text);
+    color: var(--bg-top);
+    border: none;
+    padding: 16px 32px;
+    font-size: 1.2rem;
+    font-family: inherit;
+    font-weight: bold;
+    border-radius: 30px;
+    cursor: pointer;
+    text-transform: uppercase;
+    letter-spacing: 0.1em;
+    box-shadow: 0 10px 20px rgba(0,0,0,0.15);
+    transition: transform 0.1s, box-shadow 0.1s;
+  }
+  button:active {
+    transform: translateY(2px) scale(0.98);
+    box-shadow: 0 5px 10px rgba(0,0,0,0.15);
+  }
+</style>
+</head>
+<body>
+  <canvas id="game"></canvas>
+  <div id="ui">
+    <div class="hud">
+      <div id="scoreDisplay">0</div>
+      <div id="timeDisplay">00:45</div>
+    </div>
+  </div>
+  <div id="startScreen" class="screens">
+    <h1>SALVAGE<br>SLING</h1>
+    <p>Sling pods into orbital rings. Chain ricochets to ignite dormant sectors.</p>
+    <button id="startBtn">Ignite</button>
+  </div>
+  <div id="gameOverScreen" class="screens hidden">
+    <h1>SIGNAL<br>LOST</h1>
+    <p id="finalScore">Score: 0</p>
+    <button id="restartBtn">Reboot</button>
+  </div>
+
+<script>
+const canvas = document.getElementById('game');
+const ctx = canvas.getContext('2d');
+let width, height;
+let LAUNCH_PAD = { x: 0, y: 0, radius: 40 };
+
+function resize() {
+  width = window.innerWidth;
+  height = window.innerHeight;
+  canvas.width = width * window.devicePixelRatio;
+  canvas.height = height * window.devicePixelRatio;
+  ctx.scale(window.devicePixelRatio, window.devicePixelRatio);
+  LAUNCH_PAD = { x: width / 2, y: height - 100, radius: 40 };
+}
+window.addEventListener('resize', resize);
+resize();
+
+const palette = {
+  dark: { text: '#eee', pad: 'rgba(255,255,255,0.1)', knot: 'rgba(255,255,255,0.2)' },
+  light: { text: '#111', pad: 'rgba(0,0,0,0.1)', knot: 'rgba(0,0,0,0.15)' }
+};
+let currentPalette = palette.dark;
+
+function updatePalette() {
+  const isDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
+  currentPalette = isDark ? palette.dark : palette.light;
+}
+window.matchMedia('(prefers-color-scheme: dark)').addEventListener('change', updatePalette);
+updatePalette();
+
+const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+function playTone(freq, type, duration, vol=0.1) {
+  if (audioCtx.state === 'suspended') return;
+  const osc = audioCtx.createOscillator();
+  const gain = audioCtx.createGain();
+  osc.type = type;
+  osc.frequency.setValueAtTime(freq, audioCtx.currentTime);
+  gain.gain.setValueAtTime(vol, audioCtx.currentTime);
+  gain.gain.exponentialRampToValueAtTime(0.01, audioCtx.currentTime + duration);
+  osc.connect(gain);
+  gain.connect(audioCtx.destination);
+  osc.start();
+  osc.stop(audioCtx.currentTime + duration);
+}
+
+function vibrate(pattern) {
+  if (navigator.vibrate) {
+    try { navigator.vibrate(pattern); } catch(e) {}
+  }
+}
+
+let state = 'start';
+let score = 0;
+let timeLeft = 45;
+let lastTime = performance.now();
+let multiplier = 1;
+let level = 1;
+let hitPause = 0;
+
+let pod = { x: 0, y: 0, vx: 0, vy: 0, radius: 6, active: false };
+let planets = [];
+let knots = [];
+let particles = [];
+let floaters = [];
+let dust = [];
+
+for(let i=0; i<50; i++) {
+  dust.push({
+    x: Math.random() * width,
+    y: Math.random() * height,
+    size: Math.random() * 2,
+    vx: (Math.random() - 0.5) * 0.2,
+    vy: (Math.random() - 0.5) * 0.2,
+    alpha: Math.random() * 0.5
+  });
+}
+
+let isDragging = false;
+let dragStart = { x: 0, y: 0 };
+let dragCurrent = { x: 0, y: 0 };
+
+function resetPod() {
+  pod = { x: LAUNCH_PAD.x, y: LAUNCH_PAD.y, vx: 0, vy: 0, radius: 6, active: false };
+  multiplier = 1;
+}
+
+function generateLevel() {
+  planets = [];
+  knots = [];
+  let numPlanets = Math.min(2 + Math.floor(level / 2), 4);
+  const colors = [
+    ['#00c6ff', '#0072ff'], ['#ff7e5f', '#feb47b'],
+    ['#11998e', '#38ef7d'], ['#cb2d3e', '#ef473f'],
+    ['#f7971e', '#ffd200']
+  ];
+  
+  for(let i=0; i<numPlanets; i++) {
+    let r = 30 + Math.random() * 30;
+    let px, py, valid = false, attempts = 0;
+    while(!valid && attempts < 50) {
+      px = r + Math.random() * (width - r*2);
+      py = r + Math.random() * (height - 250 - r*2);
+      valid = true;
+      for(let p of planets) {
+        if(Math.hypot(p.x - px, p.y - py) < p.radius + r + 60) valid = false;
+      }
+      attempts++;
+    }
+    
+    let numRings = 1 + Math.floor(Math.random() * 3);
+    let rings = [];
+    for(let j=0; j<numRings; j++) {
+      let start = Math.random() * Math.PI * 2;
+      rings.push({
+        dist: r + 20 + j * 25,
+        start: start,
+        end: start + Math.PI * (0.5 + Math.random() * 1.0),
+        angleOffset: 0,
+        speed: (Math.random() * 0.02 + 0.01) * (Math.random() < 0.5 ? 1 : -1),
+        active: true
+      });
+    }
+    
+    let c = colors[Math.floor(Math.random() * colors.length)];
+    planets.push({
+      x: px, y: py, radius: r, mass: r * 60,
+      color1: c[0], color2: c[1], seed: Math.random() * 100, rings: rings
+    });
+  }
+  
+  let numKnots = Math.min(1 + Math.floor(level / 3), 3);
+  for(let i=0; i<numKnots; i++) {
+    knots.push({
+      x: Math.random() * width,
+      y: Math.random() * (height - 200),
+      vx: (Math.random() - 0.5) * 1,
+      vy: (Math.random() - 0.5) * 1,
+      mass: (Math.random() < 0.5 ? 1 : -1) * (1000 + Math.random() * 1000),
+      radius: 60 + Math.random() * 40,
+      phase: Math.random()
+    });
+  }
+}
+
+function createConfetti(x, y) {
+  const colors = ['#fceabb', '#f8b500', '#00c6ff', '#ff7e5f', '#38ef7d'];
+  for(let i=0; i<30; i++) {
+    let angle = Math.random() * Math.PI * 2;
+    let speed = 2 + Math.random() * 5;
+    particles.push({
+      x: x, y: y, vx: Math.cos(angle) * speed, vy: Math.sin(angle) * speed,
+      life: 1.0, decay: 0.02 + Math.random() * 0.02,
+      color: colors[Math.floor(Math.random() * colors.length)],
+      size: 3 + Math.random() * 4, type: 'confetti'
+    });
+  }
+}
+
+function createSparks(x, y, color) {
+  for(let i=0; i<10; i++) {
+    let angle = Math.random() * Math.PI * 2;
+    let speed = 1 + Math.random() * 3;
+    particles.push({
+      x: x, y: y, vx: Math.cos(angle) * speed, vy: Math.sin(angle) * speed,
+      life: 1.0, decay: 0.05, color: color, size: 2, type: 'spark'
+    });
+  }
+}
+
+function createExplosion(x, y, color) {
+  for(let i=0; i<20; i++) {
+    let angle = Math.random() * Math.PI * 2;
+    let speed = 1 + Math.random() * 4;
+    particles.push({
+      x: x, y: y, vx: Math.cos(angle) * speed, vy: Math.sin(angle) * speed,
+      life: 1.0, decay: 0.03, color: color, size: 4 + Math.random() * 4, type: 'smoke'
+    });
+  }
+}
+
+function getTrajectory(startX, startY, vX, vY, steps) {
+  let pts = [];
+  let x = startX, y = startY, vx = vX, vy = vY;
+  for(let i=0; i<steps; i++) {
+    for(let p of planets) {
+      let dx = p.x - x, dy = p.y - y;
+      let distSq = dx*dx + dy*dy;
+      if(distSq < p.radius*p.radius) return pts;
+      let f = p.mass / distSq;
+      vx += (dx/Math.sqrt(distSq)) * f;
+      vy += (dy/Math.sqrt(distSq)) * f;
+    }
+    for(let k of knots) {
+      let dx = k.x - x, dy = k.y - y;
+      let distSq = dx*dx + dy*dy;
+      if(distSq > 100) {
+        let f = k.mass / distSq;
+        vx += (dx/Math.sqrt(distSq)) * f;
+        vy += (dy/Math.sqrt(distSq)) * f;
+      }
+    }
+    x += vx; y += vy;
+    if(x < 0 || x > width) vx *= -0.8;
+    if(y < 0) vy *= -0.8;
+    pts.push({x, y});
+  }
+  return pts;
+}
+
+function drawCutPaperCircle(ctx, x, y, radius, color1, color2, seed) {
+  ctx.save();
+  ctx.translate(x, y);
+  ctx.shadowColor = currentPalette === palette.light ? 'rgba(0,0,0,0.15)' : 'rgba(0,0,0,0.4)';
+  ctx.shadowBlur = 12;
+  ctx.shadowOffsetX = 5;
+  ctx.shadowOffsetY = 5;
+  
+  ctx.beginPath();
+  let numPts = 40;
+  for(let i=0; i<=numPts; i++) {
+    let angle = (i / numPts) * Math.PI * 2;
+    let rVar = Math.sin(angle * 5 + seed) * 3 + Math.cos(angle * 11 + seed) * 2;
+    let r = radius + rVar;
+    let px = Math.cos(angle) * r, py = Math.sin(angle) * r;
+    if(i===0) ctx.moveTo(px, py); else ctx.lineTo(px, py);
+  }
+  ctx.closePath();
+  
+  let grad = ctx.createLinearGradient(-radius, -radius, radius, radius);
+  grad.addColorStop(0, color1);
+  grad.addColorStop(1, color2);
+  ctx.fillStyle = grad;
+  ctx.fill();
+  
+  ctx.shadowColor = 'rgba(255,255,255,0.3)';
+  ctx.shadowBlur = 0;
+  ctx.shadowOffsetX = -2;
+  ctx.shadowOffsetY = -2;
+  ctx.strokeStyle = 'rgba(255,255,255,0.2)';
+  ctx.lineWidth = 2;
+  ctx.stroke();
+  ctx.restore();
+}
+
+function handleInputStart(e) {
+  if (state !== 'playing' || pod.active) return;
+  isDragging = true;
+  let clientX = e.touches ? e.touches[0].clientX : e.clientX;
+  let clientY = e.touches ? e.touches[0].clientY : e.clientY;
+  dragStart = { x: clientX, y: clientY };
+  dragCurrent = { x: clientX, y: clientY };
+}
+
+function handleInputMove(e) {
+  if (!isDragging) return;
+  e.preventDefault();
+  let clientX = e.touches ? e.touches[0].clientX : e.clientX;
+  let clientY = e.touches ? e.touches[0].clientY : e.clientY;
+  dragCurrent = { x: clientX, y: clientY };
+}
+
+function handleInputEnd(e) {
+  if (!isDragging) return;
+  isDragging = false;
+  let dx = dragStart.x - dragCurrent.x;
+  let dy = dragStart.y - dragCurrent.y;
+  let dist = Math.hypot(dx, dy);
+  let maxDrag = 150;
+  if (dist > maxDrag) { dx = (dx / dist) * maxDrag; dy = (dy / dist) * maxDrag; }
+  
+  if (dist > 10) {
+    pod.active = true;
+    pod.vx = dx * 0.15;
+    pod.vy = dy * 0.15;
+    multiplier = 1;
+    playTone(400, 'sine', 0.2);
+  }
+}
+
+canvas.addEventListener('mousedown', handleInputStart);
+canvas.addEventListener('mousemove', handleInputMove);
+window.addEventListener('mouseup', handleInputEnd);
+canvas.addEventListener('touchstart', handleInputStart, {passive: false});
+canvas.addEventListener('touchmove', handleInputMove, {passive: false});
+window.addEventListener('touchend', handleInputEnd);
+
+document.getElementById('startBtn').addEventListener('click', () => {
+  if (audioCtx.state === 'suspended') audioCtx.resume();
+  document.getElementById('startScreen').classList.add('hidden');
+  startGame();
+});
+
+document.getElementById('restartBtn').addEventListener('click', () => {
+  document.getElementById('gameOverScreen').classList.add('hidden');
+  startGame();
+});
+
+function startGame() {
+  state = 'playing';
+  score = 0;
+  timeLeft = 45;
+  level = 1;
+  generateLevel();
+  resetPod();
+  particles = [];
+  floaters = [];
+}
+
+function loop(timestamp) {
+  requestAnimationFrame(loop);
+  let dt = timestamp - lastTime;
+  lastTime = timestamp;
+  if(dt > 100) dt = 16;
+  
+  ctx.clearRect(0, 0, width, height);
+  
+  if (hitPause > 0) {
+    hitPause -= dt;
+  } else if (state === 'playing') {
+    timeLeft -= dt / 1000;
+    if (timeLeft <= 0) {
+      timeLeft = 0;
+      state = 'gameover';
+      document.getElementById('gameOverScreen').classList.remove('hidden');
+      document.getElementById('finalScore').innerText = `Score: ${score}`;
+    }
+    
+    for(let p of planets) {
+      for(let r of p.rings) r.angleOffset += r.speed;
+    }
+    
+    for(let k of knots) {
+      k.x += k.vx; k.y += k.vy;
+      if(k.x < 0 || k.x > width) k.vx *= -1;
+      if(k.y < 0 || k.y > height - 200) k.vy *= -1;
+      k.phase += 0.01;
+    }
+    
+    if (pod.active) {
+      let speed = Math.hypot(pod.vx, pod.vy);
+      if (speed > 25) { pod.vx = (pod.vx/speed)*25; pod.vy = (pod.vy/speed)*25; speed = 25; }
+      
+      let steps = Math.ceil(speed / 5);
+      let stepVx = pod.vx / steps, stepVy = pod.vy / steps;
+      let crashed = false;
+      
+      for(let s=0; s<steps; s++) {
+        pod.x += stepVx; pod.y += stepVy;
+        
+        if (pod.x < pod.radius || pod.x > width - pod.radius) {
+          pod.vx *= -0.8; stepVx *= -0.8;
+          pod.x = Math.max(pod.radius, Math.min(width - pod.radius, pod.x));
+          multiplier++;
+          createSparks(pod.x, pod.y, currentPalette.text);
+          vibrate(10);
+          playTone(300, 'triangle', 0.1);
+        }
+        if (pod.y < pod.radius) {
+          pod.vy *= -0.8; stepVy *= -0.8;
+          pod.y = pod.radius;
+          multiplier++;
+          createSparks(pod.x, pod.y, currentPalette.text);
+          vibrate(10);
+          playTone(300, 'triangle', 0.1);
+        }
+        
+        for (let p of planets) {
+          let dx = pod.x - p.x, dy = pod.y - p.y;
+          let dist = Math.hypot(dx, dy);
+          
+          if (dist < p.radius + pod.radius) {
+            crashed = true;
+            createExplosion(pod.x, pod.y, p.color1);
+            vibrate(50);
+            playTone(100, 'sawtooth', 0.5, 0.2);
+            break;
+          }
+          
+          for (let r of p.rings) {
+            if (!r.active) continue;
+            if (Math.abs(dist - r.dist) < pod.radius + 4) {
+              let angle = Math.atan2(dy, dx);
+              if (angle < 0) angle += Math.PI * 2;
+              let start = (r.start + r.angleOffset) % (Math.PI * 2);
+              let end = (r.end + r.angleOffset) % (Math.PI * 2);
+              if (start < 0) start += Math.PI * 2;
+              if (end < 0) end += Math.PI * 2;
+              
+              let inArc = start < end ? (angle >= start && angle <= end) : (angle >= start || angle <= end);
+              if (inArc) {
+                r.active = false;
+                score += 100 * multiplier;
+                timeLeft += 3;
+                createConfetti(pod.x, pod.y);
+                vibrate([20, 30, 20]);
+                playTone(800 + multiplier*100, 'sine', 0.3);
+                hitPause = 40;
+                
+                floaters.push({ x: pod.x, y: pod.y, text: `+${100 * multiplier}`, life: 1, vy: -1 });
+                multiplier++;
+                
+                let nx = dx / dist, ny = dy / dist;
+                let dot = pod.vx * nx + pod.vy * ny;
+                pod.vx -= 2 * dot * nx; pod.vy -= 2 * dot * ny;
+                pod.vx *= 0.9; pod.vy *= 0.9;
+                stepVx = pod.vx / steps; stepVy = pod.vy / steps;
+              }
+            }
+          }
+        }
+        if (crashed) { resetPod(); break; }
+      }
+      
+      if (pod.active) {
+        for (let p of planets) {
+          let dx = p.x - pod.x, dy = p.y - pod.y;
+          let distSq = dx*dx + dy*dy;
+          let f = p.mass / distSq;
+          pod.vx += (dx / Math.sqrt(distSq)) * f;
+          pod.vy += (dy / Math.sqrt(distSq)) * f;
+        }
+        for (let k of knots) {
+          let dx = k.x - pod.x, dy = k.y - pod.y;
+          let distSq = dx*dx + dy*dy;
+          if (distSq > 100) {
+            let f = k.mass / distSq;
+            pod.vx += (dx / Math.sqrt(distSq)) * f;
+            pod.vy += (dy / Math.sqrt(distSq)) * f;
+          }
+        }
+        if (pod.y > height + 50) resetPod();
+      }
+    }
+    
+    let anyRings = false;
+    for(let p of planets) {
+      for(let r of p.rings) if(r.active) anyRings = true;
+    }
+    if(!anyRings && state === 'playing') {
+      level++;
+      timeLeft += 10;
+      generateLevel();
+      resetPod();
+      playTone(600, 'sine', 0.1);
+      setTimeout(()=>playTone(800, 'sine', 0.4), 100);
+      floaters.push({ x: width/2, y: height/2, text: `ORBIT CLEARED`, life: 2, vy: -0.5, size: 24 });
+    }
+  }
+  
+  ctx.fillStyle = currentPalette.text;
+  for(let d of dust) {
+    if (hitPause <= 0) {
+      d.x += d.vx; d.y += d.vy;
+      if(d.x < 0) d.x = width; if(d.x > width) d.x = 0;
+      if(d.y < 0) d.y = height; if(d.y > height) d.y = 0;
+    }
+    ctx.globalAlpha = d.alpha;
+    ctx.beginPath(); ctx.arc(d.x, d.y, d.size, 0, Math.PI*2); ctx.fill();
+  }
+  ctx.globalAlpha = 1;
+  
+  for(let k of knots) {
+    ctx.save();
+    ctx.translate(k.x, k.y);
+    ctx.strokeStyle = currentPalette.knot;
+    ctx.lineWidth = 1;
+    let p = (timestamp * 0.001 + k.phase) % 1;
+    for(let i=0; i<3; i++) {
+      let r = k.radius * ((p + i/3) % 1);
+      ctx.beginPath(); ctx.arc(0, 0, r, 0, Math.PI*2); ctx.stroke();
+    }
+    ctx.restore();
+  }
+  
+  if (!pod.active && isDragging) {
+    let dx = dragStart.x - dragCurrent.x, dy = dragStart.y - dragCurrent.y;
+    let dist = Math.hypot(dx, dy);
+    let maxDrag = 150;
+    if (dist > maxDrag) { dx = (dx / dist) * maxDrag; dy = (dy / dist) * maxDrag; }
+    if (dist > 10) {
+      let pts = getTrajectory(LAUNCH_PAD.x, LAUNCH_PAD.y, dx*0.15, dy*0.15, 80);
+      ctx.beginPath(); ctx.moveTo(LAUNCH_PAD.x, LAUNCH_PAD.y);
+      for(let i=0; i<pts.length; i+=2) ctx.lineTo(pts[i].x, pts[i].y);
+      ctx.strokeStyle = currentPalette.text; ctx.lineWidth = 2;
+      ctx.setLineDash([4, 8]); ctx.stroke(); ctx.setLineDash([]);
+    }
+  }
+  
+  for(let p of planets) {
+    ctx.save();
+    ctx.translate(p.x, p.y);
+    ctx.lineWidth = 6; ctx.lineCap = 'round';
+    for(let r of p.rings) {
+      if(!r.active) continue;
+      ctx.beginPath();
+      ctx.arc(0, 0, r.dist, r.start + r.angleOffset, r.end + r.angleOffset);
+      ctx.strokeStyle = currentPalette.text;
+      ctx.shadowColor = 'rgba(0,0,0,0.2)';
+      ctx.shadowBlur = 4; ctx.shadowOffsetX = 2; ctx.shadowOffsetY = 2;
+      ctx.stroke();
+    }
+    ctx.restore();
+    drawCutPaperCircle(ctx, p.x, p.y, p.radius, p.color1, p.color2, p.seed);
+  }
+  
+  ctx.fillStyle = currentPalette.pad;
+  ctx.beginPath(); ctx.arc(LAUNCH_PAD.x, LAUNCH_PAD.y, LAUNCH_PAD.radius, 0, Math.PI*2); ctx.fill();
+  
+  if(!pod.active && isDragging) {
+    let dx = dragStart.x - dragCurrent.x, dy = dragStart.y - dragCurrent.y;
+    let dist = Math.hypot(dx, dy);
+    let maxDrag = 150;
+    if (dist > maxDrag) { dx = (dx / dist) * maxDrag; dy = (dy / dist) * maxDrag; }
+    let px = LAUNCH_PAD.x - dx, py = LAUNCH_PAD.y - dy;
+    
+    ctx.strokeStyle = currentPalette.text; ctx.lineWidth = 2;
+    ctx.beginPath(); ctx.moveTo(LAUNCH_PAD.x - 20, LAUNCH_PAD.y); ctx.lineTo(px, py);
+    ctx.moveTo(LAUNCH_PAD.x + 20, LAUNCH_PAD.y); ctx.lineTo(px, py); ctx.stroke();
+    
+    ctx.fillStyle = currentPalette.text;
+    ctx.beginPath(); ctx.arc(px, py, pod.radius, 0, Math.PI*2); ctx.fill();
+  } else {
+    ctx.fillStyle = currentPalette.text;
+    ctx.beginPath(); ctx.arc(pod.x, pod.y, pod.radius, 0, Math.PI*2); ctx.fill();
+    if (multiplier > 1 && pod.active) {
+      ctx.font = 'bold 16px ui-monospace, monospace';
+      ctx.textAlign = 'center';
+      ctx.fillText(`x${multiplier}`, pod.x, pod.y - 15);
+    }
+  }
+  
+  for(let i=particles.length-1; i>=0; i--) {
+    let p = particles[i];
+    if (hitPause <= 0) {
+      p.x += p.vx; p.y += p.vy; p.life -= p.decay;
+      if(p.type === 'confetti') { p.vy += 0.1; p.vx *= 0.95; }
+      else if(p.type === 'smoke') { p.size *= 0.95; }
+    }
+    if(p.life <= 0) { particles.splice(i, 1); }
+    else {
+      ctx.globalAlpha = p.life; ctx.fillStyle = p.color;
+      if(p.type === 'confetti') ctx.fillRect(p.x - p.size/2, p.y - p.size/2, p.size, p.size);
+      else { ctx.beginPath(); ctx.arc(p.x, p.y, p.size, 0, Math.PI*2); ctx.fill(); }
+      ctx.globalAlpha = 1;
+    }
+  }
+  
+  for(let i=floaters.length-1; i>=0; i--) {
+    let f = floaters[i];
+    if (hitPause <= 0) { f.y += f.vy; f.life -= 0.02; }
+    if(f.life <= 0) floaters.splice(i, 1);
+    else {
+      ctx.globalAlpha = f.life; ctx.fillStyle = currentPalette.text;
+      ctx.font = `bold ${f.size || 16}px ui-monospace, monospace`;
+      ctx.textAlign = 'center'; ctx.fillText(f.text, f.x, f.y);
+      ctx.globalAlpha = 1;
+    }
+  }
+  
+  document.getElementById('scoreDisplay').innerText = score;
+  let m = Math.floor(timeLeft / 60);
+  let s = Math.floor(timeLeft % 60);
+  document.getElementById('timeDisplay').innerText = `${m}:${s.toString().padStart(2, '0')}`;
+}
+
+requestAnimationFrame(loop);
+</script>
+</body>
+</html>
