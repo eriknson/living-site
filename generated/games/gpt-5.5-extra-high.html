@@ -1,0 +1,325 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Paper Ferry Gust</title>
+<style>
+:root{
+  color-scheme:light dark;
+  --bg:#eef3ed;--ink:#182326;--muted:#607174;--panel:rgba(250,249,239,.78);
+  --strong:rgba(250,249,239,.93);--line:rgba(24,35,38,.16);--gold:#d49b35;
+  --cyan:#428895;--coral:#d86645;--good:#158a72;--shadow:rgba(23,38,42,.18);
+}
+@media (prefers-color-scheme:dark){
+  :root{--bg:#071215;--ink:#edf4ee;--muted:#9cb6b3;--panel:rgba(8,20,23,.76);
+    --strong:rgba(8,20,23,.93);--line:rgba(237,244,238,.16);--gold:#e7bd66;
+    --cyan:#73c5cf;--coral:#f07b5c;--good:#52c5a8;--shadow:rgba(0,0,0,.42)}
+}
+*{box-sizing:border-box}
+html,body{margin:0;width:100%;height:100%;overflow:hidden;background:var(--bg);color:var(--ink);
+  font-family:Inter,system-ui,-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif}
+body{width:100dvw;height:100dvh}
+#game{position:fixed;inset:0;width:100dvw;height:100dvh;overflow:hidden;user-select:none;-webkit-user-select:none;touch-action:none;
+  background:linear-gradient(180deg,#f7f6e9 0%,#dce8e4 52%,#cbdcd9 100%)}
+@media (prefers-color-scheme:dark){
+  #game{background:linear-gradient(180deg,#091619 0%,#0d2023 54%,#061012 100%)}
+}
+canvas{position:absolute;inset:0;width:100dvw;height:100dvh;display:block;touch-action:none}
+.hud{position:absolute;inset:env(safe-area-inset-top) 0 auto 0;padding:13px 14px 0;display:grid;
+  grid-template-columns:84px 1fr 84px;gap:9px;pointer-events:none;font-family:ui-monospace,"SFMono-Regular",Menlo,monospace}
+.pill{min-height:54px;border:1px solid var(--line);border-radius:18px;background:var(--panel);backdrop-filter:blur(16px);
+  -webkit-backdrop-filter:blur(16px);box-shadow:0 16px 42px var(--shadow);padding:9px 10px}
+.pill b{display:block;font-size:22px;line-height:1;font-variant-numeric:tabular-nums}.pill span{display:block;margin-top:5px;
+  color:var(--muted);font-size:10px;letter-spacing:.08em;text-transform:uppercase}.center{text-align:center}.right{text-align:right}
+#bar{height:7px;margin-top:8px;border-radius:99px;background:rgba(95,111,113,.22);overflow:hidden}
+#tidebar{height:100%;width:0;background:linear-gradient(90deg,var(--cyan),var(--gold),var(--coral));border-radius:99px}
+#tip{position:absolute;left:50%;bottom:calc(16px + env(safe-area-inset-bottom));transform:translateX(-50%);
+  max-width:calc(100dvw - 32px);min-height:44px;display:flex;align-items:center;justify-content:center;padding:10px 14px;
+  border:1px solid var(--line);border-radius:999px;background:var(--panel);backdrop-filter:blur(16px);box-shadow:0 14px 34px var(--shadow);
+  font:12px/1.25 ui-monospace,"SFMono-Regular",Menlo,monospace;color:var(--muted);text-align:center;pointer-events:none}
+#overlay{position:absolute;inset:0;display:grid;place-items:center;padding:22px;background:rgba(18,28,29,.12);backdrop-filter:blur(6px);
+  transition:opacity .32s ease}
+#overlay.hide{opacity:0;pointer-events:none}
+#card{width:min(460px,calc(100dvw - 32px));border:1px solid var(--line);border-radius:30px;background:var(--strong);
+  box-shadow:0 28px 88px var(--shadow);backdrop-filter:blur(22px);padding:27px}
+h1{margin:0 0 10px;font-size:clamp(42px,12vw,66px);line-height:.86;letter-spacing:-.075em}
+p{margin:0;color:var(--muted);line-height:1.42}.rules{margin:18px 0 21px;display:grid;gap:8px;
+  font:12px/1.35 ui-monospace,"SFMono-Regular",Menlo,monospace}
+.rules div{border:1px solid var(--line);border-radius:15px;padding:10px 12px;background:rgba(255,255,255,.08)}
+button{min-height:50px;min-width:145px;border:0;border-radius:999px;background:var(--ink);color:var(--bg);
+  font:800 14px ui-monospace,"SFMono-Regular",Menlo,monospace;text-transform:uppercase;letter-spacing:.04em;cursor:pointer}
+button:active{transform:translateY(1px)}#play{width:100%}.micro{margin-top:12px;color:var(--muted);
+  font:11px/1.35 ui-monospace,"SFMono-Regular",Menlo,monospace}
+</style>
+</head>
+<body>
+<main id="game" aria-label="Paper Ferry Gust browser game">
+  <canvas id="c"></canvas>
+  <section class="hud" aria-live="polite">
+    <div class="pill"><b id="score">0</b><span>score</span></div>
+    <div class="pill center"><b id="time">45.0</b><span id="windText">wind: calm</span><div id="bar"><div id="tidebar"></div></div></div>
+    <div class="pill right"><b id="streak">0</b><span>bullseyes</span></div>
+  </section>
+  <div id="tip">Drag from the ferry, curve through the ring, release before gulls circle.</div>
+  <section id="overlay">
+    <div id="card">
+      <h1 id="title">Paper<br>Ferry Gust</h1>
+      <p id="copy">Flick a folded ferry across a cold spring bay. The wind bends every toss; pass through ink rings before the tide eats the launch dock.</p>
+      <div class="rules">
+        <div>Touch: drag from the ferry, release to launch. Side-drag adds spin.</div>
+        <div>Keyboard: arrows/WASD aim, Space launches. Hit ring centers for comet mode.</div>
+      </div>
+      <button id="play" type="button">Start Crossing</button>
+      <div class="micro" id="micro">Three bullseyes in a row turn the ferry into a comet for bonus points.</div>
+    </div>
+  </section>
+</main>
+<script>
+(() => {
+"use strict";
+const canvas = document.getElementById("c"), ctx = canvas.getContext("2d", {alpha:false});
+const $ = id => document.getElementById(id);
+const scoreEl=$("score"), timeEl=$("time"), streakEl=$("streak"), windText=$("windText"), tidebar=$("tidebar");
+const tip=$("tip"), overlay=$("overlay"), title=$("title"), copy=$("copy"), play=$("play"), micro=$("micro");
+const mq = matchMedia("(prefers-color-scheme: dark)");
+let dark = mq.matches; mq.addEventListener?.("change", e => dark = e.matches);
+let W=1,H=1,DPR=1,last=performance.now(),state="title",audio=null;
+let score=0,time=45,tide=0,shot=0,streak=0,best=0,shake=0,flash=0,slow=0,combo=1;
+let ferry, ring, wind, pointer, particles=[], trails=[], gulls=[], keys={}, aim={x:0,y:-1,power:0};
+const clamp=(v,a,b)=>Math.max(a,Math.min(b,v)), rnd=(a,b)=>a+Math.random()*(b-a), TAU=Math.PI*2;
+const dist=(a,b,c,d)=>Math.hypot(a-c,b-d);
+
+function pal(){
+  return dark ? {
+    sky:"#071215", far:"#10272b", water:"#0c2024", ink:"#edf4ee", muted:"#9cb6b3",
+    paper:"#f1ead5", ring:"#78d0d9", gold:"#e7bd66", coral:"#f07b5c", gull:"#d8e5df",
+    wash:"rgba(237,244,238,.06)", line:"rgba(237,244,238,.13)"
+  } : {
+    sky:"#f7f6e9", far:"#dbe9e5", water:"#cbdeda", ink:"#182326", muted:"#607174",
+    paper:"#fff9df", ring:"#428895", gold:"#d49b35", coral:"#d86645", gull:"#39494b",
+    wash:"rgba(24,35,38,.06)", line:"rgba(24,35,38,.12)"
+  };
+}
+function resize(){
+  W=Math.max(320,innerWidth); H=Math.max(500,innerHeight); DPR=Math.min(2,devicePixelRatio||1);
+  canvas.width=Math.floor(W*DPR); canvas.height=Math.floor(H*DPR); ctx.setTransform(DPR,0,0,DPR,0,0);
+  if(state==="playing") placeDock();
+}
+function placeDock(){
+  const dockY = H - 68 - tide * H * .34;
+  if(!ferry || !ferry.flying){ ferry={x:W*.5,y:dockY,vx:0,vy:0,a:0,spin:0,flying:false,ready:true,ghost:0}; }
+}
+function newRing(){
+  const margin=54, top=H*.19, bottom=Math.max(H*.42,H-185-tide*H*.28);
+  const prog=1-time/45, r=clamp(46-prog*17-shot*.45,24,48);
+  ring={x:rnd(margin,W-margin),y:rnd(top,bottom),r,hit:false,pulse:0};
+}
+function setWind(){
+  const prog=1-time/45, ang=rnd(-2.8,-.35)+prog*rnd(-1.2,1.2), mag=rnd(22,42)+prog*38;
+  wind={x:Math.cos(ang)*mag,y:Math.sin(ang)*mag*.35,turn:rnd(-1,1)*(1+prog*1.9),gust:0,next:rnd(2.7,4.7)};
+}
+function resetGame(){
+  state="playing"; score=0; time=45; tide=0; shot=0; streak=0; best=0; shake=0; flash=0; slow=0; combo=1;
+  particles=[]; trails=[]; gulls=[]; pointer=null; aim={x:0,y:-1,power:0};
+  placeDock(); newRing(); setWind(); overlay.classList.add("hide");
+  tip.textContent="Drag from the ferry, release through the ring.";
+  beep(420,.04,"sine",.035); navigator.vibrate?.(18);
+}
+function endGame(){
+  state="over"; overlay.classList.remove("hide"); title.innerHTML="Tide<br>Report";
+  copy.textContent=`You ferried ${score} points before the tide covered the dock. Best bullseye chain: ${best}.`;
+  play.textContent="Play Again"; micro.textContent=best>=3?"Comet wake unlocked. Try a greedier wind line.":"Bullseyes stack at three for comet bonus.";
+  tip.textContent="Play again without reloading.";
+}
+function beep(freq,dur,type="sine",vol=.04){
+  try{
+    audio ||= new (window.AudioContext||window.webkitAudioContext)();
+    const t=audio.currentTime,o=audio.createOscillator(),g=audio.createGain();
+    o.type=type; o.frequency.setValueAtTime(freq,t); o.frequency.exponentialRampToValueAtTime(Math.max(80,freq*.55),t+dur);
+    g.gain.setValueAtTime(vol,t); g.gain.exponentialRampToValueAtTime(.0001,t+dur);
+    o.connect(g); g.connect(audio.destination); o.start(t); o.stop(t+dur+.02);
+  }catch(e){}
+}
+function splash(x,y,color,n=18,power=1){
+  for(let i=0;i<n;i++){
+    const a=rnd(0,TAU), s=rnd(30,170)*power;
+    particles.push({x,y,vx:Math.cos(a)*s,vy:Math.sin(a)*s-rnd(0,60),life:rnd(.35,.8),max:.8,c:color,r:rnd(1.5,4.5)});
+  }
+}
+function spawnGull(){
+  const fromLeft=Math.random()<.5, y=rnd(H*.22,H*.58), speed=rnd(80,135)*(fromLeft?1:-1);
+  gulls.push({x:fromLeft?-40:W+40,y,vx:speed,phase:rnd(0,TAU),steal:false});
+}
+function launch(vx,vy,spin){
+  if(state!=="playing" || ferry.flying) return;
+  const sp=Math.hypot(vx,vy);
+  if(sp<120){ tip.textContent="Give the ferry a longer flick."; return; }
+  ferry.vx=clamp(vx,-520,520); ferry.vy=clamp(vy,-680,360); ferry.spin=clamp(spin,-5,5); ferry.flying=true; ferry.ready=false; shot++;
+  pointer=null; ring.pulse=.35; beep(560,.055,"triangle",.035); navigator.vibrate?.(12);
+}
+function ringScore(){
+  const d=dist(ferry.x,ferry.y,ring.x,ring.y), inner=ring.r*.34;
+  if(d<ring.r && !ring.hit){
+    ring.hit=true;
+    const bull=d<inner, pts=Math.round((bull?140:70)*combo + Math.max(0, 40-d));
+    score+=pts; streak=bull?streak+1:0; best=Math.max(best,streak); combo=streak>=3?1.8:1;
+    flash=bull?.22:.1; slow=bull?.08:0; splash(ring.x,ring.y,bull?pal().gold:pal().ring,bull?34:18,bull?1.35:1);
+    trails.push({pts:[{x:ferry.x,y:ferry.y}],life:bull?1.1:.55,gold:bull});
+    tip.textContent=bull ? (streak>=3?"COMET WAKE! keep threading centers.":"Bullseye. Chain three.") : "Ring crossed. Center hits build comet wake.";
+    beep(bull?880:660,bull?.13:.08,bull?"sawtooth":"triangle",bull?.05:.04); navigator.vibrate?.(bull?[18,30,18]:10);
+    newRing();
+  }
+}
+function miss(reason){
+  if(!ferry.flying) return;
+  streak=0; combo=1; shake=.18; splash(ferry.x,ferry.y,pal().coral,22,1.1);
+  ferry.flying=false; ferry.ready=true; ferry.vx=0; ferry.vy=0; ferry.ghost=.25; placeDock();
+  tip.textContent=reason; beep(180,.12,"square",.035); navigator.vibrate?.(35);
+}
+function update(dt){
+  if(state!=="playing") return;
+  if(slow>0){ slow-=dt; dt*=.32; }
+  time-=dt; tide=clamp(1-time/45,0,1); if(time<=0) endGame();
+  wind.next-=dt; wind.gust=Math.max(0,wind.gust-dt*1.7);
+  if(wind.next<=0){ setWind(); wind.gust=1; tip.textContent="Gust shift: watch the wind ribbon."; }
+  if(Math.random()<dt*(.18+tide*.35)) spawnGull();
+  const dockLine=H-42-tide*H*.34;
+  if(!ferry.flying){
+    ferry.y += (dockLine-26-ferry.y)*Math.min(1,dt*8);
+    if(!pointer && Math.random()<dt*.38 && time<39) tip.textContent="Aim quickly. Idle gulls steal points.";
+  }else{
+    const curve=wind.turn*70*Math.sin(performance.now()/520+ferry.y*.015);
+    ferry.vx += (wind.x + curve) * dt;
+    ferry.vy += (wind.y + 72) * dt;
+    ferry.x += ferry.vx*dt; ferry.y += ferry.vy*dt; ferry.a += ferry.spin*dt + ferry.vx*.0009;
+    trails.push({pts:[{x:ferry.x,y:ferry.y}],life:streak>=3?.75:.35,gold:streak>=3});
+    ringScore();
+    if(ferry.y>dockLine) miss("The tide swallowed that crossing.");
+    if(ferry.x<-80||ferry.x>W+80||ferry.y<-90||ferry.y>H+80) miss("Lost in the fog. Relaunch fast.");
+  }
+  if(pointer && !ferry.flying){
+    pointer.idle+=dt;
+    const dx=pointer.x-ferry.x, dy=pointer.y-ferry.y, len=Math.hypot(dx,dy)||1;
+    aim.x=dx/len; aim.y=dy/len; aim.power=clamp(len/145,0,1);
+    if(pointer.idle>2.25 && score>0){ score=Math.max(0,score-12); pointer.idle=0; shake=.1; tip.textContent="A circling gull nipped 12 points. Release sooner."; spawnGull(); }
+  }
+  for(const g of gulls){
+    g.x+=g.vx*dt; g.phase+=dt*8;
+    if(ferry.flying && !g.steal && dist(g.x,g.y,ferry.x,ferry.y)<30){
+      score=Math.max(0,score-45); g.steal=true; shake=.2; miss("Gull strike. Keep arcs away from wings.");
+    }
+  }
+  gulls=gulls.filter(g=>g.x>-90&&g.x<W+90);
+  for(const p of particles){ p.x+=p.vx*dt; p.y+=p.vy*dt; p.vy+=130*dt; p.life-=dt; }
+  particles=particles.filter(p=>p.life>0);
+  for(const t of trails) t.life-=dt; trails=trails.filter(t=>t.life>0);
+  shake=Math.max(0,shake-dt); flash=Math.max(0,flash-dt); ring.pulse=Math.max(0,ring.pulse-dt);
+}
+function drawBoat(x,y,a,scale=1,alpha=1){
+  const p=pal(); ctx.save(); ctx.translate(x,y); ctx.rotate(a); ctx.scale(scale,scale); ctx.globalAlpha=alpha;
+  ctx.fillStyle=p.paper; ctx.strokeStyle=p.ink; ctx.lineWidth=1.4;
+  ctx.beginPath(); ctx.moveTo(0,-17); ctx.lineTo(22,12); ctx.lineTo(0,6); ctx.lineTo(-22,12); ctx.closePath(); ctx.fill(); ctx.stroke();
+  ctx.beginPath(); ctx.moveTo(0,-17); ctx.lineTo(0,6); ctx.moveTo(-22,12); ctx.lineTo(0,2); ctx.lineTo(22,12); ctx.stroke();
+  ctx.restore();
+}
+function draw(){
+  const p=pal(), sx=shake?rnd(-6,6)*shake*5:0, sy=shake?rnd(-5,5)*shake*5:0;
+  ctx.save(); ctx.translate(sx,sy);
+  const bg=ctx.createLinearGradient(0,0,0,H); bg.addColorStop(0,p.sky); bg.addColorStop(.5,p.far); bg.addColorStop(1,p.water);
+  ctx.fillStyle=bg; ctx.fillRect(-10,-10,W+20,H+20);
+  ctx.fillStyle=p.wash;
+  for(let i=0;i<7;i++){ const y=H*.16+i*H*.105+Math.sin(performance.now()/1800+i)*7; ctx.beginPath(); ctx.ellipse(W*.5,y,W*(.55+i*.03),18+i*5,0,0,TAU); ctx.fill(); }
+  ctx.strokeStyle=p.line; ctx.lineWidth=1;
+  for(let i=0;i<9;i++){ const y=H*.2+i*H*.085; ctx.beginPath(); ctx.moveTo(0,y); for(let x=0;x<=W;x+=28) ctx.lineTo(x,y+Math.sin(x*.016+i+performance.now()/1700)*5); ctx.stroke(); }
+  drawWind(p);
+  const dock=H-42-tide*H*.34;
+  ctx.fillStyle=dark?"rgba(6,13,15,.55)":"rgba(238,243,237,.58)"; ctx.fillRect(0,dock,W,H-dock+20);
+  ctx.strokeStyle=p.coral; ctx.setLineDash([10,8]); ctx.lineWidth=2; ctx.beginPath(); ctx.moveTo(0,dock); ctx.lineTo(W,dock); ctx.stroke(); ctx.setLineDash([]);
+  drawRing(p); for(const t of trails) drawTrail(t,p); for(const g of gulls) drawGull(g,p);
+  drawBoat(ferry.x,ferry.y,ferry.a,1,ferry.ghost?0.5:1);
+  if(pointer && !ferry.flying) drawAim(p);
+  for(const q of particles){ ctx.globalAlpha=clamp(q.life/q.max,0,1); ctx.fillStyle=q.c; ctx.beginPath(); ctx.arc(q.x,q.y,q.r,0,TAU); ctx.fill(); }
+  ctx.globalAlpha=1;
+  if(flash){ ctx.fillStyle=streak>=3?`rgba(231,189,102,${flash*.7})`:`rgba(66,136,149,${flash*.5})`; ctx.fillRect(0,0,W,H); }
+  ctx.restore();
+  scoreEl.textContent=score; timeEl.textContent=Math.max(0,time).toFixed(1); streakEl.textContent=streak;
+  tidebar.style.width=(tide*100).toFixed(1)+"%"; windText.textContent=`wind ${wind.x>0?"east":"west"} ${Math.round(Math.hypot(wind.x,wind.y))}`;
+}
+function drawWind(p){
+  ctx.save(); ctx.globalAlpha=.72; ctx.strokeStyle=p.muted; ctx.lineWidth=2;
+  for(let i=0;i<4;i++){
+    const y=H*.2+i*H*.13+Math.sin(performance.now()/900+i)*8, start=wind.x>0?18:W-18, dir=wind.x>0?1:-1;
+    ctx.beginPath(); ctx.moveTo(start,y);
+    for(let k=0;k<5;k++){ const x=start+dir*(k+1)*W*.11; ctx.lineTo(x,y+Math.sin(k+performance.now()/500+i)*12); }
+    ctx.stroke();
+  }
+  ctx.restore();
+}
+function drawRing(p){
+  const pulse=ring.pulse*22, r=ring.r+pulse;
+  ctx.save(); ctx.translate(ring.x,ring.y);
+  ctx.strokeStyle=p.ring; ctx.lineWidth=4; ctx.globalAlpha=.92; ctx.beginPath(); ctx.arc(0,0,r,0,TAU); ctx.stroke();
+  ctx.strokeStyle=p.gold; ctx.lineWidth=2.5; ctx.beginPath(); ctx.arc(0,0,ring.r*.34+ring.pulse*8,0,TAU); ctx.stroke();
+  ctx.fillStyle=dark?"rgba(115,197,207,.08)":"rgba(66,136,149,.08)"; ctx.beginPath(); ctx.arc(0,0,ring.r,0,TAU); ctx.fill();
+  ctx.restore();
+}
+function drawAim(p){
+  const len=aim.power*150, ex=ferry.x+aim.x*len, ey=ferry.y+aim.y*len;
+  ctx.save(); ctx.strokeStyle=p.gold; ctx.fillStyle=p.gold; ctx.lineWidth=4; ctx.lineCap="round";
+  ctx.beginPath(); ctx.moveTo(ferry.x,ferry.y); ctx.lineTo(ex,ey); ctx.stroke();
+  ctx.beginPath(); ctx.arc(ex,ey,5+aim.power*7,0,TAU); ctx.fill();
+  ctx.strokeStyle=p.line; ctx.lineWidth=1.5;
+  ctx.beginPath(); ctx.moveTo(ex,ey); let x=ex,y=ey,vx=aim.x*420*aim.power,vy=aim.y*520*aim.power;
+  for(let i=0;i<34;i++){ vx+=(wind.x+wind.turn*45)*.025; vy+=(wind.y+72)*.025; x+=vx*.025; y+=vy*.025; ctx.lineTo(x,y); }
+  ctx.stroke(); ctx.restore();
+}
+function drawTrail(t,p){
+  const pt=t.pts[0]; ctx.save(); ctx.globalAlpha=clamp(t.life,0,1)*(t.gold?.95:.45); ctx.fillStyle=t.gold?p.gold:p.ring;
+  ctx.beginPath(); ctx.arc(pt.x,pt.y,t.gold?5:3,0,TAU); ctx.fill(); ctx.restore();
+}
+function drawGull(g,p){
+  ctx.save(); ctx.translate(g.x,g.y); ctx.strokeStyle=g.steal?p.coral:p.gull; ctx.lineWidth=2.2; ctx.lineCap="round";
+  const flap=Math.sin(g.phase)*9; ctx.beginPath(); ctx.moveTo(-18,flap); ctx.quadraticCurveTo(-7,-10,0,0); ctx.quadraticCurveTo(7,-10,18,-flap); ctx.stroke(); ctx.restore();
+}
+function loop(now){
+  let dt=Math.min(.033,(now-last)/1000); last=now; update(dt); draw(); requestAnimationFrame(loop);
+}
+function pos(e){ const r=canvas.getBoundingClientRect(); return {x:e.clientX-r.left,y:e.clientY-r.top}; }
+canvas.addEventListener("pointerdown", e => {
+  if(state!=="playing" || ferry.flying) return; e.preventDefault(); canvas.setPointerCapture?.(e.pointerId);
+  const q=pos(e); pointer={id:e.pointerId,x:q.x,y:q.y,px:q.x,py:q.y,t:performance.now(),vx:0,vy:0,idle:0};
+});
+canvas.addEventListener("pointermove", e => {
+  if(!pointer || pointer.id!==e.pointerId) return; e.preventDefault();
+  const q=pos(e), now=performance.now(), dt=Math.max(16,now-pointer.t);
+  pointer.vx=(q.x-pointer.x)/dt*1000; pointer.vy=(q.y-pointer.y)/dt*1000; pointer.px=pointer.x; pointer.py=pointer.y;
+  pointer.x=q.x; pointer.y=q.y; pointer.t=now;
+});
+canvas.addEventListener("pointerup", e => {
+  if(!pointer || pointer.id!==e.pointerId) return; e.preventDefault();
+  const q=pos(e), dx=q.x-ferry.x, dy=q.y-ferry.y, sp=Math.hypot(pointer.vx,pointer.vy);
+  const vx=dx*2.2 + pointer.vx*.38, vy=dy*2.5 + pointer.vy*.38, spin=clamp((dx*pointer.vy-dy*pointer.vx)/22000,-5,5);
+  launch(vx,vy,spin + (sp>300?spin*.5:0));
+});
+canvas.addEventListener("pointercancel", e => { if(pointer && pointer.id===e.pointerId) pointer=null; });
+addEventListener("keydown", e => {
+  keys[e.key.toLowerCase()]=true;
+  if(e.code==="Space"){ e.preventDefault(); if(state==="title"||state==="over") resetGame(); else launch(aim.x*430*(aim.power||.75),aim.y*520*(aim.power||.75),aim.x*2.5); }
+});
+addEventListener("keyup", e => keys[e.key.toLowerCase()]=false);
+function keyboardAim(){
+  if(state!=="playing"||ferry.flying||pointer) return;
+  let x=(keys.arrowright||keys.d?1:0)-(keys.arrowleft||keys.a?1:0), y=(keys.arrowdown||keys.s?1:0)-(keys.arrowup||keys.w?1:0);
+  if(x||y){ const l=Math.hypot(x,y); aim.x=x/l; aim.y=y/l; aim.power=clamp((aim.power||.45)+.018,.45,1); }
+  else aim.power=Math.max(.45,(aim.power||.45)-.01);
+}
+play.addEventListener("click", resetGame);
+resize(); addEventListener("resize", resize);
+placeDock(); newRing(); setWind();
+setInterval(keyboardAim,16);
+requestAnimationFrame(loop);
+})();
+</script>
+</body>
+</html>
