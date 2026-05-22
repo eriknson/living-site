@@ -1,0 +1,688 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Thermophone Fling</title>
+<style>
+  body, html {
+    margin: 0; padding: 0;
+    width: 100vw; height: 100vh;
+    overflow: hidden;
+    background-color: #111;
+    font-family: ui-monospace, 'SFMono-Regular', Menlo, monospace;
+    user-select: none;
+    -webkit-user-select: none;
+    touch-action: none;
+  }
+  canvas {
+    display: block;
+    width: 100%; height: 100%;
+  }
+  #ui {
+    position: absolute;
+    top: 0; left: 0; width: 100%; height: 100%;
+    pointer-events: none;
+    display: flex;
+    flex-direction: column;
+    justify-content: space-between;
+  }
+  .hud {
+    padding: 20px 20px 40px 20px;
+    display: flex;
+    justify-content: space-between;
+    color: #fff;
+    text-shadow: 0 1px 4px rgba(0,0,0,0.5);
+    font-size: 16px;
+    font-weight: bold;
+  }
+  #menus {
+    position: absolute;
+    top: 0; left: 0; width: 100%; height: 100%;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    background: rgba(0,0,0,0.7);
+    pointer-events: auto;
+    backdrop-filter: blur(8px);
+    -webkit-backdrop-filter: blur(8px);
+    transition: opacity 0.3s ease;
+  }
+  h1 { font-size: 36px; font-weight: normal; margin-bottom: 10px; color: #fff; text-shadow: 0 2px 10px rgba(0,0,0,0.5); letter-spacing: 2px; }
+  p { color: #ccc; text-align: center; max-width: 85%; line-height: 1.6; margin-bottom: 40px; font-size: 15px; }
+  button {
+    background: #FFF; color: #111;
+    border: none; border-radius: 30px;
+    padding: 16px 48px; font-size: 18px;
+    font-family: inherit; font-weight: bold;
+    cursor: pointer;
+    box-shadow: 0 4px 15px rgba(0,0,0,0.3);
+    transition: transform 0.1s;
+    letter-spacing: 1px;
+  }
+  button:active { transform: scale(0.92); }
+  .hidden { opacity: 0; pointer-events: none; }
+  
+  @media (prefers-color-scheme: light) {
+    #menus { background: rgba(255,255,255,0.75); }
+    h1 { color: #111; text-shadow: none; font-weight: bold; }
+    p { color: #444; }
+    button { background: #111; color: #FFF; }
+  }
+</style>
+</head>
+<body>
+<canvas id="game"></canvas>
+<div id="ui">
+  <div class="hud">
+    <div>
+      SCORE<br><span id="scoreDisplay" style="font-size: 28px;">0</span>
+      <div id="comboDisplay" style="color:#FFF176; font-size:14px; opacity:0; transition:opacity 0.2s; margin-top:5px;"></div>
+    </div>
+    <div style="text-align: right">
+      NEXT: <span id="nextDisplay" style="display:inline-block;width:20px;height:20px;border-radius:50%;vertical-align:middle;border:2px solid rgba(255,255,255,0.5)"></span><br>
+      TAPS: <span id="tapsDisplay">3</span>
+    </div>
+  </div>
+</div>
+<div id="menus">
+  <h1 id="title">THERMOPHONE</h1>
+  <p id="subtitle">Drag down to loft droplets.<br>Merge matching temperatures.<br>Hard flicks crack mismatched knots.<br>Tap to forcefully fracture.</p>
+  <button id="startBtn">START</button>
+</div>
+<script>
+const canvas = document.getElementById('game');
+const ctx = canvas.getContext('2d', { alpha: false });
+const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+
+let width, height, dpr;
+let isDark = true;
+
+const SIZES = [18, 24, 32, 42, 54, 68, 84, 102, 125, 150];
+const COLORS = ['#B2DFDB', '#80CBC4', '#4DB6AC', '#AED581', '#DCE775', '#FFF176', '#FFD54F', '#FFB74D', '#FF8A65', '#E57373'];
+
+const GRAVITY = -0.12; 
+const DAMPING = 0.98;
+const BOUNCE = 0.2;
+const TIME_STEP = 1000 / 60;
+
+let gameState = 'START';
+let score = 0;
+let fractures = 3;
+let droplets = [];
+let particles = [];
+let windDust = [];
+let mergesThisFrame = [];
+let currentDroplet = null;
+let nextLevel = 0;
+let gameOverTimer = 0;
+let combo = 0;
+let comboTimer = 0;
+let flashAlpha = 0;
+let fogBurnWidth = 0;
+let windPhase = 0;
+let accumulator = 0;
+let lastTime = 0;
+
+function checkTheme() {
+    isDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
+}
+window.matchMedia('(prefers-color-scheme: dark)').addEventListener('change', checkTheme);
+checkTheme();
+
+function resize() {
+    width = window.innerWidth;
+    height = window.innerHeight;
+    dpr = window.devicePixelRatio || 1;
+    canvas.width = width * dpr;
+    canvas.height = height * dpr;
+    ctx.scale(dpr, dpr);
+    
+    if (currentDroplet && !currentDroplet.active) {
+        currentDroplet.x = width / 2;
+    }
+    
+    // Init wind dust
+    windDust = [];
+    for (let i = 0; i < 40; i++) {
+        windDust.push({
+            x: Math.random() * width,
+            y: Math.random() * height,
+            speedMultiplier: Math.random() * 0.5 + 0.5
+        });
+    }
+}
+window.addEventListener('resize', resize);
+resize();
+
+function playSound(type, level = 0) {
+    if (audioCtx.state !== 'running') return;
+    try {
+        const osc = audioCtx.createOscillator();
+        const gain = audioCtx.createGain();
+        osc.connect(gain);
+        gain.connect(audioCtx.destination);
+        let now = audioCtx.currentTime;
+        
+        if (type === 'merge') {
+            osc.type = 'sine';
+            osc.frequency.setValueAtTime(300 + level * 60, now);
+            osc.frequency.exponentialRampToValueAtTime(600 + level * 100, now + 0.15);
+            gain.gain.setValueAtTime(0.2, now);
+            gain.gain.exponentialRampToValueAtTime(0.01, now + 0.3);
+            osc.start(now);
+            osc.stop(now + 0.3);
+        } else if (type === 'flick') {
+            osc.type = 'triangle';
+            osc.frequency.setValueAtTime(200, now);
+            osc.frequency.exponentialRampToValueAtTime(50, now + 0.1);
+            gain.gain.setValueAtTime(0.1, now);
+            gain.gain.exponentialRampToValueAtTime(0.01, now + 0.1);
+            osc.start(now);
+            osc.stop(now + 0.1);
+        } else if (type === 'shatter') {
+            osc.type = 'square';
+            osc.frequency.setValueAtTime(100, now);
+            osc.frequency.exponentialRampToValueAtTime(500, now + 0.1);
+            gain.gain.setValueAtTime(0.15, now);
+            gain.gain.exponentialRampToValueAtTime(0.01, now + 0.2);
+            osc.start(now);
+            osc.stop(now + 0.2);
+        } else if (type === 'over') {
+            osc.type = 'sawtooth';
+            osc.frequency.setValueAtTime(150, now);
+            osc.frequency.exponentialRampToValueAtTime(30, now + 1);
+            gain.gain.setValueAtTime(0.2, now);
+            gain.gain.linearRampToValueAtTime(0.01, now + 1);
+            osc.start(now);
+            osc.stop(now + 1);
+        }
+    } catch(e) {}
+}
+
+function updateHUD() {
+    document.getElementById('scoreDisplay').innerText = score;
+    document.getElementById('tapsDisplay').innerText = fractures;
+    document.getElementById('nextDisplay').style.backgroundColor = COLORS[nextLevel];
+    
+    let comboEl = document.getElementById('comboDisplay');
+    if (combo > 1) {
+        comboEl.innerText = `${combo}x COMBO`;
+        comboEl.style.opacity = 1;
+    } else {
+        comboEl.style.opacity = 0;
+    }
+}
+
+function spawnCurrentDroplet() {
+    if (gameState !== 'PLAYING') return;
+    currentDroplet = {
+        x: width / 2,
+        y: height - 100,
+        vx: 0, vy: 0,
+        level: nextLevel,
+        r: SIZES[nextLevel],
+        active: false,
+        spawnTime: Date.now()
+    };
+    nextLevel = Math.floor(Math.random() * 4); // 0 to 3
+    updateHUD();
+}
+
+function createParticles(x, y, level) {
+    let color = COLORS[level] || '#FFF';
+    for (let i = 0; i < 15; i++) {
+        particles.push({
+            x: x, y: y,
+            vx: (Math.random() - 0.5) * 12,
+            vy: (Math.random() - 0.5) * 12,
+            life: 1.0,
+            color: color,
+            size: Math.random() * 4 + 2
+        });
+    }
+}
+
+function getWindAt(y) {
+    let h3 = height / 3;
+    let intensity = Math.min(2.5, 1 + score / 2000);
+    if (y < h3) return Math.sin(windPhase) * 0.15 * intensity;
+    if (y < h3 * 2) return Math.cos(windPhase * 0.8) * -0.2 * intensity;
+    return Math.sin(windPhase * 1.2) * 0.12 * intensity;
+}
+
+function updatePhysics(dt) {
+    windPhase += 0.01 * (dt / 16.6);
+    
+    // Physics integration
+    for (let d of droplets) {
+        d.vy += GRAVITY;
+        d.vx += getWindAt(d.y);
+        d.vx *= DAMPING;
+        d.vy *= DAMPING;
+        
+        d.x += d.vx;
+        d.y += d.vy;
+        
+        if (d.y - d.r < 0) {
+            d.y = d.r;
+            d.vy = Math.max(0, d.vy * -BOUNCE);
+            d.vx *= 0.8; 
+        }
+        if (d.y + d.r > height) {
+            d.y = height - d.r;
+            d.vy = Math.min(0, d.vy * -BOUNCE);
+            d.vx *= 0.8;
+        }
+        if (d.x - d.r < 0) {
+            d.x = d.r;
+            d.vx = Math.abs(d.vx) * BOUNCE;
+        }
+        if (d.x + d.r > width) {
+            d.x = width - d.r;
+            d.vx = -Math.abs(d.vx) * BOUNCE;
+        }
+    }
+    
+    // Collisions
+    for (let iter = 0; iter < 4; iter++) {
+        for (let i = 0; i < droplets.length; i++) {
+            for (let j = i + 1; j < droplets.length; j++) {
+                let d1 = droplets[i];
+                let d2 = droplets[j];
+                let dx = d2.x - d1.x;
+                let dy = d2.y - d1.y;
+                let distSq = dx*dx + dy*dy;
+                let minDist = d1.r + d2.r;
+                
+                if (distSq < minDist * minDist) {
+                    let dist = Math.sqrt(distSq) || 1;
+                    
+                    if (d1.level === d2.level && !d1.merging && !d2.merging) {
+                        d1.merging = true;
+                        d2.merging = true;
+                        mergesThisFrame.push({d1, d2});
+                        continue;
+                    }
+                    
+                    let nx = dx / dist;
+                    let ny = dy / dist;
+                    let overlap = minDist - dist;
+                    
+                    let m1 = d1.r * d1.r;
+                    let m2 = d2.r * d2.r;
+                    let ratio1 = m2 / (m1 + m2);
+                    let ratio2 = m1 / (m1 + m2);
+                    
+                    d1.x -= nx * overlap * ratio1;
+                    d1.y -= ny * overlap * ratio1;
+                    d2.x += nx * overlap * ratio2;
+                    d2.y += ny * overlap * ratio2;
+                    
+                    let rvx = d2.vx - d1.vx;
+                    let rvy = d2.vy - d1.vy;
+                    let velAlongNormal = rvx * nx + rvy * ny;
+                    
+                    if (velAlongNormal > 0) continue;
+                    
+                    // Turbulence cracks mismatched pairs on hard impact
+                    if (velAlongNormal < -12 && d1.level !== d2.level) {
+                        let smaller = d1.level < d2.level ? d1 : d2;
+                        smaller.crack = true;
+                    }
+                    
+                    let jVal = -(1.1) * velAlongNormal;
+                    jVal /= (1/m1 + 1/m2);
+                    
+                    let ix = jVal * nx;
+                    let iy = jVal * ny;
+                    d1.vx -= ix / m1;
+                    d1.vy -= iy / m1;
+                    d2.vx += ix / m2;
+                    d2.vy += iy / m2;
+                }
+            }
+        }
+    }
+    
+    // Crack resolution
+    for (let i = droplets.length - 1; i >= 0; i--) {
+        let d = droplets[i];
+        if (d.crack) {
+            createParticles(d.x, d.y, d.level);
+            droplets.splice(i, 1);
+            playSound('shatter');
+            score = Math.max(0, score - 15);
+            combo = 0;
+            if (navigator.vibrate) navigator.vibrate(40);
+            updateHUD();
+        }
+    }
+    
+    // Merge resolution
+    for (let m of mergesThisFrame) {
+        if (droplets.indexOf(m.d1) === -1 || droplets.indexOf(m.d2) === -1) continue;
+        droplets = droplets.filter(d => d !== m.d1 && d !== m.d2);
+        
+        let newX = (m.d1.x + m.d2.x) / 2;
+        let newY = (m.d1.y + m.d2.y) / 2;
+        let newLevel = m.d1.level + 1;
+        
+        combo++;
+        comboTimer = 2500;
+        score += newLevel * 10 * combo;
+        
+        if (newLevel < SIZES.length) {
+            droplets.push({
+                x: newX, y: newY,
+                vx: (m.d1.vx + m.d2.vx)/2, 
+                vy: (m.d1.vy + m.d2.vy)/2,
+                level: newLevel, r: SIZES[newLevel],
+                active: true, spawnTime: Date.now()
+            });
+        }
+        if (newLevel >= 4) {
+            fractures = Math.min(5, fractures + 1);
+        }
+        createParticles(newX, newY, newLevel);
+        playSound('merge', newLevel);
+        flashAlpha = Math.min(1.0, flashAlpha + 0.15 + combo * 0.05);
+        if (navigator.vibrate) navigator.vibrate(20);
+        updateHUD();
+    }
+    mergesThisFrame = [];
+    
+    // Particles update
+    for (let i = particles.length - 1; i >= 0; i--) {
+        let p = particles[i];
+        p.x += p.vx; p.y += p.vy;
+        p.vy += GRAVITY * 0.5;
+        p.life -= 0.03 * (dt / 16.6);
+        if (p.life <= 0) particles.splice(i, 1);
+    }
+    
+    // Combo timer
+    if (comboTimer > 0) {
+        comboTimer -= dt;
+        if (comboTimer <= 0) {
+            combo = 0;
+            updateHUD();
+        }
+    }
+    
+    let dangerY = height - 250;
+    let anyOverLine = false;
+    let now = Date.now();
+    for (let d of droplets) {
+        if (d.y + d.r > dangerY && (now - d.spawnTime > 1200)) {
+            anyOverLine = true;
+            break;
+        }
+    }
+    if (anyOverLine) {
+        gameOverTimer += dt;
+        if (gameOverTimer > 3000) setGameOver();
+    } else {
+        gameOverTimer = Math.max(0, gameOverTimer - dt * 2);
+    }
+}
+
+function drawDroplet(ctx, d) {
+    ctx.beginPath();
+    ctx.arc(d.x, d.y, d.r, 0, Math.PI * 2);
+    ctx.fillStyle = COLORS[d.level];
+    ctx.fill();
+    
+    ctx.beginPath();
+    ctx.arc(d.x - d.r*0.3, d.y - d.r*0.3, d.r*0.2, 0, Math.PI*2);
+    ctx.fillStyle = 'rgba(255,255,255,0.3)';
+    ctx.fill();
+    
+    ctx.fillStyle = '#000';
+    ctx.globalAlpha = 0.5;
+    ctx.textAlign = 'center';
+    ctx.textBaseline = 'middle';
+    ctx.font = `bold ${d.r * 0.8}px monospace`;
+    ctx.fillText((d.level * 10 + 10) + "°", d.x, d.y + d.r*0.05);
+    ctx.globalAlpha = 1.0;
+}
+
+function draw(time) {
+    let gradientColors = isDark ? 
+        ['#3E2723', '#263238', '#1A1A1A'] : 
+        ['#FFA586', '#E2B49A', '#84A5B8'];
+
+    let bgGradient = ctx.createLinearGradient(0, height, 0, 0);
+    bgGradient.addColorStop(0, gradientColors[0]);
+    bgGradient.addColorStop(0.5, gradientColors[1]);
+    bgGradient.addColorStop(1, gradientColors[2]);
+    ctx.fillStyle = bgGradient;
+    ctx.fillRect(0, 0, width, height);
+    
+    let targetBurnWidth = combo * 30;
+    fogBurnWidth += (targetBurnWidth - fogBurnWidth) * 0.1;
+    if (fogBurnWidth > 1) {
+        let burnGrad = ctx.createLinearGradient(width/2 - fogBurnWidth, 0, width/2 + fogBurnWidth, 0);
+        burnGrad.addColorStop(0, 'rgba(255,255,255,0)');
+        burnGrad.addColorStop(0.5, isDark ? 'rgba(255,255,255,0.1)' : 'rgba(255,255,255,0.3)');
+        burnGrad.addColorStop(1, 'rgba(255,255,255,0)');
+        ctx.fillStyle = burnGrad;
+        ctx.fillRect(0, 0, width, height);
+    }
+    
+    // Wind Dust
+    ctx.fillStyle = isDark ? 'rgba(255,255,255,0.1)' : 'rgba(255,255,255,0.2)';
+    for (let w of windDust) {
+        w.x += getWindAt(w.y) * 15 * w.speedMultiplier;
+        w.y += GRAVITY * 4;
+        if (w.x > width + 50) w.x = -50;
+        if (w.x < -50) w.x = width + 50;
+        if (w.y < -50) w.y = height + 50;
+        ctx.beginPath();
+        ctx.arc(w.x, w.y, 2, 0, Math.PI*2);
+        ctx.fill();
+    }
+    
+    // Isotherms
+    ctx.strokeStyle = isDark ? 'rgba(255, 255, 255, 0.08)' : 'rgba(255, 255, 255, 0.2)';
+    ctx.lineWidth = 1.5;
+    for (let i = 1; i <= 6; i++) {
+        let yBase = (height / 7) * i;
+        ctx.beginPath();
+        for (let x = 0; x <= width; x += 40) {
+            let noise = Math.sin(x * 0.02 + time * 0.001 + i) * 20;
+            noise += Math.cos(x * 0.01 - time * 0.0005 + i*2) * 15;
+            let y = yBase + noise;
+            if (x === 0) ctx.moveTo(x, y); else ctx.lineTo(x, y);
+        }
+        ctx.stroke();
+    }
+
+    // Danger Line
+    let dangerY = height - 250;
+    ctx.save();
+    if (gameOverTimer > 0) {
+        ctx.strokeStyle = (Date.now() % 400 > 200) ? '#ff4444' : '#ffffff';
+        ctx.lineWidth = 3;
+    } else {
+        let maxDropletY = 0;
+        for (let d of droplets) if (d.y + d.r > maxDropletY) maxDropletY = d.y + d.r;
+        let distToDanger = dangerY - maxDropletY;
+        let dangerAlpha = distToDanger < 100 ? 0.2 + ((100 - distToDanger) / 100) * 0.4 : 0.15;
+        ctx.strokeStyle = isDark ? `rgba(255,255,255,${dangerAlpha})` : `rgba(0,0,0,${dangerAlpha})`;
+        ctx.lineWidth = 2;
+    }
+    ctx.setLineDash([12, 16]);
+    ctx.beginPath();
+    ctx.moveTo(0, dangerY);
+    ctx.lineTo(width, dangerY);
+    ctx.stroke();
+    ctx.restore();
+
+    for (let d of droplets) drawDroplet(ctx, d);
+    
+    if (currentDroplet && !currentDroplet.active) {
+        currentDroplet.y = height - 100 + Math.sin(time * 0.005) * 5;
+        drawDroplet(ctx, currentDroplet);
+    }
+    
+    for (let p of particles) {
+        ctx.globalAlpha = Math.max(0, p.life);
+        ctx.fillStyle = p.color;
+        ctx.beginPath();
+        ctx.arc(p.x, p.y, p.size, 0, Math.PI*2);
+        ctx.fill();
+    }
+    ctx.globalAlpha = 1.0;
+    
+    if (flashAlpha > 0) {
+        ctx.fillStyle = `rgba(255, 255, 255, ${flashAlpha})`;
+        ctx.fillRect(0, 0, width, height);
+        flashAlpha -= 0.02;
+    }
+    
+    if (isDragging && currentDroplet && dragDist > 10) {
+        let dx = touchCurX - touchStartX;
+        let dy = touchCurY - touchStartY;
+        let power = 0.15;
+        let vx = -dx * power;
+        let vy = -dy * power;
+        let speed = Math.sqrt(vx*vx + vy*vy);
+        if (speed > 25) { vx = (vx/speed)*25; vy = (vy/speed)*25; }
+        
+        ctx.beginPath();
+        ctx.moveTo(currentDroplet.x, currentDroplet.y);
+        let sx = currentDroplet.x, sy = currentDroplet.y, svx = vx, svy = vy;
+        ctx.strokeStyle = 'rgba(255, 255, 255, 0.5)';
+        ctx.lineWidth = 2;
+        ctx.setLineDash([6, 8]);
+        for (let i = 0; i < 40; i++) {
+            svy += GRAVITY;
+            svx += getWindAt(sy);
+            svx *= DAMPING; svy *= DAMPING;
+            sx += svx; sy += svy;
+            if (sx < 0 || sx > width) svx *= -BOUNCE;
+            ctx.lineTo(sx, sy);
+        }
+        ctx.stroke();
+        ctx.setLineDash([]);
+    }
+}
+
+function loop(time) {
+    requestAnimationFrame(loop);
+    if (!lastTime) lastTime = time;
+    let dt = time - lastTime;
+    if (dt > 100) dt = 100;
+    lastTime = time;
+    
+    if (gameState === 'PLAYING') {
+        accumulator += dt;
+        while (accumulator >= TIME_STEP) {
+            updatePhysics(TIME_STEP);
+            accumulator -= TIME_STEP;
+        }
+    }
+    draw(time);
+}
+
+let touchStartX=0, touchStartY=0, touchCurX=0, touchCurY=0;
+let isDragging = false, dragStartTime = 0, dragDist = 0;
+
+function handleTap(x, y) {
+    if (fractures <= 0) return;
+    for (let i = droplets.length - 1; i >= 0; i--) {
+        let d = droplets[i];
+        let dx = d.x - x;
+        let dy = d.y - y;
+        if (dx*dx + dy*dy < (d.r + 25)**2) {
+            createParticles(d.x, d.y, d.level);
+            droplets.splice(i, 1);
+            fractures--;
+            playSound('shatter');
+            updateHUD();
+            if (navigator.vibrate) navigator.vibrate(50);
+            return; 
+        }
+    }
+}
+
+canvas.addEventListener('pointerdown', e => {
+    if (gameState !== 'PLAYING') return;
+    touchStartX = touchCurX = e.clientX;
+    touchStartY = touchCurY = e.clientY;
+    isDragging = true;
+    dragDist = 0;
+    dragStartTime = Date.now();
+});
+canvas.addEventListener('pointermove', e => {
+    if (!isDragging) return;
+    touchCurX = e.clientX;
+    touchCurY = e.clientY;
+    let dx = touchCurX - touchStartX;
+    let dy = touchCurY - touchStartY;
+    dragDist = Math.sqrt(dx*dx + dy*dy);
+});
+canvas.addEventListener('pointerup', e => {
+    if (!isDragging) return;
+    isDragging = false;
+    let time = Date.now() - dragStartTime;
+    
+    if (dragDist < 15 && time < 250) {
+        handleTap(e.clientX, e.clientY);
+        return;
+    }
+    
+    if (currentDroplet && dragDist > 10) {
+        let dx = touchCurX - touchStartX;
+        let dy = touchCurY - touchStartY;
+        let power = 0.15;
+        currentDroplet.vx = -dx * power;
+        currentDroplet.vy = -dy * power;
+        let speed = Math.sqrt(currentDroplet.vx**2 + currentDroplet.vy**2);
+        if (speed > 25) {
+            currentDroplet.vx = (currentDroplet.vx/speed)*25;
+            currentDroplet.vy = (currentDroplet.vy/speed)*25;
+        }
+        currentDroplet.active = true;
+        currentDroplet.spawnTime = Date.now();
+        droplets.push(currentDroplet);
+        playSound('flick');
+        currentDroplet = null;
+        setTimeout(spawnCurrentDroplet, 600);
+    }
+});
+canvas.addEventListener('pointercancel', () => isDragging = false);
+window.addEventListener('contextmenu', e => e.preventDefault());
+
+function startGame() {
+    gameState = 'PLAYING';
+    score = 0; fractures = 3; combo = 0;
+    droplets = []; particles = []; mergesThisFrame = [];
+    gameOverTimer = 0; fogBurnWidth = 0;
+    document.getElementById('menus').classList.add('hidden');
+    if (audioCtx.state === 'suspended') audioCtx.resume();
+    spawnCurrentDroplet();
+}
+
+function setGameOver() {
+    gameState = 'GAMEOVER';
+    document.getElementById('menus').classList.remove('hidden');
+    document.getElementById('title').innerText = 'FOGGED IN';
+    document.getElementById('subtitle').innerHTML = `Final Score: ${score}<br>The atmosphere grew too dense.`;
+    document.getElementById('startBtn').innerText = 'RESTART';
+    currentDroplet = null;
+    playSound('over');
+    if (navigator.vibrate) navigator.vibrate([100, 50, 100, 50, 200]);
+}
+
+document.getElementById('startBtn').addEventListener('click', () => {
+    if (audioCtx.state === 'suspended') audioCtx.resume();
+    startGame();
+});
+
+requestAnimationFrame(loop);
+</script>
+</body>
+</html>
