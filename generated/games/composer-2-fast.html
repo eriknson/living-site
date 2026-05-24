@@ -1,0 +1,907 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <title>Riftlight — Composer</title>
+  <style>
+    :root {
+      --bg0: #0c1418;
+      --bg1: #152428;
+      --ink: #e8f4f0;
+      --muted: rgba(232,244,240,0.55);
+      --accent: #ff9b6e;
+      --beam: #ffe8a8;
+      --fog: rgba(206,218,226,0.42);
+      --lane: rgba(255,210,168,0.06);
+      --danger: #e85d4f;
+      --glass: rgba(12,20,24,0.72);
+      --mono: ui-monospace, SFMono-Regular, Menlo, Monaco, monospace;
+    }
+    @media (prefers-color-scheme: dark) {
+      :root {
+        --bg0: #0c1418;
+        --bg1: #152428;
+        --ink: #e8f4f0;
+        --muted: rgba(232,244,240,0.55);
+        --accent: #ff9b6e;
+        --beam: #ffe8a8;
+        --fog: rgba(206,218,226,0.42);
+        --lane: rgba(255,210,168,0.06);
+        --danger: #e85d4f;
+        --glass: rgba(12,20,24,0.72);
+      }
+      .card {
+        border-color: rgba(255,255,255,0.08);
+        box-shadow: 0 18px 50px rgba(0,0,0,0.25);
+      }
+      .btn {
+        background: linear-gradient(135deg, #ff8f5c, #ff6b4a);
+        color: #1a0d08;
+        box-shadow: 0 6px 20px rgba(255,120,80,0.35);
+      }
+      .meter-bar {
+        background: rgba(255,255,255,0.08);
+      }
+    }
+    @media (prefers-color-scheme: light) {
+      :root {
+        --bg0: #e6eef2;
+        --bg1: #d4e2ea;
+        --ink: #0f1a22;
+        --muted: rgba(15,26,34,0.5);
+        --accent: #c75a34;
+        --beam: #b8860a;
+        --fog: rgba(120,140,154,0.35);
+        --lane: rgba(60,110,140,0.08);
+        --danger: #c43d32;
+        --glass: rgba(230,238,242,0.88);
+      }
+    }
+    * { box-sizing: border-box; }
+    html, body {
+      margin: 0;
+      height: 100%;
+      overflow: hidden;
+      background: var(--bg0);
+      color: var(--ink);
+      font-family: system-ui, sans-serif;
+    }
+    #wrap {
+      width: 100dvw;
+      height: 100dvh;
+      height: 100vh;
+      position: relative;
+      background: radial-gradient(120% 80% at 50% -10%, rgba(255,154,122,0.22), transparent),
+                  linear-gradient(180deg, var(--bg1), var(--bg0));
+      touch-action: none;
+      user-select: none;
+      -webkit-user-select: none;
+    }
+    #cv {
+      display: block;
+      width: 100%;
+      height: 100%;
+      touch-action: none;
+      cursor: grab;
+    }
+    #cv:active { cursor: grabbing; }
+    .overlay {
+      position: absolute;
+      inset: 0;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      padding: max(16px, env(safe-area-inset-top)) max(16px, env(safe-area-inset-right))
+               max(16px, env(safe-area-inset-bottom)) max(16px, env(safe-area-inset-left));
+      pointer-events: none;
+      transition: opacity 0.38s ease, transform 0.38s ease;
+    }
+    .overlay.active { pointer-events: auto; }
+    .card {
+      max-width: 340px;
+      width: 100%;
+      padding: 28px 24px;
+      border-radius: 16px;
+      background: var(--glass);
+      backdrop-filter: blur(12px);
+      -webkit-backdrop-filter: blur(12px);
+      border: 1px solid rgba(255,255,255,0.08);
+      text-align: center;
+      box-shadow: 0 18px 50px rgba(0,0,0,0.25);
+    }
+    @media (prefers-color-scheme: light) {
+      .card { border-color: rgba(0,0,0,0.06); box-shadow: 0 14px 40px rgba(30,60,80,0.12); }
+    }
+    h1 {
+      margin: 0 0 8px;
+      font-size: 1.35rem;
+      font-weight: 650;
+      letter-spacing: -0.02em;
+    }
+    p {
+      margin: 0 0 18px;
+      font-size: 0.92rem;
+      line-height: 1.45;
+      color: var(--muted);
+    }
+    .btn {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      min-height: 48px;
+      min-width: 160px;
+      padding: 0 22px;
+      border: none;
+      border-radius: 999px;
+      font-size: 1rem;
+      font-weight: 600;
+      font-family: var(--mono);
+      background: linear-gradient(135deg, #ff8f5c, #ff6b4a);
+      color: #1a0d08;
+      cursor: pointer;
+      pointer-events: auto;
+      box-shadow: 0 6px 20px rgba(255,120,80,0.35);
+    }
+    @media (prefers-color-scheme: light) {
+      .btn {
+        background: linear-gradient(135deg, #e86b3a, #d94e32);
+        color: #fff;
+        box-shadow: 0 6px 18px rgba(200,90,50,0.28);
+      }
+    }
+    .btn:active { transform: scale(0.97); }
+    .hud {
+      position: absolute;
+      top: max(10px, env(safe-area-inset-top));
+      left: max(12px, env(safe-area-inset-left));
+      right: max(12px, env(safe-area-inset-right));
+      display: flex;
+      justify-content: space-between;
+      align-items: flex-start;
+      pointer-events: none;
+      font-family: var(--mono);
+      font-size: 12px;
+      letter-spacing: 0.04em;
+      opacity: 0;
+      transition: opacity 0.35s ease;
+    }
+    .hud.on { opacity: 1; }
+    .meter-wrap {
+      flex: 1;
+      max-width: 55%;
+      margin-right: 12px;
+    }
+    .meter-label { color: var(--muted); margin-bottom: 4px; font-size: 11px; }
+    .meter-bar {
+      height: 8px;
+      border-radius: 4px;
+      background: rgba(255,255,255,0.08);
+      overflow: hidden;
+    }
+    @media (prefers-color-scheme: light) {
+      .meter-bar { background: rgba(0,0,0,0.08); }
+    }
+    .meter-fill {
+      height: 100%;
+      width: 100%;
+      border-radius: 4px;
+      background: linear-gradient(90deg, #ffb347, #ff6b4a);
+      transform-origin: left center;
+      transform: scaleX(1);
+      transition: transform 0.08s linear;
+    }
+    .score-block { text-align: right; }
+    .score-val { font-size: 22px; font-weight: 700; }
+    .score-sub { color: var(--muted); font-size: 11px; margin-top: 2px; }
+    .hidden { opacity: 0 !important; pointer-events: none !important; }
+    .hint {
+      position: absolute;
+      bottom: max(18px, env(safe-area-inset-bottom));
+      left: 50%;
+      transform: translateX(-50%);
+      font-family: var(--mono);
+      font-size: 11px;
+      color: var(--muted);
+      opacity: 0;
+      transition: opacity 0.4s ease;
+      pointer-events: none;
+      text-align: center;
+      max-width: 90%;
+    }
+    .hint.on { opacity: 0.85; }
+  </style>
+</head>
+<body>
+  <div id="wrap">
+    <canvas id="cv" aria-label="Riftlight game"></canvas>
+    <div class="hud" id="hud">
+      <div class="meter-wrap">
+        <div class="meter-label">SUNSET</div>
+        <div class="meter-bar"><div class="meter-fill" id="meterFill"></div></div>
+      </div>
+      <div class="score-block">
+        <div class="score-val" id="scoreEl">0</div>
+        <div class="score-sub">LÚMENS</div>
+      </div>
+    </div>
+    <div class="hint on" id="hint">Swipe ↔ lanes · Tap sucks clustered light · Arrows / Space desktop</div>
+    <div class="overlay active" id="titleOverlay">
+      <div class="card">
+        <h1>Riftlight</h1>
+        <p>Harvest sunbeams in the thinning fog bands over the bay. Slip lanes before shutters slam shut. Tap pulls a pocket of clustered motes—but only while the fog rift glows green.</p>
+        <button class="btn" type="button" id="btnStart">Begin run</button>
+      </div>
+    </div>
+    <div class="overlay hidden" id="gameoverOverlay">
+      <div class="card">
+        <h1>Glow stalled</h1>
+        <p id="goMsg">Sunset emptied before the skyline did.</p>
+        <button class="btn" type="button" id="btnAgain">Replay</button>
+      </div>
+    </div>
+  </div>
+  <script>
+(function () {
+  'use strict';
+  var canvas = document.getElementById('cv');
+  var ctx = canvas.getContext('2d');
+  var hud = document.getElementById('hud');
+  var meterFill = document.getElementById('meterFill');
+  var scoreEl = document.getElementById('scoreEl');
+  var titleOv = document.getElementById('titleOverlay');
+  var goOv = document.getElementById('gameoverOverlay');
+  var hint = document.getElementById('hint');
+  var goMsg = document.getElementById('goMsg');
+  var W = 0, H = 0, DPR = 1;
+
+  /** @type {AudioContext|null} */
+  var actx = null;
+  function sfx(freq, dur, vol, type) {
+    try {
+      if (!actx) return;
+      var o = actx.createOscillator();
+      var g = actx.createGain();
+      o.type = type || 'sine';
+      o.frequency.value = freq;
+      g.gain.value = 0;
+      o.connect(g);
+      g.connect(actx.destination);
+      var t = actx.currentTime;
+      g.gain.setValueAtTime(0, t);
+      g.gain.linearRampToValueAtTime(vol * 0.25, t + 0.01);
+      g.gain.exponentialRampToValueAtTime(0.001, t + dur);
+      o.start(t);
+      o.stop(t + dur + 0.05);
+    } catch (e) {}
+  }
+  function buzz(ms) {
+    try { if (navigator.vibrate) navigator.vibrate(ms); } catch (e) {}
+  }
+
+  var STATE = 'title';
+  var lane = 1;
+  var targetLane = 1;
+  var laneAnim = 0;
+  var playerX = 0;
+  var score = 0;
+  var combo = 0;
+  var meter = 1;
+  var timeAlive = 0;
+  /** @typedef {{lane:number,y:number,vy:number,size:number,collected:boolean,phase:number}} Beam */
+  /** @typedef {{lane:number,y:number,seed:number,hit:false}} Thorn */
+  /** @typedef {{lane:number,warn:number,closesAt:number,really:number,skew:number,dealt:number}} Shut */
+  /** @type {Beam[]} */
+  var beams = [];
+  /** @type {Thorn[]} */
+  var thorns = [];
+  /** @type {Shut[]} */
+  var shutters = [];
+  /** @type {{x:number,y:number,vx:number,vy:number,t:number,color:string}[]} */
+  var parts = [];
+
+  function laneX(l) {
+    var pad = W * 0.08;
+    var w = W - pad * 2;
+    return pad + w * (l + 0.5) / 3;
+  }
+
+  function resize() {
+    DPR = Math.min(2, window.devicePixelRatio || 1);
+    W = canvas.clientWidth || window.innerWidth;
+    H = canvas.clientHeight || window.innerHeight;
+    canvas.width = Math.floor(W * DPR);
+    canvas.height = Math.floor(H * DPR);
+    ctx.setTransform(DPR, 0, 0, DPR, 0, 0);
+    playerX = laneX(lane);
+  }
+  window.addEventListener('resize', resize);
+
+  function driftIntensity() {
+    var base = Math.min(timeAlive / 45, 1);
+    var wobble = 0.5 + 0.5 * Math.sin(timeAlive * 0.85);
+    return Math.min(0.95, 0.42 + base * 0.36 + (1 - base) * 0.08 * wobble);
+  }
+
+  function spawnBeam() {
+    var hard = driftIntensity();
+    var l = (Math.random() * 3) | 0;
+    beams.push({
+      lane: l,
+      y: -40 - Math.random() * 30,
+      vy: 90 + Math.random() * (70 + hard * 80),
+      size: 10 + (1 - hard) * (6 + Math.random() * 10),
+      collected: false,
+      phase: Math.random() * 6.283
+    });
+  }
+
+  function spawnThorn() {
+    var l = (Math.random() * 3) | 0;
+    if (hardMode() && Math.random() < 0.22) {
+      l = lane;
+    }
+    thorns.push({
+      lane: l,
+      y: -28,
+      seed: Math.random() * 1000,
+      hit: false
+    });
+  }
+
+  function hardMode() {
+    return timeAlive > 12;
+  }
+
+  function planShutter() {
+    var lanes = [0, 1, 2];
+    shuffleInPlace(lanes);
+    var decoyChance = Math.min(0.45, Math.max(0, (timeAlive - 14) / 45) * 0.45);
+    var realLane = lanes[0];
+    var telegraphEnds = Math.max(0.45, 0.82 - Math.min(timeAlive / 62, 0.28));
+    var slamDur = Math.max(0.24, 0.58 - timeAlive * 0.009);
+    var skew = (Math.random() - 0.5) * (12 + timeAlive * 0.18);
+    var decoys = [];
+    if (Math.random() < decoyChance) {
+      var d = lanes[1];
+      if (d !== realLane) decoys.push(d);
+    }
+    var slamStart = timeAlive + telegraphEnds;
+    shutters.push({ lane: realLane, warn: slamStart, closesAt: slamDur, really: 1, skew: skew, dealt: 0 });
+    for (var i = 0; i < decoys.length; i++) {
+      shutters.push({
+        lane: decoys[i],
+        warn: slamStart + (Math.random() - 0.5) * 0.08,
+        closesAt: slamDur * 1.06,
+        really: 0,
+        skew: skew * 0.7,
+        dealt: 1
+      });
+    }
+  }
+
+  function shuffleInPlace(a) {
+    for (var i = a.length - 1; i > 0; i--) {
+      var j = (Math.random() * (i + 1)) | 0;
+      var t = a[i];
+      a[i] = a[j];
+      a[j] = t;
+    }
+  }
+
+  var nextBeam = 0;
+  var nextThorn = 2.5;
+  var nextShut = 3.2;
+  var roundStart = 0;
+
+  function resetGame() {
+    lane = 1;
+    targetLane = 1;
+    laneAnim = 0;
+    score = 0;
+    combo = 0;
+    meter = 1;
+    timeAlive = 0;
+    beams.length = 0;
+    thorns.length = 0;
+    shutters.length = 0;
+    parts.length = 0;
+    nextBeam = 0;
+    nextThorn = 1.2;
+    nextShut = 2.4;
+    roundStart = performance.now() / 1000;
+    playerX = laneX(lane);
+    scoreEl.textContent = '0';
+    meterFill.style.transform = 'scaleX(1)';
+  }
+
+  function startPlay() {
+    if (!actx) {
+      try {
+        actx = new (window.AudioContext || window.webkitAudioContext)();
+      } catch (e) { actx = null; }
+    }
+    if (actx && actx.state === 'suspended') actx.resume().catch(function () {});
+    resetGame();
+    STATE = 'play';
+    titleOv.classList.remove('active');
+    titleOv.classList.add('hidden');
+    goOv.classList.add('hidden');
+    goOv.classList.remove('active');
+    hud.classList.add('on');
+    hint.classList.add('on');
+    setTimeout(function () { hint.classList.remove('on'); }, 4200);
+    sfx(520, 0.12, 0.5, 'triangle');
+  }
+
+  function gameOver() {
+    if (STATE !== 'play') return;
+    STATE = 'over';
+    beams.length = 0;
+    thorns.length = 0;
+    shutters.length = 0;
+    parts.length = 0;
+    hud.classList.remove('on');
+    goMsg.textContent = 'You held ' + score + ' lúmens before the fog won. Best chains reward timing when rifts align.';
+    goOv.classList.remove('hidden');
+    goOv.classList.add('active');
+    sfx(120, 0.35, 0.7, 'sawtooth');
+    buzz([0, 40, 60, 40]);
+  }
+
+  function addParticles(x, y, n, col) {
+    for (var i = 0; i < n; i++) {
+      var a = Math.random() * 6.283;
+      var sp = 40 + Math.random() * 120;
+      parts.push({
+        x: x, y: y,
+        vx: Math.cos(a) * sp,
+        vy: Math.sin(a) * sp - 40,
+        t: 0.45 + Math.random() * 0.2,
+        color: col || 'rgba(255,230,168,1)'
+      });
+    }
+  }
+
+  /** @param {'left'|'right'} dir */
+  function nudgeLane(dir) {
+    if (STATE !== 'play') return;
+    if (dir === 'left' && lane > 0) { lane--; targetLane = lane; laneAnim = 1; sfx(880, 0.06, 0.35, 'square'); }
+    if (dir === 'right' && lane < 2) { lane++; targetLane = lane; laneAnim = 1; sfx(930, 0.06, 0.35, 'square'); }
+  }
+
+  function tryClusterGrab(px, py) {
+    if (STATE !== 'play') return;
+    var grabR = Math.max(72, Math.min(W, H) * 0.12);
+    var hit = [];
+    var riftOk = shutterRiftOpen(lane) > 0.55;
+    for (var i = 0; i < beams.length; i++) {
+      var b = beams[i];
+      if (b.collected) continue;
+      if (Math.abs(lane - b.lane) > 0) continue;
+      var ox = laneX(b.lane) + Math.sin(b.phase + timeAlive * 2) * 6;
+      var dy = py - (H * 0.72 + b.y);
+      if (Math.abs(px - ox) < grabR * 0.55 && dy > -grabR && dy < grabR * 0.35) {
+        if (riftOk) hit.push(b);
+      }
+    }
+    if (hit.length >= 2 && riftOk) {
+      var bonus = Math.floor(hit.length * 14 + combo * 2);
+      combo += hit.length;
+      for (var j = 0; j < hit.length; j++) {
+        hit[j].collected = true;
+      }
+      score += bonus;
+      meter = Math.min(1, meter + 0.04 * hit.length);
+      scoreEl.textContent = String(score);
+      addParticles(px, py + 20, Math.min(32, 8 + hit.length * 6), 'rgba(255,220,150,1)');
+      sfx(640 + hit.length * 40, 0.14, 0.65, 'sine');
+      buzz(14);
+      return;
+    }
+    if (hit.length === 1 && riftOk) {
+      hit[0].collected = true;
+      combo++;
+      var gOne = Math.floor(10 + combo * 0.6);
+      score += gOne;
+      meter = Math.min(1, meter + 0.028 + shutterRiftOpen(lane) * 0.01);
+      scoreEl.textContent = String(score);
+      addParticles(px, py + 20, 14, 'rgba(255,220,180,1)');
+      sfx(700, 0.1, 0.42, 'sine');
+      buzz(12);
+      return;
+    }
+    if (!riftOk || hit.length === 0) {
+      combo = 0;
+      meter = Math.max(0, meter - 0.03);
+      sfx(240, 0.08, 0.35, 'square');
+      return;
+    }
+  }
+
+  function shutterRiftOpen(l) {
+    var open = 1;
+    for (var i = 0; i < shutters.length; i++) {
+      var s = shutters[i];
+      if (!s.really) continue;
+      if (s.lane !== l) continue;
+      var t = timeAlive;
+      if (t >= s.warn && t < s.warn + s.closesAt) open *= 1 - easeInQuad((t - s.warn) / s.closesAt);
+      else if (t >= s.warn + s.closesAt && t < s.warn + s.closesAt + 1.05) open *= 0.15 + 0.85 * pulse(t - (s.warn + s.closesAt));
+      else open *= 1;
+    }
+    var drift = driftIntensity();
+    return open * (1 - drift * 0.28);
+  }
+
+  function pulse(t) {
+    return 0.5 + 0.5 * Math.sin(t * 11);
+  }
+
+  function easeInQuad(x) {
+    return x * x;
+  }
+
+  var touchSx = 0, touchSy = 0, touchT = 0;
+
+  function onTouchStart(e) {
+    e.preventDefault();
+    var tch = e.touches && e.touches[0] ? e.touches[0] : (e.changedTouches && e.changedTouches[0]);
+    if (tch) {
+      touchSx = tch.clientX;
+      touchSy = tch.clientY;
+      touchT = performance.now();
+    }
+  }
+  function onTouchEnd(e) {
+    e.preventDefault();
+    if (STATE === 'title' || STATE === 'over') return;
+    if (!e.changedTouches || !e.changedTouches[0]) return;
+    var t = e.changedTouches[0];
+    var dx = t.clientX - touchSx;
+    var dy = t.clientY - touchSy;
+    var dt = performance.now() - touchT;
+    if (dt < 240 && Math.abs(dx) < 14 && Math.abs(dy) < 14) {
+      tryClusterGrab(touchSx, touchSy);
+      return;
+    }
+    if (Math.abs(dx) > Math.abs(dy) && Math.abs(dx) > 28) {
+      nudgeLane(dx < 0 ? 'left' : 'right');
+    }
+  }
+
+  function onMouseDown(e) {
+    if (e.button !== 0) return;
+    touchSx = e.clientX;
+    touchSy = e.clientY;
+    touchT = performance.now();
+  }
+  function onMouseUp(e) {
+    if (e.button !== 0) return;
+    if (STATE === 'title' || STATE === 'over') return;
+    var dx = e.clientX - touchSx;
+    var dy = e.clientY - touchSy;
+    var dt = performance.now() - touchT;
+    if (dt < 280 && Math.abs(dx) < 12 && Math.abs(dy) < 12) {
+      tryClusterGrab(touchSx, touchSy);
+      return;
+    }
+    if (Math.abs(dx) > 24) nudgeLane(dx < 0 ? 'left' : 'right');
+  }
+
+  document.addEventListener('keydown', function (e) {
+    if (STATE === 'title' && (e.code === 'Enter' || e.code === 'Space')) {
+      e.preventDefault();
+      startPlay();
+      return;
+    }
+    if (STATE === 'over' && (e.code === 'Enter' || e.code === 'Space')) {
+      e.preventDefault();
+      startPlay();
+      return;
+    }
+    if (STATE !== 'play') return;
+    if (e.code === 'ArrowLeft' || e.code === 'KeyA') { e.preventDefault(); nudgeLane('left'); }
+    if (e.code === 'ArrowRight' || e.code === 'KeyD') { e.preventDefault(); nudgeLane('right'); }
+    if (e.code === 'Space') { e.preventDefault(); tryClusterGrab(playerX, H * 0.72); }
+  });
+
+  canvas.addEventListener('touchstart', onTouchStart, { passive: false });
+  canvas.addEventListener('touchend', onTouchEnd, { passive: false });
+  canvas.addEventListener('mousedown', onMouseDown);
+  window.addEventListener('mouseup', onMouseUp);
+
+  document.getElementById('btnStart').addEventListener('click', function () { startPlay(); });
+  document.getElementById('btnAgain').addEventListener('click', function () { startPlay(); });
+
+  var lastT = 0;
+  function tick(now) {
+    var tsec = now / 1000;
+    var dt = lastT ? Math.min(0.05, tsec - lastT) : 0.016;
+    lastT = tsec;
+
+    if (STATE === 'play') {
+      timeAlive += dt;
+      var drain = 0.019 + timeAlive * 0.00035;
+      meter -= drain * dt;
+      if (meter <= 0) { meter = 0; gameOver(); }
+
+      if (STATE !== 'play') {
+        meterFill.style.transform = 'scaleX(' + Math.max(0, Math.min(1, meter)) + ')';
+        drawScene();
+        requestAnimationFrame(tick);
+        return;
+      }
+
+      var tx = laneX(lane);
+      playerX += (tx - playerX) * (1 - Math.pow(0.001, dt * 60));
+      if (laneAnim > 0) laneAnim = Math.max(0, laneAnim - dt * 5);
+
+      nextBeam -= dt;
+      var bpace = Math.max(0.28, 0.85 - timeAlive * 0.012);
+      if (nextBeam <= 0) {
+        spawnBeam();
+        if (Math.random() < 0.35 + Math.min(0.35, timeAlive / 90)) spawnBeam();
+        nextBeam = bpace * (0.7 + Math.random() * 0.7);
+      }
+      nextThorn -= dt;
+      if (nextThorn <= 0) {
+        spawnThorn();
+        nextThorn = 1.7 - Math.min(0.95, timeAlive * 0.018) + Math.random() * 0.5;
+      }
+      nextShut -= dt;
+      if (nextShut <= 0) {
+        planShutter();
+        nextShut = 2.9 - Math.min(1.2, timeAlive * 0.025) + Math.random() * 1.4;
+      }
+
+      var py = H * 0.72;
+      var pr = Math.max(18, Math.min(W, H) * 0.038);
+      for (var bi = beams.length - 1; bi >= 0; bi--) {
+        var b = beams[bi];
+        b.y += b.vy * dt;
+        b.phase += dt * 3;
+        if (b.collected) { beams.splice(bi, 1); continue; }
+        var bx = laneX(b.lane) + Math.sin(b.phase) * 5;
+        var by = py + b.y;
+        var r = b.size * 0.5;
+        if (b.lane === lane && Math.hypot(bx - playerX, by - py) < pr + r) {
+          var ro = shutterRiftOpen(lane);
+          if (ro > 0.45) {
+            b.collected = true;
+            var gain = Math.floor(8 + combo * 0.5 + ro * 6);
+            score += gain;
+            combo++;
+            meter = Math.min(1, meter + 0.018 + ro * 0.012);
+            scoreEl.textContent = String(score);
+            addParticles(bx, by, 10);
+            sfx(720 + combo * 6, 0.08, 0.5, 'triangle');
+            if (combo % 5 === 0) buzz(18);
+          }
+        }
+        if (b.y > H) beams.splice(bi, 1);
+      }
+
+      for (var ti = thorns.length - 1; ti >= 0; ti--) {
+        var th = thorns[ti];
+        th.y += (110 + timeAlive * 1.5) * dt;
+        var thx = laneX(th.lane);
+        var thy = py + th.y;
+        if (!th.hit && th.lane === lane && Math.abs(thy - py) < pr + 10) {
+          th.hit = true;
+          meter -= 0.18;
+          combo = 0;
+          addParticles(playerX, py, 14, 'rgba(232,93,79,0.9)');
+          sfx(160, 0.2, 0.55, 'sawtooth');
+          buzz([0, 30, 40, 30]);
+          if (meter <= 0) { meter = 0; gameOver(); }
+        }
+        if (th.y > H) thorns.splice(ti, 1);
+      }
+
+      if (STATE !== 'play') {
+        meterFill.style.transform = 'scaleX(' + Math.max(0, Math.min(1, meter)) + ')';
+        drawScene();
+        requestAnimationFrame(tick);
+        return;
+      }
+
+      for (var si = shutters.length - 1; si >= 0; si--) {
+        var sh = shutters[si];
+        if (timeAlive > sh.warn + sh.closesAt + 1.15) shutters.splice(si, 1);
+        else if (sh.really && !sh.dealt && timeAlive >= sh.warn + sh.closesAt) {
+          sh.dealt = 1;
+          if (lane === sh.lane) {
+            meter -= 0.22;
+            combo = 0;
+            sfx(100, 0.22, 0.6, 'square');
+            buzz(50);
+            if (meter <= 0) { meter = 0; gameOver(); }
+          }
+        }
+      }
+
+      if (STATE !== 'play') {
+        meterFill.style.transform = 'scaleX(' + Math.max(0, Math.min(1, meter)) + ')';
+        drawScene();
+        requestAnimationFrame(tick);
+        return;
+      }
+
+      for (var pi = parts.length - 1; pi >= 0; pi--) {
+        var p = parts[pi];
+        p.t -= dt;
+        p.x += p.vx * dt;
+        p.y += p.vy * dt;
+        p.vy += 120 * dt;
+        if (p.t <= 0) parts.splice(pi, 1);
+      }
+      meterFill.style.transform = 'scaleX(' + Math.max(0, Math.min(1, meter)) + ')';
+    }
+
+    drawScene();
+    requestAnimationFrame(tick);
+  }
+
+  function drawScene() {
+    var isLight = window.matchMedia && window.matchMedia('(prefers-color-scheme: light)').matches;
+    var skyTop = isLight ? '#c5d8e4' : '#0e1c24';
+    var skyBot = isLight ? '#eef4f6' : '#12262e';
+    var g = ctx.createLinearGradient(0, 0, 0, H);
+    g.addColorStop(0, skyTop);
+    g.addColorStop(0.45, skyBot);
+    g.addColorStop(1, isLight ? '#dce8ea' : '#0a1619');
+    ctx.fillStyle = g;
+    ctx.fillRect(0, 0, W, H);
+
+    var sunGy = ctx.createRadialGradient(W * 0.55, -H * 0.06, 0, W * 0.52, H * 0.15, Math.max(W, H) * 0.55);
+    sunGy.addColorStop(0, isLight ? 'rgba(255,200,140,0.55)' : 'rgba(255,160,112,0.35)');
+    sunGy.addColorStop(0.5, 'rgba(255,120,88,0.12)');
+    sunGy.addColorStop(1, 'rgba(255,160,122,0)');
+    ctx.fillStyle = sunGy;
+    ctx.fillRect(0, 0, W, H);
+
+    ctx.save();
+    ctx.globalCompositeOperation = 'screen';
+    for (var f = 0; f < 4; f++) {
+      ctx.fillStyle = isLight ? 'rgba(230,238,246,0.08)' : 'rgba(210,226,238,0.06)';
+      var fx = Math.sin(timeAlive * (0.2 + f * 0.06) + f) * W * 0.04;
+      var fy = (timeAlive * (18 + f * 6)) % (H * 0.5);
+      ctx.beginPath();
+      ctx.ellipse(W * (0.2 + f * 0.18) + fx, fy, W * 0.35 + f * 20, H * 0.06, 0, 0, 6.283);
+      ctx.fill();
+    }
+    ctx.restore();
+
+    var pad = W * 0.08;
+    for (var l = 0; l < 3; l++) {
+      ctx.strokeStyle = isLight ? 'rgba(70,110,130,0.12)' : 'rgba(180,215,218,0.07)';
+      ctx.lineWidth = 2;
+      var lx = pad + ((W - pad * 2) / 3) * (l + 0.5);
+      ctx.beginPath();
+      ctx.setLineDash([6, 10]);
+      ctx.moveTo(lx, 0);
+      ctx.lineTo(lx, H);
+      ctx.stroke();
+      ctx.setLineDash([]);
+      var rf = shutterRiftOpen(l);
+      var fogA = driftIntensity();
+      ctx.fillStyle = isLight ? 'rgba(255,252,246,' + String(0.18 + fogA * 0.32) + ')' :
+        'rgba(24,42,54,' + String(0.22 + fogA * 0.38) + ')';
+      ctx.fillRect(laneX(l) - (W - pad * 2) / 6, 0, (W - pad * 2) / 3, H);
+      var clip = rf;
+      ctx.save();
+      ctx.globalAlpha = 0.92;
+      ctx.fillStyle = clip > 0.7 ? 'rgba(120,200,165,' + String(clip * (isLight ? 0.12 : 0.15)) + ')' :
+        'rgba(200,215,226,' + String((1 - clip) * (isLight ? 0.08 : 0.06)) + ')';
+      ctx.fillRect(laneX(l) - (W - pad * 2) / 6 + 6, H * 0.18, (W - pad * 2) / 3 - 12, H * 0.62);
+      ctx.restore();
+      for (var si2 = 0; si2 < shutters.length; si2++) {
+        var sh = shutters[si2];
+        if (sh.lane !== l) continue;
+        var t = timeAlive;
+        if (t < sh.warn) {
+          ctx.fillStyle = sh.really ? 'rgba(255,200,120,' + String(0.15 + pulse(t + sh.skew) * 0.06) + ')' :
+            'rgba(230,236,238,' + String(0.08 + pulse(t + sh.skew) * 0.06) + ')';
+          var ww = laneX(l) - (W - pad * 2) / 6;
+          ctx.fillRect(ww, H * 0.2, (W - pad * 2) / 3, H * 0.62);
+          ctx.strokeStyle = sh.really ? 'rgba(255,150,92,0.45)' : 'rgba(210,218,226,0.28)';
+          ctx.lineWidth = 2;
+          ctx.strokeRect(ww + 8, H * 0.24, (W - pad * 2) / 3 - 16, H * 0.54);
+        } else if (t < sh.warn + sh.closesAt && sh.really) {
+          ctx.fillStyle = 'rgba(40,170,225,' + String(0.18 + pulse(t + sh.skew) * 0.12) + ')';
+          ctx.fillRect(laneX(l) - (W - pad * 2) / 6 + sh.skew, H * 0.52, (W - pad * 2) / 3, H * 0.14);
+        } else if (t < sh.warn + sh.closesAt && !sh.really) {
+          ctx.strokeStyle = 'rgba(230,238,246,0.22)';
+          ctx.strokeRect(laneX(l) - (W - pad * 2) / 6, H * 0.24, (W - pad * 2) / 3, H * 0.56);
+        } else if (t < sh.warn + sh.closesAt + 0.42 && !sh.really) {
+          ctx.fillStyle = 'rgba(246,246,246,0.14)';
+          ctx.fillRect(laneX(l) - (W - pad * 2) / 6, H * 0.25, (W - pad * 2) / 3, H * 0.55);
+        }
+      }
+    }
+
+    ctx.save();
+    ctx.globalCompositeOperation = 'lighter';
+    for (var bi2 = 0; bi2 < beams.length; bi2++) {
+      var b2 = beams[bi2];
+      if (b2.collected) continue;
+      var bx2 = laneX(b2.lane) + Math.sin(b2.phase) * 5;
+      var by2 = H * 0.72 + b2.y;
+      var roff = shutterRiftOpen(b2.lane);
+      var halo = ctx.createRadialGradient(bx2, by2, 0, bx2, by2, b2.size * (0.85 + roff));
+      halo.addColorStop(0, isLight ? 'rgba(255,200,92,1)' : 'rgba(255,236,172,1)');
+      halo.addColorStop(0.5, 'rgba(255,180,120,' + String(0.35 + roff * 0.25) + ')');
+      halo.addColorStop(1, 'rgba(255,230,168,0)');
+      ctx.globalAlpha = 0.65 + roff * 0.32;
+      ctx.fillStyle = halo;
+      ctx.beginPath();
+      ctx.arc(bx2, by2, b2.size, 0, 6.283);
+      ctx.fill();
+    }
+    ctx.restore();
+
+    for (var ti2 = 0; ti2 < thorns.length; ti2++) {
+      var th2 = thorns[ti2];
+      var tcx = laneX(th2.lane);
+      var tcy = H * 0.72 + th2.y;
+      ctx.save();
+      ctx.translate(tcx + Math.sin(th2.seed + timeAlive * 4) * 3, tcy);
+      ctx.rotate(Math.sin(th2.seed) * 0.35);
+      ctx.fillStyle = isLight ? '#3a5260' : '#6a8490';
+      ctx.beginPath();
+      ctx.moveTo(0, -12);
+      ctx.lineTo(-8, 9);
+      ctx.lineTo(8, 9);
+      ctx.closePath();
+      ctx.fill();
+      ctx.restore();
+    }
+
+    var py2 = H * 0.72;
+    var pr2 = Math.max(18, Math.min(W, H) * 0.038);
+    ctx.save();
+    ctx.translate(playerX, py2);
+    var pg = ctx.createRadialGradient(0, 0, 0, 0, 0, pr2 * 1.8);
+    pg.addColorStop(0, isLight ? 'rgba(255,240,215,1)' : 'rgba(255,230,205,1)');
+    pg.addColorStop(0.5, 'rgba(255,150,118,0.35)');
+    pg.addColorStop(1, 'rgba(255,200,156,0)');
+    ctx.fillStyle = pg;
+    ctx.beginPath();
+    ctx.arc(0, 0, pr2 * 1.65, 0, 6.283);
+    ctx.fill();
+    ctx.fillStyle = isLight ? 'rgba(60,105,126,1)' : 'rgba(200,226,238,1)';
+    ctx.strokeStyle = isLight ? 'rgba(240,246,249,1)' : 'rgba(255,255,255,0.92)';
+    ctx.lineWidth = 3;
+    ctx.beginPath();
+    ctx.moveTo(0, -pr2 * 0.95);
+    ctx.lineTo(-pr2 * 0.74, pr2 * 0.58);
+    ctx.lineTo(pr2 * 0.74, pr2 * 0.58);
+    ctx.closePath();
+    ctx.fill();
+    ctx.stroke();
+    ctx.restore();
+
+    for (var pi2 = 0; pi2 < parts.length; pi2++) {
+      var p2 = parts[pi2];
+      ctx.globalAlpha = Math.max(0, p2.t * 3);
+      ctx.fillStyle = p2.color || '#ffe8aa';
+      ctx.beginPath();
+      ctx.arc(p2.x, p2.y, 2.5 + p2.t * 3, 0, 6.283);
+      ctx.fill();
+      ctx.globalAlpha = 1;
+    }
+
+    if (STATE !== 'title') return;
+    ctx.fillStyle = 'rgba(0,0,0,0.18)';
+    ctx.fillRect(0, 0, W, H);
+  }
+
+  requestAnimationFrame(tick);
+
+  canvas.focus && canvas.setAttribute('tabindex', '-1');
+})();
+  </script>
+</body>
+</html>

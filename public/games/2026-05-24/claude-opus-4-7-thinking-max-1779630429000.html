@@ -1,0 +1,1694 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="theme-color" content="#14100c" media="(prefers-color-scheme: dark)">
+<meta name="theme-color" content="#e8dcc4" media="(prefers-color-scheme: light)">
+<title>STRATA — Vent Drawing</title>
+<style>
+  :root {
+    --bg: #14100c;
+    --bg2: #1f1812;
+    --fg: #f0e0c0;
+    --fg-dim: #8a7860;
+    --accent: #ffa340;
+    --accent2: #b06a20;
+    --accent3: #ffcc77;
+    --danger: #d94934;
+    --line: #3a2d22;
+    --node-core: #fff5d5;
+    --shale-1: #1a1410;
+    --shale-2: #221912;
+    --shale-3: #2d2218;
+    --scribble: rgba(255,200,150,0.04);
+    --vignette: rgba(0,0,0,0.55);
+  }
+  @media (prefers-color-scheme: light) {
+    :root {
+      --bg: #ece1c4;
+      --bg2: #d8cba8;
+      --fg: #2a1f14;
+      --fg-dim: #6e5a40;
+      --accent: #a05418;
+      --accent2: #6c360a;
+      --accent3: #c8761c;
+      --danger: #962e18;
+      --line: #b8a682;
+      --node-core: #f8eac8;
+      --shale-1: #ddcfae;
+      --shale-2: #cdbf9c;
+      --shale-3: #bdb088;
+      --scribble: rgba(70,40,15,0.07);
+      --vignette: rgba(40,25,10,0.18);
+    }
+  }
+
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  html, body {
+    width: 100dvw; height: 100dvh;
+    overflow: hidden;
+    background: var(--bg);
+    color: var(--fg);
+    font-family: ui-monospace, 'SFMono-Regular', Menlo, Consolas, monospace;
+    -webkit-text-size-adjust: 100%;
+    -webkit-touch-callout: none;
+    -webkit-tap-highlight-color: transparent;
+    overscroll-behavior: none;
+  }
+  #app {
+    position: fixed; inset: 0;
+    user-select: none; -webkit-user-select: none;
+    touch-action: none;
+    overflow: hidden;
+  }
+  canvas {
+    position: absolute; inset: 0;
+    width: 100%; height: 100%;
+    touch-action: none;
+    display: block;
+  }
+
+  /* HUD */
+  .hud {
+    position: absolute;
+    top: 0; left: 0; right: 0;
+    padding: max(env(safe-area-inset-top, 8px), 14px) 18px 8px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    pointer-events: none;
+    font-size: 11px;
+    letter-spacing: 0.18em;
+    text-transform: uppercase;
+    color: var(--fg-dim);
+    z-index: 10;
+  }
+  .hud .item { display: flex; align-items: baseline; gap: 8px; }
+  .hud .label { opacity: 0.55; }
+  .hud .val {
+    color: var(--fg);
+    font-weight: 500;
+    font-variant-numeric: tabular-nums;
+    transition: color 0.15s, transform 0.15s;
+    display: inline-block;
+  }
+  .hud .val.flash {
+    color: var(--accent);
+    transform: scale(1.18);
+  }
+  .struts { display: flex; gap: 6px; align-items: center; }
+  .strut {
+    width: 9px; height: 9px;
+    background: var(--accent);
+    transform: rotate(45deg);
+    box-shadow: 0 0 6px var(--accent);
+    transition: opacity 0.25s, background 0.25s, box-shadow 0.25s;
+  }
+  .strut.off {
+    background: transparent;
+    border: 1px solid var(--line);
+    box-shadow: none;
+  }
+  .strut.snapping {
+    animation: snap 0.4s ease-out forwards;
+  }
+  @keyframes snap {
+    0% { background: var(--danger); box-shadow: 0 0 12px var(--danger); transform: rotate(45deg) scale(1.4); }
+    100% { background: transparent; box-shadow: none; transform: rotate(45deg) scale(1); border: 1px solid var(--line); }
+  }
+
+  /* Timer bar */
+  .timer {
+    position: absolute;
+    bottom: max(env(safe-area-inset-bottom, 14px), 18px);
+    left: 18px; right: 18px;
+    height: 3px;
+    background: var(--line);
+    pointer-events: none;
+    z-index: 10;
+    border-radius: 2px;
+    overflow: hidden;
+  }
+  .timer-fill {
+    position: absolute; top: 0; left: 0; bottom: 0;
+    background: var(--accent);
+    width: 100%;
+    transition: background 0.2s, box-shadow 0.2s;
+    transform-origin: left center;
+  }
+  .timer-fill.warn {
+    background: var(--danger);
+    box-shadow: 0 0 10px var(--danger);
+  }
+  .timer-fill.idle {
+    background: var(--fg-dim);
+    opacity: 0.5;
+  }
+  .timer-label {
+    position: absolute;
+    bottom: max(env(safe-area-inset-bottom, 14px), 18px);
+    left: 18px;
+    transform: translateY(-14px);
+    font-size: 10px;
+    letter-spacing: 0.22em;
+    color: var(--fg-dim);
+    text-transform: uppercase;
+    pointer-events: none;
+    z-index: 10;
+  }
+  .timer-label.right { left: auto; right: 18px; }
+
+  /* Overlays */
+  .overlay {
+    position: absolute; inset: 0;
+    display: flex; flex-direction: column;
+    justify-content: center; align-items: center;
+    padding: 28px 24px;
+    z-index: 20;
+    background: color-mix(in srgb, var(--bg) 78%, transparent);
+    -webkit-backdrop-filter: blur(10px);
+    backdrop-filter: blur(10px);
+    animation: fadeIn 0.3s ease-out;
+  }
+  .overlay.hidden { display: none; }
+  @keyframes fadeIn {
+    from { opacity: 0; }
+    to { opacity: 1; }
+  }
+  .panel {
+    max-width: 380px;
+    width: 100%;
+    text-align: center;
+    display: flex; flex-direction: column;
+    align-items: center; gap: 18px;
+  }
+  .tag {
+    font-size: 11px;
+    letter-spacing: 0.4em;
+    text-transform: uppercase;
+    color: var(--fg-dim);
+  }
+  .tag .dot {
+    display: inline-block;
+    width: 6px; height: 6px;
+    background: var(--accent);
+    transform: rotate(45deg);
+    margin: 0 8px 1px;
+    vertical-align: middle;
+  }
+  h1 {
+    font-size: clamp(56px, 18vw, 96px);
+    line-height: 0.9;
+    letter-spacing: -0.05em;
+    font-weight: 800;
+    color: var(--fg);
+  }
+  h1 .accent { color: var(--accent); }
+  h2 {
+    font-size: clamp(64px, 22vw, 120px);
+    line-height: 0.85;
+    letter-spacing: -0.05em;
+    font-weight: 800;
+    color: var(--accent);
+    font-variant-numeric: tabular-nums;
+  }
+  .desc {
+    font-size: 13px;
+    line-height: 1.65;
+    color: var(--fg-dim);
+    max-width: 320px;
+  }
+  .desc strong {
+    color: var(--fg);
+    font-weight: 500;
+  }
+  .hint-list {
+    display: flex; flex-direction: column;
+    gap: 8px; text-align: left;
+    font-size: 12px; color: var(--fg-dim);
+    max-width: 300px;
+    line-height: 1.5;
+    margin: 4px 0;
+  }
+  .hint-list li {
+    list-style: none;
+    padding-left: 20px;
+    position: relative;
+  }
+  .hint-list li::before {
+    content: '';
+    position: absolute; left: 0; top: 7px;
+    width: 7px; height: 7px;
+    background: var(--accent);
+    transform: rotate(45deg);
+  }
+  .hint-list .seam::before { background: var(--danger); }
+  button {
+    background: transparent;
+    border: 1px solid var(--accent);
+    color: var(--accent);
+    padding: 16px 36px;
+    font-family: inherit;
+    font-size: 12px;
+    letter-spacing: 0.32em;
+    text-transform: uppercase;
+    cursor: pointer;
+    border-radius: 0;
+    min-height: 50px;
+    min-width: 220px;
+    transition: background 0.15s, color 0.15s, transform 0.1s;
+    font-weight: 500;
+    margin-top: 8px;
+    -webkit-tap-highlight-color: transparent;
+  }
+  button:hover { background: var(--accent); color: var(--bg); }
+  button:active { transform: translateY(1px); }
+  button:focus { outline: none; }
+  button:focus-visible { box-shadow: 0 0 0 2px var(--accent3); }
+
+  .stats {
+    display: flex; gap: 24px;
+    font-size: 11px; color: var(--fg-dim);
+    text-transform: uppercase; letter-spacing: 0.22em;
+  }
+  .stats .v {
+    color: var(--fg);
+    font-variant-numeric: tabular-nums;
+    margin-right: 4px;
+  }
+
+  /* Center floating message */
+  .center-msg {
+    position: absolute; inset: 0;
+    display: flex; align-items: center; justify-content: center;
+    pointer-events: none;
+    z-index: 5;
+    opacity: 0;
+    transition: opacity 0.25s ease-out;
+    padding: 30px;
+  }
+  .center-msg.show { opacity: 1; }
+  .center-msg .col {
+    display: flex; flex-direction: column;
+    align-items: center; gap: 6px;
+    transform: translateY(-20px);
+  }
+  .center-msg .big {
+    font-size: clamp(34px, 11vw, 56px);
+    color: var(--accent);
+    font-weight: 800;
+    letter-spacing: -0.03em;
+    line-height: 1;
+    font-variant-numeric: tabular-nums;
+    text-shadow: 0 0 24px color-mix(in srgb, var(--accent) 50%, transparent);
+  }
+  .center-msg.danger .big { color: var(--danger); text-shadow: 0 0 24px color-mix(in srgb, var(--danger) 50%, transparent); }
+  .center-msg .small {
+    font-size: 12px;
+    color: var(--fg-dim);
+    letter-spacing: 0.3em;
+    text-transform: uppercase;
+  }
+
+  .hidden { display: none !important; }
+</style>
+</head>
+<body>
+<div id="app">
+  <canvas id="game"></canvas>
+
+  <div class="hud hidden" id="hud">
+    <div class="item">
+      <span class="label">Room</span>
+      <span class="val" id="roomEl">01</span>
+    </div>
+    <div class="struts" id="struts"></div>
+    <div class="item">
+      <span class="label">Score</span>
+      <span class="val" id="scoreEl">0000</span>
+    </div>
+  </div>
+
+  <div class="timer-label hidden" id="leftLabel">Tap to vent</div>
+  <div class="timer-label right hidden" id="rightLabel">0/0</div>
+  <div class="timer hidden" id="timer">
+    <div class="timer-fill" id="timerFill"></div>
+  </div>
+
+  <div class="center-msg" id="centerMsg">
+    <div class="col">
+      <div id="centerBig" class="big">+100</div>
+      <div id="centerSmall" class="small">ROOM CLEARED</div>
+    </div>
+  </div>
+
+  <div class="overlay" id="titleScreen">
+    <div class="panel">
+      <div class="tag">PROJECT VENT<span class="dot"></span>STRATA</div>
+      <h1>STR<span class="accent">A</span>TA</h1>
+      <p class="desc">Trapped air pockets in the shale. Trace a <strong>single path</strong> through every glowing node before the shell seals.</p>
+      <ul class="hint-list">
+        <li>Drag your finger through every pressure node.</li>
+        <li class="seam">Cross a red seam &mdash; a strut snaps.</li>
+        <li>Lift to validate. Three snaps and you're sealed in.</li>
+      </ul>
+      <button id="startBtn">DROP IN</button>
+    </div>
+  </div>
+
+  <div class="overlay hidden" id="gameOverScreen">
+    <div class="panel">
+      <div class="tag" id="gameOverTag">SHELL COLLAPSED</div>
+      <h2 id="finalScore">0</h2>
+      <div class="stats">
+        <div><span class="v" id="finalRooms">0</span>ROOMS</div>
+        <div><span class="v" id="finalStreak">0</span>BEST CHAIN</div>
+      </div>
+      <p class="desc" id="gameOverDesc">The shale shifted before your last breath escaped. Drop in again.</p>
+      <button id="restartBtn">DESCEND AGAIN</button>
+    </div>
+  </div>
+</div>
+
+<script>
+(() => {
+  'use strict';
+
+  // ============================================================
+  // Setup
+  // ============================================================
+  const canvas = document.getElementById('game');
+  const ctx = canvas.getContext('2d', { alpha: false });
+  let DPR = Math.min(window.devicePixelRatio || 1, 2);
+  let W = 0, H = 0;
+
+  function getCSS(name) {
+    return getComputedStyle(document.documentElement).getPropertyValue('--' + name).trim();
+  }
+
+  let isDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
+  let palette = {};
+  function refreshPalette() {
+    palette = {
+      bg: getCSS('bg'),
+      bg2: getCSS('bg2'),
+      fg: getCSS('fg'),
+      fgDim: getCSS('fg-dim'),
+      accent: getCSS('accent'),
+      accent2: getCSS('accent2'),
+      accent3: getCSS('accent3'),
+      danger: getCSS('danger'),
+      line: getCSS('line'),
+      nodeCore: getCSS('node-core'),
+      shale1: getCSS('shale-1'),
+      shale2: getCSS('shale-2'),
+      shale3: getCSS('shale-3'),
+    };
+  }
+
+  let shaleTex = null;
+  function resize() {
+    const w = Math.max(1, window.innerWidth);
+    const h = Math.max(1, window.innerHeight);
+    DPR = Math.min(window.devicePixelRatio || 1, 2);
+    canvas.width = Math.round(w * DPR);
+    canvas.height = Math.round(h * DPR);
+    canvas.style.width = w + 'px';
+    canvas.style.height = h + 'px';
+    ctx.setTransform(DPR, 0, 0, DPR, 0, 0);
+    W = w; H = h;
+    shaleTex = makeShaleTexture(Math.max(W, 600), Math.max(H, 800));
+  }
+
+  window.addEventListener('resize', resize);
+  window.addEventListener('orientationchange', () => setTimeout(resize, 50));
+  try {
+    window.matchMedia('(prefers-color-scheme: dark)').addEventListener('change', (e) => {
+      isDark = e.matches;
+      refreshPalette();
+      shaleTex = makeShaleTexture(Math.max(W, 600), Math.max(H, 800));
+    });
+  } catch (e) { /* older Safari */ }
+
+  refreshPalette();
+  resize();
+
+  // ============================================================
+  // Audio (Web Audio synth)
+  // ============================================================
+  let audioCtx = null;
+  let masterGain = null;
+  function getAudio() {
+    if (!audioCtx) {
+      try {
+        const AC = window.AudioContext || window.webkitAudioContext;
+        if (!AC) return null;
+        audioCtx = new AC();
+        masterGain = audioCtx.createGain();
+        masterGain.gain.value = 0.45;
+        masterGain.connect(audioCtx.destination);
+      } catch (e) { return null; }
+    }
+    if (audioCtx.state === 'suspended') {
+      try { audioCtx.resume(); } catch (e) {}
+    }
+    return audioCtx;
+  }
+
+  function tone(freq, dur, type = 'sine', vol = 0.1, attack = 0.005) {
+    const ac = getAudio(); if (!ac) return;
+    try {
+      const o = ac.createOscillator();
+      const g = ac.createGain();
+      o.type = type;
+      o.frequency.value = freq;
+      o.connect(g); g.connect(masterGain);
+      const now = ac.currentTime;
+      g.gain.setValueAtTime(0.0001, now);
+      g.gain.linearRampToValueAtTime(vol, now + attack);
+      g.gain.exponentialRampToValueAtTime(0.0001, now + dur);
+      o.start(now);
+      o.stop(now + dur + 0.05);
+    } catch (e) {}
+  }
+
+  function noise(dur, vol = 0.1, filterFreq = 1500, filterType = 'highpass') {
+    const ac = getAudio(); if (!ac) return;
+    try {
+      const bufSize = Math.floor(ac.sampleRate * dur);
+      const buf = ac.createBuffer(1, bufSize, ac.sampleRate);
+      const d = buf.getChannelData(0);
+      for (let i = 0; i < bufSize; i++) {
+        d[i] = (Math.random() * 2 - 1) * (1 - i / bufSize);
+      }
+      const src = ac.createBufferSource();
+      src.buffer = buf;
+      const g = ac.createGain();
+      g.gain.value = vol;
+      const f = ac.createBiquadFilter();
+      f.type = filterType;
+      f.frequency.value = filterFreq;
+      src.connect(f); f.connect(g); g.connect(masterGain);
+      src.start();
+    } catch (e) {}
+  }
+
+  function vibe(p) {
+    try { navigator.vibrate?.(p); } catch (e) {}
+  }
+
+  // ============================================================
+  // Utilities
+  // ============================================================
+  function rand(a, b) { return a + Math.random() * (b - a); }
+  function randInt(a, b) { return Math.floor(a + Math.random() * (b - a + 1)); }
+  function clamp(v, a, b) { return v < a ? a : (v > b ? b : v); }
+  function dist(ax, ay, bx, by) {
+    const dx = bx - ax, dy = by - ay;
+    return Math.sqrt(dx * dx + dy * dy);
+  }
+
+  function segIntersect(p1, p2, p3, p4) {
+    const x1 = p1.x, y1 = p1.y, x2 = p2.x, y2 = p2.y;
+    const x3 = p3.x, y3 = p3.y, x4 = p4.x, y4 = p4.y;
+    const denom = (x2 - x1) * (y4 - y3) - (y2 - y1) * (x4 - x3);
+    if (Math.abs(denom) < 1e-9) return false;
+    const ua = ((x4 - x3) * (y1 - y3) - (y4 - y3) * (x1 - x3)) / denom;
+    const ub = ((x2 - x1) * (y1 - y3) - (y2 - y1) * (x1 - x3)) / denom;
+    return ua >= 0 && ua <= 1 && ub >= 0 && ub <= 1;
+  }
+
+  function distPtSeg(px, py, ax, ay, bx, by) {
+    const dx = bx - ax, dy = by - ay;
+    const l2 = dx * dx + dy * dy;
+    if (l2 === 0) return dist(px, py, ax, ay);
+    let t = ((px - ax) * dx + (py - ay) * dy) / l2;
+    t = clamp(t, 0, 1);
+    return dist(px, py, ax + t * dx, ay + t * dy);
+  }
+
+  // ============================================================
+  // Shale texture (cached offscreen canvas)
+  // ============================================================
+  function makeShaleTexture(w, h) {
+    const off = document.createElement('canvas');
+    off.width = w; off.height = h;
+    const c = off.getContext('2d');
+
+    c.fillStyle = palette.shale1;
+    c.fillRect(0, 0, w, h);
+
+    let y = 0;
+    while (y < h) {
+      const bandH = randInt(6, 38);
+      const choice = Math.random();
+      let col;
+      if (choice < 0.5) col = palette.shale1;
+      else if (choice < 0.85) col = palette.shale2;
+      else col = palette.shale3;
+      c.fillStyle = col;
+      c.globalAlpha = rand(0.35, 0.95);
+      c.fillRect(0, y, w, bandH);
+      y += bandH;
+    }
+    c.globalAlpha = 1;
+
+    const fleckCount = Math.floor((w * h) / 600);
+    for (let i = 0; i < fleckCount; i++) {
+      const x = Math.random() * w, yy = Math.random() * h;
+      const s = Math.random() < 0.85 ? 1 : 2;
+      const bright = Math.random() < 0.45;
+      if (isDark) {
+        c.fillStyle = bright
+          ? `rgba(255,220,170,${rand(0.03, 0.09)})`
+          : `rgba(8,4,2,${rand(0.18, 0.42)})`;
+      } else {
+        c.fillStyle = bright
+          ? `rgba(255,245,220,${rand(0.18, 0.42)})`
+          : `rgba(70,45,20,${rand(0.07, 0.18)})`;
+      }
+      c.fillRect(x, yy, s, s);
+    }
+
+    for (let i = 0; i < 48; i++) {
+      c.beginPath();
+      let x = Math.random() * w, yy = Math.random() * h;
+      c.moveTo(x, yy);
+      for (let j = 0; j < 6; j++) {
+        x += rand(-55, 55);
+        yy += rand(-16, 16);
+        c.lineTo(x, yy);
+      }
+      c.strokeStyle = isDark
+        ? `rgba(255,200,150,${rand(0.02, 0.05)})`
+        : `rgba(80,50,25,${rand(0.04, 0.09)})`;
+      c.lineWidth = rand(0.4, 1.2);
+      c.stroke();
+    }
+
+    const grad = c.createRadialGradient(
+      w / 2, h / 2, Math.min(w, h) * 0.28,
+      w / 2, h / 2, Math.max(w, h) * 0.72
+    );
+    grad.addColorStop(0, 'rgba(0,0,0,0)');
+    grad.addColorStop(1, isDark ? 'rgba(0,0,0,0.55)' : 'rgba(40,25,10,0.18)');
+    c.fillStyle = grad;
+    c.fillRect(0, 0, w, h);
+
+    return off;
+  }
+
+  // ============================================================
+  // Particles
+  // ============================================================
+  const particles = [];
+  const ambient = [];
+
+  function spawn(x, y, n, kind) {
+    for (let i = 0; i < n; i++) {
+      const p = {
+        x, y, vx: 0, vy: 0,
+        life: 1, maxLife: 1, size: 2,
+        color: palette.accent, gravity: 0, drag: 0.95,
+      };
+      if (kind === 'visit') {
+        const a = rand(0, Math.PI * 2);
+        const sp = rand(1, 3.5);
+        p.vx = Math.cos(a) * sp;
+        p.vy = Math.sin(a) * sp;
+        p.life = p.maxLife = rand(0.4, 0.8);
+        p.size = rand(1.6, 3.6);
+        p.color = `hsl(${rand(28, 44)}, 95%, ${rand(58, 72)}%)`;
+        p.drag = 0.92;
+      } else if (kind === 'vent') {
+        const a = rand(0, Math.PI * 2);
+        const sp = rand(2, 7);
+        p.vx = Math.cos(a) * sp;
+        p.vy = Math.sin(a) * sp;
+        p.life = p.maxLife = rand(0.6, 1.4);
+        p.size = rand(2, 5);
+        p.color = `hsl(${rand(25, 50)}, 90%, ${rand(58, 76)}%)`;
+        p.drag = 0.95;
+      } else if (kind === 'release') {
+        const a = rand(0, Math.PI * 2);
+        const sp = rand(1.5, 5);
+        p.vx = Math.cos(a) * sp;
+        p.vy = Math.sin(a) * sp;
+        p.life = p.maxLife = rand(0.8, 1.8);
+        p.size = rand(2, 6);
+        p.color = `hsl(${rand(28, 50)}, 85%, ${rand(60, 78)}%)`;
+        p.drag = 0.96;
+      } else if (kind === 'dust') {
+        p.vx = rand(-4, 4);
+        p.vy = rand(-4, 4);
+        p.life = p.maxLife = rand(0.6, 1.3);
+        p.size = rand(1, 2.5);
+        p.color = isDark ? `rgba(140,105,70,0.7)` : `rgba(70,45,25,0.55)`;
+        p.gravity = 0.15;
+        p.drag = 0.92;
+      } else if (kind === 'snap') {
+        const a = rand(0, Math.PI * 2);
+        const sp = rand(3, 9);
+        p.vx = Math.cos(a) * sp;
+        p.vy = Math.sin(a) * sp;
+        p.life = p.maxLife = rand(0.4, 1.0);
+        p.size = rand(2, 4.5);
+        p.color = `hsl(${rand(0, 22)}, 85%, ${rand(50, 65)}%)`;
+        p.drag = 0.93;
+      } else if (kind === 'trail') {
+        const a = rand(0, Math.PI * 2);
+        const sp = rand(0.3, 1.5);
+        p.vx = Math.cos(a) * sp;
+        p.vy = Math.sin(a) * sp;
+        p.life = p.maxLife = rand(0.25, 0.55);
+        p.size = rand(1, 2.2);
+        p.color = `hsl(${rand(28, 48)}, 92%, ${rand(58, 74)}%)`;
+        p.drag = 0.94;
+      }
+      particles.push(p);
+    }
+  }
+
+  function updateParticles(dt) {
+    for (let i = particles.length - 1; i >= 0; i--) {
+      const p = particles[i];
+      p.x += p.vx;
+      p.y += p.vy;
+      p.vy += p.gravity;
+      p.vx *= p.drag;
+      p.vy *= p.drag;
+      p.life -= dt;
+      if (p.life <= 0) particles.splice(i, 1);
+    }
+  }
+
+  function renderParticles(ctx) {
+    for (const p of particles) {
+      const t = p.life / p.maxLife;
+      ctx.globalAlpha = Math.max(0, Math.min(1, t));
+      ctx.fillStyle = p.color;
+      ctx.beginPath();
+      ctx.arc(p.x, p.y, Math.max(0.5, p.size * t), 0, Math.PI * 2);
+      ctx.fill();
+    }
+    ctx.globalAlpha = 1;
+  }
+
+  function updateAmbient(dt) {
+    while (ambient.length < 50) {
+      ambient.push({
+        x: Math.random() * W,
+        y: H + rand(0, 50),
+        vx: rand(-0.18, 0.18),
+        vy: rand(-0.4, -0.05),
+        size: rand(0.5, 1.8),
+        a: rand(0.06, 0.22),
+        phase: rand(0, Math.PI * 2),
+        spin: rand(0.5, 2),
+      });
+    }
+    for (let i = ambient.length - 1; i >= 0; i--) {
+      const a = ambient[i];
+      a.x += a.vx;
+      a.y += a.vy;
+      a.phase += dt * a.spin;
+      if (a.y < -20 || a.x < -20 || a.x > W + 20) {
+        ambient.splice(i, 1);
+      }
+    }
+  }
+
+  function renderAmbient(ctx) {
+    ctx.fillStyle = isDark ? '#ffd9a0' : '#5a3a1a';
+    for (const a of ambient) {
+      ctx.globalAlpha = a.a * (0.55 + Math.sin(a.phase) * 0.45);
+      ctx.fillRect(a.x, a.y, a.size, a.size);
+    }
+    ctx.globalAlpha = 1;
+  }
+
+  // ============================================================
+  // Score popups
+  // ============================================================
+  const pops = [];
+  function pushPop(x, y, txt, color, big) {
+    pops.push({
+      x, y, txt,
+      vy: -0.7,
+      life: 1.1, maxLife: 1.1,
+      color: color || palette.accent,
+      big: big || false,
+    });
+  }
+  function updatePops(dt) {
+    for (let i = pops.length - 1; i >= 0; i--) {
+      const p = pops[i];
+      p.y += p.vy;
+      p.vy *= 0.96;
+      p.life -= dt;
+      if (p.life <= 0) pops.splice(i, 1);
+    }
+  }
+  function renderPops(ctx) {
+    ctx.textAlign = 'center';
+    ctx.textBaseline = 'middle';
+    for (const p of pops) {
+      const t = p.life / p.maxLife;
+      ctx.globalAlpha = Math.max(0, t);
+      ctx.fillStyle = p.color;
+      ctx.font = p.big
+        ? '700 22px ui-monospace, monospace'
+        : '600 14px ui-monospace, monospace';
+      ctx.fillText(p.txt, p.x, p.y);
+    }
+    ctx.globalAlpha = 1;
+  }
+
+  // ============================================================
+  // Room
+  // ============================================================
+  function getBounds() {
+    const top = 64;
+    const bot = H - 56;
+    const side = 20;
+    return { x: side, y: top, w: W - side * 2, h: bot - top };
+  }
+
+  class Room {
+    constructor(idx) {
+      this.idx = idx;
+      this.nodes = [];
+      this.seams = [];
+      this.cracks = [];
+      this.time = 0;
+      this.started = false;
+      this.preTimer = 0;
+      this.timeMax = Math.max(3.4, 7.6 - idx * 0.32);
+      this.drift = idx >= 6 ? Math.min((idx - 5) * 0.6, 4.5) : 0;
+      this.path = [];
+      this.dragging = false;
+      this.solved = false;
+      this.failed = false;
+      this.failReason = '';
+      this.brokeSeam = null;
+      this.brokeAt = -1;
+      this.snapPt = null;
+      this.appearT = 0;
+      this.exitT = 0;
+      this.lastBonus = 0;
+      this.bonusNodeSpawned = false;
+      this.bounds = getBounds();
+      this.generate();
+    }
+
+    generate() {
+      const b = this.bounds;
+      const nNodes = clamp(3 + Math.floor(this.idx / 2.5), 3, 7);
+      const tries = 250;
+      const minDist = Math.max(70, Math.min(b.w, b.h) / (1.5 + nNodes * 0.35));
+      const margin = 32;
+
+      for (let i = 0; i < nNodes; i++) {
+        let placed = false;
+        for (let t = 0; t < tries; t++) {
+          const x = rand(b.x + margin, b.x + b.w - margin);
+          const y = rand(b.y + margin, b.y + b.h - margin);
+          let ok = true;
+          for (const n of this.nodes) {
+            if (dist(x, y, n.bx, n.by) < minDist) { ok = false; break; }
+          }
+          if (ok) {
+            this.nodes.push(this.makeNode(x, y));
+            placed = true;
+            break;
+          }
+        }
+        if (!placed) {
+          this.nodes.push(this.makeNode(
+            rand(b.x + margin, b.x + b.w - margin),
+            rand(b.y + margin, b.y + b.h - margin)
+          ));
+        }
+      }
+
+      const nSeams = clamp(Math.floor((this.idx - 1) / 2), 0, 4);
+      let attempts = 0;
+      while (this.seams.length < nSeams && attempts < 80) {
+        attempts++;
+        const seam = this.makeSeam(b);
+        if (seam && !this.seamBlocksNodes(seam) && !this.seamCrossesSeam(seam)) {
+          this.seams.push(seam);
+        }
+      }
+
+      const nCracks = randInt(8, 16);
+      for (let i = 0; i < nCracks; i++) {
+        this.cracks.push(this.makeCrack(b));
+      }
+    }
+
+    makeNode(x, y) {
+      return {
+        x, y, bx: x, by: y,
+        r: 22,
+        visited: false,
+        pulse: 0,
+        phase: rand(0, Math.PI * 2),
+        spawnFlash: 0,
+      };
+    }
+
+    makeSeam(b) {
+      const cx = b.x + b.w * rand(0.18, 0.82);
+      const cy = b.y + b.h * rand(0.18, 0.82);
+      const len = Math.min(b.w, b.h) * rand(0.22, 0.46);
+      const ang = rand(0, Math.PI);
+      const dx = Math.cos(ang) * len / 2;
+      const dy = Math.sin(ang) * len / 2;
+      const start = { x: cx - dx, y: cy - dy };
+      const end = { x: cx + dx, y: cy + dy };
+      const pts = [start];
+      const segs = randInt(3, 5);
+      for (let i = 1; i < segs; i++) {
+        const t = i / segs;
+        const bx2 = start.x + (end.x - start.x) * t;
+        const by2 = start.y + (end.y - start.y) * t;
+        const perpX = -(end.y - start.y);
+        const perpY = (end.x - start.x);
+        const plen = Math.sqrt(perpX * perpX + perpY * perpY) || 1;
+        const jitter = rand(-14, 14);
+        pts.push({
+          x: bx2 + (perpX / plen) * jitter,
+          y: by2 + (perpY / plen) * jitter,
+        });
+      }
+      pts.push(end);
+      return { pts, phase: rand(0, Math.PI * 2) };
+    }
+
+    makeCrack(b) {
+      const sides = [
+        () => ({ x: rand(b.x, b.x + b.w), y: b.y }),
+        () => ({ x: b.x + b.w, y: rand(b.y, b.y + b.h) }),
+        () => ({ x: rand(b.x, b.x + b.w), y: b.y + b.h }),
+        () => ({ x: b.x, y: rand(b.y, b.y + b.h) }),
+      ];
+      const start = sides[randInt(0, 3)]();
+      const segs = randInt(4, 7);
+      const pts = [start];
+      let x = start.x, y = start.y;
+      const cx = b.x + b.w / 2, cy = b.y + b.h / 2;
+      const dirX = (cx - x), dirY = (cy - y);
+      const dl = Math.sqrt(dirX * dirX + dirY * dirY) || 1;
+      const inX = dirX / dl, inY = dirY / dl;
+      const totalLen = rand(50, Math.min(b.w, b.h) * 0.55);
+      for (let i = 1; i <= segs; i++) {
+        const step = totalLen / segs;
+        x += inX * step + rand(-step * 0.45, step * 0.45);
+        y += inY * step + rand(-step * 0.45, step * 0.45);
+        pts.push({ x, y });
+      }
+      return { pts, threshold: rand(0.1, 0.85) };
+    }
+
+    seamSegs(seam) {
+      const segs = [];
+      for (let i = 0; i < seam.pts.length - 1; i++) {
+        segs.push([seam.pts[i], seam.pts[i + 1]]);
+      }
+      return segs;
+    }
+
+    seamBlocksNodes(seam) {
+      for (const n of this.nodes) {
+        for (const [a, b] of this.seamSegs(seam)) {
+          if (distPtSeg(n.x, n.y, a.x, a.y, b.x, b.y) < n.r + 14) return true;
+        }
+      }
+      return false;
+    }
+
+    seamCrossesSeam(seam) {
+      for (const s of this.seams) {
+        for (const [a, b] of this.seamSegs(seam)) {
+          for (const [c, d] of this.seamSegs(s)) {
+            if (segIntersect(a, b, c, d)) return true;
+          }
+        }
+      }
+      return false;
+    }
+
+    update(dt) {
+      const b = getBounds();
+      if (b.x !== this.bounds.x || b.w !== this.bounds.w ||
+          b.y !== this.bounds.y || b.h !== this.bounds.h) {
+        this.rescale(b);
+      }
+      this.appearT = Math.min(1, this.appearT + dt * 3);
+      if (this.solved || this.failed) {
+        this.exitT = Math.min(1, this.exitT + dt * (this.failed ? 1.4 : 1.8));
+        return;
+      }
+      if (!this.started && this.appearT >= 0.9) {
+        this.preTimer += dt;
+        if (this.preTimer > 2.0) {
+          this.started = true;
+        }
+      }
+      if (this.started) {
+        this.time += dt;
+      }
+      for (const n of this.nodes) {
+        n.phase += dt * 2;
+        if (n.pulse > 0) n.pulse -= dt * 4;
+        if (n.spawnFlash > 0) n.spawnFlash -= dt * 2.5;
+        if (this.drift > 0 && !this.solved) {
+          n.x = n.bx + Math.sin(n.phase * 0.5) * this.drift;
+          n.y = n.by + Math.cos(n.phase * 0.4) * this.drift;
+        }
+      }
+
+      if (this.idx >= 6 && !this.bonusNodeSpawned &&
+          this.started && this.time > this.timeMax * 0.45) {
+        this.spawnBonusNode();
+      }
+
+      if (this.time >= this.timeMax) {
+        this.fail('SHELL SEALED');
+      }
+    }
+
+    rescale(newB) {
+      const oldB = this.bounds;
+      const fx = (v) => (v - oldB.x) / oldB.w;
+      const fy = (v) => (v - oldB.y) / oldB.h;
+      for (const n of this.nodes) {
+        const ax = fx(n.bx), ay = fy(n.by);
+        n.bx = newB.x + ax * newB.w;
+        n.by = newB.y + ay * newB.h;
+        n.x = n.bx; n.y = n.by;
+      }
+      for (const seam of this.seams) {
+        for (const pt of seam.pts) {
+          const ax = fx(pt.x), ay = fy(pt.y);
+          pt.x = newB.x + ax * newB.w;
+          pt.y = newB.y + ay * newB.h;
+        }
+      }
+      for (const crack of this.cracks) {
+        for (const pt of crack.pts) {
+          const ax = fx(pt.x), ay = fy(pt.y);
+          pt.x = newB.x + ax * newB.w;
+          pt.y = newB.y + ay * newB.h;
+        }
+      }
+      this.path = [];
+      this.bounds = newB;
+    }
+
+    spawnBonusNode() {
+      const b = this.bounds;
+      const margin = 36;
+      for (let t = 0; t < 80; t++) {
+        const x = rand(b.x + margin, b.x + b.w - margin);
+        const y = rand(b.y + margin, b.y + b.h - margin);
+        let ok = true;
+        for (const n of this.nodes) {
+          if (dist(x, y, n.bx, n.by) < 64) { ok = false; break; }
+        }
+        if (!ok) continue;
+        let seamOk = true;
+        for (const seam of this.seams) {
+          for (const [a, b2] of this.seamSegs(seam)) {
+            if (distPtSeg(x, y, a.x, a.y, b2.x, b2.y) < 30) { seamOk = false; break; }
+          }
+          if (!seamOk) break;
+        }
+        if (!seamOk) continue;
+        const newNode = this.makeNode(x, y);
+        newNode.spawnFlash = 1.5;
+        newNode.pulse = 1;
+        this.nodes.push(newNode);
+        spawn(x, y, 18, 'visit');
+        tone(920, 0.18, 'triangle', 0.06);
+        vibe(20);
+        this.bonusNodeSpawned = true;
+        return;
+      }
+      this.bonusNodeSpawned = true;
+    }
+
+    pointerDown(x, y) {
+      if (this.solved || this.failed) return;
+      this.started = true;
+      this.path = [{ x, y }];
+      this.dragging = true;
+      this.resetVisited();
+      this.checkNode(x, y);
+      spawn(x, y, 2, 'trail');
+    }
+
+    pointerMove(x, y) {
+      if (!this.dragging) return;
+      const last = this.path[this.path.length - 1];
+      const d = dist(x, y, last.x, last.y);
+      if (d < 2) return;
+      const steps = Math.max(1, Math.ceil(d / 6));
+      let prev = last;
+      for (let i = 1; i <= steps; i++) {
+        const t = i / steps;
+        const sx = last.x + (x - last.x) * t;
+        const sy = last.y + (y - last.y) * t;
+        const cur = { x: sx, y: sy };
+        for (const seam of this.seams) {
+          for (const [a, b] of this.seamSegs(seam)) {
+            if (segIntersect(prev, cur, a, b)) {
+              this.path.push(cur);
+              this.snap(seam, sx, sy);
+              return;
+            }
+          }
+        }
+        this.path.push(cur);
+        this.checkNode(sx, sy);
+        prev = cur;
+      }
+      if (Math.random() < 0.5) spawn(x, y, 1, 'trail');
+    }
+
+    pointerUp() {
+      if (!this.dragging || this.solved || this.failed) return;
+      this.dragging = false;
+      const allVisited = this.nodes.every(n => n.visited);
+      if (allVisited) {
+        this.solve();
+      } else {
+        const visitedCount = this.nodes.filter(n => n.visited).length;
+        this.path = [];
+        this.resetVisited();
+        tone(180, 0.1, 'sine', 0.04);
+        if (visitedCount > 0) {
+          pushPop(W / 2, H / 2 - 16,
+            `INCOMPLETE · ${visitedCount}/${this.nodes.length}`,
+            palette.fgDim);
+        }
+      }
+    }
+
+    resetVisited() {
+      for (const n of this.nodes) {
+        if (n.visited) {
+          n.visited = false;
+          n.pulse = 0;
+        }
+      }
+    }
+
+    checkNode(x, y) {
+      for (let i = 0; i < this.nodes.length; i++) {
+        const n = this.nodes[i];
+        if (!n.visited && dist(x, y, n.x, n.y) < n.r) {
+          n.visited = true;
+          n.pulse = 1;
+          const visited = this.nodes.filter(nn => nn.visited).length;
+          tone(360 + visited * 70, 0.13, 'sine', 0.07);
+          spawn(n.x, n.y, 14, 'visit');
+          vibe(8);
+        }
+      }
+    }
+
+    snap(seam, x, y) {
+      this.brokeSeam = seam;
+      this.brokeAt = performance.now();
+      this.snapPt = { x, y };
+      spawn(x, y, 24, 'snap');
+      spawn(x, y, 14, 'dust');
+      noise(0.45, 0.16, 800, 'highpass');
+      tone(85, 0.32, 'sawtooth', 0.08);
+      tone(55, 0.42, 'square', 0.05);
+      this.fail('STRUT SNAPPED');
+    }
+
+    solve() {
+      if (this.solved) return;
+      this.solved = true;
+      const timeFrac = clamp(1 - this.time / this.timeMax, 0, 1);
+      const base = 100 + this.idx * 15;
+      const bonus = Math.floor(timeFrac * 120);
+      const gained = base + bonus;
+      this.lastBonus = gained;
+      addScore(gained);
+
+      for (const n of this.nodes) {
+        spawn(n.x, n.y, 18, 'vent');
+      }
+      spawn(W / 2, H / 2, 50, 'release');
+      hitstop = 0.16;
+      vibe([15, 22, 28]);
+
+      tone(220, 0.12, 'sine', 0.06);
+      setTimeout(() => tone(440, 0.16, 'sine', 0.08), 60);
+      setTimeout(() => tone(660, 0.22, 'sine', 0.1), 120);
+      noise(0.32, 0.04, 600, 'highpass');
+
+      pushPop(W / 2, H / 2 - 24, '+' + gained, palette.accent, true);
+      showCenter('+' + gained,
+        'ROOM ' + String(this.idx).padStart(2, '0') + ' VENTED',
+        1.1, false);
+    }
+
+    fail(reason) {
+      if (this.failed || this.solved) return;
+      this.failed = true;
+      this.failReason = reason;
+      decStruts();
+      shake = 22;
+      hitstop = 0.2;
+      vibe([45, 35, 65]);
+      spawn(W / 2, H / 2, 18, 'dust');
+      showCenter(reason, struts > 0 ? `${struts} STRUT${struts === 1 ? '' : 'S'} LEFT` : 'NO STRUTS LEFT', 1.1, true);
+    }
+  }
+
+  // ============================================================
+  // Drawing helpers
+  // ============================================================
+  function drawRoomBorder(ctx, b, alpha, urgent) {
+    ctx.save();
+    ctx.globalAlpha = alpha * 0.55;
+    ctx.strokeStyle = palette.line;
+    ctx.lineWidth = 1;
+    ctx.strokeRect(b.x + 0.5, b.y + 0.5, b.w - 1, b.h - 1);
+
+    const c = 16;
+    ctx.strokeStyle = palette.accent2;
+    ctx.lineWidth = 2;
+    ctx.beginPath();
+    ctx.moveTo(b.x, b.y + c); ctx.lineTo(b.x, b.y); ctx.lineTo(b.x + c, b.y);
+    ctx.moveTo(b.x + b.w - c, b.y); ctx.lineTo(b.x + b.w, b.y); ctx.lineTo(b.x + b.w, b.y + c);
+    ctx.moveTo(b.x + b.w, b.y + b.h - c); ctx.lineTo(b.x + b.w, b.y + b.h); ctx.lineTo(b.x + b.w - c, b.y + b.h);
+    ctx.moveTo(b.x + c, b.y + b.h); ctx.lineTo(b.x, b.y + b.h); ctx.lineTo(b.x, b.y + b.h - c);
+    ctx.stroke();
+
+    if (urgent > 0) {
+      const pulse = 0.35 + 0.45 * Math.sin(performance.now() / 1000 * 9);
+      ctx.globalAlpha = urgent * pulse * alpha;
+      ctx.strokeStyle = palette.danger;
+      ctx.lineWidth = 2.5;
+      ctx.strokeRect(b.x - 2, b.y - 2, b.w + 4, b.h + 4);
+    }
+    ctx.restore();
+  }
+
+  function drawCracks(ctx, room) {
+    const frac = room.time / room.timeMax;
+    if (frac < 0.05) return;
+    ctx.save();
+    for (const crack of room.cracks) {
+      if (frac < crack.threshold) continue;
+      const t = clamp((frac - crack.threshold) / 0.45, 0, 1);
+      const pts = crack.pts;
+      const last = Math.max(1, Math.floor(t * (pts.length - 1)));
+      ctx.beginPath();
+      ctx.moveTo(pts[0].x, pts[0].y);
+      for (let i = 1; i <= last; i++) ctx.lineTo(pts[i].x, pts[i].y);
+      const lastP = pts[last];
+      const prevP = pts[last - 1];
+      const interpT = t * (pts.length - 1) - (last - 1);
+      const ix = prevP.x + (lastP.x - prevP.x) * interpT;
+      const iy = prevP.y + (lastP.y - prevP.y) * interpT;
+      ctx.lineTo(ix, iy);
+      ctx.strokeStyle = isDark
+        ? `rgba(255,240,220,${0.22 + t * 0.32})`
+        : `rgba(35,22,12,${0.32 + t * 0.36})`;
+      ctx.lineWidth = 1.2;
+      ctx.stroke();
+    }
+    ctx.restore();
+  }
+
+  function drawSeams(ctx, room, time) {
+    for (const seam of room.seams) {
+      const broken = (room.brokeSeam === seam);
+      const segs = room.seamSegs(seam);
+      const pulse = 0.5 + 0.5 * Math.sin(time * 4 + seam.phase);
+      ctx.save();
+      ctx.shadowColor = broken ? '#ffffff' : palette.danger;
+      ctx.shadowBlur = broken ? 22 : 6 + pulse * 5;
+      ctx.strokeStyle = broken ? '#ffffff' : palette.danger;
+      ctx.lineWidth = broken ? 3.2 : 2.1 + pulse * 1.2;
+      ctx.lineCap = 'round';
+      ctx.lineJoin = 'round';
+      ctx.beginPath();
+      ctx.moveTo(seam.pts[0].x, seam.pts[0].y);
+      for (let i = 1; i < seam.pts.length; i++) ctx.lineTo(seam.pts[i].x, seam.pts[i].y);
+      ctx.stroke();
+      ctx.shadowBlur = 0;
+      ctx.strokeStyle = broken ? '#fff5d5' : '#ffce82';
+      ctx.lineWidth = 0.8;
+      ctx.stroke();
+      ctx.restore();
+    }
+  }
+
+  function drawNodes(ctx, room, time) {
+    for (const n of room.nodes) {
+      const breath = 0.86 + 0.14 * Math.sin(time * 2 + n.phase);
+      const r = n.r;
+      const glowR = r * (1.7 + n.pulse * 0.9 + n.spawnFlash * 0.6);
+      const intensity = n.visited ? 0.6 : 0.32 * breath + n.spawnFlash * 0.3;
+
+      const g = ctx.createRadialGradient(n.x, n.y, r * 0.15, n.x, n.y, glowR);
+      g.addColorStop(0, `rgba(255,180,90,${intensity})`);
+      g.addColorStop(0.5, `rgba(255,140,60,${intensity * 0.4})`);
+      g.addColorStop(1, 'rgba(255,100,40,0)');
+      ctx.fillStyle = g;
+      ctx.beginPath();
+      ctx.arc(n.x, n.y, glowR, 0, Math.PI * 2);
+      ctx.fill();
+
+      ctx.strokeStyle = n.visited ? palette.accent : palette.accent2;
+      ctx.lineWidth = 2;
+      ctx.beginPath();
+      ctx.arc(n.x, n.y, r * 0.92, 0, Math.PI * 2);
+      ctx.stroke();
+
+      ctx.fillStyle = isDark ? palette.shale1 : palette.shale2;
+      ctx.beginPath();
+      ctx.arc(n.x, n.y, r * 0.78, 0, Math.PI * 2);
+      ctx.fill();
+
+      const coreR = r * (n.visited ? 0.56 : 0.4 * breath);
+      const cg = ctx.createRadialGradient(n.x, n.y, 0, n.x, n.y, coreR);
+      cg.addColorStop(0, n.visited ? palette.nodeCore : palette.accent3);
+      cg.addColorStop(0.6, palette.accent);
+      cg.addColorStop(1, palette.accent2);
+      ctx.fillStyle = cg;
+      ctx.beginPath();
+      ctx.arc(n.x, n.y, coreR, 0, Math.PI * 2);
+      ctx.fill();
+
+      if (n.pulse > 0) {
+        ctx.strokeStyle = palette.accent;
+        ctx.globalAlpha = n.pulse;
+        ctx.lineWidth = 2;
+        ctx.beginPath();
+        ctx.arc(n.x, n.y, r + (1 - n.pulse) * 24, 0, Math.PI * 2);
+        ctx.stroke();
+        ctx.globalAlpha = 1;
+      }
+
+      if (n.spawnFlash > 0) {
+        ctx.strokeStyle = palette.accent3;
+        ctx.globalAlpha = n.spawnFlash * 0.7;
+        ctx.lineWidth = 1.5;
+        ctx.beginPath();
+        ctx.arc(n.x, n.y, r + (1.5 - n.spawnFlash) * 40, 0, Math.PI * 2);
+        ctx.stroke();
+        ctx.globalAlpha = 1;
+      }
+    }
+  }
+
+  function drawPath(ctx, room) {
+    if (room.path.length < 2) return;
+    const pts = room.path;
+    ctx.save();
+    ctx.lineCap = 'round';
+    ctx.lineJoin = 'round';
+
+    ctx.shadowColor = palette.accent;
+    ctx.shadowBlur = 18;
+    ctx.strokeStyle = `rgba(255,165,80,0.45)`;
+    ctx.lineWidth = 9;
+    ctx.beginPath();
+    ctx.moveTo(pts[0].x, pts[0].y);
+    for (let i = 1; i < pts.length - 1; i++) {
+      const mx = (pts[i].x + pts[i + 1].x) / 2;
+      const my = (pts[i].y + pts[i + 1].y) / 2;
+      ctx.quadraticCurveTo(pts[i].x, pts[i].y, mx, my);
+    }
+    ctx.lineTo(pts[pts.length - 1].x, pts[pts.length - 1].y);
+    ctx.stroke();
+
+    ctx.shadowBlur = 6;
+    ctx.strokeStyle = isDark ? '#fff5d5' : '#fff0c0';
+    ctx.lineWidth = 2.5;
+    ctx.stroke();
+    ctx.restore();
+  }
+
+  function drawTitleAtmosphere(ctx, time) {
+    const cx = W / 2, cy = H * 0.62;
+    const r = Math.min(W, H) * 0.32;
+    ctx.save();
+    ctx.translate(cx, cy);
+
+    const ringCount = 4;
+    for (let i = 0; i < ringCount; i++) {
+      const a = (i / ringCount) * Math.PI * 2 + time * 0.2;
+      const x = Math.cos(a) * r;
+      const y = Math.sin(a) * r * 0.4;
+      const breath = 0.6 + 0.4 * Math.sin(time * 1.5 + i);
+      const g = ctx.createRadialGradient(x, y, 0, x, y, 80 * breath);
+      g.addColorStop(0, `rgba(255,170,80,${0.18 * breath})`);
+      g.addColorStop(1, 'rgba(255,100,40,0)');
+      ctx.fillStyle = g;
+      ctx.beginPath();
+      ctx.arc(x, y, 80 * breath, 0, Math.PI * 2);
+      ctx.fill();
+    }
+    ctx.restore();
+  }
+
+  // ============================================================
+  // HUD / DOM refs
+  // ============================================================
+  const hudEl = document.getElementById('hud');
+  const roomEl = document.getElementById('roomEl');
+  const scoreEl = document.getElementById('scoreEl');
+  const strutsEl = document.getElementById('struts');
+  const timerEl = document.getElementById('timer');
+  const timerFillEl = document.getElementById('timerFill');
+  const leftLabelEl = document.getElementById('leftLabel');
+  const rightLabelEl = document.getElementById('rightLabel');
+  const titleScreen = document.getElementById('titleScreen');
+  const gameOverScreen = document.getElementById('gameOverScreen');
+  const startBtn = document.getElementById('startBtn');
+  const restartBtn = document.getElementById('restartBtn');
+  const finalScoreEl = document.getElementById('finalScore');
+  const finalRoomsEl = document.getElementById('finalRooms');
+  const finalStreakEl = document.getElementById('finalStreak');
+  const gameOverDescEl = document.getElementById('gameOverDesc');
+  const gameOverTagEl = document.getElementById('gameOverTag');
+  const centerMsg = document.getElementById('centerMsg');
+  const centerBig = document.getElementById('centerBig');
+  const centerSmall = document.getElementById('centerSmall');
+
+  function buildStruts() {
+    let html = '';
+    for (let i = 0; i < 3; i++) {
+      html += `<div class="strut${i < struts ? '' : ' off'}" id="strut${i}"></div>`;
+    }
+    strutsEl.innerHTML = html;
+  }
+
+  function updateHud() {
+    roomEl.textContent = String(currentRoomNum).padStart(2, '0');
+    scoreEl.textContent = String(score).padStart(4, '0');
+  }
+
+  function decStruts() {
+    const idx = struts - 1;
+    struts = Math.max(0, struts - 1);
+    const el = document.getElementById('strut' + idx);
+    if (el) {
+      el.classList.remove('off');
+      el.classList.add('snapping');
+    }
+  }
+
+  let centerTimer = 0;
+  function showCenter(big, small, dur, danger) {
+    centerBig.textContent = big;
+    centerSmall.textContent = small;
+    centerMsg.classList.add('show');
+    centerMsg.classList.toggle('danger', !!danger);
+    centerTimer = dur;
+  }
+  function hideCenter() {
+    centerMsg.classList.remove('show');
+  }
+
+  // ============================================================
+  // Game state
+  // ============================================================
+  let state = 'title';
+  let score = 0;
+  let bestStreak = 0;
+  let currentStreak = 0;
+  let currentRoomNum = 0;
+  let struts = 3;
+  let room = null;
+  let shake = 0;
+  let hitstop = 0;
+  let dragActive = false;
+  let activePointerId = null;
+
+  function addScore(amt) {
+    score += amt;
+    scoreEl.classList.add('flash');
+    setTimeout(() => scoreEl.classList.remove('flash'), 200);
+  }
+
+  function startGame() {
+    score = 0;
+    struts = 3;
+    currentStreak = 0;
+    bestStreak = 0;
+    currentRoomNum = 0;
+    dragActive = false;
+    activePointerId = null;
+    shake = 0;
+    hitstop = 0;
+    particles.length = 0;
+    pops.length = 0;
+    titleScreen.classList.add('hidden');
+    gameOverScreen.classList.add('hidden');
+    hudEl.classList.remove('hidden');
+    timerEl.classList.remove('hidden');
+    leftLabelEl.classList.remove('hidden');
+    rightLabelEl.classList.remove('hidden');
+    state = 'playing';
+    buildStruts();
+    nextRoom();
+    updateHud();
+    hideCenter();
+  }
+
+  function nextRoom() {
+    currentRoomNum++;
+    room = new Room(currentRoomNum);
+    updateHud();
+  }
+
+  function endGame() {
+    state = 'gameover';
+    hudEl.classList.add('hidden');
+    timerEl.classList.add('hidden');
+    leftLabelEl.classList.add('hidden');
+    rightLabelEl.classList.add('hidden');
+    hideCenter();
+    finalScoreEl.textContent = String(score);
+    finalRoomsEl.textContent = String(currentRoomNum - 1);
+    finalStreakEl.textContent = String(bestStreak);
+    if (currentRoomNum >= 12) {
+      gameOverTagEl.textContent = 'DEEP VENT COMPLETE';
+      gameOverDescEl.textContent = 'You found a pocket no surveyor mapped. The dust still smells of relief.';
+    } else if (currentRoomNum >= 6) {
+      gameOverTagEl.textContent = 'SHELL COLLAPSED';
+      gameOverDescEl.textContent = 'Three struts gone. The strata closed around your last unfinished spline.';
+    } else {
+      gameOverTagEl.textContent = 'TRAPPED IN';
+      gameOverDescEl.textContent = 'The shale shifted before your line could find its end. Drop in again.';
+    }
+    gameOverScreen.classList.remove('hidden');
+    noise(0.6, 0.15, 400, 'lowpass');
+    tone(90, 0.4, 'sine', 0.06);
+    vibe([90, 60, 90]);
+  }
+
+  startBtn.addEventListener('click', () => {
+    getAudio();
+    startGame();
+  });
+  restartBtn.addEventListener('click', () => {
+    getAudio();
+    startGame();
+  });
+
+  // ============================================================
+  // Input
+  // ============================================================
+  function getPt(e) {
+    const r = canvas.getBoundingClientRect();
+    return { x: e.clientX - r.left, y: e.clientY - r.top };
+  }
+
+  canvas.addEventListener('pointerdown', (e) => {
+    if (state !== 'playing' || !room) return;
+    if (activePointerId !== null) return;
+    e.preventDefault();
+    activePointerId = e.pointerId;
+    try { canvas.setPointerCapture?.(e.pointerId); } catch (err) {}
+    dragActive = true;
+    const p = getPt(e);
+    room.pointerDown(p.x, p.y);
+  });
+  canvas.addEventListener('pointermove', (e) => {
+    if (state !== 'playing' || !room || !dragActive) return;
+    if (e.pointerId !== activePointerId) return;
+    e.preventDefault();
+    const p = getPt(e);
+    room.pointerMove(p.x, p.y);
+  });
+  function endDrag(e) {
+    if (state !== 'playing' || !room) return;
+    if (!dragActive) return;
+    if (e && e.pointerId !== undefined && e.pointerId !== activePointerId) return;
+    dragActive = false;
+    activePointerId = null;
+    if (e && e.preventDefault) e.preventDefault();
+    room.pointerUp();
+  }
+  canvas.addEventListener('pointerup', endDrag);
+  canvas.addEventListener('pointercancel', endDrag);
+  canvas.addEventListener('pointerleave', endDrag);
+
+  ['touchstart', 'touchmove', 'touchend', 'touchcancel'].forEach(ev => {
+    canvas.addEventListener(ev, (e) => e.preventDefault(), { passive: false });
+  });
+
+  document.addEventListener('keydown', (e) => {
+    if (state === 'title' && (e.key === 'Enter' || e.key === ' ')) {
+      e.preventDefault();
+      startBtn.click();
+    } else if (state === 'gameover' && (e.key === 'Enter' || e.key === ' ' || e.key === 'r' || e.key === 'R')) {
+      e.preventDefault();
+      restartBtn.click();
+    }
+  });
+
+  document.addEventListener('contextmenu', (e) => {
+    if (state === 'playing') e.preventDefault();
+  });
+  document.addEventListener('gesturestart', (e) => e.preventDefault());
+
+  // ============================================================
+  // Loop
+  // ============================================================
+  let last = performance.now();
+  let timeAcc = 0;
+
+  function loop(t) {
+    let dt = (t - last) / 1000;
+    last = t;
+    if (dt > 0.08) dt = 0.08;
+    timeAcc += dt;
+
+    if (hitstop > 0) {
+      hitstop -= dt;
+    } else {
+      update(dt);
+    }
+    render();
+    requestAnimationFrame(loop);
+  }
+
+  function update(dt) {
+    updateAmbient(dt);
+    updateParticles(dt);
+    updatePops(dt);
+
+    if (state === 'playing' && room) {
+      room.update(dt);
+
+      if (room.solved && room.exitT >= 0.6) {
+        currentStreak++;
+        if (currentStreak > bestStreak) bestStreak = currentStreak;
+        nextRoom();
+      } else if (room.failed && room.exitT >= 0.8) {
+        currentStreak = 0;
+        if (struts <= 0) {
+          endGame();
+        } else {
+          nextRoom();
+        }
+      }
+
+      const frac = clamp(1 - room.time / room.timeMax, 0, 1);
+      timerFillEl.style.width = (frac * 100) + '%';
+      timerFillEl.className = 'timer-fill';
+      if (!room.started) timerFillEl.classList.add('idle');
+      else if (frac < 0.3) timerFillEl.classList.add('warn');
+
+      const visited = room.nodes.filter(n => n.visited).length;
+      rightLabelEl.textContent = `${visited}/${room.nodes.length}`;
+      leftLabelEl.textContent = room.started ? 'Pressure' : 'Tap to start';
+
+      updateHud();
+    }
+
+    if (centerTimer > 0) {
+      centerTimer -= dt;
+      if (centerTimer <= 0) hideCenter();
+    }
+
+    if (shake > 0) shake -= dt * 60;
+  }
+
+  function render() {
+    const now = performance.now() / 1000;
+    ctx.save();
+
+    const sx = shake > 0 ? (Math.random() - 0.5) * shake * 0.6 : 0;
+    const sy = shake > 0 ? (Math.random() - 0.5) * shake * 0.6 : 0;
+    ctx.translate(sx, sy);
+
+    if (shaleTex) {
+      ctx.drawImage(shaleTex, 0, 0, W, H);
+    } else {
+      ctx.fillStyle = palette.bg;
+      ctx.fillRect(0, 0, W, H);
+    }
+
+    renderAmbient(ctx);
+
+    if (state === 'title') {
+      drawTitleAtmosphere(ctx, now);
+    } else if (state === 'playing' && room) {
+      const b = room.bounds;
+      const appearA = room.appearT;
+      const exitMul = room.solved
+        ? (1 - room.exitT * 0.4)
+        : (room.failed ? (1 - room.exitT * 0.55) : 1);
+
+      ctx.save();
+      ctx.globalAlpha = appearA * exitMul;
+
+      const tintGrad = ctx.createRadialGradient(
+        W / 2, H / 2, 30, W / 2, H / 2, Math.max(W, H) * 0.7);
+      tintGrad.addColorStop(0,
+        isDark ? 'rgba(255,200,130,0.04)' : 'rgba(80,40,15,0.04)');
+      tintGrad.addColorStop(1, 'rgba(0,0,0,0)');
+      ctx.fillStyle = tintGrad;
+      ctx.fillRect(b.x, b.y, b.w, b.h);
+
+      drawCracks(ctx, room);
+      drawSeams(ctx, room, now);
+      drawNodes(ctx, room, now);
+      drawPath(ctx, room);
+
+      ctx.restore();
+
+      const frac = room.time / room.timeMax;
+      const urgent = room.started && frac > 0.65 ? (frac - 0.65) / 0.35 : 0;
+      drawRoomBorder(ctx, b, appearA * exitMul, urgent);
+    } else if (state === 'gameover') {
+      // overlay handles screen
+    }
+
+    renderParticles(ctx);
+    renderPops(ctx);
+
+    ctx.restore();
+  }
+
+  requestAnimationFrame(loop);
+})();
+</script>
+</body>
+</html>
