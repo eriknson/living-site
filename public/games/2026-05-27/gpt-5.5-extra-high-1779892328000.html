@@ -1,0 +1,463 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Moon Gate</title>
+<style>
+:root{
+  color-scheme: light dark;
+  --bg0:#f7f3e8; --bg1:#d9eef0; --ink:#14201f; --muted:#5f6f6b;
+  --panel:rgba(255,252,241,.78); --line:rgba(20,32,31,.16);
+  --button:#13201f; --buttonInk:#fff9ec; --shadow:rgba(26,42,39,.22);
+}
+@media (prefers-color-scheme:dark){
+  :root{
+    --bg0:#061111; --bg1:#12302f; --ink:#edf7ec; --muted:#a9bbb4;
+    --panel:rgba(8,22,22,.72); --line:rgba(237,247,236,.15);
+    --button:#ecf5df; --buttonInk:#071111; --shadow:rgba(0,0,0,.44);
+  }
+}
+*{box-sizing:border-box}
+html,body{margin:0;width:100%;height:100%;overflow:hidden;background:var(--bg0);color:var(--ink);font-family:Inter,system-ui,-apple-system,Segoe UI,sans-serif}
+body{position:fixed;inset:0}
+#game{position:fixed;inset:0;width:100dvw;height:100dvh;display:block;touch-action:none;user-select:none;background:linear-gradient(180deg,var(--bg0),var(--bg1));}
+.hud,.overlay{position:fixed;left:0;right:0;pointer-events:none}
+.hud{top:env(safe-area-inset-top);display:grid;grid-template-columns:1fr auto 1fr;align-items:start;padding:14px 16px 0;font-family:ui-monospace,SFMono-Regular,Menlo,monospace;font-size:12px;letter-spacing:.08em;text-transform:uppercase}
+.hud div{padding:9px 10px;border:1px solid var(--line);background:var(--panel);backdrop-filter:blur(14px);box-shadow:0 10px 26px var(--shadow)}
+.hud div:first-child{border-radius:16px 6px 16px 16px;justify-self:start}
+.hud div:nth-child(2){border-radius:16px;justify-self:center;text-align:center}
+.hud div:last-child{border-radius:6px 16px 16px 16px;justify-self:end;text-align:right}
+.overlay{inset:0;display:grid;place-items:center;padding:24px;background:radial-gradient(circle at 50% 42%,rgba(255,255,255,.22),transparent 34%);transition:opacity .35s ease,transform .35s ease}
+.overlay.hidden{opacity:0;transform:scale(1.02);pointer-events:none}
+.card{width:min(430px,92dvw);border:1px solid var(--line);border-radius:28px;background:var(--panel);box-shadow:0 24px 70px var(--shadow);backdrop-filter:blur(18px);padding:24px;pointer-events:auto}
+h1{margin:0 0 8px;font-size:clamp(40px,13vw,66px);line-height:.9;letter-spacing:-.08em;font-weight:830}
+p{margin:0;color:var(--muted);font-size:15px;line-height:1.45}
+.rule{margin:18px 0;padding:14px;border:1px solid var(--line);border-radius:18px;font-family:ui-monospace,SFMono-Regular,Menlo,monospace;font-size:12px;letter-spacing:.04em;text-transform:uppercase;color:var(--ink);background:rgba(255,255,255,.09)}
+button{appearance:none;border:0;min-height:48px;width:100%;border-radius:18px;background:var(--button);color:var(--buttonInk);font-weight:760;font-size:16px;letter-spacing:.02em;box-shadow:0 12px 28px var(--shadow);cursor:pointer}
+.small{margin-top:12px;font-family:ui-monospace,SFMono-Regular,Menlo,monospace;font-size:11px;letter-spacing:.07em;text-transform:uppercase}
+#toast{position:fixed;left:50%;bottom:calc(22px + env(safe-area-inset-bottom));transform:translateX(-50%);padding:10px 14px;border-radius:999px;background:var(--panel);border:1px solid var(--line);box-shadow:0 12px 32px var(--shadow);font-family:ui-monospace,SFMono-Regular,Menlo,monospace;font-size:12px;letter-spacing:.08em;text-transform:uppercase;color:var(--ink);pointer-events:none;opacity:.95;transition:opacity .25s ease}
+#toast.hide{opacity:0}
+</style>
+</head>
+<body>
+<canvas id="game" aria-label="Moon Gate game"></canvas>
+<div class="hud" aria-hidden="true">
+  <div id="score">Score 0</div>
+  <div id="time">Dawn 60</div>
+  <div id="orbit">Orbit 100%</div>
+</div>
+<div id="title" class="overlay">
+  <section class="card">
+    <h1>Moon<br>Gate</h1>
+    <p>Spring-clear orbital flicks. Pull back anywhere, release the moon into the glowing matching gate before the orbit collapses.</p>
+    <div class="rule">Hold, aim, release. Hits refill orbit. Shadows punish lazy angles.</div>
+    <button id="startBtn">Begin Orbit</button>
+    <p class="small">Keyboard: arrows aim, space flick, R restart</p>
+  </section>
+</div>
+<div id="over" class="overlay hidden">
+  <section class="card">
+    <h1 id="overTitle">Orbit Lost</h1>
+    <p id="overText">The inner tide went quiet.</p>
+    <div class="rule" id="finalStats">Score 0</div>
+    <button id="againBtn">Play Again</button>
+  </section>
+</div>
+<div id="toast">Pull back, release at the glow</div>
+<script>
+(() => {
+  "use strict";
+  const canvas = document.getElementById("game");
+  const ctx = canvas.getContext("2d", { alpha:false });
+  const scoreEl = document.getElementById("score");
+  const timeEl = document.getElementById("time");
+  const orbitEl = document.getElementById("orbit");
+  const title = document.getElementById("title");
+  const over = document.getElementById("over");
+  const overTitle = document.getElementById("overTitle");
+  const overText = document.getElementById("overText");
+  const finalStats = document.getElementById("finalStats");
+  const toast = document.getElementById("toast");
+  const startBtn = document.getElementById("startBtn");
+  const againBtn = document.getElementById("againBtn");
+  const TAU = Math.PI * 2;
+  const clamp = (v,a,b) => Math.max(a, Math.min(b, v));
+  const lerp = (a,b,t) => a + (b-a) * t;
+  const ease = t => 1 - Math.pow(1 - t, 3);
+  const css = getComputedStyle(document.documentElement);
+  const darkMode = matchMedia("(prefers-color-scheme: dark)");
+  const colors = [
+    {name:"sun",  hex:"#f2b441"},
+    {name:"sprig",hex:"#49b782"},
+    {name:"tide", hex:"#42a7bd"},
+    {name:"flare",hex:"#e86b4f"}
+  ];
+  let W=0,H=0,DPR=1,cx=0,cy=0,ringR=0,minOrbit=0,maxOrbit=0;
+  let state = "title", last = 0, elapsed = 0, score = 0, combo = 0, bestCombo = 0, shake = 0;
+  let gateSpin = 0, orbitR = 1, orbitAngle = -1.4, orbitDir = 1, target = 0, targetStreak = 0;
+  let aim = null, moon = null, particles = [], ripples = [], shadows = [], flash = 0;
+  let audioCtx = null, toastTimer = 0, keyAim = -Math.PI/2, keyPower = .72;
+
+  function resize(){
+    DPR = Math.min(2, window.devicePixelRatio || 1);
+    W = Math.max(1, innerWidth); H = Math.max(1, innerHeight);
+    canvas.width = Math.round(W * DPR); canvas.height = Math.round(H * DPR);
+    canvas.style.width = W + "px"; canvas.style.height = H + "px";
+    ctx.setTransform(DPR,0,0,DPR,0,0);
+    cx = W * .5; cy = H * (H > W ? .54 : .52);
+    const m = Math.min(W, H);
+    ringR = Math.min(m * .47, H * .36);
+    maxOrbit = ringR * .68;
+    minOrbit = Math.max(44, ringR * .25);
+    orbitR = clamp(orbitR || maxOrbit, minOrbit, maxOrbit);
+  }
+  addEventListener("resize", resize, {passive:true});
+  resize();
+
+  function rand(a,b){ return a + Math.random() * (b-a); }
+  function angleDiff(a,b){ return Math.atan2(Math.sin(a-b), Math.cos(a-b)); }
+  function dist(a,b,c,d){ return Math.hypot(a-c,b-d); }
+  function moonPos(){
+    return {x:cx + Math.cos(orbitAngle)*orbitR, y:cy + Math.sin(orbitAngle)*orbitR};
+  }
+  function gateAngle(i){ return gateSpin + i * TAU / colors.length + Math.sin(elapsed*.65 + i)*.045; }
+  function shadowAngle(i){ return -gateSpin * 1.35 + i * Math.PI + Math.sin(elapsed*.9+i)*.2; }
+  function setToast(text){
+    toast.textContent = text;
+    toast.classList.remove("hide");
+    clearTimeout(toastTimer);
+    toastTimer = setTimeout(()=>toast.classList.add("hide"), 1700);
+  }
+  function buzz(ms){ navigator.vibrate?.(ms); }
+  function audio(){
+    if (!audioCtx) {
+      const AC = window.AudioContext || window.webkitAudioContext;
+      if (AC) audioCtx = new AC();
+    }
+    if (audioCtx && audioCtx.state === "suspended") audioCtx.resume();
+    return audioCtx;
+  }
+  function tone(freq=440, dur=.08, type="sine", gain=.04){
+    const ac = audio(); if (!ac) return;
+    const o = ac.createOscillator(), g = ac.createGain();
+    o.type = type; o.frequency.setValueAtTime(freq, ac.currentTime);
+    g.gain.setValueAtTime(gain, ac.currentTime);
+    g.gain.exponentialRampToValueAtTime(.0001, ac.currentTime + dur);
+    o.connect(g).connect(ac.destination);
+    o.start(); o.stop(ac.currentTime + dur);
+  }
+  function burst(x,y,color,n=16,force=1){
+    for(let i=0;i<n;i++){
+      const a = rand(0,TAU), s = rand(50,210)*force;
+      particles.push({x,y,vx:Math.cos(a)*s,vy:Math.sin(a)*s,r:rand(1.5,4),life:rand(.35,.85),max:1,color});
+    }
+  }
+  function addRipple(x,y,color){
+    ripples.push({x,y,r:8,life:.55,color});
+  }
+  function chooseTarget(){
+    let next = Math.floor(rand(0, colors.length));
+    if (next === target) next = (next + 1 + Math.floor(rand(0, colors.length-1))) % colors.length;
+    target = next;
+  }
+  function resetRound(){
+    state = "playing";
+    elapsed = 0; score = 0; combo = 0; bestCombo = 0; targetStreak = 0; shake = 0; flash = 0;
+    gateSpin = -.4; orbitR = maxOrbit; orbitAngle = -1.35; orbitDir = 1;
+    particles = []; ripples = []; shadows = [0,1]; moon = null; aim = null;
+    target = Math.floor(rand(0, colors.length));
+    title.classList.add("hidden"); over.classList.add("hidden");
+    setToast("Pull back, release at the glow");
+    updateHud();
+  }
+  function endRound(won=false){
+    state = "over";
+    overTitle.textContent = won ? "Dawn Held" : "Orbit Lost";
+    overText.textContent = won ? "You kept the tiny sky in tune." : "The orbit shrank into silence.";
+    finalStats.textContent = `Score ${score}  |  Best combo x${Math.max(1, bestCombo)}`;
+    over.classList.remove("hidden");
+    tone(won ? 720 : 150, .18, won ? "triangle" : "sawtooth", .045);
+    buzz(won ? [30,40,30] : 60);
+  }
+  function updateHud(){
+    scoreEl.textContent = "Score " + score;
+    timeEl.textContent = "Dawn " + Math.max(0, Math.ceil(60 - elapsed));
+    orbitEl.textContent = "Orbit " + Math.round(100 * (orbitR-minOrbit)/(maxOrbit-minOrbit)) + "%";
+  }
+  function launch(vec){
+    if (state !== "playing" || moon) return;
+    const p = moonPos();
+    const len = Math.hypot(vec.x, vec.y);
+    if (len < 12) { setToast("Pull farther"); return; }
+    const power = clamp(len / 120, .18, 1);
+    const nx = vec.x / len, ny = vec.y / len;
+    moon = {x:p.x,y:p.y,vx:nx*lerp(430,780,power),vy:ny*lerp(430,780,power),life:1.6,color:colors[target].hex,trail:[]};
+    aim = null;
+    tone(260 + power*180, .07, "triangle", .035);
+    buzz(12);
+  }
+  function scoreHit(x,y){
+    const add = 10 + combo * 3 + Math.floor((orbitR/maxOrbit)*6);
+    score += add; combo++;
+    bestCombo = Math.max(bestCombo, combo);
+    targetStreak++;
+    orbitR = clamp(orbitR + 22 + combo * 1.6, minOrbit, maxOrbit);
+    if (targetStreak % 5 === 0) {
+      orbitDir *= -1;
+      score += 25;
+      flash = .25;
+      setToast("Spring tide: orbit reversed");
+    } else {
+      setToast("Clean gate +" + add);
+    }
+    burst(x,y,colors[target].hex,24,1.15);
+    addRipple(x,y,colors[target].hex);
+    tone(520 + combo*22, .09, "sine", .05);
+    setTimeout(()=>tone(740 + combo*18, .07, "triangle", .035), 55);
+    buzz(20);
+    chooseTarget();
+    moon = null;
+  }
+  function miss(x,y,msg="Miss"){
+    combo = 0;
+    orbitR = clamp(orbitR - 34, minOrbit-4, maxOrbit);
+    shake = .18;
+    burst(x,y,"#1c2725",14,.8);
+    setToast(msg);
+    tone(120, .12, "sawtooth", .035);
+    buzz(40);
+    moon = null;
+    if (orbitR <= minOrbit) endRound(false);
+  }
+  function pointerPos(e){
+    const r = canvas.getBoundingClientRect();
+    return {x:e.clientX-r.left, y:e.clientY-r.top};
+  }
+  canvas.addEventListener("pointerdown", e => {
+    e.preventDefault();
+    if (state !== "playing" || moon) return;
+    canvas.setPointerCapture(e.pointerId);
+    audio();
+    const p = pointerPos(e);
+    aim = {sx:p.x, sy:p.y, x:p.x, y:p.y};
+  });
+  canvas.addEventListener("pointermove", e => {
+    e.preventDefault();
+    if (!aim) return;
+    const p = pointerPos(e);
+    aim.x = p.x; aim.y = p.y;
+  });
+  function releasePointer(e){
+    e.preventDefault();
+    if (!aim) return;
+    const v = {x:aim.sx-aim.x, y:aim.sy-aim.y};
+    launch(v);
+  }
+  canvas.addEventListener("pointerup", releasePointer);
+  canvas.addEventListener("pointercancel", e => { e.preventDefault(); aim = null; });
+  addEventListener("keydown", e => {
+    if (e.key === "r" || e.key === "R") { resetRound(); return; }
+    if (state !== "playing") return;
+    if (e.key === "ArrowLeft") keyAim -= .16;
+    if (e.key === "ArrowRight") keyAim += .16;
+    if (e.key === "ArrowUp") keyPower = clamp(keyPower+.08,.25,1);
+    if (e.key === "ArrowDown") keyPower = clamp(keyPower-.08,.25,1);
+    if (e.code === "Space") { e.preventDefault(); launch({x:Math.cos(keyAim)*keyPower*120,y:Math.sin(keyAim)*keyPower*120}); }
+  });
+  startBtn.onclick = resetRound;
+  againBtn.onclick = resetRound;
+
+  function step(dt){
+    if (state === "playing") {
+      elapsed += dt;
+      const pressure = 4.8 + elapsed * .13 + Math.min(18, score * .012);
+      orbitR -= pressure * dt * (aim ? .72 : 1);
+      orbitAngle += orbitDir * (1.42 + elapsed*.01) * dt * (aim ? .18 : 1);
+      gateSpin += (0.22 + elapsed*.006 + score*.0006) * dt;
+      if (orbitR <= minOrbit && !moon) endRound(false);
+      if (elapsed >= 60) endRound(true);
+      if (moon) updateMoon(dt);
+      updateHud();
+    }
+    for (const p of particles) {
+      p.life -= dt; p.x += p.vx*dt; p.y += p.vy*dt; p.vx *= .982; p.vy *= .982; p.vy += 20*dt;
+    }
+    particles = particles.filter(p=>p.life>0);
+    for (const r of ripples) { r.life -= dt; r.r += 170*dt; }
+    ripples = ripples.filter(r=>r.life>0);
+    shake = Math.max(0, shake - dt);
+    flash = Math.max(0, flash - dt);
+  }
+  function updateMoon(dt){
+    moon.trail.push({x:moon.x,y:moon.y});
+    if (moon.trail.length > 13) moon.trail.shift();
+    const dx = cx - moon.x, dy = cy - moon.y, d = Math.hypot(dx,dy) || 1;
+    moon.vx += dx/d * 75 * dt;
+    moon.vy += dy/d * 75 * dt;
+    moon.x += moon.vx * dt; moon.y += moon.vy * dt;
+    moon.life -= dt;
+    const md = dist(moon.x, moon.y, cx, cy);
+    const ma = Math.atan2(moon.y-cy, moon.x-cx);
+    const gateArc = Math.max(.33, .62 - elapsed*.004);
+    for (let i=0;i<colors.length;i++){
+      if (md > ringR-24 && md < ringR+38 && Math.abs(angleDiff(ma, gateAngle(i))) < gateArc*.52) {
+        return i === target ? scoreHit(moon.x, moon.y) : miss(moon.x, moon.y, "Wrong gate");
+      }
+    }
+    for (let i=0;i<shadows.length;i++){
+      const sr = lerp(orbitR + 35, ringR - 45, .62);
+      if (Math.abs(md - sr) < 18 && Math.abs(angleDiff(ma, shadowAngle(i))) < .28 + elapsed*.0015) {
+        return miss(moon.x, moon.y, "Shadow bite");
+      }
+    }
+    if (moon.life <= 0 || md > ringR + 86 || moon.y < -70 || moon.y > H+70 || moon.x < -70 || moon.x > W+70) {
+      miss(moon.x, moon.y, "Lost moon");
+    }
+  }
+  function draw(){
+    const bg0 = css.getPropertyValue("--bg0").trim(), bg1 = css.getPropertyValue("--bg1").trim();
+    const g = ctx.createLinearGradient(0,0,0,H);
+    g.addColorStop(0,bg0); g.addColorStop(1,bg1);
+    ctx.fillStyle = g; ctx.fillRect(0,0,W,H);
+    ctx.save();
+    if (shake) ctx.translate(rand(-6,6)*shake*5, rand(-6,6)*shake*5);
+    drawSky();
+    drawArena();
+    drawParticles();
+    ctx.restore();
+    if (flash) {
+      ctx.fillStyle = `rgba(242,180,65,${flash*.35})`;
+      ctx.fillRect(0,0,W,H);
+    }
+  }
+  function drawSky(){
+    ctx.save();
+    ctx.globalAlpha = darkMode.matches ? .18 : .28;
+    ctx.strokeStyle = darkMode.matches ? "#d6efe5" : "#356a66";
+    ctx.lineWidth = 1;
+    for(let i=0;i<7;i++){
+      const r = ringR*(.45+i*.18) + Math.sin(elapsed+i)*6;
+      ctx.beginPath();
+      ctx.ellipse(cx,cy,r,r*.72,Math.sin(i)*.08,0,TAU);
+      ctx.stroke();
+    }
+    ctx.restore();
+  }
+  function drawArena(){
+    const ink = css.getPropertyValue("--ink").trim();
+    ctx.save();
+    ctx.lineCap = "round";
+    ctx.strokeStyle = darkMode.matches ? "rgba(237,247,236,.16)" : "rgba(20,32,31,.16)";
+    ctx.lineWidth = 1.4;
+    ctx.beginPath(); ctx.arc(cx,cy,ringR,0,TAU); ctx.stroke();
+    ctx.beginPath(); ctx.arc(cx,cy,orbitR,0,TAU); ctx.stroke();
+    drawGates();
+    drawShadows();
+    const p = moonPos();
+    if (!moon) drawOrbitMoon(p.x,p.y);
+    if (aim && !moon) drawAim(p.x,p.y);
+    drawLaunchedMoon();
+    ctx.fillStyle = ink;
+    ctx.globalAlpha = .82;
+    ctx.beginPath(); ctx.arc(cx,cy,5,0,TAU); ctx.fill();
+    ctx.restore();
+  }
+  function drawGates(){
+    const gateArc = Math.max(.33, .62 - elapsed*.004);
+    for(let i=0;i<colors.length;i++){
+      const a = gateAngle(i), glow = i === target;
+      ctx.save();
+      ctx.strokeStyle = colors[i].hex;
+      ctx.lineWidth = glow ? 14 : 8;
+      ctx.globalAlpha = glow ? .95 : .38;
+      ctx.shadowColor = colors[i].hex;
+      ctx.shadowBlur = glow ? 20 : 0;
+      ctx.beginPath(); ctx.arc(cx,cy,ringR,a-gateArc/2,a+gateArc/2); ctx.stroke();
+      ctx.shadowBlur = 0;
+      ctx.globalAlpha = glow ? .92 : .45;
+      const tx = cx + Math.cos(a) * (ringR + 24), ty = cy + Math.sin(a) * (ringR + 24);
+      ctx.fillStyle = colors[i].hex;
+      ctx.beginPath(); ctx.arc(tx,ty,glow?5:3.5,0,TAU); ctx.fill();
+      ctx.restore();
+    }
+  }
+  function drawShadows(){
+    ctx.save();
+    ctx.strokeStyle = darkMode.matches ? "rgba(1,5,5,.72)" : "rgba(25,37,35,.34)";
+    ctx.lineWidth = 20;
+    ctx.lineCap = "round";
+    const sr = lerp(orbitR + 35, ringR - 45, .62);
+    for(let i=0;i<shadows.length;i++){
+      const a = shadowAngle(i), arc = .54 + elapsed*.003;
+      ctx.beginPath(); ctx.arc(cx,cy,sr,a-arc/2,a+arc/2); ctx.stroke();
+    }
+    ctx.restore();
+  }
+  function drawOrbitMoon(x,y){
+    const c = colors[target].hex;
+    ctx.save();
+    ctx.shadowColor = c; ctx.shadowBlur = 18;
+    ctx.fillStyle = c; ctx.beginPath(); ctx.arc(x,y,13,0,TAU); ctx.fill();
+    ctx.shadowBlur = 0; ctx.fillStyle = "rgba(255,255,255,.72)";
+    ctx.beginPath(); ctx.arc(x-4,y-4,4,0,TAU); ctx.fill();
+    ctx.restore();
+  }
+  function drawAim(x,y){
+    const vx = aim.sx - aim.x, vy = aim.sy - aim.y;
+    const len = clamp(Math.hypot(vx,vy),0,122);
+    if (len < 5) return;
+    const a = Math.atan2(vy,vx), ex = x + Math.cos(a)*len*1.25, ey = y + Math.sin(a)*len*1.25;
+    ctx.save();
+    ctx.strokeStyle = colors[target].hex; ctx.fillStyle = colors[target].hex;
+    ctx.globalAlpha = .85; ctx.lineWidth = 4; ctx.lineCap = "round";
+    ctx.beginPath(); ctx.moveTo(x,y); ctx.lineTo(ex,ey); ctx.stroke();
+    ctx.beginPath();
+    ctx.moveTo(ex,ey);
+    ctx.lineTo(ex-Math.cos(a-.45)*16, ey-Math.sin(a-.45)*16);
+    ctx.lineTo(ex-Math.cos(a+.45)*16, ey-Math.sin(a+.45)*16);
+    ctx.closePath(); ctx.fill();
+    ctx.globalAlpha = .22; ctx.beginPath(); ctx.arc(aim.x, aim.y, 22 + Math.sin(elapsed*8)*2, 0, TAU); ctx.fill();
+    ctx.restore();
+  }
+  function drawLaunchedMoon(){
+    if (!moon) return;
+    ctx.save();
+    for(let i=0;i<moon.trail.length;i++){
+      const t = i / moon.trail.length;
+      ctx.globalAlpha = t*.45;
+      ctx.fillStyle = moon.color;
+      ctx.beginPath(); ctx.arc(moon.trail[i].x,moon.trail[i].y,3+t*6,0,TAU); ctx.fill();
+    }
+    ctx.globalAlpha = 1; ctx.shadowColor = moon.color; ctx.shadowBlur = 18; ctx.fillStyle = moon.color;
+    ctx.beginPath(); ctx.arc(moon.x,moon.y,12,0,TAU); ctx.fill();
+    ctx.restore();
+  }
+  function drawParticles(){
+    for(const r of ripples){
+      ctx.save();
+      ctx.globalAlpha = clamp(r.life/.55,0,1)*.55;
+      ctx.strokeStyle = r.color; ctx.lineWidth = 2;
+      ctx.beginPath(); ctx.arc(r.x,r.y,r.r,0,TAU); ctx.stroke();
+      ctx.restore();
+    }
+    for(const p of particles){
+      ctx.save();
+      ctx.globalAlpha = clamp(p.life/.75,0,1);
+      ctx.fillStyle = p.color;
+      ctx.beginPath(); ctx.arc(p.x,p.y,p.r,0,TAU); ctx.fill();
+      ctx.restore();
+    }
+  }
+  function frame(t){
+    const dt = Math.min(.033, (t-last)/1000 || .016);
+    last = t;
+    step(dt);
+    draw();
+    requestAnimationFrame(frame);
+  }
+  requestAnimationFrame(frame);
+})();
+</script>
+</body>
+</html>
