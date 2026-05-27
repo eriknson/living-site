@@ -1,0 +1,461 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Erik Nilsson</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Instrument+Sans:wdth,wght@75..100,400..700&family=Sora:wght@500;700&display=swap" rel="stylesheet" />
+  <style>
+    *, *::before, *::after { box-sizing: border-box; }
+    html { -webkit-text-size-adjust: 100%; }
+    body {
+      margin: 0;
+      min-height: 100dvh;
+      font-family: "Instrument Sans", system-ui, sans-serif;
+      font-variation-settings: "wdth" 88;
+      font-size: clamp(0.95rem, 0.88rem + 0.35vw, 1.05rem);
+      line-height: 1.45;
+      color: #0a0a0b;
+      background: #f4f1ec;
+    }
+
+    @supports (color: color(display-p3 1 1 1)) {
+      body {
+        color: color(display-p3 0.04 0.04 0.045);
+        background: color(display-p3 0.94 0.93 0.89);
+      }
+    }
+
+    a {
+      color: inherit;
+      text-decoration-thickness: 1px;
+      text-underline-offset: 0.2em;
+      text-decoration-color: currentColor;
+    }
+    a:hover { text-decoration-thickness: 2px; }
+    a:focus-visible {
+      outline: 3px solid;
+      outline-offset: 4px;
+    }
+
+    main {
+      max-width: 40rem;
+      margin: 0 auto;
+      padding: clamp(1.25rem, 4vw, 3rem);
+    }
+
+    header.hero {
+      position: relative;
+      padding: clamp(2.5rem, 8vw, 5rem) clamp(1.5rem, 5vw, 3.5rem) clamp(2rem, 5vw, 3.25rem);
+      margin-inline: clamp(-1.25rem, -4vw, -3rem);
+      margin-bottom: clamp(2rem, 5vw, 3.5rem);
+      font-family: Sora, "Instrument Sans", sans-serif;
+      letter-spacing: -0.03em;
+      border-radius: clamp(0.25rem, 1vw, 0.75rem);
+      background: #1a0630;
+      color: #faf8ff;
+    }
+
+    @supports (color: color(display-p3 1 1 1)) {
+      header.hero {
+        background: color(display-p3 0.06 0.02 0.22);
+        color: color(display-p3 0.98 0.97 1);
+      }
+    }
+
+    header.hero::after {
+      content: "";
+      position: absolute;
+      inset: 0;
+      pointer-events: none;
+      border-radius: inherit;
+      box-shadow:
+        inset 0 1px 0 color(display-p3 0.45 1 0.85 / 0.14),
+        inset 0 -1px 0 color(display-p3 1 0.2 0.55 / 0.1);
+    }
+
+    /* Fallback inset hairlines without P3 alpha */
+    @supports not (color: color(display-p3 1 1 1)) {
+      header.hero::after {
+        box-shadow:
+          inset 0 1px 0 rgb(255 255 255 / 0.08),
+          inset 0 -1px 0 rgb(255 255 255 / 0.04);
+      }
+    }
+
+    h1 {
+      margin: 0 0 0.35rem;
+      font-size: clamp(2.4rem, 6vw + 1rem, 4.85rem);
+      font-weight: 700;
+      line-height: 0.95;
+    }
+
+    .tag {
+      margin: 0;
+      font-size: clamp(0.75rem, 0.68rem + 0.35vw, 0.9rem);
+      font-weight: 500;
+      letter-spacing: 0.06em;
+      text-transform: uppercase;
+      opacity: 0.88;
+      max-width: 28em;
+    }
+
+    .glyph {
+      position: absolute;
+      right: clamp(1rem, 4vw, 2.5rem);
+      top: clamp(1rem, 3vw, 2rem);
+      font-size: clamp(4rem, 12vw, 10rem);
+      font-weight: 700;
+      line-height: 0.72;
+      color: #33184d;
+      mix-blend-mode: screen;
+      user-select: none;
+      opacity: 0.35;
+    }
+
+    @supports (color: color(display-p3 1 1 1)) {
+      .glyph {
+        color: color(display-p3 0.55 0.15 0.95);
+      }
+    }
+
+    .trace {
+      display: flex;
+      align-items: flex-end;
+      gap: clamp(3px, 0.9vw, 8px);
+      height: clamp(3.25rem, 10vw, 5.5rem);
+      margin-top: clamp(2rem, 5vw, 3rem);
+    }
+
+    .trace i {
+      display: block;
+      flex: 1 1 0;
+      min-width: 4px;
+      border-radius: 2px;
+      background: #ff2975;
+      height: var(--h, 50%);
+      animation: sway 9s ease-in-out infinite alternate;
+      animation-delay: var(--d, 0s);
+    }
+
+    @supports (color: color(display-p3 1 1 1)) {
+      .trace i:nth-child(1) { background: color(display-p3 0.92 0.15 0.62); }
+      .trace i:nth-child(2) { background: color(display-p3 0.42 1 0.78); }
+      .trace i:nth-child(3) { background: color(display-p3 0.98 0.55 0.08); }
+      .trace i:nth-child(4) { background: color(display-p3 0.25 0.55 1); }
+      .trace i:nth-child(5) { background: color(display-p3 0.75 1 0.12); }
+      .trace i:nth-child(6) { background: color(display-p3 1 0.22 0.35); }
+      .trace i:nth-child(7) { background: color(display-p3 0.38 0.95 1); }
+      .trace i:nth-child(8) { background: color(display-p3 0.88 0.35 1); }
+      .trace i:nth-child(9) { background: color(display-p3 0.95 0.78 0.1); }
+      .trace i:nth-child(10) { background: color(display-p3 0.2 0.92 0.72); }
+      .trace i:nth-child(11) { background: color(display-p3 1 0.42 0.55); }
+      .trace i:nth-child(12) { background: color(display-p3 0.5 0.35 1); }
+      .trace i:nth-child(13) { background: color(display-p3 0.82 1 0.35); }
+      .trace i:nth-child(14) { background: color(display-p3 1 0.32 0.15); }
+      .trace i:nth-child(15) { background: color(display-p3 0.22 1 0.9); }
+    }
+
+    /* solid bar motion only — opacity / height oscillation reads “stutter-gap” without gradients */
+    @keyframes sway {
+      0% { transform: scaleY(0.62); opacity: 0.55; }
+      100% { transform: scaleY(1); opacity: 1; }
+    }
+
+    .trace i:nth-child(1) { --h: 38%; --d: -0.2s; }
+    .trace i:nth-child(2) { --h: 92%; --d: -1.5s; }
+    .trace i:nth-child(3) { --h: 24%; --d: -0.8s; }
+    .trace i:nth-child(4) { --h: 71%; --d: -2.1s; }
+    .trace i:nth-child(5) { --h: 55%; --d: -0.3s; }
+    .trace i:nth-child(6) { --h: 84%; --d: -3s; }
+    .trace i:nth-child(7) { --h: 31%; --d: -1.9s; }
+    .trace i:nth-child(8) { --h: 66%; --d: -2.8s; }
+    .trace i:nth-child(9) { --h: 48%; --d: -0.6s; }
+    .trace i:nth-child(10) { --h: 100%; --d: -1.1s; }
+    .trace i:nth-child(11) { --h: 42%; --d: -3.5s; }
+    .trace i:nth-child(12) { --h: 77%; --d: -0.5s; }
+    .trace i:nth-child(13) { --h: 29%; --d: -2.4s; }
+    .trace i:nth-child(14) { --h: 88%; --d: -1.7s; }
+    .trace i:nth-child(15) { --h: 61%; --d: -0.1s; }
+
+    section.copy {
+      display: grid;
+      gap: clamp(1.5rem, 4vw, 2.75rem);
+    }
+
+    @media (min-width: 54rem) {
+      section.copy {
+        grid-template-columns: 1fr 1fr;
+        align-items: start;
+      }
+    }
+
+    article.lede {
+      padding: clamp(1.35rem, 4vw, 2rem);
+      border-radius: 0.65rem;
+      background: #0d2f2f;
+      color: #e8fffb;
+      font-variation-settings: "wdth" 94;
+      font-size: clamp(1rem, 0.95rem + 0.35vw, 1.14rem);
+    }
+
+    @supports (color: color(display-p3 1 1 1)) {
+      article.lede {
+        background: color(display-p3 0.02 0.22 0.2);
+        color: color(display-p3 0.92 1 0.98);
+      }
+    }
+
+    article.lede p {
+      margin: 0;
+      max-width: 42ch;
+    }
+
+    aside.panel {
+      padding: clamp(1.35rem, 4vw, 2rem);
+      border-radius: 0.65rem;
+      background: #5a0018;
+      color: #fff2f7;
+      display: grid;
+      gap: 1.25rem;
+    }
+
+    @supports (color: color(display-p3 1 1 1)) {
+      aside.panel {
+        background: color(display-p3 0.58 0.02 0.18);
+        color: color(display-p3 1 0.93 0.97);
+      }
+    }
+
+    .panel h2,
+    footer h2 {
+      margin: 0;
+      font-family: Sora, sans-serif;
+      font-size: 0.72rem;
+      font-weight: 700;
+      letter-spacing: 0.14em;
+      text-transform: uppercase;
+      opacity: 0.8;
+    }
+
+    .pulse {
+      list-style: none;
+      padding: 0;
+      margin: 0;
+      display: grid;
+      gap: 0.85rem;
+    }
+
+    .pulse li {
+      display: grid;
+      gap: 0.25rem;
+    }
+
+    .pulse time {
+      font-family: ui-monospace, monospace;
+      font-size: 0.72rem;
+      letter-spacing: 0.04em;
+      opacity: 0.65;
+    }
+
+    nav.links {
+      display: flex;
+      flex-wrap: wrap;
+      gap: clamp(0.85rem, 3vw, 1.65rem);
+      padding: clamp(1.25rem, 3vw, 2rem);
+      margin-top: clamp(1rem, 3vw, 2rem);
+      border-radius: 0.65rem;
+      border: 1px solid;
+      border-color: #c9c4bc;
+      background: #ffffff;
+      font-variation-settings: "wdth" 85;
+      font-weight: 500;
+    }
+
+    @supports (color: color(display-p3 1 1 1)) {
+      nav.links {
+        border-color: color(display-p3 0.65 0.62 0.58);
+        background: color(display-p3 1 0.995 0.99);
+      }
+    }
+
+    nav.links span.sep {
+      opacity: 0.35;
+      user-select: none;
+    }
+
+    footer.meta {
+      margin-top: clamp(2rem, 5vw, 3.5rem);
+      padding-top: clamp(1.25rem, 4vw, 2rem);
+      border-top: 1px solid;
+      border-color: #d4cfc6;
+      display: grid;
+      gap: 0.6rem;
+    }
+
+    @supports (color: color(display-p3 1 1 1)) {
+      footer.meta {
+        border-color: color(display-p3 0.78 0.75 0.7);
+      }
+    }
+
+    .meta-row {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 0.5rem 1.25rem;
+      align-items: baseline;
+      font-size: 0.82rem;
+      letter-spacing: 0.02em;
+      opacity: 0.92;
+    }
+
+    .ampers {
+      display: inline-block;
+      font-weight: 600;
+      opacity: 0.4;
+      margin-inline: 0.06em;
+    }
+
+    code.badge {
+      font-family: ui-monospace, monospace;
+      font-size: 0.78rem;
+      padding: 0.15em 0.45em;
+      border-radius: 0.3em;
+      background: #0a0a0b;
+      color: #f5f372;
+      font-weight: 500;
+      letter-spacing: 0;
+    }
+
+    @supports (color: color(display-p3 1 1 1)) {
+      code.badge {
+        background: color(display-p3 0.04 0.04 0.05);
+        color: color(display-p3 0.98 0.95 0.28);
+      }
+    }
+
+    @media (prefers-color-scheme: dark) {
+      body {
+        color: #e6e6ea;
+        background: #141218;
+      }
+      @supports (color: color(display-p3 1 1 1)) {
+        body {
+          color: color(display-p3 0.9 0.9 0.93);
+          background: color(display-p3 0.08 0.07 0.1);
+        }
+      }
+
+      nav.links {
+        border-color: #3a3640;
+        background: #1c1a22;
+        color: #e6e6ea;
+      }
+      @supports (color: color(display-p3 1 1 1)) {
+        nav.links {
+          border-color: color(display-p3 0.23 0.21 0.25);
+          background: color(display-p3 0.11 0.1 0.13);
+        }
+      }
+
+      footer.meta {
+        border-color: #3a3640;
+      }
+      @supports (color: color(display-p3 1 1 1)) {
+        footer.meta {
+          border-color: color(display-p3 0.23 0.21 0.25);
+        }
+      }
+
+      code.badge {
+        background: #e8e8ec;
+        color: #0a0a0b;
+      }
+      @supports (color: color(display-p3 1 1 1)) {
+        code.badge {
+          background: color(display-p3 0.92 0.92 0.94);
+          color: color(display-p3 0.04 0.04 0.05);
+        }
+      }
+    }
+
+    @media (prefers-reduced-motion: reduce) {
+      .trace i { animation: none; }
+    }
+  </style>
+
+<style id="__living_site_scroll_guard">
+  /* Scroll guard injected at build time to ensure generated pages remain scrollable in iframes. */
+  html, body {
+    height: auto !important;
+    min-height: 100% !important;
+    max-height: none !important;
+    overflow-y: auto !important;
+    overflow-x: hidden !important;
+    position: static !important;
+    -webkit-overflow-scrolling: touch !important;
+    touch-action: pan-y !important;
+    overscroll-behavior-y: contain !important;
+  }
+  /* Avoid accidental fixed full-screen traps that break scrolling on mobile. */
+  body {
+    inset: auto !important;
+  }
+</style>
+</head>
+<body>
+  <main>
+    <header class="hero">
+      <span class="glyph" aria-hidden="true">EN</span>
+      <h1>Erik Nilsson</h1>
+      <p class="tag">Product design · Cursor · San Francisco</p>
+      <div class="trace" role="presentation" aria-hidden="true">
+        <i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i>
+      </div>
+    </header>
+
+    <section class="copy">
+      <article class="lede">
+        <p>Design for how people build software with AI. This page is part of living-site — it rebuilds from fresh activity data daily.</p>
+      </article>
+      <aside class="panel" aria-label="Now">
+        <h2>2026-05-26</h2>
+        <ul class="pulse">
+          <li><span><code class="badge">±17°C</code> partly cloudy · spring</span></li>
+          <li><span>Lately · Fred again.., Drake, Beach House<span class="ampers">&</span>Jacub among others.</span></li>
+          <li>
+            <time datetime="2025-12-20">Dec 2025</time>
+            <span><a href="https://x.com/flowstated/status/2002167999353241901">Imagine 2026</a></span>
+          </li>
+        </ul>
+      </aside>
+    </section>
+
+    <nav class="links" aria-label="Contact">
+      <a href="https://eriks.design">Site</a>
+      <span class="sep">/</span>
+      <a href="https://cursor.com">Cursor</a>
+      <span class="sep">/</span>
+      <a href="https://x.com/flowstated">X</a>
+      <span class="sep">/</span>
+      <a href="https://github.com/eriknson">GitHub</a>
+      <span class="sep">/</span>
+      <a href="https://linkedin.com/in/eriknson">LinkedIn</a>
+      <span class="sep">/</span>
+      <a href="mailto:contact@eriks.design">Email</a>
+    </nav>
+
+    <footer class="meta">
+      <h2>Open edge</h2>
+      <div class="meta-row">
+        <span>Weight models next door<br />Agents from the phone<br />Pacific light in May</span>
+      </div>
+      <div class="meta-row">
+        <span><a href="https://github.com/eriknson">Repos</a> — side tinkering.</span>
+      </div>
+    </footer>
+  </main>
+</body>
+</html>
