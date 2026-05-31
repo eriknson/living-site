@@ -1,0 +1,681 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+    <title>Chord Sort</title>
+    <style>
+        :root {
+            --bg-color: #F4F4F6;
+            --text-color: #111111;
+            --bg-color-rgb: 244, 244, 246;
+        }
+        @media (prefers-color-scheme: dark) {
+            :root {
+                --bg-color: #0F1115;
+                --text-color: #FFFFFF;
+                --bg-color-rgb: 15, 17, 21;
+            }
+        }
+        body {
+            margin: 0;
+            padding: 0;
+            width: 100dvw;
+            height: 100dvh;
+            overflow: hidden;
+            background-color: var(--bg-color);
+            color: var(--text-color);
+            font-family: ui-monospace, 'SFMono-Regular', Menlo, monospace;
+            user-select: none;
+            -webkit-user-select: none;
+            touch-action: none;
+        }
+        canvas {
+            display: block;
+        }
+        #ui-layer {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            pointer-events: none;
+            display: flex;
+            flex-direction: column;
+        }
+        .screen {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            background: rgba(var(--bg-color-rgb), 0.85);
+            backdrop-filter: blur(8px);
+            -webkit-backdrop-filter: blur(8px);
+            pointer-events: auto;
+            z-index: 10;
+        }
+        h1 {
+            font-size: 2.5rem;
+            margin-bottom: 0.5rem;
+            letter-spacing: 0.1em;
+            text-align: center;
+        }
+        p {
+            font-size: 1rem;
+            opacity: 0.7;
+            margin-bottom: 0.5rem;
+            text-align: center;
+            max-width: 80%;
+        }
+        button {
+            margin-top: 2rem;
+            padding: 1rem 3rem;
+            font-size: 1.2rem;
+            font-family: inherit;
+            font-weight: bold;
+            background: var(--text-color);
+            color: var(--bg-color);
+            border: none;
+            border-radius: 30px;
+            cursor: pointer;
+            transition: transform 0.1s, opacity 0.2s;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.2);
+        }
+        button:active {
+            transform: scale(0.95);
+        }
+        #hud {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            padding: 20px 30px;
+            box-sizing: border-box;
+            display: flex;
+            justify-content: space-between;
+            align-items: flex-start;
+            z-index: 5;
+        }
+        #score {
+            font-size: 2.5rem;
+            font-weight: bold;
+            line-height: 1;
+        }
+        @keyframes pop {
+            0% { transform: scale(1); }
+            50% { transform: scale(1.3); }
+            100% { transform: scale(1); }
+        }
+        .pop {
+            animation: pop 0.2s ease-out;
+        }
+        #lives {
+            display: flex;
+            gap: 8px;
+            margin-top: 8px;
+        }
+        .heart {
+            width: 14px;
+            height: 14px;
+            background-color: #FF4D4D;
+            border-radius: 50%;
+            transition: transform 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275), opacity 0.3s;
+        }
+        .heart.lost {
+            transform: scale(0);
+            opacity: 0;
+        }
+    </style>
+</head>
+<body>
+    <canvas id="gameCanvas"></canvas>
+    <div id="ui-layer">
+        <div id="start-screen" class="screen">
+            <h1>CHORD SORT</h1>
+            <p>Swipe left/right to sort notes.</p>
+            <p>Swipe down to drop instantly.</p>
+            <button id="start-btn">PLAY</button>
+        </div>
+        <div id="game-over-screen" class="screen" style="display: none;">
+            <h1>GAME OVER</h1>
+            <p>Score: <span id="final-score" style="font-weight: bold; color: var(--text-color); opacity: 1;">0</span></p>
+            <p>Best: <span id="best-score">0</span></p>
+            <button id="restart-btn">PLAY AGAIN</button>
+        </div>
+        <div id="hud" style="display: none;">
+            <div id="score">0</div>
+            <div id="lives">
+                <div class="heart"></div>
+                <div class="heart"></div>
+                <div class="heart"></div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const canvas = document.getElementById('gameCanvas');
+        const ctx = canvas.getContext('2d', { alpha: false });
+        
+        let GAME_WIDTH, LANE_WIDTH, OFFSET_X, TARGET_Y, TARGET_HEIGHT;
+        let isDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
+        window.matchMedia('(prefers-color-scheme: dark)').addEventListener('change', e => {
+            isDark = e.matches;
+        });
+
+        function resize() {
+            canvas.width = window.innerWidth;
+            canvas.height = window.innerHeight;
+            GAME_WIDTH = Math.min(window.innerWidth, 600);
+            LANE_WIDTH = GAME_WIDTH / 4;
+            OFFSET_X = (window.innerWidth - GAME_WIDTH) / 2;
+            TARGET_Y = window.innerHeight - Math.max(120, window.innerHeight * 0.15);
+            TARGET_HEIGHT = window.innerHeight - TARGET_Y;
+        }
+        window.addEventListener('resize', resize);
+        resize();
+
+        // Game State
+        let gameState = 'start'; // start, playing, gameover
+        let score = 0;
+        let sessionHighScore = 0;
+        let lives = 3;
+        let notes = [];
+        let particles = [];
+        let popups = [];
+        let hitPause = 0;
+        let screenShake = 0;
+        let targetFlashes = [0, 0, 0, 0];
+        let globalTime = 0;
+
+        const colors = ['#FF4D4D', '#FFB800', '#00D084', '#00A3FF']; // Coral, Sun, Teal, Sky
+        const freqs = [261.63, 293.66, 329.63, 392.00]; // C4, D4, E4, G4
+
+        // Audio
+        let audioCtx = null;
+        let droneOsc = null;
+        let droneGain = null;
+
+        function initAudio() {
+            if (!audioCtx) {
+                audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+            }
+            if (audioCtx.state === 'suspended') audioCtx.resume();
+        }
+
+        function playNote(freq, type = 'sine', duration = 0.5, vol = 0.1) {
+            if (!audioCtx) return;
+            const osc = audioCtx.createOscillator();
+            const gain = audioCtx.createGain();
+            const filter = audioCtx.createBiquadFilter();
+            
+            osc.type = type;
+            osc.frequency.setValueAtTime(freq, audioCtx.currentTime);
+            
+            filter.type = 'lowpass';
+            filter.frequency.setValueAtTime(freq * 3, audioCtx.currentTime);
+            filter.frequency.exponentialRampToValueAtTime(freq, audioCtx.currentTime + duration);
+            
+            gain.gain.setValueAtTime(0, audioCtx.currentTime);
+            gain.gain.linearRampToValueAtTime(vol, audioCtx.currentTime + 0.05);
+            gain.gain.exponentialRampToValueAtTime(0.001, audioCtx.currentTime + duration);
+            
+            osc.connect(filter);
+            filter.connect(gain);
+            gain.connect(audioCtx.destination);
+            
+            osc.start();
+            osc.stop(audioCtx.currentTime + duration);
+        }
+
+        function playCorrect(lane) {
+            playNote(freqs[lane], 'sine', 0.6, 0.3);
+            playNote(freqs[lane] * 1.5, 'triangle', 0.4, 0.1);
+        }
+
+        function playWrong() {
+            playNote(150, 'sawtooth', 0.4, 0.15);
+            playNote(155, 'square', 0.4, 0.15);
+        }
+
+        function playGameOver() {
+            playNote(200, 'sawtooth', 1.0, 0.3);
+            setTimeout(() => playNote(180, 'sawtooth', 1.0, 0.3), 200);
+            setTimeout(() => playNote(150, 'sawtooth', 1.5, 0.3), 400);
+        }
+
+        function startDrone() {
+            if (!audioCtx || droneOsc) return;
+            droneOsc = audioCtx.createOscillator();
+            droneGain = audioCtx.createGain();
+            droneOsc.type = 'sine';
+            droneOsc.frequency.setValueAtTime(65.41, audioCtx.currentTime); // C2
+            droneGain.gain.setValueAtTime(0, audioCtx.currentTime);
+            droneGain.gain.linearRampToValueAtTime(0.03, audioCtx.currentTime + 2);
+            droneOsc.connect(droneGain);
+            droneGain.connect(audioCtx.destination);
+            droneOsc.start();
+        }
+
+        function stopDrone() {
+            if (droneGain && audioCtx) {
+                droneGain.gain.linearRampToValueAtTime(0.001, audioCtx.currentTime + 1);
+                setTimeout(() => {
+                    if (droneOsc) {
+                        droneOsc.stop();
+                        droneOsc.disconnect();
+                        droneOsc = null;
+                    }
+                }, 1000);
+            }
+        }
+
+        // Classes
+        class Note {
+            constructor(lane, colorIndex) {
+                this.lane = lane;
+                this.colorIndex = colorIndex;
+                this.y = -50;
+                this.visualX = OFFSET_X + lane * LANE_WIDTH + LANE_WIDTH / 2;
+                this.isActive = false;
+                this.resolved = false;
+                this.fastDropping = false;
+            }
+            
+            update(dt, speed) {
+                if (this.fastDropping) {
+                    this.y += speed * dt * 12;
+                } else {
+                    this.y += speed * dt;
+                }
+                
+                let targetX = OFFSET_X + this.lane * LANE_WIDTH + LANE_WIDTH / 2;
+                this.visualX += (targetX - this.visualX) * 0.4;
+            }
+            
+            draw(ctx, time) {
+                let color = colors[this.colorIndex];
+                let targetX = OFFSET_X + this.lane * LANE_WIDTH + LANE_WIDTH / 2;
+                let tilt = (targetX - this.visualX) * 0.05;
+                
+                ctx.save();
+                ctx.translate(this.visualX, this.y);
+                ctx.rotate(tilt);
+                
+                let alpha = Math.min(1.0, (this.y + 50) / 100);
+                ctx.globalAlpha = alpha;
+                
+                if (this.isActive) {
+                    ctx.shadowColor = color;
+                    ctx.shadowBlur = 20;
+                    
+                    let pulse = 1 + Math.sin(time * 8) * 0.1;
+                    ctx.beginPath();
+                    ctx.ellipse(0, 0, 14 * pulse + 4, 10 * pulse + 4, -Math.PI / 6, 0, Math.PI * 2);
+                    ctx.strokeStyle = `rgba(255,255,255,0.4)`;
+                    ctx.lineWidth = 2;
+                    ctx.stroke();
+                }
+                
+                ctx.fillStyle = color;
+                ctx.strokeStyle = color;
+                
+                ctx.beginPath();
+                ctx.ellipse(0, 0, 14, 10, -Math.PI / 6, 0, Math.PI * 2);
+                ctx.fill();
+                
+                ctx.lineWidth = 4;
+                ctx.lineCap = 'round';
+                ctx.beginPath();
+                ctx.moveTo(10, -2);
+                ctx.lineTo(10, -35);
+                ctx.stroke();
+                
+                ctx.fillStyle = 'rgba(255, 255, 255, 0.4)';
+                ctx.beginPath();
+                ctx.ellipse(-3, -2, 4, 3, -Math.PI / 6, 0, Math.PI * 2);
+                ctx.fill();
+                
+                ctx.restore();
+                
+                if (this.fastDropping) {
+                    ctx.fillStyle = color;
+                    ctx.globalAlpha = 0.15;
+                    ctx.fillRect(this.visualX - 14, this.y - 200, 28, 200);
+                    ctx.globalAlpha = 1.0;
+                }
+            }
+        }
+
+        class Particle {
+            constructor(x, y, color) {
+                this.x = x;
+                this.y = y;
+                this.color = color;
+                let angle = Math.random() * Math.PI * 2;
+                let speed = Math.random() * 200 + 50;
+                this.vx = Math.cos(angle) * speed;
+                this.vy = Math.sin(angle) * speed - 150;
+                this.life = 1.0;
+                this.decay = Math.random() * 2 + 1.5;
+                this.size = Math.random() * 5 + 2;
+            }
+            update(dt) {
+                this.x += this.vx * dt;
+                this.y += this.vy * dt;
+                this.vy += 600 * dt; // gravity
+                this.life -= this.decay * dt;
+            }
+            draw(ctx) {
+                ctx.globalAlpha = Math.max(0, this.life);
+                ctx.fillStyle = this.color;
+                ctx.beginPath();
+                ctx.arc(this.x, this.y, this.size, 0, Math.PI * 2);
+                ctx.fill();
+                ctx.globalAlpha = 1.0;
+            }
+        }
+
+        class ScorePopup {
+            constructor(x, y, text, color) {
+                this.x = x;
+                this.y = y;
+                this.text = text;
+                this.color = color;
+                this.life = 1.0;
+            }
+            update(dt) {
+                this.y -= 60 * dt;
+                this.life -= dt * 1.5;
+            }
+            draw(ctx) {
+                ctx.globalAlpha = Math.max(0, this.life);
+                ctx.fillStyle = this.color;
+                ctx.font = 'bold 24px ui-monospace, monospace';
+                ctx.textAlign = 'center';
+                ctx.fillText(this.text, this.x, this.y);
+                ctx.globalAlpha = 1.0;
+            }
+        }
+
+        function spawnParticles(x, y, color) {
+            for (let i = 0; i < 15; i++) {
+                particles.push(new Particle(x, y, color));
+            }
+        }
+
+        function moveActiveNote(dir) {
+            let activeNote = notes.find(n => n.isActive);
+            if (activeNote && !activeNote.fastDropping) {
+                activeNote.lane += dir;
+                if (activeNote.lane < 0) activeNote.lane = 0;
+                if (activeNote.lane > 3) activeNote.lane = 3;
+            }
+        }
+
+        function fastDrop() {
+            let activeNote = notes.find(n => n.isActive);
+            if (activeNote && !activeNote.fastDropping) {
+                activeNote.fastDropping = true;
+            }
+        }
+
+        // Input
+        let touchStartX = 0;
+        let touchStartY = 0;
+        let touchX = 0;
+        let touchY = 0;
+        let isSwiping = false;
+
+        window.addEventListener('touchstart', e => {
+            if (e.target.tagName === 'BUTTON') return;
+            touchStartX = e.touches[0].clientX;
+            touchStartY = e.touches[0].clientY;
+            touchX = touchStartX;
+            touchY = touchStartY;
+            isSwiping = true;
+        }, {passive: false});
+
+        window.addEventListener('touchmove', e => {
+            if (e.target.tagName !== 'BUTTON') e.preventDefault();
+            if (!isSwiping || gameState !== 'playing') return;
+            
+            let currentX = e.touches[0].clientX;
+            let currentY = e.touches[0].clientY;
+            
+            let dx = currentX - touchX;
+            let dy = currentY - touchY;
+            
+            let swipeThresholdX = Math.min(window.innerWidth * 0.1, 40);
+            let swipeThresholdY = 50;
+            
+            if (dx > swipeThresholdX) {
+                moveActiveNote(1);
+                touchX += swipeThresholdX;
+            } else if (dx < -swipeThresholdX) {
+                moveActiveNote(-1);
+                touchX -= swipeThresholdX;
+            }
+            
+            if (dy > swipeThresholdY) {
+                fastDrop();
+                isSwiping = false;
+            }
+        }, {passive: false});
+
+        window.addEventListener('touchend', () => {
+            isSwiping = false;
+        });
+
+        window.addEventListener('keydown', e => {
+            if (gameState !== 'playing') return;
+            if (e.key === 'ArrowLeft') moveActiveNote(-1);
+            else if (e.key === 'ArrowRight') moveActiveNote(1);
+            else if (e.key === 'ArrowDown') fastDrop();
+        });
+
+        function startGame() {
+            initAudio();
+            startDrone();
+            gameState = 'playing';
+            score = 0;
+            lives = 3;
+            notes = [];
+            particles = [];
+            popups = [];
+            hitPause = 0;
+            screenShake = 0;
+            
+            document.getElementById('score').innerText = '0';
+            document.querySelectorAll('.heart').forEach(h => h.classList.remove('lost'));
+            
+            document.getElementById('start-screen').style.display = 'none';
+            document.getElementById('game-over-screen').style.display = 'none';
+            document.getElementById('hud').style.display = 'flex';
+            
+            // Initial note
+            notes.push(new Note(Math.floor(Math.random() * 4), Math.floor(Math.random() * 4)));
+        }
+
+        document.getElementById('start-btn').addEventListener('click', startGame);
+        document.getElementById('restart-btn').addEventListener('click', startGame);
+
+        // Main Loop
+        let lastTime = performance.now();
+        function loop(time) {
+            requestAnimationFrame(loop);
+            let dt = (time - lastTime) / 1000;
+            lastTime = time;
+            if (dt > 0.1) dt = 0.1;
+            
+            globalTime += dt;
+            update(dt);
+            draw(dt);
+        }
+
+        function update(dt) {
+            if (gameState !== 'playing') return;
+            
+            if (hitPause > 0) {
+                hitPause -= dt;
+                return;
+            }
+            
+            let speed = Math.min(150 + score * 5, 800);
+            let distanceBetweenNotes = Math.max(150, 400 - score * 5);
+            
+            if (notes.length === 0 || notes[notes.length - 1].y > distanceBetweenNotes) {
+                let lane = Math.floor(Math.random() * 4);
+                let colorIndex = Math.floor(Math.random() * 4);
+                notes.push(new Note(lane, colorIndex));
+            }
+            
+            let activeNote = null;
+            let maxY = -Infinity;
+            
+            for (let i = notes.length - 1; i >= 0; i--) {
+                let n = notes[i];
+                n.update(dt, speed);
+                
+                if (!n.resolved && n.y > maxY) {
+                    maxY = n.y;
+                    activeNote = n;
+                }
+                
+                if (n.y >= TARGET_Y && !n.resolved) {
+                    n.resolved = true;
+                    n.y = TARGET_Y;
+                    
+                    if (n.lane === n.colorIndex) {
+                        score++;
+                        playCorrect(n.lane);
+                        spawnParticles(n.visualX, TARGET_Y, colors[n.colorIndex]);
+                        popups.push(new ScorePopup(n.visualX, TARGET_Y - 20, '+1', colors[n.colorIndex]));
+                        targetFlashes[n.lane] = 1.0;
+                        hitPause = 0.03;
+                        if (navigator.vibrate) navigator.vibrate(10);
+                        
+                        let scoreEl = document.getElementById('score');
+                        scoreEl.innerText = score;
+                        scoreEl.classList.remove('pop');
+                        void scoreEl.offsetWidth;
+                        scoreEl.classList.add('pop');
+                    } else {
+                        lives--;
+                        playWrong();
+                        screenShake = 15;
+                        spawnParticles(n.visualX, TARGET_Y, isDark ? '#FFFFFF' : '#111111');
+                        if (navigator.vibrate) navigator.vibrate([30, 30, 30]);
+                        
+                        const hearts = document.querySelectorAll('.heart');
+                        if (lives >= 0 && lives < 3) {
+                            hearts[2 - lives].classList.add('lost');
+                        }
+                        
+                        if (lives <= 0) {
+                            gameState = 'gameover';
+                            stopDrone();
+                            playGameOver();
+                            if (score > sessionHighScore) sessionHighScore = score;
+                            document.getElementById('final-score').innerText = score;
+                            document.getElementById('best-score').innerText = sessionHighScore;
+                            document.getElementById('game-over-screen').style.display = 'flex';
+                            document.getElementById('hud').style.display = 'none';
+                        }
+                    }
+                }
+            }
+            
+            notes = notes.filter(n => !n.resolved);
+            
+            notes.forEach(n => n.isActive = false);
+            if (activeNote) activeNote.isActive = true;
+            
+            particles.forEach(p => p.update(dt));
+            particles = particles.filter(p => p.life > 0);
+            
+            popups.forEach(p => p.update(dt));
+            popups = popups.filter(p => p.life > 0);
+            
+            for (let i=0; i<4; i++) {
+                if (targetFlashes[i] > 0) targetFlashes[i] -= dt * 3;
+            }
+        }
+
+        function draw(dt) {
+            ctx.fillStyle = isDark ? '#0F1115' : '#F4F4F6';
+            ctx.fillRect(0, 0, canvas.width, canvas.height);
+            
+            ctx.save();
+            if (screenShake > 0) {
+                let dx = (Math.random() - 0.5) * screenShake;
+                let dy = (Math.random() - 0.5) * screenShake;
+                ctx.translate(dx, dy);
+                if (gameState === 'playing') screenShake -= dt * 60;
+            }
+            
+            // Staff Lines
+            ctx.lineWidth = 2;
+            let activeNote = notes.find(n => n.isActive);
+            
+            for (let i = 0; i <= 4; i++) {
+                let x = OFFSET_X + i * LANE_WIDTH;
+                let dist = activeNote ? Math.abs(activeNote.visualX - x) : 1000;
+                let alpha = 0.05;
+                if (dist < LANE_WIDTH) {
+                    alpha = 0.05 + 0.15 * (1 - dist/LANE_WIDTH);
+                }
+                
+                ctx.strokeStyle = isDark ? `rgba(255,255,255,${alpha})` : `rgba(0,0,0,${alpha})`;
+                ctx.beginPath();
+                ctx.moveTo(x, 0);
+                ctx.lineTo(x, window.innerHeight);
+                ctx.stroke();
+            }
+            
+            // Targets
+            let pulse = Math.sin(globalTime * 3) * 0.05;
+            for (let i = 0; i < 4; i++) {
+                let x = OFFSET_X + i * LANE_WIDTH;
+                
+                ctx.fillStyle = colors[i];
+                ctx.globalAlpha = Math.max(0, 0.1 + targetFlashes[i] * 0.5 + pulse);
+                ctx.fillRect(x, TARGET_Y, LANE_WIDTH, TARGET_HEIGHT);
+                
+                ctx.globalAlpha = Math.max(0, 0.4 + targetFlashes[i] * 0.6);
+                ctx.fillRect(x, TARGET_Y, LANE_WIDTH, 4);
+            }
+            ctx.globalAlpha = 1.0;
+            
+            // Speed lines
+            if (notes.some(n => n.fastDropping)) {
+                ctx.strokeStyle = isDark ? 'rgba(255,255,255,0.05)' : 'rgba(0,0,0,0.05)';
+                ctx.lineWidth = 1;
+                ctx.beginPath();
+                for (let i=0; i<8; i++) {
+                    let x = OFFSET_X + Math.random() * GAME_WIDTH;
+                    ctx.moveTo(x, 0);
+                    ctx.lineTo(x, window.innerHeight);
+                }
+                ctx.stroke();
+            }
+            
+            // Notes
+            notes.filter(n => !n.isActive).forEach(n => n.draw(ctx, globalTime));
+            notes.filter(n => n.isActive).forEach(n => n.draw(ctx, globalTime));
+            
+            // Particles & Popups
+            particles.forEach(p => p.draw(ctx));
+            popups.forEach(p => p.draw(ctx));
+            
+            ctx.restore();
+        }
+
+        requestAnimationFrame(loop);
+    </script>
+</body>
+</html>

@@ -1,0 +1,1258 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="theme-color" content="#0a1419" media="(prefers-color-scheme: dark)">
+<meta name="theme-color" content="#ece5d2" media="(prefers-color-scheme: light)">
+<title>Misty Routes</title>
+<style>
+:root {
+  color-scheme: light dark;
+  --bg-deep: #0a1419;
+  --bg-mid: #142428;
+  --ink: #e2eced;
+  --ink-dim: rgba(226,236,237,0.5);
+  --ink-fade: rgba(226,236,237,0.15);
+  --accent: #f4b942;
+  --beacon: #4fb8c4;
+  --line: rgba(226,236,237,0.16);
+  --line-soft: rgba(226,236,237,0.08);
+  --panel: rgba(8,16,20,0.78);
+  --button-bg: #e2eced;
+  --button-fg: #0a1419;
+}
+@media (prefers-color-scheme: light) {
+  :root {
+    --bg-deep: #ece5d2;
+    --bg-mid: #d8d0bb;
+    --ink: #18272d;
+    --ink-dim: rgba(24,39,45,0.55);
+    --ink-fade: rgba(24,39,45,0.16);
+    --accent: #c4571a;
+    --beacon: #216c79;
+    --line: rgba(24,39,45,0.22);
+    --line-soft: rgba(24,39,45,0.1);
+    --panel: rgba(236,229,210,0.86);
+    --button-bg: #18272d;
+    --button-fg: #ece5d2;
+  }
+}
+
+* { box-sizing: border-box; margin: 0; padding: 0; }
+
+html, body {
+  width: 100%;
+  height: 100dvh;
+  overflow: hidden;
+  background: var(--bg-deep);
+  color: var(--ink);
+  font-family: ui-monospace, 'SFMono-Regular', Menlo, Monaco, Consolas, monospace;
+  -webkit-tap-highlight-color: transparent;
+  -webkit-touch-callout: none;
+  overscroll-behavior: none;
+  user-select: none;
+  -webkit-user-select: none;
+}
+
+body {
+  position: fixed;
+  inset: 0;
+  touch-action: none;
+}
+
+canvas {
+  position: absolute;
+  inset: 0;
+  width: 100dvw;
+  height: 100dvh;
+  display: block;
+  touch-action: none;
+}
+
+.hud {
+  position: fixed;
+  top: 0; left: 0; right: 0;
+  padding: max(env(safe-area-inset-top, 0px), 14px) 22px 0;
+  display: flex;
+  justify-content: space-between;
+  pointer-events: none;
+  z-index: 5;
+  font-size: 11px;
+  letter-spacing: 0.15em;
+  text-transform: uppercase;
+}
+.hud > div { line-height: 1.4; }
+.hud .r { text-align: right; }
+.hud .label {
+  color: var(--ink-dim);
+  font-size: 9px;
+  margin-bottom: 4px;
+  letter-spacing: 0.32em;
+}
+.hud .value {
+  font-size: 18px;
+  font-variant-numeric: tabular-nums;
+  font-weight: 500;
+  letter-spacing: 0.04em;
+}
+
+.timer-track {
+  position: fixed;
+  top: 0; left: 0; right: 0;
+  height: 3px;
+  pointer-events: none;
+  z-index: 6;
+  background: var(--ink-fade);
+}
+.timer-fill {
+  position: absolute;
+  top: 0; left: 0;
+  height: 100%;
+  width: 100%;
+  background: var(--accent);
+  box-shadow: 0 0 10px var(--accent), 0 0 18px var(--accent);
+  transform-origin: 0 0;
+  transition: transform 0.1s linear;
+  transform: scaleX(1);
+}
+
+.overlay {
+  position: fixed;
+  inset: 0;
+  background: var(--panel);
+  backdrop-filter: blur(22px) saturate(120%);
+  -webkit-backdrop-filter: blur(22px) saturate(120%);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 22px;
+  padding: 44px 26px max(env(safe-area-inset-bottom, 0px), 32px);
+  text-align: center;
+  z-index: 10;
+  opacity: 1;
+  transition: opacity 0.45s ease, visibility 0.45s;
+  visibility: visible;
+}
+.overlay.hidden {
+  opacity: 0;
+  pointer-events: none;
+  visibility: hidden;
+}
+
+.brand {
+  font-size: 10px;
+  letter-spacing: 0.5em;
+  text-transform: uppercase;
+  color: var(--ink-dim);
+  font-weight: 600;
+}
+
+.headline {
+  font-size: 42px;
+  font-weight: 500;
+  line-height: 1.04;
+  letter-spacing: -0.01em;
+  max-width: 340px;
+}
+
+.copy {
+  font-size: 11px;
+  letter-spacing: 0.18em;
+  line-height: 1.85;
+  color: var(--ink-dim);
+  max-width: 320px;
+  text-transform: uppercase;
+}
+
+.steps {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  margin-top: 4px;
+  width: 100%;
+  max-width: 340px;
+}
+.step {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  font-size: 10px;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+  color: var(--ink-dim);
+  text-align: left;
+  padding: 13px 16px;
+  border: 1px solid var(--line-soft);
+  border-radius: 2px;
+}
+.step .n {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 22px;
+  height: 22px;
+  border-radius: 50%;
+  background: var(--accent);
+  color: var(--bg-deep);
+  font-weight: 700;
+  flex-shrink: 0;
+  font-size: 10px;
+}
+
+.btn {
+  appearance: none;
+  -webkit-appearance: none;
+  background: var(--button-bg);
+  color: var(--button-fg);
+  border: none;
+  font-family: inherit;
+  font-size: 11px;
+  letter-spacing: 0.3em;
+  text-transform: uppercase;
+  padding: 18px 38px;
+  cursor: pointer;
+  margin-top: 8px;
+  min-height: 52px;
+  min-width: 200px;
+  font-weight: 700;
+  transition: transform 0.12s ease, opacity 0.2s ease;
+  border-radius: 0;
+}
+.btn:active { transform: scale(0.96); opacity: 0.88; }
+.btn:focus-visible { outline: 2px solid var(--accent); outline-offset: 4px; }
+
+.stat-row { display: flex; gap: 56px; margin-top: 12px; }
+.stat-label {
+  font-size: 9px;
+  color: var(--ink-dim);
+  letter-spacing: 0.3em;
+  text-transform: uppercase;
+  margin-bottom: 8px;
+}
+.stat-value {
+  font-size: 32px;
+  font-variant-numeric: tabular-nums;
+  font-weight: 500;
+}
+
+.hint {
+  position: fixed;
+  bottom: max(env(safe-area-inset-bottom, 0px), 26px);
+  left: 0; right: 0;
+  text-align: center;
+  font-size: 10px;
+  color: var(--ink-dim);
+  letter-spacing: 0.45em;
+  text-transform: uppercase;
+  pointer-events: none;
+  z-index: 5;
+  opacity: 0;
+  transition: opacity 0.5s;
+}
+.hint.show { opacity: 1; animation: hintPulse 2.6s ease-in-out infinite; }
+@keyframes hintPulse {
+  0%, 100% { opacity: 0.75; }
+  50% { opacity: 0.35; }
+}
+
+.flash {
+  position: fixed;
+  inset: 0;
+  background: var(--accent);
+  pointer-events: none;
+  opacity: 0;
+  z-index: 7;
+  mix-blend-mode: screen;
+  transition: opacity 0.25s ease;
+}
+@media (prefers-color-scheme: light) {
+  .flash { mix-blend-mode: multiply; }
+}
+
+@media (max-height: 700px) {
+  .headline { font-size: 34px; }
+  .steps { gap: 6px; }
+  .step { padding: 10px 14px; }
+}
+@media (max-height: 580px) {
+  .steps { display: none; }
+  .headline { font-size: 28px; }
+  .overlay { gap: 16px; }
+}
+</style>
+</head>
+<body>
+<canvas id="game"></canvas>
+<div class="hud">
+  <div>
+    <div class="label">Route</div>
+    <div class="value" id="level">01</div>
+  </div>
+  <div class="r">
+    <div class="label">Score</div>
+    <div class="value" id="score">000000</div>
+  </div>
+</div>
+<div class="timer-track"><div class="timer-fill" id="timer"></div></div>
+<div class="flash" id="flash"></div>
+
+<div class="overlay" id="title-screen">
+  <div class="brand">Misty Routes</div>
+  <div class="headline">Draw paths<br>through the fog</div>
+  <div class="copy">Guide the courier to each beacon.<br>Storms drift in. Stay clear.</div>
+  <div class="steps">
+    <div class="step"><span class="n">1</span>Touch and drag to sketch a route</div>
+    <div class="step"><span class="n">2</span>Release — the courier walks it</div>
+    <div class="step"><span class="n">3</span>Reach the beacon before time runs out</div>
+  </div>
+  <button class="btn" id="start">Begin</button>
+</div>
+
+<div class="overlay hidden" id="gameover-screen">
+  <div class="brand">Lost in fog</div>
+  <div class="headline">The path<br>vanished</div>
+  <div class="stat-row">
+    <div>
+      <div class="stat-label">Routes</div>
+      <div class="stat-value" id="final-routes">0</div>
+    </div>
+    <div>
+      <div class="stat-label">Score</div>
+      <div class="stat-value" id="final-score">0</div>
+    </div>
+  </div>
+  <button class="btn" id="restart">Play again</button>
+</div>
+
+<div class="hint" id="hint">Drag to draw a route</div>
+
+<script>
+(() => {
+  'use strict';
+
+  const $ = (id) => document.getElementById(id);
+  const canvas = $('game');
+  const ctx = canvas.getContext('2d', { alpha: false });
+
+  let W = 0, H = 0, DPR = 1;
+  const SAFE_TOP = 56;
+  const SAFE_BOT = 36;
+
+  function resize() {
+    DPR = Math.min(window.devicePixelRatio || 1, 2);
+    W = window.innerWidth;
+    H = window.innerHeight;
+    canvas.width = Math.round(W * DPR);
+    canvas.height = Math.round(H * DPR);
+    canvas.style.width = W + 'px';
+    canvas.style.height = H + 'px';
+    ctx.setTransform(DPR, 0, 0, DPR, 0, 0);
+    rebuildMap();
+    if (state === STATE.PLAYING) {
+      traveler.x = clamp(traveler.x, 30, W - 30);
+      traveler.y = clamp(traveler.y, SAFE_TOP + 20, H - SAFE_BOT - 10);
+    }
+  }
+  window.addEventListener('resize', resize);
+  window.addEventListener('orientationchange', () => setTimeout(resize, 150));
+
+  const dmq = window.matchMedia('(prefers-color-scheme: dark)');
+  let isDark = dmq.matches;
+  function pal() {
+    return isDark ? {
+      bg: '#0a1419',
+      bg2: '#152428',
+      bg3: '#1d3338',
+      line: 'rgba(226,236,237,0.06)',
+      lineMid: 'rgba(226,236,237,0.14)',
+      lineHi: 'rgba(226,236,237,0.32)',
+      mist: 'rgba(226,236,237,0.04)',
+      mistBright: 'rgba(226,236,237,0.085)',
+      ink: '#e2eced',
+      inkDim: 'rgba(226,236,237,0.55)',
+      accent: '#f4b942',
+      accentRGB: '244,185,66',
+      accentBright: '#fff5d6',
+      beacon: '#4fb8c4',
+      beaconRGB: '79,184,196',
+      hazardCore: '#070a0e',
+      hazardEdge: 'rgba(8,12,18,0.95)',
+      hazardGlow: 'rgba(70,28,38,0.42)',
+      hazardWisp: 'rgba(40,52,60,0.7)'
+    } : {
+      bg: '#ece5d2',
+      bg2: '#d8d0bb',
+      bg3: '#c5bba0',
+      line: 'rgba(24,39,45,0.09)',
+      lineMid: 'rgba(24,39,45,0.2)',
+      lineHi: 'rgba(24,39,45,0.4)',
+      mist: 'rgba(255,255,255,0.32)',
+      mistBright: 'rgba(255,255,255,0.5)',
+      ink: '#18272d',
+      inkDim: 'rgba(24,39,45,0.55)',
+      accent: '#c4571a',
+      accentRGB: '196,87,26',
+      accentBright: '#fbe6cf',
+      beacon: '#216c79',
+      beaconRGB: '33,108,121',
+      hazardCore: '#1c2630',
+      hazardEdge: 'rgba(18,28,42,0.8)',
+      hazardGlow: 'rgba(70,50,55,0.35)',
+      hazardWisp: 'rgba(60,70,85,0.5)'
+    };
+  }
+  let C = pal();
+  dmq.addEventListener('change', () => { isDark = dmq.matches; C = pal(); });
+
+  const STATE = { TITLE: 0, PLAYING: 1, GAMEOVER: 2 };
+  let state = STATE.TITLE;
+  let level = 1, score = 0;
+  let levelTimer = 16, levelTimerMax = 16;
+  let routesCompleted = 0, combo = 0;
+  let lastBeaconTime = 0;
+
+  const traveler = { x: 0, y: 0, speed: 150, trail: [], pulse: 0, radius: 7 };
+  const beacon = { x: 0, y: 0, radius: 18, pulse: 0, gain: 0 };
+
+  let path = [];
+  let drawingPath = null;
+  let isDrawing = false;
+  let activePointerId = null;
+  let hazards = [];
+  let particles = [];
+  let mist = [];
+  let landmarks = [];
+  let contours = [];
+  let hazardSpawnTimer = 0;
+  let shake = 0, shakeX = 0, shakeY = 0;
+  let mapTime = 0, gameTime = 0;
+  let scorePulse = 0;
+
+  let audio = null;
+  function ensureAudio() {
+    if (!audio) {
+      try { audio = new (window.AudioContext || window.webkitAudioContext)(); } catch (e) {}
+    }
+    if (audio && audio.state === 'suspended') audio.resume();
+    return audio;
+  }
+  function tone(freq, dur, type = 'sine', vol = 0.1, attack = 0.005, slideTo) {
+    const ac = audio;
+    if (!ac) return;
+    const t = ac.currentTime;
+    const o = ac.createOscillator();
+    const g = ac.createGain();
+    o.type = type;
+    o.frequency.setValueAtTime(freq, t);
+    if (slideTo !== undefined) o.frequency.exponentialRampToValueAtTime(Math.max(30, slideTo), t + dur);
+    g.gain.setValueAtTime(0, t);
+    g.gain.linearRampToValueAtTime(vol, t + attack);
+    g.gain.exponentialRampToValueAtTime(0.0001, t + dur);
+    o.connect(g); g.connect(ac.destination);
+    o.start(t); o.stop(t + dur + 0.05);
+  }
+  function sfx(name) {
+    if (!audio) return;
+    if (name === 'beacon') {
+      tone(523.25, 0.16, 'sine', 0.12);
+      setTimeout(() => tone(783.99, 0.22, 'sine', 0.1), 60);
+      setTimeout(() => tone(1046.5, 0.22, 'sine', 0.07), 130);
+    } else if (name === 'combo') {
+      tone(659.25, 0.12, 'sine', 0.12);
+      setTimeout(() => tone(880, 0.14, 'sine', 0.1), 50);
+      setTimeout(() => tone(1318.5, 0.2, 'sine', 0.08), 110);
+    } else if (name === 'hit') {
+      tone(200, 0.55, 'sawtooth', 0.16, 0.001, 50);
+      setTimeout(() => tone(100, 0.5, 'square', 0.11, 0.001, 40), 40);
+      setTimeout(() => tone(60, 0.4, 'triangle', 0.08, 0.001, 25), 100);
+    } else if (name === 'draw') {
+      tone(160 + Math.random() * 50, 0.04, 'triangle', 0.025);
+    } else if (name === 'release') {
+      tone(440, 0.05, 'sine', 0.04);
+    } else if (name === 'warn') {
+      tone(520, 0.08, 'sawtooth', 0.035);
+      setTimeout(() => tone(260, 0.07, 'sawtooth', 0.03), 60);
+    } else if (name === 'tick') {
+      tone(900, 0.03, 'square', 0.025);
+    }
+  }
+
+  const rand = (a, b) => a + Math.random() * (b - a);
+  const dist = (a, b) => Math.hypot(a.x - b.x, a.y - b.y);
+  const clamp = (v, mn, mx) => Math.max(mn, Math.min(mx, v));
+
+  function rebuildMap() {
+    contours = [];
+    for (let i = 0; i < 7; i++) {
+      contours.push({
+        phase: Math.random() * Math.PI * 2,
+        amp1: rand(60, 130),
+        amp2: rand(25, 60),
+        freq1: rand(0.004, 0.011),
+        freq2: rand(0.009, 0.02),
+        offset: (i - 3) * (H / 9) + rand(-25, 25),
+        speed: rand(0.5, 1.2) * (Math.random() < 0.5 ? 1 : -1)
+      });
+    }
+    mist = [];
+    for (let i = 0; i < 7; i++) {
+      mist.push({
+        x: rand(0, W),
+        y: rand(0, H),
+        r: rand(160, 320),
+        vx: rand(-18, 18),
+        vy: rand(-6, 6),
+        bright: Math.random() < 0.4
+      });
+    }
+    landmarks = [];
+    const count = Math.floor((W * H) / 16000);
+    for (let i = 0; i < count; i++) {
+      landmarks.push({
+        x: rand(0, W),
+        y: rand(0, H),
+        size: rand(2, 4.5),
+        type: Math.floor(rand(0, 3)),
+        a: rand(0.3, 0.7),
+        phase: rand(0, Math.PI * 2),
+        drift: rand(0.5, 1.5)
+      });
+    }
+  }
+
+  function spawnHazard(forceInitial = false) {
+    let x, y, attempts = 0;
+    const minTraveler = forceInitial ? 220 : 170;
+    do {
+      x = rand(50, W - 50);
+      y = rand(SAFE_TOP + 50, H - SAFE_BOT - 30);
+      attempts++;
+    } while (attempts < 60 && (
+      dist({ x, y }, traveler) < minTraveler ||
+      dist({ x, y }, beacon) < 100 ||
+      hazards.some(h => dist({ x, y }, h) < h.radius + 70)
+    ));
+
+    const r = rand(40, 70);
+    const willMove = !forceInitial && Math.random() < clamp(0.1 + (level - 1) * 0.08, 0, 0.7);
+    const a = rand(0, Math.PI * 2);
+    const speed = willMove ? rand(12, 22 + level * 1.5) : 0;
+
+    hazards.push({
+      x, y, radius: r,
+      vx: Math.cos(a) * speed,
+      vy: Math.sin(a) * speed,
+      pulse: rand(0, Math.PI * 2),
+      life: forceInitial ? 1 : 0,
+      seed: rand(0, 1000)
+    });
+    if (!forceInitial) setTimeout(() => sfx('warn'), 40);
+  }
+
+  function placeBeacon() {
+    let x, y, attempts = 0;
+    do {
+      x = rand(70, W - 70);
+      y = rand(SAFE_TOP + 60, H - SAFE_BOT - 30);
+      attempts++;
+    } while (attempts < 80 && (
+      dist({ x, y }, traveler) < Math.min(W, H) * 0.32 ||
+      hazards.some(h => dist({ x, y }, h) < h.radius + 50)
+    ));
+    beacon.x = x;
+    beacon.y = y;
+    beacon.pulse = 0;
+    beacon.gain = 0;
+  }
+
+  function emitParticles(x, y, count, rgb, opts = {}) {
+    const speed = opts.speed || 180;
+    const life = opts.life || 1.2;
+    const sizeMin = opts.sizeMin || 2;
+    const sizeMax = opts.sizeMax || 5;
+    for (let i = 0; i < count; i++) {
+      const a = opts.dir !== undefined ? opts.dir + rand(-0.5, 0.5) : rand(0, Math.PI * 2);
+      const s = rand(speed * 0.35, speed);
+      particles.push({
+        x, y,
+        vx: Math.cos(a) * s,
+        vy: Math.sin(a) * s,
+        life, ttl: life,
+        size: rand(sizeMin, sizeMax),
+        rgb
+      });
+    }
+  }
+
+  function startGame() {
+    state = STATE.PLAYING;
+    level = 1;
+    score = 0;
+    routesCompleted = 0;
+    combo = 0;
+    gameTime = 0;
+    lastBeaconTime = 0;
+
+    traveler.x = W / 2;
+    traveler.y = H - SAFE_BOT - 40;
+    traveler.trail = [];
+    traveler.speed = 150;
+    path = [];
+    hazards = [];
+    particles = [];
+    drawingPath = null;
+    isDrawing = false;
+    activePointerId = null;
+
+    placeBeacon();
+    spawnHazard(true);
+
+    levelTimerMax = 16;
+    levelTimer = levelTimerMax;
+
+    $('title-screen').classList.add('hidden');
+    $('gameover-screen').classList.add('hidden');
+    $('hint').classList.add('show');
+    updateHUD();
+  }
+
+  function gameOver() {
+    if (state !== STATE.PLAYING) return;
+    state = STATE.GAMEOVER;
+    shake = 22;
+    sfx('hit');
+    try { navigator.vibrate?.([40, 50, 130]); } catch (e) {}
+
+    emitParticles(traveler.x, traveler.y, 44, C.accentRGB, { speed: 360, life: 1.3 });
+
+    $('final-routes').textContent = routesCompleted;
+    $('final-score').textContent = String(score).padStart(6, '0');
+
+    setTimeout(() => $('gameover-screen').classList.remove('hidden'), 750);
+  }
+
+  function flashScreen() {
+    const f = $('flash');
+    f.style.opacity = '0.35';
+    setTimeout(() => { f.style.opacity = '0'; }, 80);
+  }
+
+  function reachBeacon() {
+    routesCompleted++;
+    const sinceLast = gameTime - lastBeaconTime;
+    lastBeaconTime = gameTime;
+    if (routesCompleted > 1 && sinceLast < 7) combo = Math.min(combo + 1, 9);
+    else combo = 0;
+
+    const tb = Math.floor((levelTimer / levelTimerMax) * 240);
+    const cb = combo * 60;
+    const points = 100 + tb + cb + (level - 1) * 25;
+    score += points;
+
+    level++;
+
+    sfx(combo > 0 ? 'combo' : 'beacon');
+    try { navigator.vibrate?.(combo > 0 ? [18, 20, 30] : 28); } catch (e) {}
+    flashScreen();
+    scorePulse = 1;
+
+    emitParticles(beacon.x, beacon.y, 32, C.accentRGB, { speed: 260, life: 1.1 });
+
+    traveler.x = beacon.x;
+    traveler.y = beacon.y;
+    path = [];
+    drawingPath = null;
+    isDrawing = false;
+
+    placeBeacon();
+
+    const target = clamp(1 + Math.floor((level - 1) * 0.9), 1, 9);
+    while (hazards.length < target) spawnHazard(true);
+
+    traveler.speed = 150 + Math.min((level - 1) * 7, 100);
+    levelTimerMax = Math.max(8, 16 - (level - 1) * 0.45);
+    levelTimer = levelTimerMax;
+
+    $('hint').classList.remove('show');
+    updateHUD();
+  }
+
+  function updateHUD() {
+    $('level').textContent = String(level).padStart(2, '0');
+    $('score').textContent = String(score).padStart(6, '0');
+    $('timer').style.transform = `scaleX(${clamp(levelTimer / levelTimerMax, 0, 1)})`;
+  }
+
+  function getPoint(e) {
+    if (e.touches && e.touches[0]) return { x: e.touches[0].clientX, y: e.touches[0].clientY };
+    if (e.changedTouches && e.changedTouches[0]) return { x: e.changedTouches[0].clientX, y: e.changedTouches[0].clientY };
+    return { x: e.clientX, y: e.clientY };
+  }
+
+  function findTouch(list, id) {
+    if (!list) return null;
+    for (let i = 0; i < list.length; i++) if (list[i].identifier === id) return list[i];
+    return null;
+  }
+
+  function onDown(e) {
+    e.preventDefault();
+    ensureAudio();
+    if (state !== STATE.PLAYING) return;
+    if (isDrawing) return;
+    let p;
+    if (e.touches && e.touches[0]) {
+      activePointerId = e.touches[0].identifier;
+      p = { x: e.touches[0].clientX, y: e.touches[0].clientY };
+    } else {
+      activePointerId = 'mouse';
+      p = { x: e.clientX, y: e.clientY };
+    }
+    p.x = clamp(p.x, 4, W - 4);
+    p.y = clamp(p.y, SAFE_TOP, H - 4);
+    drawingPath = [{ x: traveler.x, y: traveler.y }, p];
+    isDrawing = true;
+    sfx('draw');
+    try { navigator.vibrate?.(4); } catch (e) {}
+  }
+  function onMove(e) {
+    if (!isDrawing) return;
+    let p;
+    if (e.touches) {
+      e.preventDefault();
+      const t = findTouch(e.touches, activePointerId);
+      if (!t) return;
+      p = { x: t.clientX, y: t.clientY };
+    } else {
+      if (activePointerId !== 'mouse') return;
+      p = { x: e.clientX, y: e.clientY };
+    }
+    p.x = clamp(p.x, 4, W - 4);
+    p.y = clamp(p.y, SAFE_TOP, H - 4);
+    const last = drawingPath[drawingPath.length - 1];
+    if (dist(last, p) > 6) {
+      drawingPath.push(p);
+      if (drawingPath.length % 6 === 0) sfx('draw');
+    }
+  }
+  function onUp(e) {
+    if (!isDrawing) return;
+    if (e && e.changedTouches) {
+      const t = findTouch(e.changedTouches, activePointerId);
+      if (!t) return;
+      e.preventDefault();
+    } else if (e && activePointerId !== 'mouse') {
+      return;
+    }
+    isDrawing = false;
+    activePointerId = null;
+    if (drawingPath && drawingPath.length > 1) {
+      path = drawingPath.slice(1);
+    }
+    drawingPath = null;
+    sfx('release');
+  }
+
+  canvas.addEventListener('touchstart', onDown, { passive: false });
+  canvas.addEventListener('touchmove', onMove, { passive: false });
+  canvas.addEventListener('touchend', onUp, { passive: false });
+  canvas.addEventListener('touchcancel', onUp, { passive: false });
+  canvas.addEventListener('mousedown', onDown);
+  window.addEventListener('mousemove', onMove);
+  window.addEventListener('mouseup', onUp);
+
+  // Keyboard fallback for desktop — arrow keys nudge a path waypoint
+  let kbPath = null;
+  let kbKeys = {};
+  window.addEventListener('keydown', (e) => {
+    if (state === STATE.TITLE && (e.key === 'Enter' || e.key === ' ')) {
+      e.preventDefault(); ensureAudio(); startGame(); return;
+    }
+    if (state === STATE.GAMEOVER && (e.key === 'Enter' || e.key === ' ' || e.key.toLowerCase() === 'r')) {
+      e.preventDefault(); ensureAudio(); startGame(); return;
+    }
+    if (state !== STATE.PLAYING) return;
+    if (!kbKeys[e.key]) kbKeys[e.key] = true;
+    if (e.key.toLowerCase() === 'r' || e.key === 'Escape') {
+      // Quick clear path
+      path = [];
+    }
+  });
+  window.addEventListener('keyup', (e) => { delete kbKeys[e.key]; });
+
+  $('start').addEventListener('click', () => { ensureAudio(); startGame(); });
+  $('restart').addEventListener('click', () => { ensureAudio(); startGame(); });
+
+  let lastTime = performance.now();
+
+  function processKeyboard(dt) {
+    if (state !== STATE.PLAYING) return;
+    if (isDrawing) return;
+    let dx = 0, dy = 0;
+    if (kbKeys['ArrowLeft'] || kbKeys['a'] || kbKeys['A']) dx -= 1;
+    if (kbKeys['ArrowRight'] || kbKeys['d'] || kbKeys['D']) dx += 1;
+    if (kbKeys['ArrowUp'] || kbKeys['w'] || kbKeys['W']) dy -= 1;
+    if (kbKeys['ArrowDown'] || kbKeys['s'] || kbKeys['S']) dy += 1;
+    if (dx === 0 && dy === 0) return;
+
+    if (path.length > 0) path = [];
+
+    const len = Math.hypot(dx, dy);
+    dx /= len; dy /= len;
+    const speed = 240;
+    const nx = clamp(traveler.x + dx * speed * dt, 14, W - 14);
+    const ny = clamp(traveler.y + dy * speed * dt, SAFE_TOP + 14, H - SAFE_BOT - 4);
+    traveler.x = nx;
+    traveler.y = ny;
+    const tl = traveler.trail[traveler.trail.length - 1];
+    if (!tl || dist(tl, traveler) > 5) {
+      traveler.trail.push({ x: traveler.x, y: traveler.y, life: 1 });
+    }
+  }
+
+  function update(dt) {
+    mapTime += dt;
+
+    if (state === STATE.PLAYING) {
+      gameTime += dt;
+      scorePulse = Math.max(0, scorePulse - dt * 2);
+
+      // Move traveler along path
+      if (!isDrawing && path.length > 0) {
+        let rem = traveler.speed * dt;
+        let safety = 0;
+        while (rem > 0.0001 && path.length > 0 && safety++ < 200) {
+          const t = path[0];
+          const dx = t.x - traveler.x;
+          const dy = t.y - traveler.y;
+          const d = Math.hypot(dx, dy);
+          if (d < 0.5) { path.shift(); continue; }
+          const move = Math.min(d, rem);
+          traveler.x += (dx / d) * move;
+          traveler.y += (dy / d) * move;
+          rem -= move;
+          if (move >= d - 0.05) path.shift();
+        }
+        const tl = traveler.trail[traveler.trail.length - 1];
+        if (!tl || dist(tl, traveler) > 5) {
+          traveler.trail.push({ x: traveler.x, y: traveler.y, life: 1 });
+        }
+      }
+
+      processKeyboard(dt);
+
+      traveler.trail = traveler.trail.filter(t => { t.life -= dt * 1.3; return t.life > 0; });
+      traveler.pulse += dt * 3;
+      beacon.pulse += dt * 2.2;
+      beacon.gain = Math.min(1, beacon.gain + dt * 1.5);
+
+      if (dist(traveler, beacon) < beacon.radius * 0.9 + traveler.radius) {
+        reachBeacon();
+      }
+
+      for (const h of hazards) {
+        h.life = Math.min(1, h.life + dt * 0.9);
+        h.pulse += dt * 1.7;
+        h.x += h.vx * dt;
+        h.y += h.vy * dt;
+        if (h.x - h.radius < 30) { h.x = 30 + h.radius; h.vx = Math.abs(h.vx); }
+        if (h.x + h.radius > W - 30) { h.x = W - 30 - h.radius; h.vx = -Math.abs(h.vx); }
+        if (h.y - h.radius < SAFE_TOP + 20) { h.y = SAFE_TOP + 20 + h.radius; h.vy = Math.abs(h.vy); }
+        if (h.y + h.radius > H - SAFE_BOT) { h.y = H - SAFE_BOT - h.radius; h.vy = -Math.abs(h.vy); }
+
+        if (h.life > 0.65) {
+          if (dist(traveler, h) < h.radius * 0.66 + traveler.radius) {
+            gameOver();
+            return;
+          }
+        }
+      }
+
+      hazardSpawnTimer -= dt;
+      const targetCount = clamp(1 + Math.floor((level - 1) * 0.85), 1, 9);
+      const maxOnScreen = clamp(targetCount + 2, 2, 10);
+      if (hazards.length < maxOnScreen && hazardSpawnTimer <= 0 && gameTime > 2.5) {
+        spawnHazard(false);
+        hazardSpawnTimer = rand(2.4, 4.8) - Math.min(level * 0.12, 1.4);
+      }
+
+      levelTimer -= dt;
+      if (levelTimer <= 0) { levelTimer = 0; gameOver(); return; }
+
+      // Tick sound when timer is low
+      if (levelTimer < 4) {
+        const phase = Math.floor(levelTimer * 2);
+        const lastPhase = Math.floor((levelTimer + dt) * 2);
+        if (phase !== lastPhase) sfx('tick');
+      }
+
+      updateHUD();
+    }
+
+    for (const m of mist) {
+      m.x += m.vx * dt;
+      m.y += m.vy * dt;
+      if (m.x < -m.r) m.x = W + m.r;
+      if (m.x > W + m.r) m.x = -m.r;
+      if (m.y < -m.r) m.y = H + m.r;
+      if (m.y > H + m.r) m.y = -m.r;
+    }
+
+    particles = particles.filter(p => {
+      p.life -= dt;
+      p.x += p.vx * dt;
+      p.y += p.vy * dt;
+      p.vx *= 0.93;
+      p.vy *= 0.93;
+      return p.life > 0;
+    });
+
+    shake = Math.max(0, shake - dt * 50);
+    shakeX = (Math.random() - 0.5) * shake;
+    shakeY = (Math.random() - 0.5) * shake;
+  }
+
+  function drawBackground() {
+    ctx.fillStyle = C.bg;
+    ctx.fillRect(0, 0, W, H);
+
+    const grad = ctx.createRadialGradient(W / 2, H * 0.42, 0, W / 2, H * 0.42, Math.max(W, H) * 0.78);
+    grad.addColorStop(0, C.bg2);
+    grad.addColorStop(1, C.bg);
+    ctx.fillStyle = grad;
+    ctx.fillRect(0, 0, W, H);
+
+    ctx.fillStyle = C.line;
+    const gs = 36;
+    for (let x = gs / 2; x < W; x += gs) {
+      for (let y = gs / 2; y < H; y += gs) {
+        ctx.fillRect(x - 0.5, y - 0.5, 1, 1);
+      }
+    }
+
+    ctx.lineWidth = 1;
+    for (let i = 0; i < contours.length; i++) {
+      const c = contours[i];
+      const t = mapTime * 0.08 * c.speed;
+      ctx.strokeStyle = i % 2 === 0 ? C.lineMid : C.line;
+      ctx.beginPath();
+      const step = 14;
+      for (let x = -50; x <= W + 50; x += step) {
+        const y = H / 2 + c.offset +
+          Math.sin(x * c.freq1 + t + c.phase) * c.amp1 +
+          Math.cos(x * c.freq2 + t * 0.6 + c.phase) * c.amp2;
+        if (x === -50) ctx.moveTo(x, y);
+        else ctx.lineTo(x, y);
+      }
+      ctx.stroke();
+    }
+
+    for (const lm of landmarks) {
+      const a = lm.a * (0.5 + Math.sin(mapTime * lm.drift + lm.phase) * 0.3);
+      ctx.fillStyle = C.lineMid;
+      ctx.globalAlpha = a * 0.7;
+      if (lm.type === 0) {
+        ctx.fillRect(lm.x - lm.size, lm.y - 0.5, lm.size * 2, 1);
+        ctx.fillRect(lm.x - 0.5, lm.y - lm.size, 1, lm.size * 2);
+      } else if (lm.type === 1) {
+        ctx.beginPath();
+        ctx.arc(lm.x, lm.y, lm.size * 0.45, 0, Math.PI * 2);
+        ctx.fill();
+      } else {
+        ctx.beginPath();
+        ctx.moveTo(lm.x, lm.y - lm.size);
+        ctx.lineTo(lm.x - lm.size, lm.y + lm.size * 0.6);
+        ctx.lineTo(lm.x + lm.size, lm.y + lm.size * 0.6);
+        ctx.closePath();
+        ctx.fill();
+      }
+    }
+    ctx.globalAlpha = 1;
+  }
+
+  function drawMist() {
+    for (const m of mist) {
+      const grad = ctx.createRadialGradient(m.x, m.y, 0, m.x, m.y, m.r);
+      grad.addColorStop(0, m.bright ? C.mistBright : C.mist);
+      grad.addColorStop(1, 'rgba(0,0,0,0)');
+      ctx.fillStyle = grad;
+      ctx.fillRect(m.x - m.r, m.y - m.r, m.r * 2, m.r * 2);
+    }
+  }
+
+  function drawHazards() {
+    for (const h of hazards) {
+      // Warning phase
+      if (h.life < 0.45) {
+        const t = h.life / 0.45;
+        const ringR = h.radius * (0.45 + t * 0.35);
+        ctx.strokeStyle = `rgba(${C.accentRGB},${(0.55 * (1 - t * 0.4)).toFixed(2)})`;
+        ctx.lineWidth = 1.5;
+        ctx.setLineDash([5, 6]);
+        ctx.lineDashOffset = -mapTime * 42;
+        ctx.beginPath();
+        ctx.arc(h.x, h.y, ringR, 0, Math.PI * 2);
+        ctx.stroke();
+        // Inner small dot
+        ctx.fillStyle = `rgba(${C.accentRGB},${(0.4 * (1 - t)).toFixed(2)})`;
+        ctx.beginPath();
+        ctx.arc(h.x, h.y, 3, 0, Math.PI * 2);
+        ctx.fill();
+        ctx.setLineDash([]);
+        continue;
+      }
+
+      const a = (h.life - 0.45) / 0.55;
+
+      // Outer halo
+      const grad = ctx.createRadialGradient(h.x, h.y, h.radius * 0.3, h.x, h.y, h.radius * 1.7);
+      grad.addColorStop(0, C.hazardGlow);
+      grad.addColorStop(1, 'rgba(0,0,0,0)');
+      ctx.globalAlpha = a * 0.9;
+      ctx.fillStyle = grad;
+      ctx.fillRect(h.x - h.radius * 2, h.y - h.radius * 2, h.radius * 4, h.radius * 4);
+
+      // Wispy outer shape
+      ctx.globalAlpha = a * 0.55;
+      ctx.fillStyle = C.hazardWisp;
+      ctx.beginPath();
+      const pts1 = 28;
+      const baseR1 = h.radius * 0.9;
+      for (let i = 0; i <= pts1; i++) {
+        const ang = (i / pts1) * Math.PI * 2;
+        const n1 = Math.sin(ang * 3 + h.pulse * 1.2 + h.seed) * 0.22;
+        const n2 = Math.cos(ang * 5 + h.pulse * 0.7) * 0.14;
+        const r = baseR1 * (1 + n1 + n2);
+        const px = h.x + Math.cos(ang) * r;
+        const py = h.y + Math.sin(ang) * r;
+        if (i === 0) ctx.moveTo(px, py);
+        else ctx.lineTo(px, py);
+      }
+      ctx.fill();
+
+      // Solid core
+      ctx.fillStyle = C.hazardCore;
+      ctx.globalAlpha = a;
+      ctx.beginPath();
+      const pts = 36;
+      const baseR = h.radius * 0.68;
+      for (let i = 0; i <= pts; i++) {
+        const ang = (i / pts) * Math.PI * 2;
+        const n1 = Math.sin(ang * 3 + h.pulse + h.seed) * 0.16;
+        const n2 = Math.cos(ang * 5 + h.pulse * 0.6 + h.seed * 0.3) * 0.1;
+        const n3 = Math.sin(ang * 7 + h.pulse * 0.3) * 0.05;
+        const r = baseR * (1 + n1 + n2 + n3);
+        const px = h.x + Math.cos(ang) * r;
+        const py = h.y + Math.sin(ang) * r;
+        if (i === 0) ctx.moveTo(px, py);
+        else ctx.lineTo(px, py);
+      }
+      ctx.fill();
+
+      // Inner shadow detail
+      ctx.globalAlpha = a * 0.6;
+      const sh = ctx.createRadialGradient(h.x + h.radius * 0.18, h.y + h.radius * 0.18, 0, h.x, h.y, h.radius * 0.75);
+      sh.addColorStop(0, 'rgba(0,0,0,0)');
+      sh.addColorStop(1, C.hazardEdge);
+      ctx.fillStyle = sh;
+      ctx.beginPath();
+      ctx.arc(h.x, h.y, h.radius * 0.66, 0, Math.PI * 2);
+      ctx.fill();
+    }
+    ctx.globalAlpha = 1;
+  }
+
+  function drawPath() {
+    const pts = isDrawing && drawingPath ? drawingPath : (path.length > 0 ? [{ x: traveler.x, y: traveler.y }, ...path] : null);
+    if (!pts || pts.length < 2) return;
+
+    ctx.save();
+    ctx.lineCap = 'round';
+    ctx.lineJoin = 'round';
+
+    // Soft glow
+    ctx.strokeStyle = `rgba(${C.accentRGB},0.14)`;
+    ctx.lineWidth = 12;
+    ctx.beginPath();
+    ctx.moveTo(pts[0].x, pts[0].y);
+    for (let i = 1; i < pts.length; i++) ctx.lineTo(pts[i].x, pts[i].y);
+    ctx.stroke();
+
+    // Mid glow
+    ctx.strokeStyle = `rgba(${C.accentRGB},0.28)`;
+    ctx.lineWidth = 5;
+    ctx.beginPath();
+    ctx.moveTo(pts[0].x, pts[0].y);
+    for (let i = 1; i < pts.length; i++) ctx.lineTo(pts[i].x, pts[i].y);
+    ctx.stroke();
+
+    // Main dashed line
+    ctx.strokeStyle = C.accent;
+    ctx.lineWidth = 2.4;
+    ctx.setLineDash([5, 8]);
+    ctx.lineDashOffset = -mapTime * 38;
+    ctx.beginPath();
+    ctx.moveTo(pts[0].x, pts[0].y);
+    for (let i = 1; i < pts.length; i++) ctx.lineTo(pts[i].x, pts[i].y);
+    ctx.stroke();
+    ctx.setLineDash([]);
+
+    if (isDrawing) {
+      const e = pts[pts.length - 1];
+      const ringR = 10 + Math.sin(mapTime * 6) * 2;
+      ctx.strokeStyle = `rgba(${C.accentRGB},0.5)`;
+      ctx.lineWidth = 1.5;
+      ctx.beginPath();
+      ctx.arc(e.x, e.y, ringR, 0, Math.PI * 2);
+      ctx.stroke();
+      ctx.fillStyle = C.accent;
+      ctx.beginPath();
+      ctx.arc(e.x, e.y, 4.5, 0, Math.PI * 2);
+      ctx.fill();
+    }
+
+    ctx.restore();
+  }
+
+  function drawBeacon() {
+    const b = beacon;
+    const r = b.radius;
+    const g = b.gain;
+
+    for (let i = 0; i < 3; i++) {
+      const phase = ((b.pulse * 0.55) + i * 0.6) % 1.8;
+      const ringR = r + phase * 60;
+      const alpha = (1 - phase / 1.8) * 0.5 * g;
+      ctx.strokeStyle = `rgba(${C.beaconRGB},${alpha.toFixed(3)})`;
+      ctx.lineWidth = 1.5;
+      ctx.beginPath();
+      ctx.arc(b.x, b.y, ringR, 0, Math.PI * 2);
+      ctx.stroke();
+    }
+
+    const grad = ctx.createRadialGradient(b.x, b.y, 0, b.x, b.y, r * 3);
+    grad.addColorStop(0, `rgba(${C.beaconRGB},${(0.45 * g).toFixed(2)})`);
+    grad.addColorStop(1, 'rgba(0,0,0,0)');
+    ctx.fillStyle = grad;
+    ctx.fillRect(b.x - r * 3, b.y - r * 3, r * 6, r * 6);
+
+    ctx.globalAlpha = g;
+    ctx.strokeStyle = C.beacon;
+    ctx.lineWidth = 2;
+    ctx.beginPath();
+    ctx.arc(b.x, b.y, r, 0, Math.PI * 2);
+    ctx.stroke();
+
+    const cr = r * 0.42 * (1 + Math.sin(b.pulse * 2.5) * 0.15);
+    ctx.fillStyle = C.beacon;
+    ctx.beginPath();
+    ctx.arc(b.x, b.y, cr, 0, Math.PI * 2);
+    ctx.fill();
+
+    ctx.fillStyle = C.ink;
+    ctx.beginPath();
+    ctx.arc(b.x, b.y, r * 0.18, 0, Math.PI * 2);
+    ctx.fill();
+
+    // Compass cross
+    ctx.strokeStyle = `rgba(${C.beaconRGB},${(0.5 * g).toFixed(2)})`;
+    ctx.lineWidth = 1;
+    ctx.beginPath();
+    ctx.moveTo(b.x - r * 1.4, b.y);
+    ctx.lineTo(b.x - r * 1.05, b.y);
+    ctx.moveTo(b.x + r * 1.05, b.y);
+    ctx.lineTo(b.x + r * 1.4, b.y);
+    ctx.moveTo(b.x, b.y - r * 1.4);
+    ctx.lineTo(b.x, b.y - r * 1.05);
+    ctx.moveTo(b.x, b.y + r * 1.05);
+    ctx.lineTo(b.x, b.y + r * 1.4);
+    ctx.stroke();
+    ctx.globalAlpha = 1;
+  }
+
+  function drawTraveler() {
+    for (const t of traveler.trail) {
+      ctx.fillStyle = `rgba(${C.accentRGB},${(t.life * 0.4).toFixed(3)})`;
+      ctx.beginPath();
+      ctx.arc(t.x, t.y, 2.6 * t.life, 0, Math.PI * 2);
+      ctx.fill();
+    }
+
+    const r = traveler.radius;
+    const pulse = 1 + Math.sin(traveler.pulse) * 0.08;
+
+    const grad = ctx.createRadialGradient(traveler.x, traveler.y, 0, traveler.x, traveler.y, r * 4);
+    grad.addColorStop(0, `rgba(${C.accentRGB},0.5)`);
+    grad.addColorStop(1, 'rgba(0,0,0,0)');
+    ctx.fillStyle = grad;
+    ctx.fillRect(traveler.x - r * 4, traveler.y - r * 4, r * 8, r * 8);
+
+    ctx.fillStyle = C.accent;
+    ctx.beginPath();
+    ctx.arc(traveler.x, traveler.y, r * pulse, 0, Math.PI * 2);
+    ctx.fill();
+
+    ctx.fillStyle = C.accentBright;
+    ctx.beginPath();
+    ctx.arc(traveler.x - r * 0.15, traveler.y - r * 0.15, r * 0.5, 0, Math.PI * 2);
+    ctx.fill();
+  }
+
+  function drawParticles() {
+    for (const p of particles) {
+      const a = clamp(p.life / p.ttl, 0, 1);
+      ctx.fillStyle = `rgba(${p.rgb},${a.toFixed(2)})`;
+      ctx.beginPath();
+      ctx.arc(p.x, p.y, p.size * a, 0, Math.PI * 2);
+      ctx.fill();
+    }
+  }
+
+  function drawCombo() {
+    if (combo > 0 && state === STATE.PLAYING) {
+      ctx.save();
+      ctx.fillStyle = C.accent;
+      ctx.font = '600 13px ui-monospace, monospace';
+      ctx.textAlign = 'center';
+      ctx.textBaseline = 'middle';
+      ctx.globalAlpha = 0.9;
+      ctx.fillText(`×${combo + 1}`, beacon.x, beacon.y - beacon.radius - 18);
+      ctx.restore();
+    }
+  }
+
+  function render() {
+    ctx.save();
+    ctx.translate(shakeX, shakeY);
+    drawBackground();
+    drawMist();
+    drawHazards();
+    drawPath();
+    drawBeacon();
+    drawTraveler();
+    drawParticles();
+    drawCombo();
+    ctx.restore();
+  }
+
+  function loop(now) {
+    const dt = Math.min((now - lastTime) / 1000, 1 / 24);
+    lastTime = now;
+    try {
+      update(dt);
+      render();
+    } catch (e) {
+      // Never crash the loop
+      console.warn(e);
+    }
+    requestAnimationFrame(loop);
+  }
+
+  resize();
+  requestAnimationFrame(loop);
+})();
+</script>
+</body>
+</html>
