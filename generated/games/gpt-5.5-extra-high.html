@@ -1,0 +1,1033 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <title>Tidal Moons</title>
+  <style>
+    :root {
+      color-scheme: light dark;
+      --bg0: #fbf2dc;
+      --bg1: #cbeee7;
+      --ink: #132326;
+      --muted: rgba(19, 35, 38, .64);
+      --panel: rgba(255, 250, 238, .78);
+      --panel-strong: rgba(255, 250, 238, .92);
+      --line: rgba(19, 35, 38, .16);
+      --button: #132326;
+      --button-ink: #fff9ec;
+      --shadow: rgba(31, 68, 67, .18);
+    }
+    @media (prefers-color-scheme: dark) {
+      :root {
+        --bg0: #071113;
+        --bg1: #12363a;
+        --ink: #eef8ef;
+        --muted: rgba(238, 248, 239, .67);
+        --panel: rgba(9, 22, 24, .72);
+        --panel-strong: rgba(9, 22, 24, .9);
+        --line: rgba(238, 248, 239, .16);
+        --button: #eef8ef;
+        --button-ink: #071113;
+        --shadow: rgba(0, 0, 0, .35);
+      }
+    }
+    * { box-sizing: border-box; }
+    html, body {
+      width: 100dvw;
+      height: 100dvh;
+      margin: 0;
+      overflow: hidden;
+      background: linear-gradient(155deg, var(--bg0), var(--bg1));
+      color: var(--ink);
+      font-family: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+    }
+    #game {
+      position: fixed;
+      inset: 0;
+      width: 100dvw;
+      height: 100dvh;
+      user-select: none;
+      -webkit-user-select: none;
+      overflow: hidden;
+    }
+    canvas {
+      position: absolute;
+      inset: 0;
+      width: 100dvw;
+      height: 100dvh;
+      display: block;
+      touch-action: none;
+      cursor: crosshair;
+    }
+    .hud {
+      position: absolute;
+      inset: env(safe-area-inset-top) 0 auto 0;
+      display: grid;
+      grid-template-columns: 1fr auto 1fr;
+      align-items: start;
+      gap: 10px;
+      padding: 14px max(16px, env(safe-area-inset-right)) 0 max(16px, env(safe-area-inset-left));
+      pointer-events: none;
+      font-family: ui-monospace, "SFMono-Regular", Menlo, monospace;
+      font-size: 12px;
+      letter-spacing: .04em;
+      text-transform: uppercase;
+    }
+    .pill {
+      min-height: 44px;
+      padding: 10px 12px;
+      border: 1px solid var(--line);
+      border-radius: 999px;
+      background: var(--panel);
+      box-shadow: 0 10px 30px var(--shadow);
+      backdrop-filter: blur(14px);
+      -webkit-backdrop-filter: blur(14px);
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      white-space: nowrap;
+    }
+    .hud .pill:nth-child(2) { justify-self: center; }
+    .hud .pill:nth-child(3) { justify-self: end; }
+    .value {
+      color: var(--ink);
+      font-weight: 800;
+      font-size: 15px;
+      letter-spacing: 0;
+    }
+    .hint {
+      position: absolute;
+      left: 50%;
+      bottom: calc(18px + env(safe-area-inset-bottom));
+      translate: -50% 0;
+      width: min(560px, calc(100dvw - 28px));
+      min-height: 44px;
+      border: 1px solid var(--line);
+      border-radius: 18px;
+      background: var(--panel);
+      color: var(--muted);
+      box-shadow: 0 10px 30px var(--shadow);
+      backdrop-filter: blur(14px);
+      -webkit-backdrop-filter: blur(14px);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      text-align: center;
+      padding: 10px 14px;
+      font-family: ui-monospace, "SFMono-Regular", Menlo, monospace;
+      font-size: 12px;
+      letter-spacing: .03em;
+      pointer-events: none;
+      transition: opacity .25s ease, transform .25s ease;
+    }
+    .hint.fade { opacity: 0; transform: translateY(16px); }
+    .overlay {
+      position: absolute;
+      inset: 0;
+      display: grid;
+      place-items: center;
+      padding: max(24px, env(safe-area-inset-top)) max(18px, env(safe-area-inset-right)) max(24px, env(safe-area-inset-bottom)) max(18px, env(safe-area-inset-left));
+      background: radial-gradient(circle at 50% 42%, transparent 0 26%, rgba(0,0,0,.08) 72%);
+      transition: opacity .28s ease, transform .28s ease;
+    }
+    .overlay.hidden {
+      opacity: 0;
+      pointer-events: none;
+      transform: scale(.985);
+    }
+    .card {
+      width: min(460px, 100%);
+      border: 1px solid var(--line);
+      border-radius: 30px;
+      background: var(--panel-strong);
+      box-shadow: 0 24px 70px var(--shadow);
+      backdrop-filter: blur(18px);
+      -webkit-backdrop-filter: blur(18px);
+      padding: 28px;
+      text-align: left;
+    }
+    .kicker {
+      font-family: ui-monospace, "SFMono-Regular", Menlo, monospace;
+      font-size: 12px;
+      letter-spacing: .14em;
+      text-transform: uppercase;
+      color: var(--muted);
+      margin-bottom: 10px;
+    }
+    h1, h2 {
+      margin: 0;
+      line-height: .96;
+      letter-spacing: -.06em;
+      font-weight: 850;
+    }
+    h1 { font-size: clamp(48px, 16vw, 88px); }
+    h2 { font-size: clamp(38px, 11vw, 64px); }
+    p {
+      margin: 16px 0 0;
+      color: var(--muted);
+      line-height: 1.45;
+      font-size: 15px;
+    }
+    .rules {
+      display: grid;
+      gap: 8px;
+      margin: 20px 0;
+      font-family: ui-monospace, "SFMono-Regular", Menlo, monospace;
+      font-size: 12px;
+      color: var(--muted);
+    }
+    .rules span {
+      min-height: 36px;
+      border: 1px solid var(--line);
+      border-radius: 14px;
+      padding: 9px 10px;
+      background: rgba(255,255,255,.08);
+    }
+    button {
+      appearance: none;
+      width: 100%;
+      min-height: 50px;
+      border: 0;
+      border-radius: 999px;
+      background: var(--button);
+      color: var(--button-ink);
+      font-weight: 850;
+      font-size: 14px;
+      letter-spacing: .04em;
+      text-transform: uppercase;
+      cursor: pointer;
+      touch-action: manipulation;
+    }
+    .scoreline {
+      display: flex;
+      gap: 10px;
+      margin: 18px 0 20px;
+      font-family: ui-monospace, "SFMono-Regular", Menlo, monospace;
+    }
+    .scorebox {
+      flex: 1;
+      border: 1px solid var(--line);
+      border-radius: 18px;
+      padding: 12px;
+      background: rgba(255,255,255,.08);
+    }
+    .scorebox b {
+      display: block;
+      font-size: 22px;
+      color: var(--ink);
+      margin-top: 4px;
+    }
+    @media (max-height: 620px) {
+      .card { padding: 20px; border-radius: 24px; }
+      .rules { margin: 14px 0; }
+      p { margin-top: 10px; }
+    }
+  </style>
+</head>
+<body>
+  <main id="game" aria-label="Tidal Moons game">
+    <canvas id="c"></canvas>
+    <section class="hud" aria-hidden="true">
+      <div class="pill">score <span class="value" id="score">0</span></div>
+      <div class="pill">orbit <span class="value" id="orbit">100%</span></div>
+      <div class="pill">sync <span class="value" id="combo">x1</span></div>
+    </section>
+    <div class="hint" id="hint">Pull back anywhere, release the moon through its matching gate.</div>
+    <section class="overlay" id="title">
+      <div class="card">
+        <div class="kicker">clear summer orbit / one thumb</div>
+        <h1>Tidal Moons</h1>
+        <p>Flick each orbiting moon through the gate with the same color. Clean shots rebuild the orbit. Misses and time pull it inward.</p>
+        <div class="rules">
+          <span>Touch: hold, pull back, release</span>
+          <span>Keyboard: arrows aim, W/S power, Space launch</span>
+          <span>Survive 55 seconds or chase a higher score before collapse</span>
+        </div>
+        <button id="play">Play</button>
+      </div>
+    </section>
+    <section class="overlay hidden" id="over">
+      <div class="card">
+        <div class="kicker" id="resultKicker">orbit report</div>
+        <h2 id="resultTitle">Collapsed</h2>
+        <p id="resultText">The tide slipped out of phase.</p>
+        <div class="scoreline">
+          <div class="scorebox">Score <b id="finalScore">0</b></div>
+          <div class="scorebox">Best Sync <b id="finalCombo">x1</b></div>
+        </div>
+        <button id="again">Play Again</button>
+      </div>
+    </section>
+  </main>
+  <script>
+  (() => {
+    "use strict";
+
+    const canvas = document.getElementById("c");
+    const ctx = canvas.getContext("2d", { alpha: false });
+    const title = document.getElementById("title");
+    const over = document.getElementById("over");
+    const hint = document.getElementById("hint");
+    const scoreEl = document.getElementById("score");
+    const orbitEl = document.getElementById("orbit");
+    const comboEl = document.getElementById("combo");
+    const finalScoreEl = document.getElementById("finalScore");
+    const finalComboEl = document.getElementById("finalCombo");
+    const resultTitle = document.getElementById("resultTitle");
+    const resultText = document.getElementById("resultText");
+    const resultKicker = document.getElementById("resultKicker");
+    const playBtn = document.getElementById("play");
+    const againBtn = document.getElementById("again");
+
+    const TAU = Math.PI * 2;
+    const palette = [
+      { name: "sun", hex: "#ffbf3d" },
+      { name: "tide", hex: "#20b9c7" },
+      { name: "reef", hex: "#69d36f" },
+      { name: "flare", hex: "#ff6b4a" }
+    ];
+
+    let dpr = 1, w = 1, h = 1, cx = 0, cy = 0, unit = 1;
+    let state = "title";
+    let last = 0;
+    let audioCtx = null;
+    let raf = 0;
+    const motionQuery = matchMedia("(prefers-reduced-motion: reduce)");
+    const darkQuery = matchMedia("(prefers-color-scheme: dark)");
+    let reducedMotion = motionQuery.matches;
+    let dark = darkQuery.matches;
+
+    const game = {
+      score: 0,
+      combo: 1,
+      bestCombo: 1,
+      shields: 3,
+      elapsed: 0,
+      duration: 55,
+      orbitStart: 160,
+      orbitMin: 64,
+      orbitR: 150,
+      orbitCap: 160,
+      orbitSpeed: 1.05,
+      gateRot: 0,
+      gateSpeed: .23,
+      gateArc: .58,
+      shake: 0,
+      flash: 0,
+      nextMoonDelay: 0,
+      shotNo: 0
+    };
+
+    const moon = {
+      mode: "orbit",
+      angle: 0,
+      colorIndex: 0,
+      x: 0,
+      y: 0,
+      px: 0,
+      py: 0,
+      vx: 0,
+      vy: 0,
+      r: 13,
+      spin: 0
+    };
+
+    const aim = {
+      active: false,
+      pointerId: null,
+      startX: 0,
+      startY: 0,
+      x: 0,
+      y: 0,
+      power: .72,
+      angle: -Math.PI / 2,
+      keyboard: false
+    };
+
+    const particles = [];
+    const stars = [];
+    const gateOrder = [0, 1, 2, 3];
+
+    function resize() {
+      dpr = Math.min(2, window.devicePixelRatio || 1);
+      w = Math.max(1, window.innerWidth);
+      h = Math.max(1, window.innerHeight);
+      canvas.width = Math.round(w * dpr);
+      canvas.height = Math.round(h * dpr);
+      canvas.style.width = w + "px";
+      canvas.style.height = h + "px";
+      ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+      cx = w * .5;
+      cy = h * .49;
+      unit = Math.min(w, h);
+      game.orbitStart = Math.max(86, unit * .275);
+      game.orbitMin = Math.max(48, unit * .115);
+      if (state !== "play") {
+        game.orbitR = game.orbitStart;
+        game.orbitCap = game.orbitStart;
+        setMoonOnOrbit();
+      } else {
+        game.orbitR = Math.min(game.orbitR, game.orbitStart);
+      }
+      seedStars();
+    }
+
+    function seedStars() {
+      stars.length = 0;
+      const count = Math.floor(Math.min(90, Math.max(38, unit * .09)));
+      for (let i = 0; i < count; i++) {
+        stars.push({
+          x: Math.random() * w,
+          y: Math.random() * h,
+          r: Math.random() * 1.6 + .3,
+          a: Math.random() * .55 + .12,
+          p: Math.random() * TAU
+        });
+      }
+    }
+
+    function startGame() {
+      unlockAudio();
+      title.classList.add("hidden");
+      over.classList.add("hidden");
+      hint.classList.remove("fade");
+      state = "play";
+      game.score = 0;
+      game.combo = 1;
+      game.bestCombo = 1;
+      game.shields = 3;
+      game.elapsed = 0;
+      game.orbitR = game.orbitStart;
+      game.orbitCap = game.orbitStart;
+      game.gateRot = -Math.PI / 8;
+      game.gateArc = .58;
+      game.shake = 0;
+      game.flash = 0;
+      game.nextMoonDelay = 0;
+      game.shotNo = 0;
+      aim.active = false;
+      aim.keyboard = false;
+      particles.length = 0;
+      shuffleGates();
+      spawnMoon();
+      updateHud();
+      ping("start");
+    }
+
+    function endGame(won) {
+      if (state !== "play") return;
+      state = "over";
+      aim.active = false;
+      finalScoreEl.textContent = String(game.score);
+      finalComboEl.textContent = "x" + game.bestCombo;
+      resultKicker.textContent = won ? "orbit stabilized" : "orbit report";
+      resultTitle.textContent = won ? "Dawn Held" : "Collapsed";
+      resultText.textContent = won
+        ? "You kept the clear-sky system in phase until sunrise."
+        : (game.shields <= 0 ? "Too many moons crossed the wrong tide." : "The orbit shrank into the sun.");
+      over.classList.remove("hidden");
+      hint.classList.add("fade");
+      burst(cx, cy, won ? "#ffbf3d" : "#ff6b4a", won ? 54 : 34, won ? 1.3 : .9);
+      ping(won ? "win" : "lose");
+      buzz(won ? 45 : [28, 45, 28]);
+    }
+
+    function shuffleGates() {
+      for (let i = gateOrder.length - 1; i > 0; i--) {
+        const j = Math.floor(Math.random() * (i + 1));
+        [gateOrder[i], gateOrder[j]] = [gateOrder[j], gateOrder[i]];
+      }
+    }
+
+    function spawnMoon() {
+      moon.mode = "orbit";
+      moon.colorIndex = gateOrder[game.shotNo % gateOrder.length];
+      if (Math.random() < .45) moon.colorIndex = Math.floor(Math.random() * palette.length);
+      moon.angle = game.gateRot + Math.PI + Math.random() * .8 - .4;
+      moon.vx = 0;
+      moon.vy = 0;
+      moon.spin = 0;
+      moon.r = Math.max(10, unit * .024);
+      setMoonOnOrbit();
+      aim.angle = moon.angle - Math.PI / 2;
+      game.shotNo++;
+    }
+
+    function setMoonOnOrbit() {
+      moon.x = cx + Math.cos(moon.angle) * game.orbitR;
+      moon.y = cy + Math.sin(moon.angle) * game.orbitR;
+      moon.px = moon.x;
+      moon.py = moon.y;
+    }
+
+    function update(dt) {
+      if (state === "play") {
+        game.elapsed += dt;
+        if (game.elapsed > 5) hint.classList.add("fade");
+        game.orbitCap = Math.max(game.orbitMin, game.orbitStart - game.elapsed * 1.45);
+        game.orbitR = Math.min(game.orbitR, game.orbitCap);
+        game.orbitR -= (4.8 + game.elapsed * .13) * dt;
+        game.orbitSpeed = 1.05 + game.elapsed * .018;
+        game.gateSpeed = .21 + game.elapsed * .008;
+        game.gateArc = Math.max(.32, .6 - game.elapsed * .0047);
+        game.gateRot += game.gateSpeed * dt;
+        if (game.elapsed > 21) game.gateRot += Math.sin(game.elapsed * .9) * .0018;
+
+        if (moon.mode === "orbit") {
+          if (!aim.active || aim.keyboard) moon.angle += game.orbitSpeed * dt;
+          setMoonOnOrbit();
+        } else if (moon.mode === "flight") {
+          moon.px = moon.x;
+          moon.py = moon.y;
+          moon.x += moon.vx * dt;
+          moon.y += moon.vy * dt;
+          moon.vx *= Math.pow(.994, dt * 60);
+          moon.vy *= Math.pow(.994, dt * 60);
+          moon.spin += dt * 11;
+          checkGateHit();
+          const far = Math.hypot(moon.x - cx, moon.y - cy) > unit * .66 || moon.x < -60 || moon.x > w + 60 || moon.y < -60 || moon.y > h + 60;
+          if (far && moon.mode === "flight") missMoon("lost");
+        } else if (moon.mode === "wait") {
+          game.nextMoonDelay -= dt;
+          if (game.nextMoonDelay <= 0) spawnMoon();
+        }
+
+        if (game.elapsed >= game.duration) endGame(true);
+        if (game.orbitR <= game.orbitMin || game.shields <= 0) endGame(false);
+        updateHud();
+      }
+
+      for (let i = particles.length - 1; i >= 0; i--) {
+        const p = particles[i];
+        p.life -= dt;
+        p.x += p.vx * dt;
+        p.y += p.vy * dt;
+        p.vx *= Math.pow(.985, dt * 60);
+        p.vy *= Math.pow(.985, dt * 60);
+        p.vy += (p.g || 0) * dt;
+        if (p.life <= 0) particles.splice(i, 1);
+      }
+      game.shake = Math.max(0, game.shake - dt * 24);
+      game.flash = Math.max(0, game.flash - dt * 2.2);
+    }
+
+    function checkGateHit() {
+      const pr = Math.hypot(moon.px - cx, moon.py - cy);
+      const r = Math.hypot(moon.x - cx, moon.y - cy);
+      const gateR = gateRadius();
+      if (!((pr < gateR && r >= gateR) || Math.abs(r - gateR) < 10)) return;
+      const a = norm(Math.atan2(moon.y - cy, moon.x - cx));
+      let hit = null;
+      let closeness = 0;
+      for (let i = 0; i < 4; i++) {
+        const center = gateAngle(i);
+        const delta = Math.abs(shortAngle(a - center));
+        if (delta <= game.gateArc * .5) {
+          hit = i;
+          closeness = 1 - delta / (game.gateArc * .5);
+          break;
+        }
+      }
+      if (hit === null) return;
+      const gateColor = gateOrder[hit];
+      if (gateColor === moon.colorIndex) scoreMoon(closeness);
+      else missMoon("wrong", palette[gateColor].hex);
+    }
+
+    function scoreMoon(closeness) {
+      const clean = closeness > .74;
+      const gain = 90 + game.combo * 28 + Math.round(closeness * 70);
+      game.score += clean ? gain + 80 : gain;
+      game.combo++;
+      game.bestCombo = Math.max(game.bestCombo, game.combo);
+      game.orbitR = Math.min(game.orbitCap + 2, game.orbitR + (clean ? 11 : 7));
+      game.flash = clean ? .34 : .18;
+      moon.mode = "wait";
+      game.nextMoonDelay = reducedMotion ? .18 : .32;
+      const c = palette[moon.colorIndex].hex;
+      burst(moon.x, moon.y, c, clean ? 34 : 22, clean ? 1.15 : .85);
+      ringParticles(gateRadius(), c, 18);
+      ping(clean ? "clean" : "hit");
+      buzz(clean ? 18 : 9);
+      if (game.combo % 5 === 0) {
+        game.score += 150;
+        burst(cx, cy, "#ffbf3d", 28, 1);
+        ping("combo");
+      }
+    }
+
+    function missMoon(reason, wrongColor) {
+      game.combo = 1;
+      game.shields--;
+      game.orbitR -= 18;
+      game.shake = 8;
+      moon.mode = "wait";
+      game.nextMoonDelay = .55;
+      burst(moon.x, moon.y, wrongColor || "#ff6b4a", 24, .7);
+      ping(reason === "wrong" ? "wrong" : "miss");
+      buzz([20, 35, 20]);
+    }
+
+    function launchFromPointer() {
+      const dx = aim.startX - aim.x;
+      const dy = aim.startY - aim.y;
+      const len = Math.hypot(dx, dy);
+      let nx, ny, power;
+      if (len < 12) {
+        nx = Math.cos(moon.angle);
+        ny = Math.sin(moon.angle);
+        power = .58;
+      } else {
+        nx = dx / len;
+        ny = dy / len;
+        power = clamp(len / (unit * .23), .35, 1.15);
+      }
+      launch(nx, ny, power);
+    }
+
+    function launchKeyboard() {
+      launch(Math.cos(aim.angle), Math.sin(aim.angle), aim.power);
+    }
+
+    function launch(nx, ny, power) {
+      if (state !== "play" || moon.mode !== "orbit") return;
+      moon.mode = "flight";
+      const speed = (unit * .95 + 270) * power;
+      moon.vx = nx * speed;
+      moon.vy = ny * speed;
+      aim.active = false;
+      aim.keyboard = false;
+      ping("launch");
+    }
+
+    function updateHud() {
+      const stable = clamp((game.orbitR - game.orbitMin) / Math.max(1, game.orbitStart - game.orbitMin), 0, 1);
+      scoreEl.textContent = String(game.score);
+      orbitEl.textContent = Math.round(stable * 100) + "%";
+      comboEl.textContent = "x" + game.combo + " / " + Math.max(0, game.shields) + " hp";
+    }
+
+    function draw(t) {
+      const sx = game.shake ? (Math.random() - .5) * game.shake : 0;
+      const sy = game.shake ? (Math.random() - .5) * game.shake : 0;
+      ctx.save();
+      ctx.translate(sx, sy);
+      drawSky(t);
+      drawDiagram(t);
+      drawGates(t);
+      drawMoon();
+      drawAim();
+      drawParticles();
+      if (game.flash > 0) {
+        ctx.globalAlpha = game.flash * .16;
+        ctx.fillStyle = "#fff5cf";
+        ctx.fillRect(-sx, -sy, w, h);
+      }
+      ctx.restore();
+    }
+
+    function drawSky(t) {
+      const g = ctx.createLinearGradient(0, 0, w, h);
+      if (dark) {
+        g.addColorStop(0, "#071113");
+        g.addColorStop(.55, "#0d272b");
+        g.addColorStop(1, "#173f3d");
+      } else {
+        g.addColorStop(0, "#fff4d7");
+        g.addColorStop(.58, "#d7f0e7");
+        g.addColorStop(1, "#b9e4e1");
+      }
+      ctx.fillStyle = g;
+      ctx.fillRect(0, 0, w, h);
+      ctx.save();
+      for (const s of stars) {
+        const tw = s.a + Math.sin(t * .0012 + s.p) * .08;
+        ctx.globalAlpha = dark ? tw : tw * .42;
+        ctx.fillStyle = dark ? "#eaf8df" : "#356363";
+        ctx.beginPath();
+        ctx.arc(s.x, s.y, s.r, 0, TAU);
+        ctx.fill();
+      }
+      ctx.restore();
+      ctx.globalAlpha = dark ? .08 : .11;
+      ctx.strokeStyle = dark ? "#d8f2e7" : "#173f3d";
+      ctx.lineWidth = 1;
+      const gap = Math.max(32, unit * .08);
+      for (let x = (cx % gap); x < w; x += gap) {
+        ctx.beginPath();
+        ctx.moveTo(x, 0);
+        ctx.lineTo(x + Math.sin(t * .0001 + x) * 12, h);
+        ctx.stroke();
+      }
+      ctx.globalAlpha = 1;
+    }
+
+    function drawDiagram(t) {
+      ctx.save();
+      ctx.translate(cx, cy);
+      const ink = dark ? "rgba(238,248,239," : "rgba(19,35,38,";
+      ctx.strokeStyle = ink + ".17)";
+      ctx.lineWidth = 1;
+      for (let r = game.orbitMin; r <= gateRadius() + 24; r += Math.max(24, unit * .06)) {
+        ctx.beginPath();
+        ctx.arc(0, 0, r, 0, TAU);
+        ctx.stroke();
+      }
+      ctx.strokeStyle = ink + ".22)";
+      for (let i = 0; i < 36; i++) {
+        const a = i / 36 * TAU + Math.sin(t * .00015) * .04;
+        const inner = game.orbitR - (i % 3 === 0 ? 9 : 4);
+        const outer = game.orbitR + (i % 3 === 0 ? 9 : 4);
+        ctx.beginPath();
+        ctx.moveTo(Math.cos(a) * inner, Math.sin(a) * inner);
+        ctx.lineTo(Math.cos(a) * outer, Math.sin(a) * outer);
+        ctx.stroke();
+      }
+      ctx.strokeStyle = dark ? "rgba(255,191,61,.58)" : "rgba(202,122,16,.58)";
+      ctx.lineWidth = 3;
+      ctx.beginPath();
+      ctx.arc(0, 0, game.orbitR, 0, TAU);
+      ctx.stroke();
+      ctx.fillStyle = dark ? "#ffcb55" : "#f5a623";
+      ctx.shadowColor = "#ffbf3d";
+      ctx.shadowBlur = 18;
+      ctx.beginPath();
+      ctx.arc(0, 0, Math.max(15, unit * .036), 0, TAU);
+      ctx.fill();
+      ctx.shadowBlur = 0;
+      ctx.fillStyle = dark ? "rgba(255,255,255,.7)" : "rgba(255,255,255,.55)";
+      ctx.beginPath();
+      ctx.arc(-unit * .011, -unit * .013, unit * .009, 0, TAU);
+      ctx.fill();
+      ctx.restore();
+    }
+
+    function drawGates(t) {
+      const r = gateRadius();
+      ctx.save();
+      ctx.translate(cx, cy);
+      for (let i = 0; i < 4; i++) {
+        const color = palette[gateOrder[i]].hex;
+        const a = gateAngle(i);
+        const pulse = moon.colorIndex === gateOrder[i] && moon.mode !== "wait" ? 1 + Math.sin(t * .006) * .08 : 1;
+        ctx.lineWidth = Math.max(12, unit * .032) * pulse;
+        ctx.lineCap = "round";
+        ctx.strokeStyle = color;
+        ctx.globalAlpha = moon.colorIndex === gateOrder[i] ? .96 : .48;
+        ctx.shadowColor = color;
+        ctx.shadowBlur = moon.colorIndex === gateOrder[i] ? 18 : 5;
+        ctx.beginPath();
+        ctx.arc(0, 0, r, a - game.gateArc * .5, a + game.gateArc * .5);
+        ctx.stroke();
+        ctx.shadowBlur = 0;
+        ctx.globalAlpha = .7;
+        ctx.fillStyle = color;
+        const lx = Math.cos(a) * (r + unit * .045);
+        const ly = Math.sin(a) * (r + unit * .045);
+        ctx.beginPath();
+        ctx.arc(lx, ly, Math.max(3, unit * .008), 0, TAU);
+        ctx.fill();
+      }
+      ctx.restore();
+      ctx.globalAlpha = 1;
+    }
+
+    function drawMoon() {
+      if (moon.mode === "wait") return;
+      const color = palette[moon.colorIndex].hex;
+      ctx.save();
+      ctx.translate(moon.x, moon.y);
+      ctx.rotate(moon.spin);
+      ctx.shadowColor = color;
+      ctx.shadowBlur = 20;
+      ctx.fillStyle = color;
+      ctx.beginPath();
+      ctx.arc(0, 0, moon.r, 0, TAU);
+      ctx.fill();
+      ctx.shadowBlur = 0;
+      ctx.fillStyle = dark ? "rgba(255,255,255,.66)" : "rgba(255,255,255,.72)";
+      ctx.beginPath();
+      ctx.arc(-moon.r * .28, -moon.r * .32, moon.r * .28, 0, TAU);
+      ctx.fill();
+      ctx.strokeStyle = dark ? "rgba(238,248,239,.78)" : "rgba(19,35,38,.42)";
+      ctx.lineWidth = 1.2;
+      ctx.beginPath();
+      ctx.arc(0, 0, moon.r + 4, 0, TAU);
+      ctx.stroke();
+      ctx.restore();
+    }
+
+    function drawAim() {
+      if (state !== "play" || moon.mode !== "orbit") return;
+      let nx, ny, power, draw = false;
+      if (aim.active && !aim.keyboard) {
+        const dx = aim.startX - aim.x;
+        const dy = aim.startY - aim.y;
+        const len = Math.hypot(dx, dy);
+        if (len > 8) {
+          nx = dx / len;
+          ny = dy / len;
+          power = clamp(len / (unit * .23), .35, 1.15);
+          draw = true;
+        }
+        ctx.save();
+        ctx.strokeStyle = dark ? "rgba(238,248,239,.28)" : "rgba(19,35,38,.25)";
+        ctx.lineWidth = 2;
+        ctx.setLineDash([5, 7]);
+        ctx.beginPath();
+        ctx.moveTo(moon.x, moon.y);
+        ctx.lineTo(aim.x, aim.y);
+        ctx.stroke();
+        ctx.restore();
+      } else if (aim.keyboard) {
+        nx = Math.cos(aim.angle);
+        ny = Math.sin(aim.angle);
+        power = aim.power;
+        draw = true;
+      }
+      if (!draw) return;
+      const color = palette[moon.colorIndex].hex;
+      const len = (70 + unit * .17 * power);
+      ctx.save();
+      ctx.strokeStyle = color;
+      ctx.fillStyle = color;
+      ctx.globalAlpha = .9;
+      ctx.lineWidth = 4;
+      ctx.lineCap = "round";
+      ctx.shadowColor = color;
+      ctx.shadowBlur = 14;
+      ctx.beginPath();
+      ctx.moveTo(moon.x, moon.y);
+      ctx.lineTo(moon.x + nx * len, moon.y + ny * len);
+      ctx.stroke();
+      const tipX = moon.x + nx * len;
+      const tipY = moon.y + ny * len;
+      ctx.translate(tipX, tipY);
+      ctx.rotate(Math.atan2(ny, nx));
+      ctx.beginPath();
+      ctx.moveTo(12, 0);
+      ctx.lineTo(-7, -7);
+      ctx.lineTo(-3, 0);
+      ctx.lineTo(-7, 7);
+      ctx.closePath();
+      ctx.fill();
+      ctx.restore();
+    }
+
+    function drawParticles() {
+      ctx.save();
+      for (const p of particles) {
+        const a = clamp(p.life / p.max, 0, 1);
+        ctx.globalAlpha = a;
+        ctx.fillStyle = p.color;
+        ctx.beginPath();
+        ctx.arc(p.x, p.y, p.size * (1 + (1 - a) * .55), 0, TAU);
+        ctx.fill();
+      }
+      ctx.restore();
+      ctx.globalAlpha = 1;
+    }
+
+    function burst(x, y, color, count, scale) {
+      if (reducedMotion) count = Math.ceil(count * .35);
+      for (let i = 0; i < count; i++) {
+        const a = Math.random() * TAU;
+        const s = (70 + Math.random() * 280) * scale;
+        particles.push({
+          x, y,
+          vx: Math.cos(a) * s,
+          vy: Math.sin(a) * s,
+          life: .35 + Math.random() * .55,
+          max: .9,
+          size: 1.5 + Math.random() * 3.5,
+          color,
+          g: 12
+        });
+      }
+    }
+
+    function ringParticles(r, color, count) {
+      if (reducedMotion) count = Math.ceil(count * .4);
+      for (let i = 0; i < count; i++) {
+        const a = Math.random() * TAU;
+        particles.push({
+          x: cx + Math.cos(a) * r,
+          y: cy + Math.sin(a) * r,
+          vx: Math.cos(a) * (20 + Math.random() * 50),
+          vy: Math.sin(a) * (20 + Math.random() * 50),
+          life: .25 + Math.random() * .45,
+          max: .7,
+          size: 1 + Math.random() * 2.4,
+          color,
+          g: 0
+        });
+      }
+    }
+
+    function gateRadius() {
+      return Math.min(unit * .43, Math.min(w, h) * .46);
+    }
+
+    function gateAngle(i) {
+      return norm(game.gateRot + i * TAU / 4);
+    }
+
+    function norm(a) {
+      a %= TAU;
+      return a < 0 ? a + TAU : a;
+    }
+
+    function shortAngle(a) {
+      return ((a + Math.PI) % TAU + TAU) % TAU - Math.PI;
+    }
+
+    function clamp(v, lo, hi) {
+      return Math.max(lo, Math.min(hi, v));
+    }
+
+    function pointerPos(e) {
+      const rect = canvas.getBoundingClientRect();
+      return { x: e.clientX - rect.left, y: e.clientY - rect.top };
+    }
+
+    function onPointerDown(e) {
+      if (e.pointerType === "mouse" && e.button !== 0) return;
+      e.preventDefault();
+      unlockAudio();
+      if (state === "title") {
+        startGame();
+        return;
+      }
+      if (state !== "play" || moon.mode !== "orbit") return;
+      const p = pointerPos(e);
+      aim.active = true;
+      aim.keyboard = false;
+      aim.pointerId = e.pointerId;
+      aim.startX = p.x;
+      aim.startY = p.y;
+      aim.x = p.x;
+      aim.y = p.y;
+      try { canvas.setPointerCapture(e.pointerId); } catch (_) {}
+    }
+
+    function onPointerMove(e) {
+      if (!aim.active || aim.pointerId !== e.pointerId || aim.keyboard) return;
+      e.preventDefault();
+      const p = pointerPos(e);
+      aim.x = p.x;
+      aim.y = p.y;
+    }
+
+    function onPointerUp(e) {
+      if (!aim.active || aim.pointerId !== e.pointerId || aim.keyboard) return;
+      e.preventDefault();
+      const p = pointerPos(e);
+      aim.x = p.x;
+      aim.y = p.y;
+      launchFromPointer();
+      try { canvas.releasePointerCapture(e.pointerId); } catch (_) {}
+    }
+
+    function onKeyDown(e) {
+      if (["ArrowLeft", "ArrowRight", "ArrowUp", "ArrowDown", " ", "Enter", "KeyA", "KeyD", "KeyW", "KeyS", "KeyR"].includes(e.code)) {
+        e.preventDefault();
+      }
+      unlockAudio();
+      if ((state === "title" || state === "over") && (e.code === "Enter" || e.code === " ")) {
+        startGame();
+        return;
+      }
+      if (e.code === "KeyR") {
+        startGame();
+        return;
+      }
+      if (state !== "play" || moon.mode !== "orbit") return;
+      if (!aim.keyboard) {
+        aim.keyboard = true;
+        aim.angle = Math.atan2(moon.y - cy, moon.x - cx);
+        aim.power = .72;
+      }
+      if (e.code === "ArrowLeft" || e.code === "KeyA") aim.angle -= .13;
+      if (e.code === "ArrowRight" || e.code === "KeyD") aim.angle += .13;
+      if (e.code === "ArrowUp" || e.code === "KeyW") aim.power = clamp(aim.power + .06, .35, 1.15);
+      if (e.code === "ArrowDown" || e.code === "KeyS") aim.power = clamp(aim.power - .06, .35, 1.15);
+      if (e.code === " ") launchKeyboard();
+    }
+
+    function unlockAudio() {
+      if (audioCtx) {
+        if (audioCtx.state === "suspended") audioCtx.resume().catch(() => {});
+        return;
+      }
+      const AC = window.AudioContext || window.webkitAudioContext;
+      if (!AC) return;
+      try { audioCtx = new AC(); } catch (_) { audioCtx = null; }
+    }
+
+    function tone(freq, time, dur, type, gain) {
+      if (!audioCtx) return;
+      try {
+        const now = audioCtx.currentTime + time;
+        const osc = audioCtx.createOscillator();
+        const amp = audioCtx.createGain();
+        osc.type = type || "sine";
+        osc.frequency.setValueAtTime(freq, now);
+        amp.gain.setValueAtTime(0.0001, now);
+        amp.gain.exponentialRampToValueAtTime(gain || .045, now + .012);
+        amp.gain.exponentialRampToValueAtTime(0.0001, now + dur);
+        osc.connect(amp).connect(audioCtx.destination);
+        osc.start(now);
+        osc.stop(now + dur + .03);
+      } catch (_) {}
+    }
+
+    function ping(kind) {
+      if (!audioCtx) return;
+      if (kind === "launch") tone(260, 0, .08, "triangle", .026);
+      else if (kind === "hit") { tone(440, 0, .1, "sine", .035); tone(660, .06, .11, "sine", .028); }
+      else if (kind === "clean") { tone(520, 0, .08, "sine", .038); tone(780, .055, .12, "sine", .034); tone(1040, .11, .13, "sine", .024); }
+      else if (kind === "combo") { tone(660, 0, .08, "square", .022); tone(990, .055, .11, "square", .018); }
+      else if (kind === "wrong") { tone(150, 0, .13, "sawtooth", .035); tone(92, .06, .16, "sine", .026); }
+      else if (kind === "miss") tone(120, 0, .18, "triangle", .034);
+      else if (kind === "win") { tone(392, 0, .14, "sine", .03); tone(587, .08, .16, "sine", .03); tone(784, .18, .24, "sine", .03); }
+      else if (kind === "lose") { tone(196, 0, .16, "triangle", .032); tone(98, .12, .25, "triangle", .03); }
+      else if (kind === "start") tone(330, 0, .08, "sine", .022);
+    }
+
+    function buzz(pattern) {
+      try { navigator.vibrate?.(pattern); } catch (_) {}
+    }
+
+    function watchQuery(query, fn) {
+      if (query.addEventListener) query.addEventListener("change", fn);
+      else if (query.addListener) query.addListener(fn);
+    }
+
+    function loop(ts) {
+      const dt = Math.min(.033, (ts - last) / 1000 || .016);
+      last = ts;
+      update(dt);
+      draw(ts);
+      raf = requestAnimationFrame(loop);
+    }
+
+    canvas.addEventListener("pointerdown", onPointerDown, { passive: false });
+    canvas.addEventListener("pointermove", onPointerMove, { passive: false });
+    canvas.addEventListener("pointerup", onPointerUp, { passive: false });
+    canvas.addEventListener("pointercancel", onPointerUp, { passive: false });
+    window.addEventListener("keydown", onKeyDown);
+    window.addEventListener("resize", resize);
+    playBtn.addEventListener("click", startGame);
+    againBtn.addEventListener("click", startGame);
+    watchQuery(darkQuery, e => { dark = e.matches; });
+    watchQuery(motionQuery, e => { reducedMotion = e.matches; });
+
+    resize();
+    updateHud();
+    cancelAnimationFrame(raf);
+    raf = requestAnimationFrame(loop);
+  })();
+  </script>
+</body>
+</html>
