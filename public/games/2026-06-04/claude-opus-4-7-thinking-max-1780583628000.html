@@ -1,0 +1,1518 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+<meta name="color-scheme" content="light dark" />
+<meta name="theme-color" content="#f4ede1" media="(prefers-color-scheme: light)" />
+<meta name="theme-color" content="#0a1418" media="(prefers-color-scheme: dark)" />
+<title>FOGLINES — chart paths through the mist</title>
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; -webkit-tap-highlight-color: transparent; }
+
+  :root {
+    --bg: #f4ede1;
+    --bg-2: #eee5d6;
+    --fog: #e1d8c7;
+    --line: #2c3e50;
+    --ink: #1a2530;
+    --drifter: #1a4d7a;
+    --beacon: #d77827;
+    --bg-stat: rgba(20, 30, 40, 0.05);
+    --border: rgba(20, 30, 40, 0.1);
+  }
+
+  @media (prefers-color-scheme: dark) {
+    :root {
+      --bg: #0a1418;
+      --bg-2: #0c1a20;
+      --fog: #122029;
+      --line: #7fdbda;
+      --ink: #e8f4f5;
+      --drifter: #a3e8ff;
+      --beacon: #ffb347;
+      --bg-stat: rgba(255, 255, 255, 0.05);
+      --border: rgba(255, 255, 255, 0.1);
+    }
+  }
+
+  html, body {
+    width: 100vw;
+    height: 100dvh;
+    overflow: hidden;
+    background: var(--bg);
+    color: var(--ink);
+    font-family: ui-monospace, 'SFMono-Regular', Menlo, Consolas, monospace;
+    user-select: none;
+    -webkit-user-select: none;
+    -webkit-touch-callout: none;
+    overscroll-behavior: none;
+    touch-action: none;
+  }
+
+  #root {
+    position: fixed;
+    inset: 0;
+    width: 100vw;
+    height: 100dvh;
+    overflow: hidden;
+  }
+
+  #game {
+    position: absolute;
+    inset: 0;
+    width: 100%;
+    height: 100%;
+    touch-action: none;
+    display: block;
+  }
+
+  #hud {
+    position: absolute;
+    top: max(18px, env(safe-area-inset-top));
+    left: max(18px, env(safe-area-inset-left));
+    right: max(18px, env(safe-area-inset-right));
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    pointer-events: none;
+    z-index: 5;
+    transition: opacity 0.3s ease;
+  }
+  #hud.dim { opacity: 0; }
+
+  .hcol { display: flex; flex-direction: column; gap: 3px; }
+  .hcol.r { align-items: flex-end; }
+
+  .lbl {
+    font-size: 9px;
+    opacity: 0.55;
+    letter-spacing: 0.28em;
+    text-transform: uppercase;
+    font-weight: 500;
+  }
+
+  .v {
+    font-size: 22px;
+    font-weight: 500;
+    font-variant-numeric: tabular-nums;
+    line-height: 1;
+    letter-spacing: 0.04em;
+  }
+  .v.beacon { color: var(--beacon); }
+
+  #lives {
+    display: flex;
+    gap: 5px;
+    margin-top: 7px;
+  }
+
+  .life {
+    width: 8px;
+    height: 8px;
+    border-radius: 50%;
+    background: var(--drifter);
+    transition: opacity 0.3s ease, transform 0.3s ease;
+  }
+  .life.gone {
+    opacity: 0.15;
+    transform: scale(0.7);
+  }
+
+  #combo {
+    position: absolute;
+    top: 42%;
+    left: 50%;
+    transform: translate(-50%, -50%) scale(0.5);
+    font-size: 56px;
+    font-weight: 200;
+    color: var(--beacon);
+    opacity: 0;
+    pointer-events: none;
+    transition: transform 0.45s cubic-bezier(0.2, 0.7, 0.3, 1.3), opacity 0.3s ease;
+    z-index: 4;
+    letter-spacing: 0.1em;
+    text-shadow: 0 0 30px rgba(217, 119, 39, 0.4);
+  }
+  #combo.show {
+    opacity: 0.95;
+    transform: translate(-50%, -50%) scale(1);
+  }
+
+  #hint {
+    position: absolute;
+    bottom: max(36px, env(safe-area-inset-bottom));
+    left: 0;
+    right: 0;
+    text-align: center;
+    font-size: 11px;
+    letter-spacing: 0.3em;
+    text-transform: uppercase;
+    opacity: 0.45;
+    pointer-events: none;
+    z-index: 4;
+    transition: opacity 0.5s ease;
+    padding: 0 24px;
+  }
+  #hint.hidden { opacity: 0; }
+  #hint .glow {
+    display: inline-block;
+    animation: hintpulse 2.4s ease-in-out infinite;
+  }
+  @keyframes hintpulse {
+    0%, 100% { opacity: 0.6; }
+    50% { opacity: 1; }
+  }
+
+  #ovr {
+    position: absolute;
+    inset: 0;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    background: color-mix(in srgb, var(--bg) 80%, transparent);
+    backdrop-filter: blur(14px) saturate(1.05);
+    -webkit-backdrop-filter: blur(14px) saturate(1.05);
+    z-index: 10;
+    padding: 32px 24px;
+    text-align: center;
+    transition: opacity 0.4s ease;
+  }
+  #ovr.hidden { opacity: 0; pointer-events: none; }
+
+  #ovr .pre {
+    font-size: 10px;
+    letter-spacing: 0.5em;
+    opacity: 0.45;
+    margin-bottom: 14px;
+    text-transform: uppercase;
+  }
+
+  #ovr .title {
+    font-size: clamp(40px, 13vw, 64px);
+    font-weight: 200;
+    letter-spacing: 0.35em;
+    line-height: 1;
+    margin-bottom: 18px;
+    padding-left: 0.35em;
+  }
+
+  #ovr .sub {
+    font-size: 12px;
+    opacity: 0.6;
+    letter-spacing: 0.18em;
+    margin-bottom: 36px;
+    line-height: 1.85;
+    text-transform: uppercase;
+    max-width: 320px;
+  }
+
+  #stats {
+    display: flex;
+    gap: 14px;
+    margin: 0 0 30px;
+    flex-wrap: wrap;
+    justify-content: center;
+  }
+  #stats:empty { display: none; margin: 0; }
+
+  .s {
+    text-align: center;
+    background: var(--bg-stat);
+    padding: 14px 22px;
+    border-radius: 14px;
+    min-width: 92px;
+    border: 1px solid var(--border);
+  }
+
+  .sl {
+    font-size: 9px;
+    opacity: 0.55;
+    letter-spacing: 0.25em;
+    margin-bottom: 6px;
+    text-transform: uppercase;
+  }
+
+  .sv {
+    font-size: 28px;
+    font-weight: 300;
+    line-height: 1;
+    font-variant-numeric: tabular-nums;
+    color: var(--beacon);
+  }
+
+  .btn {
+    font-family: inherit;
+    font-size: 13px;
+    letter-spacing: 0.3em;
+    text-transform: uppercase;
+    background: var(--ink);
+    color: var(--bg);
+    border: none;
+    padding: 17px 42px;
+    cursor: pointer;
+    min-height: 48px;
+    min-width: 208px;
+    border-radius: 30px;
+    transition: transform 0.14s ease, opacity 0.2s;
+    font-weight: 500;
+  }
+  .btn:hover { opacity: 0.94; }
+  .btn:active { transform: scale(0.96); }
+
+  .ftr {
+    margin-top: 26px;
+    font-size: 10px;
+    opacity: 0.4;
+    letter-spacing: 0.28em;
+    text-transform: uppercase;
+    line-height: 1.8;
+  }
+  .ftr .k {
+    display: inline-block;
+    border: 1px solid var(--border);
+    border-radius: 4px;
+    padding: 1px 5px;
+    margin: 0 2px;
+    background: var(--bg-stat);
+    letter-spacing: 0.1em;
+  }
+
+  #mute {
+    position: absolute;
+    top: max(18px, env(safe-area-inset-top));
+    right: max(18px, env(safe-area-inset-right));
+    width: 44px;
+    height: 44px;
+    border-radius: 50%;
+    background: transparent;
+    border: 1px solid var(--border);
+    color: var(--ink);
+    font-family: inherit;
+    font-size: 11px;
+    cursor: pointer;
+    opacity: 0;
+    pointer-events: none;
+    transition: opacity 0.3s ease, transform 0.12s ease;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    z-index: 15;
+  }
+  #mute.show {
+    opacity: 0.45;
+    pointer-events: auto;
+  }
+  #mute:hover { opacity: 0.85; }
+  #mute:active { transform: scale(0.92); }
+</style>
+</head>
+<body>
+<div id="root">
+  <canvas id="game"></canvas>
+
+  <div id="hud">
+    <div class="hcol">
+      <div class="lbl">Score</div>
+      <div class="v" id="score">0</div>
+    </div>
+    <div class="hcol r">
+      <div class="lbl">Time</div>
+      <div class="v" id="time">60</div>
+      <div id="lives"></div>
+    </div>
+  </div>
+
+  <div id="combo"></div>
+  <button id="mute" aria-label="Toggle sound">SND</button>
+  <div id="hint"><span class="glow">drag to chart a path</span></div>
+
+  <div id="ovr">
+    <div class="pre" id="ovrPre">San Francisco · Summer · Overcast</div>
+    <div class="title">FOGLINES</div>
+    <div class="sub" id="ovrSub">Chart paths through misted lanes.<br>Reach the beacons. Dodge the squalls.</div>
+    <div id="stats"></div>
+    <button id="play" class="btn">CAST OFF</button>
+    <div class="ftr" id="ovrFtr"><span class="k">drag</span> to draw &nbsp;·&nbsp; <span class="k">space</span> to restart &nbsp;·&nbsp; <span class="k">m</span> to mute</div>
+  </div>
+</div>
+
+<script>
+'use strict';
+
+const $ = id => document.getElementById(id);
+const canvas = $('game');
+const ctx = canvas.getContext('2d', { alpha: false });
+const ovr = $('ovr');
+const playBtn = $('play');
+const scoreEl = $('score');
+const timeEl = $('time');
+const livesEl = $('lives');
+const hintEl = $('hint');
+const comboEl = $('combo');
+const muteEl = $('mute');
+const hudEl = $('hud');
+const titleEl = ovr.querySelector('.title');
+const subEl = $('ovrSub');
+const preEl = $('ovrPre');
+const ftrEl = $('ovrFtr');
+const statsEl = $('stats');
+
+let W = 0, H = 0, DPR = 1;
+let contourLayer = null;
+
+function resize() {
+  DPR = Math.min(window.devicePixelRatio || 1, 2);
+  W = window.innerWidth;
+  H = window.innerHeight;
+  canvas.style.width = W + 'px';
+  canvas.style.height = H + 'px';
+  canvas.width = Math.round(W * DPR);
+  canvas.height = Math.round(H * DPR);
+  ctx.setTransform(DPR, 0, 0, DPR, 0, 0);
+  buildContours();
+}
+
+// ----- Theme palette
+function readPalette() {
+  const dark = matchMedia('(prefers-color-scheme: dark)').matches;
+  return dark ? {
+    bg: '#0a1418',
+    fog: '#122029',
+    fogEdge: '#0a1418',
+    line: '#7fdbda',
+    ink: '#e8f4f5',
+    drifter: '#a3e8ff',
+    drifterCore: '#dff5ff',
+    beacon: '#ffb347',
+    beaconGlow: 'rgba(255, 179, 71, 0.55)',
+    beaconRing: 'rgba(255, 179, 71, 0.25)',
+    hazard: '#0e1f26',
+    hazardCore: '#050d11',
+    hazardEdge: 'rgba(255, 107, 107, 0.6)',
+    bad: '#ff6b6b',
+    pathOk: '#a3e8ff',
+    pathOkGlow: 'rgba(163, 232, 255, 0.4)',
+    pathBad: '#ff6b6b',
+    pathBadGlow: 'rgba(255, 107, 107, 0.35)',
+    trail: 'rgba(163, 232, 255, 0.55)',
+    label: 'rgba(127, 219, 218, 0.5)'
+  } : {
+    bg: '#f4ede1',
+    fog: '#e1d8c7',
+    fogEdge: '#d8cdb8',
+    line: '#3a4d5e',
+    ink: '#1a2530',
+    drifter: '#1a4d7a',
+    drifterCore: '#fff8eb',
+    beacon: '#d77827',
+    beaconGlow: 'rgba(215, 120, 39, 0.45)',
+    beaconRing: 'rgba(215, 120, 39, 0.2)',
+    hazard: '#3a4d5e',
+    hazardCore: '#1f2b36',
+    hazardEdge: 'rgba(178, 56, 41, 0.7)',
+    bad: '#b23829',
+    pathOk: '#1a4d7a',
+    pathOkGlow: 'rgba(26, 77, 122, 0.3)',
+    pathBad: '#b23829',
+    pathBadGlow: 'rgba(178, 56, 41, 0.3)',
+    trail: 'rgba(26, 77, 122, 0.5)',
+    label: 'rgba(58, 77, 94, 0.55)'
+  };
+}
+let C = readPalette();
+matchMedia('(prefers-color-scheme: dark)').addEventListener('change', () => {
+  C = readPalette();
+  buildContours();
+});
+
+// ----- Audio (Web Audio, gesture-gated) -----
+const A = { ctx: null, gain: null, muted: false, started: false };
+
+function audioInit() {
+  if (A.ctx) return;
+  try {
+    A.ctx = new (window.AudioContext || window.webkitAudioContext)();
+    A.gain = A.ctx.createGain();
+    A.gain.gain.value = 0.32;
+    A.gain.connect(A.ctx.destination);
+  } catch (e) {}
+}
+function ensureAudio() {
+  audioInit();
+  if (A.ctx && A.ctx.state === 'suspended') A.ctx.resume();
+}
+function tone(freq, dur, opts) {
+  opts = opts || {};
+  if (!A.ctx || A.muted) return;
+  const t = A.ctx.currentTime;
+  const o = A.ctx.createOscillator();
+  const g = A.ctx.createGain();
+  o.type = opts.type || 'sine';
+  o.frequency.setValueAtTime(freq, t);
+  if (opts.slide) o.frequency.exponentialRampToValueAtTime(freq * opts.slide, t + dur);
+  const vol = opts.vol == null ? 0.18 : opts.vol;
+  g.gain.setValueAtTime(0, t);
+  g.gain.linearRampToValueAtTime(vol, t + 0.008);
+  g.gain.exponentialRampToValueAtTime(0.0005, t + dur);
+  o.connect(g).connect(A.gain);
+  o.start(t);
+  o.stop(t + dur + 0.02);
+}
+function noiseBurst(dur, vol) {
+  if (!A.ctx || A.muted) return;
+  const t = A.ctx.currentTime;
+  const sr = A.ctx.sampleRate;
+  const n = Math.max(1, Math.floor(sr * dur));
+  const buf = A.ctx.createBuffer(1, n, sr);
+  const data = buf.getChannelData(0);
+  for (let i = 0; i < n; i++) data[i] = (Math.random() * 2 - 1) * (1 - i / n);
+  const src = A.ctx.createBufferSource();
+  src.buffer = buf;
+  const f = A.ctx.createBiquadFilter();
+  f.type = 'lowpass';
+  f.frequency.value = 600;
+  const g = A.ctx.createGain();
+  g.gain.value = vol || 0.16;
+  src.connect(f).connect(g).connect(A.gain);
+  src.start(t);
+}
+
+const sfx = {
+  collect() {
+    tone(659.25, 0.16, { type: 'triangle', vol: 0.16 });
+    tone(987.77, 0.32, { type: 'sine', vol: 0.13, slide: 1.4 });
+    tone(1318.5, 0.5, { type: 'sine', vol: 0.07, slide: 1.3 });
+  },
+  hit() {
+    tone(110, 0.4, { type: 'sawtooth', vol: 0.22, slide: 0.32 });
+    tone(55, 0.45, { type: 'square', vol: 0.14, slide: 0.4 });
+    noiseBurst(0.18, 0.18);
+  },
+  draw() {
+    tone(420 + Math.random() * 240, 0.04, { type: 'triangle', vol: 0.04 });
+  },
+  invalid() {
+    tone(180, 0.13, { type: 'square', vol: 0.1, slide: 0.55 });
+    tone(140, 0.16, { type: 'sawtooth', vol: 0.08, slide: 0.6 });
+  },
+  expire() {
+    tone(330, 0.18, { type: 'sine', vol: 0.1, slide: 0.5 });
+    tone(220, 0.22, { type: 'triangle', vol: 0.08, slide: 0.5 });
+  },
+  start() {
+    tone(523.25, 0.16, { type: 'sine', vol: 0.12 });
+    setTimeout(() => tone(659.25, 0.16, { type: 'sine', vol: 0.12 }), 80);
+    setTimeout(() => tone(783.99, 0.34, { type: 'triangle', vol: 0.13 }), 160);
+  },
+  over() {
+    tone(220, 0.25, { type: 'triangle', vol: 0.18, slide: 0.85 });
+    setTimeout(() => tone(174.61, 0.3, { type: 'triangle', vol: 0.18, slide: 0.85 }), 220);
+    setTimeout(() => tone(130.81, 0.7, { type: 'sine', vol: 0.18, slide: 0.85 }), 460);
+  },
+  combo(n) {
+    tone(622 + n * 50, 0.18, { type: 'sine', vol: 0.1, slide: 1.5 });
+  }
+};
+
+// ----- Game state -----
+const ST = {
+  phase: 'title',           // 'title' | 'playing' | 'gameover'
+  drifter: { x: 0, y: 0, ang: -Math.PI / 2, traveling: false, prog: 0, trail: [], scale: 1 },
+  beacon: null,
+  drawing: false,
+  drawn: [],
+  pathValid: true,
+  path: null,
+  hazards: [],
+  parts: [],
+  floats: [],
+  ripples: [],
+  score: 0,
+  combo: 1,
+  comboT: 0,
+  best: 0,
+  lives: 3,
+  time: 60,
+  spawnT: 0,
+  level: 1,
+  flash: 0,
+  shakeT: 0,
+  shakeM: 0,
+  fogT: 0,
+  hintT: 5,
+  collected: 0,
+  timeShown: 60,
+  arrivalT: 0
+};
+
+// ----- Geometry helpers -----
+const TAU = Math.PI * 2;
+const dist = (ax, ay, bx, by) => Math.hypot(ax - bx, ay - by);
+
+function segPointDist(ax, ay, bx, by, px, py) {
+  const dx = bx - ax, dy = by - ay;
+  const l2 = dx * dx + dy * dy;
+  if (l2 < 0.0001) return Math.hypot(px - ax, py - ay);
+  let t = ((px - ax) * dx + (py - ay) * dy) / l2;
+  if (t < 0) t = 0; else if (t > 1) t = 1;
+  return Math.hypot(px - (ax + dx * t), py - (ay + dy * t));
+}
+
+function pathLen(pts) {
+  let l = 0;
+  for (let i = 1; i < pts.length; i++) l += dist(pts[i - 1].x, pts[i - 1].y, pts[i].x, pts[i].y);
+  return l;
+}
+
+function posOnPath(pts, t) {
+  let rem = t;
+  for (let i = 1; i < pts.length; i++) {
+    const dx = pts[i].x - pts[i - 1].x;
+    const dy = pts[i].y - pts[i - 1].y;
+    const s = Math.hypot(dx, dy);
+    if (rem <= s) {
+      const f = s > 0 ? rem / s : 0;
+      return { x: pts[i - 1].x + dx * f, y: pts[i - 1].y + dy * f, ang: Math.atan2(dy, dx) };
+    }
+    rem -= s;
+  }
+  const last = pts[pts.length - 1];
+  const prev = pts[Math.max(0, pts.length - 2)];
+  return { x: last.x, y: last.y, ang: Math.atan2(last.y - prev.y, last.x - prev.x) };
+}
+
+const DRIFTER_R = 5;
+
+function checkPath(pts) {
+  if (pts.length < 2) return true;
+  for (let i = 1; i < pts.length; i++) {
+    const a = pts[i - 1], b = pts[i];
+    for (const h of ST.hazards) {
+      const r = h.r * h.grow + DRIFTER_R - 1;
+      if (segPointDist(a.x, a.y, b.x, b.y, h.x, h.y) < r) return false;
+    }
+  }
+  return true;
+}
+
+// ----- Spawning -----
+function spawnBeacon() {
+  let x = 0, y = 0, ok = false;
+  const minD = Math.min(W, H) * 0.32;
+  const padX = 70, padTop = 110, padBot = 140;
+  for (let n = 0; n < 80; n++) {
+    x = padX + Math.random() * Math.max(20, W - padX * 2);
+    y = padTop + Math.random() * Math.max(20, H - padTop - padBot);
+    if (dist(x, y, ST.drifter.x, ST.drifter.y) < minD) continue;
+    let bad = false;
+    for (const h of ST.hazards) {
+      if (dist(x, y, h.x, h.y) < h.r * h.grow + 70) { bad = true; break; }
+    }
+    if (!bad) { ok = true; break; }
+  }
+  if (!ok) { x = W * 0.5; y = padTop + 20; }
+  ST.beacon = { x, y, pulse: Math.random() * TAU, age: 0, life: 9 + Math.random() * 1.2, born: 0 };
+}
+
+function spawnHazard(specificX, specificY) {
+  const baseR = Math.min(W, H) * 0.052;
+  const r = baseR * (0.85 + Math.random() * 0.5);
+  let x = 0, y = 0, ok = false;
+  const isPlaced = specificX !== undefined;
+  for (let n = 0; n < 60; n++) {
+    x = isPlaced ? specificX : (r + 24 + Math.random() * Math.max(20, W - 2 * r - 48));
+    y = isPlaced ? specificY : (r + 24 + Math.random() * Math.max(20, H - 2 * r - 48));
+    if (!isPlaced) {
+      if (dist(x, y, ST.drifter.x, ST.drifter.y) < r + 100) continue;
+      if (ST.beacon && dist(x, y, ST.beacon.x, ST.beacon.y) < r + 80) continue;
+    }
+    let bad = false;
+    for (const h of ST.hazards) {
+      if (dist(x, y, h.x, h.y) < h.r + r + 18) { bad = true; break; }
+    }
+    if (!bad) { ok = true; break; }
+    if (isPlaced) break;
+  }
+  if (!ok && !isPlaced) return;
+  const moving = ST.level > 2.6 && Math.random() < 0.5;
+  const sp = moving ? 18 + Math.random() * 22 + ST.level * 2.2 : 0;
+  const d = Math.random() * TAU;
+  ST.hazards.push({
+    x, y, r,
+    vx: Math.cos(d) * sp,
+    vy: Math.sin(d) * sp,
+    phase: Math.random() * TAU,
+    grow: isPlaced ? 0.05 : 0.2,
+    age: 0
+  });
+}
+
+// ----- HUD ----------------------------------
+function updateHUD() {
+  scoreEl.textContent = ST.score;
+  const tShown = Math.max(0, Math.ceil(ST.time));
+  if (tShown !== ST.timeShown) {
+    ST.timeShown = tShown;
+    timeEl.textContent = tShown;
+  }
+  livesEl.innerHTML = '';
+  for (let i = 0; i < 3; i++) {
+    const d = document.createElement('div');
+    d.className = 'life' + (i >= ST.lives ? ' gone' : '');
+    livesEl.appendChild(d);
+  }
+}
+
+let comboTimer = 0;
+function showCombo(n) {
+  comboEl.textContent = '×' + n;
+  comboEl.classList.add('show');
+  clearTimeout(comboTimer);
+  comboTimer = setTimeout(() => comboEl.classList.remove('show'), 750);
+}
+
+// ----- Lifecycle -----
+function reset() {
+  ST.score = 0;
+  ST.combo = 1;
+  ST.comboT = 0;
+  ST.lives = 3;
+  ST.time = 60;
+  ST.timeShown = 60;
+  ST.hazards = [];
+  ST.parts = [];
+  ST.floats = [];
+  ST.ripples = [];
+  ST.drawn = [];
+  ST.path = null;
+  ST.pathValid = true;
+  ST.drawing = false;
+  ST.flash = 0;
+  ST.shakeT = 0;
+  ST.spawnT = 0;
+  ST.level = 1;
+  ST.collected = 0;
+  ST.hintT = 5;
+  ST.fogT = 0;
+  ST.arrivalT = 0;
+  ST.drifter.x = W * 0.5;
+  ST.drifter.y = H * 0.82;
+  ST.drifter.ang = -Math.PI / 2;
+  ST.drifter.traveling = false;
+  ST.drifter.prog = 0;
+  ST.drifter.trail = [];
+  ST.drifter.scale = 1;
+  spawnBeacon();
+  spawnHazard();
+  spawnHazard();
+  updateHUD();
+}
+
+function startGame() {
+  if (ST.phase === 'playing') return;
+  ensureAudio();
+  reset();
+  ST.phase = 'playing';
+  ovr.classList.add('hidden');
+  hudEl.classList.remove('dim');
+  hintEl.classList.remove('hidden');
+  muteEl.classList.add('show');
+  sfx.start();
+}
+
+function endGame() {
+  ST.phase = 'gameover';
+  ST.drawing = false;
+  ST.drawn = [];
+  if (ST.score > ST.best) ST.best = ST.score;
+  preEl.textContent = 'Round Complete';
+  titleEl.textContent = ST.lives <= 0 ? 'LOST IN FOG' : 'DRIFT ENDED';
+  subEl.innerHTML = ST.lives <= 0
+    ? 'The mist took the helm.<br>Try a calmer line.'
+    : 'The fog rolls back in.<br>One more crossing?';
+  statsEl.innerHTML =
+    '<div class="s"><div class="sl">Score</div><div class="sv">' + ST.score + '</div></div>' +
+    '<div class="s"><div class="sl">Beacons</div><div class="sv">' + ST.collected + '</div></div>' +
+    '<div class="s"><div class="sl">Best</div><div class="sv">' + ST.best + '</div></div>';
+  playBtn.textContent = 'CAST OFF AGAIN';
+  ftrEl.innerHTML = '<span class="k">space</span> to restart &nbsp;·&nbsp; <span class="k">m</span> to mute';
+  ovr.classList.remove('hidden');
+  hintEl.classList.add('hidden');
+  hudEl.classList.add('dim');
+  sfx.over();
+}
+
+function loseLife() {
+  ST.lives--;
+  ST.flash = 0.55;
+  ST.shakeT = 0.55;
+  ST.shakeM = 18;
+  ST.combo = 1;
+  if (navigator.vibrate) navigator.vibrate([40, 30, 50]);
+  sfx.hit();
+  for (let i = 0; i < 28; i++) {
+    const a = Math.random() * TAU;
+    const s = 110 + Math.random() * 170;
+    ST.parts.push({
+      x: ST.drifter.x, y: ST.drifter.y,
+      vx: Math.cos(a) * s, vy: Math.sin(a) * s,
+      life: 0.55 + Math.random() * 0.45,
+      maxLife: 1,
+      color: C.bad,
+      r: 2 + Math.random() * 2.5
+    });
+  }
+  updateHUD();
+  if (ST.lives <= 0) {
+    endGame();
+    return;
+  }
+  // Safe respawn: clear nearby hazards
+  ST.drifter.x = W * 0.5;
+  ST.drifter.y = H * 0.82;
+  ST.drifter.ang = -Math.PI / 2;
+  ST.drifter.traveling = false;
+  ST.path = null;
+  ST.drifter.trail = [];
+  ST.hazards = ST.hazards.filter(h => dist(h.x, h.y, ST.drifter.x, ST.drifter.y) > h.r + 110);
+}
+
+function collectBeacon() {
+  ST.combo = Math.min(8, ST.combo + 1);
+  ST.comboT = 4;
+  const pts = 10 * ST.combo;
+  ST.score += pts;
+  ST.collected++;
+  ST.time = Math.min(60, ST.time + 1.4);
+  if (navigator.vibrate) navigator.vibrate(22);
+  sfx.collect();
+  if (ST.combo > 1) sfx.combo(ST.combo);
+  if (ST.combo >= 3) showCombo(ST.combo);
+
+  for (let i = 0; i < 22; i++) {
+    const a = Math.random() * TAU;
+    const s = 80 + Math.random() * 170;
+    ST.parts.push({
+      x: ST.beacon.x, y: ST.beacon.y,
+      vx: Math.cos(a) * s, vy: Math.sin(a) * s,
+      life: 0.55 + Math.random() * 0.4,
+      maxLife: 0.95,
+      color: C.beacon,
+      r: 1.8 + Math.random() * 1.8
+    });
+  }
+  ST.ripples.push({ x: ST.beacon.x, y: ST.beacon.y, r: 8, maxR: 100, life: 1, color: C.beacon });
+  ST.floats.push({ x: ST.beacon.x, y: ST.beacon.y - 18, text: '+' + pts, life: 1.1, vy: -38 });
+  ST.drifter.scale = 1.4;
+  spawnBeacon();
+  updateHUD();
+}
+
+// ----- Input ---------------------------------
+function clampX(x) { return Math.max(2, Math.min(W - 2, x)); }
+function clampY(y) { return Math.max(2, Math.min(H - 2, y)); }
+
+function ptr(e) {
+  const r = canvas.getBoundingClientRect();
+  return {
+    x: clampX((e.clientX - r.left) * (W / r.width)),
+    y: clampY((e.clientY - r.top) * (H / r.height))
+  };
+}
+
+function down(e) {
+  if (e.cancelable) e.preventDefault();
+  if (ST.phase !== 'playing') return;
+  const p = ptr(e);
+  ST.drawing = true;
+  ST.drawn = [{ x: ST.drifter.x, y: ST.drifter.y }];
+  if (dist(p.x, p.y, ST.drifter.x, ST.drifter.y) > 8) ST.drawn.push(p);
+  ST.pathValid = checkPath(ST.drawn);
+  try { canvas.setPointerCapture(e.pointerId); } catch (_) {}
+}
+
+function move(e) {
+  if (!ST.drawing) return;
+  if (e.cancelable) e.preventDefault();
+  const p = ptr(e);
+  const last = ST.drawn[ST.drawn.length - 1];
+  if (dist(p.x, p.y, last.x, last.y) > 5) {
+    ST.drawn.push(p);
+    if (pathLen(ST.drawn) > Math.hypot(W, H) * 1.6) {
+      ST.drawn.pop();
+    } else {
+      ST.pathValid = checkPath(ST.drawn);
+      if (ST.pathValid && Math.random() < 0.22) sfx.draw();
+    }
+  }
+}
+
+function up(e) {
+  if (!ST.drawing) return;
+  if (e.cancelable) e.preventDefault();
+  ST.drawing = false;
+  if (ST.phase !== 'playing') { ST.drawn = []; return; }
+  if (ST.drawn.length >= 2 && ST.pathValid) {
+    ST.path = ST.drawn.slice();
+    ST.drawn = [];
+    ST.drifter.traveling = true;
+    ST.drifter.prog = 0;
+    if (ST.hintT > 0) { ST.hintT = 0; hintEl.classList.add('hidden'); }
+  } else {
+    if (!ST.pathValid) {
+      ST.flash = 0.22;
+      sfx.invalid();
+      if (navigator.vibrate) navigator.vibrate(18);
+    }
+    ST.drawn = [];
+  }
+}
+
+function onKey(e) {
+  if (e.key === ' ' || e.key === 'Enter') {
+    if (ST.phase === 'title' || ST.phase === 'gameover') {
+      e.preventDefault();
+      startGame();
+    }
+  } else if (e.key === 'm' || e.key === 'M') {
+    toggleMute();
+  } else if (e.key === 'Escape' && ST.phase === 'playing') {
+    endGame();
+  }
+}
+
+function toggleMute() {
+  A.muted = !A.muted;
+  muteEl.textContent = A.muted ? 'OFF' : 'SND';
+  muteEl.style.opacity = A.muted ? '0.25' : '';
+}
+
+// ----- Contour map background -----
+function buildContours() {
+  if (!W || !H) return;
+  contourLayer = document.createElement('canvas');
+  contourLayer.width = Math.round(W * DPR);
+  contourLayer.height = Math.round(H * DPR);
+  const c = contourLayer.getContext('2d');
+  c.setTransform(DPR, 0, 0, DPR, 0, 0);
+  c.clearRect(0, 0, W, H);
+
+  const m = Math.min(W, H);
+  const islands = [
+    { cx: W * 0.18, cy: H * 0.22, r: m * 0.17, rot: 0.4 },
+    { cx: W * 0.82, cy: H * 0.40, r: m * 0.15, rot: 1.6 },
+    { cx: W * 0.32, cy: H * 0.68, r: m * 0.19, rot: 2.4 },
+    { cx: W * 0.78, cy: H * 0.86, r: m * 0.13, rot: 3.4 },
+    { cx: W * 0.50, cy: H * 0.45, r: m * 0.08, rot: 0.9 }
+  ];
+
+  c.strokeStyle = C.line;
+  c.lineCap = 'round';
+  c.lineJoin = 'round';
+
+  for (const isl of islands) {
+    for (let ring = 0; ring < 6; ring++) {
+      const baseR = isl.r * (0.20 + ring * 0.17);
+      c.globalAlpha = 0.085 * (1 - ring * 0.10);
+      c.lineWidth = 1;
+      c.beginPath();
+      for (let theta = 0; theta <= 6.32; theta += 0.04) {
+        const w =
+          Math.sin(theta * 4 + isl.rot) * 0.13 +
+          Math.sin(theta * 7 - isl.rot * 1.7) * 0.065 +
+          Math.sin(theta * 11 + ring * 0.6) * 0.03 +
+          Math.cos(theta * 3 + ring * 1.2) * 0.02;
+        const rr = baseR * (1 + w);
+        const x = isl.cx + Math.cos(theta + isl.rot) * rr;
+        const y = isl.cy + Math.sin(theta + isl.rot) * rr * 0.86;
+        if (theta === 0) c.moveTo(x, y); else c.lineTo(x, y);
+      }
+      c.closePath();
+      c.stroke();
+    }
+  }
+
+  // Grid lines (subtle)
+  c.globalAlpha = 0.05;
+  c.lineWidth = 1;
+  const gs = 80;
+  c.beginPath();
+  for (let x = 0; x < W; x += gs) { c.moveTo(x, 0); c.lineTo(x, H); }
+  for (let y = 0; y < H; y += gs) { c.moveTo(0, y); c.lineTo(W, y); }
+  c.stroke();
+
+  // Tiny compass labels
+  c.globalAlpha = 0.22;
+  c.fillStyle = C.line;
+  c.font = '8px ui-monospace, monospace';
+  const rng = mulberrySeed(91);
+  for (let i = 0; i < 8; i++) {
+    const x = 30 + rng() * (W - 60);
+    const y = 30 + rng() * (H - 60);
+    const n = Math.floor(rng() * 89) + 10;
+    c.fillText('· ' + n + ' ·', x, y);
+  }
+  c.globalAlpha = 1;
+}
+
+function mulberrySeed(seed) {
+  let a = seed;
+  return function () {
+    a |= 0; a = (a + 0x6D2B79F5) | 0;
+    let t = Math.imul(a ^ (a >>> 15), 1 | a);
+    t = (t + Math.imul(t ^ (t >>> 7), 61 | t)) ^ t;
+    return ((t ^ (t >>> 14)) >>> 0) / 4294967296;
+  };
+}
+
+// ----- Update -----
+function tick(dt) {
+  if (ST.phase !== 'playing') return;
+
+  ST.time -= dt;
+  ST.fogT += dt;
+  if (ST.time <= 0) {
+    ST.time = 0;
+    updateHUD();
+    endGame();
+    return;
+  }
+
+  // Difficulty curve: rises from 1 → ~8.2 over 60s
+  const elapsed = 60 - ST.time;
+  ST.level = 1 + elapsed * 0.12;
+
+  // Hint timer
+  if (ST.hintT > 0) {
+    ST.hintT -= dt;
+    if (ST.collected >= 1) ST.hintT = 0;
+    if (ST.hintT <= 0) hintEl.classList.add('hidden');
+  }
+
+  // Spawn hazards
+  ST.spawnT += dt;
+  const target = Math.min(13, 2 + Math.floor(ST.level * 1.3));
+  const rate = Math.max(1.1, 3.6 - ST.level * 0.28);
+  if (ST.hazards.length < target && ST.spawnT > rate) {
+    ST.spawnT = 0;
+    spawnHazard();
+  }
+
+  // Update hazards
+  for (const h of ST.hazards) {
+    h.phase += dt * 1.5;
+    h.age += dt;
+    h.grow = Math.min(1, h.grow + dt * 0.7);
+    h.x += h.vx * dt;
+    h.y += h.vy * dt;
+    const m = h.r + 8;
+    if (h.x - h.r < 8) { h.x = h.r + 8; h.vx = Math.abs(h.vx); }
+    if (h.x + h.r > W - 8) { h.x = W - h.r - 8; h.vx = -Math.abs(h.vx); }
+    if (h.y - h.r < 8) { h.y = h.r + 8; h.vy = Math.abs(h.vy); }
+    if (h.y + h.r > H - 8) { h.y = H - h.r - 8; h.vy = -Math.abs(h.vy); }
+  }
+
+  // Update beacon
+  if (ST.beacon) {
+    ST.beacon.pulse += dt * 3.2;
+    ST.beacon.age += dt;
+    ST.beacon.born = Math.min(1, ST.beacon.born + dt * 3);
+    if (ST.beacon.age > ST.beacon.life) {
+      // Beacon expired -> becomes a hazard
+      const bx = ST.beacon.x, by = ST.beacon.y;
+      spawnHazard(bx, by);
+      ST.flash = 0.25;
+      ST.shakeT = 0.32;
+      ST.shakeM = 9;
+      sfx.expire();
+      if (navigator.vibrate) navigator.vibrate(22);
+      ST.combo = 1;
+      spawnBeacon();
+    }
+  }
+
+  // Drifter travel (paused while drawing)
+  if (!ST.drawing && ST.drifter.traveling && ST.path) {
+    const speed = 700 + ST.level * 35;
+    ST.drifter.prog += speed * dt;
+    const total = pathLen(ST.path);
+    if (ST.drifter.prog >= total) {
+      const last = ST.path[ST.path.length - 1];
+      ST.drifter.x = last.x;
+      ST.drifter.y = last.y;
+      ST.drifter.traveling = false;
+      ST.path = null;
+      ST.arrivalT = 0.4;
+    } else {
+      const p = posOnPath(ST.path, ST.drifter.prog);
+      let hit = false;
+      for (const h of ST.hazards) {
+        if (dist(p.x, p.y, h.x, h.y) < h.r * h.grow + DRIFTER_R) { hit = true; break; }
+      }
+      if (hit) {
+        loseLife();
+      } else {
+        ST.drifter.x = p.x;
+        ST.drifter.y = p.y;
+        ST.drifter.ang = p.ang;
+        if (Math.random() < 0.55) {
+          ST.drifter.trail.push({ x: p.x, y: p.y, life: 0.5 });
+        }
+        if (ST.beacon && dist(p.x, p.y, ST.beacon.x, ST.beacon.y) < 28) {
+          collectBeacon();
+        }
+      }
+    }
+  }
+
+  // Drifter scale ease
+  ST.drifter.scale += (1 - ST.drifter.scale) * Math.min(1, dt * 6);
+  if (ST.arrivalT > 0) ST.arrivalT -= dt;
+
+  // Trail decay
+  for (let i = ST.drifter.trail.length - 1; i >= 0; i--) {
+    ST.drifter.trail[i].life -= dt * 2.2;
+    if (ST.drifter.trail[i].life <= 0) ST.drifter.trail.splice(i, 1);
+  }
+
+  // Combo decay
+  if (ST.combo > 1) {
+    ST.comboT -= dt;
+    if (ST.comboT <= 0) ST.combo = 1;
+  }
+
+  // Particles
+  for (let i = ST.parts.length - 1; i >= 0; i--) {
+    const p = ST.parts[i];
+    p.x += p.vx * dt;
+    p.y += p.vy * dt;
+    p.vx *= 0.94;
+    p.vy *= 0.94;
+    p.life -= dt;
+    if (p.life <= 0) ST.parts.splice(i, 1);
+  }
+
+  // Floats
+  for (let i = ST.floats.length - 1; i >= 0; i--) {
+    const f = ST.floats[i];
+    f.y += f.vy * dt;
+    f.vy *= 0.96;
+    f.life -= dt;
+    if (f.life <= 0) ST.floats.splice(i, 1);
+  }
+
+  // Ripples
+  for (let i = ST.ripples.length - 1; i >= 0; i--) {
+    const r = ST.ripples[i];
+    r.r += (r.maxR - r.r) * 0.15;
+    r.life -= dt * 1.6;
+    if (r.life <= 0) ST.ripples.splice(i, 1);
+  }
+
+  // Effects decay
+  if (ST.flash > 0) ST.flash = Math.max(0, ST.flash - dt * 2);
+  if (ST.shakeT > 0) ST.shakeT = Math.max(0, ST.shakeT - dt);
+
+  updateHUD();
+}
+
+// ----- Render -----
+function drawHazard(h) {
+  const r = h.r * h.grow;
+  if (r < 1) return;
+
+  // Outer haze
+  const grd = ctx.createRadialGradient(h.x, h.y, r * 0.55, h.x, h.y, r * 1.55);
+  grd.addColorStop(0, C.hazard);
+  grd.addColorStop(0.55, C.hazard);
+  grd.addColorStop(1, 'rgba(0,0,0,0)');
+  ctx.fillStyle = grd;
+  ctx.globalAlpha = 0.88;
+  ctx.beginPath();
+  ctx.arc(h.x, h.y, r * 1.55, 0, TAU);
+  ctx.fill();
+  ctx.globalAlpha = 1;
+
+  // Core
+  ctx.fillStyle = C.hazardCore;
+  ctx.beginPath();
+  ctx.arc(h.x, h.y, r * 0.5, 0, TAU);
+  ctx.fill();
+
+  // Warning ring (dashed)
+  ctx.strokeStyle = C.hazardEdge;
+  ctx.lineWidth = 1.5;
+  ctx.setLineDash([5, 7]);
+  ctx.lineDashOffset = -h.phase * 12;
+  ctx.beginPath();
+  ctx.arc(h.x, h.y, r, 0, TAU);
+  ctx.stroke();
+  ctx.setLineDash([]);
+
+  // Swirl arms
+  ctx.strokeStyle = C.bg;
+  ctx.lineWidth = 0.9;
+  ctx.globalAlpha = 0.14;
+  ctx.beginPath();
+  for (let i = 0; i < 3; i++) {
+    const a0 = h.phase + i * 2.094;
+    let started = false;
+    for (let t = 0; t < 1; t += 0.06) {
+      const a = a0 + t * 2.6;
+      const rr = t * r * 0.78;
+      const x = h.x + Math.cos(a) * rr;
+      const y = h.y + Math.sin(a) * rr;
+      if (!started) { ctx.moveTo(x, y); started = true; } else ctx.lineTo(x, y);
+    }
+  }
+  ctx.stroke();
+  ctx.globalAlpha = 1;
+}
+
+function drawBeacon(b) {
+  const pulse = 1 + Math.sin(b.pulse) * 0.18;
+  const lifeFrac = 1 - b.age / b.life;
+  const born = b.born;
+
+  ctx.save();
+  ctx.globalAlpha = born;
+
+  // Outer halo
+  const grd = ctx.createRadialGradient(b.x, b.y, 0, b.x, b.y, 54 * pulse);
+  grd.addColorStop(0, C.beaconGlow);
+  grd.addColorStop(0.45, C.beaconRing);
+  grd.addColorStop(1, 'rgba(0,0,0,0)');
+  ctx.fillStyle = grd;
+  ctx.beginPath();
+  ctx.arc(b.x, b.y, 54 * pulse, 0, TAU);
+  ctx.fill();
+
+  // Ring
+  ctx.strokeStyle = C.beacon;
+  ctx.lineWidth = 1.2;
+  ctx.globalAlpha = 0.6 * born;
+  ctx.beginPath();
+  ctx.arc(b.x, b.y, 22 * pulse, 0, TAU);
+  ctx.stroke();
+  ctx.globalAlpha = born;
+
+  // Cross marker
+  ctx.strokeStyle = C.beacon;
+  ctx.lineWidth = 1.5;
+  const cm = 14;
+  ctx.beginPath();
+  ctx.moveTo(b.x - cm, b.y); ctx.lineTo(b.x - 5, b.y);
+  ctx.moveTo(b.x + 5, b.y);  ctx.lineTo(b.x + cm, b.y);
+  ctx.moveTo(b.x, b.y - cm); ctx.lineTo(b.x, b.y - 5);
+  ctx.moveTo(b.x, b.y + 5);  ctx.lineTo(b.x, b.y + cm);
+  ctx.stroke();
+
+  // Center dot
+  ctx.fillStyle = C.beacon;
+  ctx.beginPath();
+  ctx.arc(b.x, b.y, 4 + Math.sin(b.pulse * 2) * 1.2, 0, TAU);
+  ctx.fill();
+
+  // Lifetime arc (last half)
+  if (lifeFrac < 0.55 && lifeFrac > 0) {
+    const urgent = lifeFrac < 0.3;
+    ctx.strokeStyle = urgent ? C.bad : C.beacon;
+    ctx.lineWidth = 2.2;
+    ctx.globalAlpha = 0.85 * born * (0.55 - lifeFrac) / 0.55 + 0.15;
+    ctx.beginPath();
+    ctx.arc(b.x, b.y, 30, -Math.PI / 2, -Math.PI / 2 + (lifeFrac / 0.55) * TAU);
+    ctx.stroke();
+  }
+
+  ctx.restore();
+  ctx.globalAlpha = 1;
+}
+
+function drawPath(pts, valid, drawing, baseAlpha) {
+  const color = valid ? C.pathOk : C.pathBad;
+  const glow = valid ? C.pathOkGlow : C.pathBadGlow;
+
+  // Outer glow
+  ctx.strokeStyle = glow;
+  ctx.lineCap = 'round';
+  ctx.lineJoin = 'round';
+  ctx.globalAlpha = baseAlpha;
+  ctx.lineWidth = 14;
+  ctx.beginPath();
+  ctx.moveTo(pts[0].x, pts[0].y);
+  for (let i = 1; i < pts.length; i++) ctx.lineTo(pts[i].x, pts[i].y);
+  ctx.stroke();
+
+  // Inner line
+  ctx.globalAlpha = baseAlpha;
+  ctx.strokeStyle = color;
+  ctx.lineWidth = 2.6;
+  if (!valid) {
+    ctx.setLineDash([7, 5]);
+    ctx.lineDashOffset = -ST.fogT * 18;
+  } else if (!drawing) {
+    ctx.setLineDash([10, 6]);
+    ctx.lineDashOffset = -ST.fogT * 80;
+  }
+  ctx.beginPath();
+  ctx.moveTo(pts[0].x, pts[0].y);
+  for (let i = 1; i < pts.length; i++) ctx.lineTo(pts[i].x, pts[i].y);
+  ctx.stroke();
+  ctx.setLineDash([]);
+  ctx.globalAlpha = 1;
+
+  // Arrow head (drawing only)
+  if (drawing && pts.length >= 2) {
+    const last = pts[pts.length - 1];
+    const second = pts[pts.length - 2];
+    const ang = Math.atan2(last.y - second.y, last.x - second.x);
+    ctx.save();
+    ctx.translate(last.x, last.y);
+    ctx.rotate(ang);
+    ctx.fillStyle = color;
+    ctx.globalAlpha = baseAlpha;
+    ctx.beginPath();
+    ctx.moveTo(8, 0);
+    ctx.lineTo(-2, -4);
+    ctx.lineTo(0, 0);
+    ctx.lineTo(-2, 4);
+    ctx.closePath();
+    ctx.fill();
+    ctx.restore();
+    ctx.globalAlpha = 1;
+  }
+}
+
+function drawDrifter() {
+  const d = ST.drifter;
+  ctx.save();
+  ctx.translate(d.x, d.y);
+  ctx.rotate(d.ang);
+  ctx.scale(d.scale, d.scale);
+
+  // Halo
+  const grd = ctx.createRadialGradient(0, 0, 0, 0, 0, 26);
+  grd.addColorStop(0, C.drifter);
+  grd.addColorStop(0.35, 'rgba(0,0,0,0)');
+  grd.addColorStop(1, 'rgba(0,0,0,0)');
+  ctx.fillStyle = grd;
+  ctx.globalAlpha = 0.65;
+  ctx.beginPath();
+  ctx.arc(0, 0, 26, 0, TAU);
+  ctx.fill();
+  ctx.globalAlpha = 1;
+
+  // Hull
+  ctx.fillStyle = C.drifter;
+  ctx.beginPath();
+  ctx.moveTo(11, 0);
+  ctx.lineTo(-7, -6.5);
+  ctx.lineTo(-4, 0);
+  ctx.lineTo(-7, 6.5);
+  ctx.closePath();
+  ctx.fill();
+
+  // Highlight dot
+  ctx.fillStyle = C.drifterCore;
+  ctx.globalAlpha = 0.95;
+  ctx.beginPath();
+  ctx.arc(2, 0, 1.7, 0, TAU);
+  ctx.fill();
+  ctx.globalAlpha = 1;
+
+  ctx.restore();
+
+  // Idle ring (when stationary)
+  if (!d.traveling && ST.phase === 'playing') {
+    const t = performance.now() * 0.002;
+    const pulse = 16 + Math.sin(t) * 4;
+    ctx.strokeStyle = C.drifter;
+    ctx.globalAlpha = 0.32 + Math.sin(t * 2) * 0.08;
+    ctx.lineWidth = 1;
+    ctx.setLineDash([3, 5]);
+    ctx.lineDashOffset = -t * 12;
+    ctx.beginPath();
+    ctx.arc(d.x, d.y, pulse, 0, TAU);
+    ctx.stroke();
+    ctx.setLineDash([]);
+    ctx.globalAlpha = 1;
+  }
+}
+
+function render() {
+  // Bg
+  ctx.fillStyle = C.bg;
+  ctx.fillRect(0, 0, W, H);
+
+  ctx.save();
+
+  // Screen shake
+  if (ST.shakeT > 0) {
+    const s = ST.shakeM * (ST.shakeT / 0.55);
+    ctx.translate((Math.random() - 0.5) * s, (Math.random() - 0.5) * s);
+  }
+
+  // Contour map (with slow drift)
+  if (contourLayer) {
+    const ox = Math.sin(ST.fogT * 0.18) * 3;
+    const oy = Math.cos(ST.fogT * 0.14) * 2;
+    ctx.drawImage(contourLayer, ox, oy, W, H);
+  }
+
+  // Fog vignette
+  const m = Math.max(W, H);
+  const fgrd = ctx.createRadialGradient(W / 2, H / 2, m * 0.18, W / 2, H / 2, m * 0.78);
+  fgrd.addColorStop(0, 'rgba(0,0,0,0)');
+  fgrd.addColorStop(1, C.fog);
+  ctx.fillStyle = fgrd;
+  ctx.globalAlpha = 0.7;
+  ctx.fillRect(0, 0, W, H);
+  ctx.globalAlpha = 1;
+
+  // Hazards
+  for (const h of ST.hazards) drawHazard(h);
+
+  // Ripples
+  for (const r of ST.ripples) {
+    ctx.strokeStyle = r.color;
+    ctx.lineWidth = 1.8;
+    ctx.globalAlpha = Math.max(0, r.life * 0.55);
+    ctx.beginPath();
+    ctx.arc(r.x, r.y, r.r, 0, TAU);
+    ctx.stroke();
+  }
+  ctx.globalAlpha = 1;
+
+  // Beacon
+  if (ST.beacon) drawBeacon(ST.beacon);
+
+  // Path (committed, dimmed while drawing)
+  if (ST.path && !ST.drawing) drawPath(ST.path, true, false, 0.7);
+
+  // Drawing preview path
+  if (ST.drawing && ST.drawn.length >= 2) drawPath(ST.drawn, ST.pathValid, true, 0.92);
+
+  // Drifter trail
+  for (const t of ST.drifter.trail) {
+    ctx.fillStyle = C.drifter;
+    ctx.globalAlpha = Math.max(0, t.life) * 0.55;
+    ctx.beginPath();
+    ctx.arc(t.x, t.y, 4 * t.life + 0.5, 0, TAU);
+    ctx.fill();
+  }
+  ctx.globalAlpha = 1;
+
+  // Drifter
+  drawDrifter();
+
+  // Particles
+  for (const p of ST.parts) {
+    ctx.fillStyle = p.color;
+    const f = Math.max(0, p.life / p.maxLife);
+    ctx.globalAlpha = Math.min(1, f);
+    ctx.beginPath();
+    ctx.arc(p.x, p.y, p.r * (0.3 + f * 0.7), 0, TAU);
+    ctx.fill();
+  }
+  ctx.globalAlpha = 1;
+
+  // Floating text
+  ctx.font = '600 14px ui-monospace, monospace';
+  ctx.textAlign = 'center';
+  for (const f of ST.floats) {
+    ctx.fillStyle = C.beacon;
+    ctx.globalAlpha = Math.min(1, f.life);
+    ctx.fillText(f.text, f.x, f.y);
+  }
+  ctx.globalAlpha = 1;
+  ctx.textAlign = 'left';
+
+  ctx.restore();
+
+  // Flash
+  if (ST.flash > 0) {
+    ctx.fillStyle = C.bad;
+    ctx.globalAlpha = ST.flash * 0.32;
+    ctx.fillRect(0, 0, W, H);
+    ctx.globalAlpha = 1;
+  }
+}
+
+function renderTitle() {
+  ctx.fillStyle = C.bg;
+  ctx.fillRect(0, 0, W, H);
+
+  const t = performance.now() * 0.0003;
+  if (contourLayer) {
+    const ox = Math.sin(t * 3) * 6;
+    const oy = Math.cos(t * 2.4) * 4;
+    ctx.drawImage(contourLayer, ox, oy, W, H);
+  }
+
+  const m = Math.max(W, H);
+  const grd = ctx.createRadialGradient(W / 2, H / 2, m * 0.16, W / 2, H / 2, m * 0.78);
+  grd.addColorStop(0, 'rgba(0,0,0,0)');
+  grd.addColorStop(1, C.fog);
+  ctx.fillStyle = grd;
+  ctx.globalAlpha = 0.55;
+  ctx.fillRect(0, 0, W, H);
+  ctx.globalAlpha = 1;
+
+  // Drifting demo orbs (decorative)
+  const t2 = performance.now() * 0.0008;
+  for (let i = 0; i < 3; i++) {
+    const ph = t2 + i * 2.1;
+    const x = W * 0.5 + Math.cos(ph) * W * 0.32;
+    const y = H * 0.5 + Math.sin(ph * 1.3) * H * 0.18;
+    const r = 18 + Math.sin(ph * 2) * 4;
+    const og = ctx.createRadialGradient(x, y, 0, x, y, r * 2);
+    og.addColorStop(0, C.beaconGlow);
+    og.addColorStop(1, 'rgba(0,0,0,0)');
+    ctx.fillStyle = og;
+    ctx.beginPath();
+    ctx.arc(x, y, r * 2, 0, TAU);
+    ctx.fill();
+  }
+}
+
+// ----- Main loop -----
+let last = 0;
+function loop(now) {
+  const dt = Math.min(0.045, (now - last) / 1000) || 0;
+  last = now;
+  if (ST.phase === 'playing') {
+    tick(dt);
+    render();
+  } else {
+    renderTitle();
+  }
+  requestAnimationFrame(loop);
+}
+
+// ----- Boot -----
+function init() {
+  resize();
+  window.addEventListener('resize', resize);
+  window.addEventListener('orientationchange', resize);
+  canvas.addEventListener('pointerdown', down, { passive: false });
+  canvas.addEventListener('pointermove', move, { passive: false });
+  canvas.addEventListener('pointerup', up, { passive: false });
+  canvas.addEventListener('pointercancel', up, { passive: false });
+  canvas.addEventListener('contextmenu', e => e.preventDefault());
+  document.addEventListener('keydown', onKey);
+  playBtn.addEventListener('click', () => startGame());
+  playBtn.addEventListener('touchend', e => { e.preventDefault(); startGame(); }, { passive: false });
+  muteEl.addEventListener('click', e => { e.stopPropagation(); toggleMute(); });
+  muteEl.addEventListener('touchend', e => { e.preventDefault(); e.stopPropagation(); toggleMute(); }, { passive: false });
+  hintEl.classList.add('hidden');
+  requestAnimationFrame(loop);
+}
+
+window.addEventListener('error', e => { /* swallow to keep game running */ });
+
+init();
+</script>
+</body>
+</html>
