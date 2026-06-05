@@ -1,0 +1,735 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Moon Gates</title>
+<style>
+  :root{
+    color-scheme: light dark;
+    --bg:#f7f2e8;
+    --ink:#102027;
+    --muted:rgba(16,32,39,.62);
+    --panel:rgba(255,252,244,.76);
+    --line:rgba(16,32,39,.14);
+    --shadow:rgba(16,32,39,.18);
+    --gold:#e6a93a;
+    --teal:#24a99c;
+    --blue:#4f93b7;
+    --coral:#e26e4b;
+  }
+  @media (prefers-color-scheme: dark){
+    :root{
+      --bg:#071115;
+      --ink:#edf7f3;
+      --muted:rgba(237,247,243,.66);
+      --panel:rgba(9,22,27,.72);
+      --line:rgba(237,247,243,.16);
+      --shadow:rgba(0,0,0,.36);
+      --gold:#ffc857;
+      --teal:#37d0bf;
+      --blue:#7bc4e8;
+      --coral:#ff8b62;
+    }
+  }
+  *{box-sizing:border-box}
+  html,body{margin:0;width:100%;height:100%;overflow:hidden;background:var(--bg);color:var(--ink);font-family:Inter,system-ui,-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif}
+  body{
+    background:
+      radial-gradient(circle at 24% 16%, rgba(230,169,58,.22), transparent 30%),
+      radial-gradient(circle at 78% 82%, rgba(36,169,156,.14), transparent 34%),
+      var(--bg);
+  }
+  #wrap{position:fixed;inset:0;width:100dvw;height:100dvh;overflow:hidden;user-select:none}
+  canvas{position:absolute;inset:0;width:100dvw;height:100dvh;touch-action:none}
+  .hud{
+    position:absolute;z-index:3;top:calc(env(safe-area-inset-top) + 14px);left:16px;right:16px;
+    display:flex;align-items:flex-start;justify-content:space-between;gap:10px;pointer-events:none;
+    font-family:ui-monospace,"SFMono-Regular",Menlo,monospace;text-transform:uppercase;letter-spacing:.08em
+  }
+  .card{
+    min-height:44px;padding:10px 12px;border:1px solid var(--line);border-radius:18px;
+    background:var(--panel);box-shadow:0 18px 50px var(--shadow);backdrop-filter:blur(18px)
+  }
+  .stat{font-size:11px;color:var(--muted);line-height:1.1}
+  .value{font-size:20px;color:var(--ink);line-height:1.1;margin-top:2px}
+  #rightStats{text-align:right}
+  .overlay{
+    position:absolute;z-index:5;inset:0;display:grid;place-items:center;padding:24px;
+    background:rgba(7,17,21,.05);transition:opacity .26s ease,transform .26s ease;
+  }
+  .overlay.hidden{opacity:0;transform:scale(.985);pointer-events:none}
+  .modal{
+    width:min(480px,92dvw);border:1px solid var(--line);border-radius:30px;padding:26px;
+    background:var(--panel);box-shadow:0 24px 80px var(--shadow);backdrop-filter:blur(22px)
+  }
+  h1{margin:0 0 8px;font-size:clamp(38px,12vw,68px);line-height:.9;letter-spacing:-.08em;font-weight:800}
+  h2{margin:0 0 8px;font-size:34px;line-height:1;letter-spacing:-.05em}
+  p{margin:0;color:var(--muted);font-size:15px;line-height:1.5}
+  .rule{margin:18px 0;padding:14px;border:1px solid var(--line);border-radius:20px;font-family:ui-monospace,"SFMono-Regular",Menlo,monospace;font-size:12px;line-height:1.45;color:var(--ink)}
+  button{
+    width:100%;min-height:52px;border:0;border-radius:18px;margin-top:16px;padding:0 18px;
+    background:var(--ink);color:var(--bg);font-weight:800;font-size:15px;letter-spacing:.02em;
+    cursor:pointer;touch-action:manipulation
+  }
+  .small{font-family:ui-monospace,"SFMono-Regular",Menlo,monospace;font-size:11px;text-transform:uppercase;letter-spacing:.11em;color:var(--muted);margin-top:14px}
+  #targetPill{display:inline-flex;align-items:center;gap:8px;margin-top:12px;font-family:ui-monospace,"SFMono-Regular",Menlo,monospace;font-size:12px;text-transform:uppercase;letter-spacing:.1em;color:var(--muted)}
+  #targetDot{width:10px;height:10px;border-radius:50%;background:var(--gold);box-shadow:0 0 18px currentColor}
+</style>
+</head>
+<body>
+<div id="wrap">
+  <canvas id="game" aria-label="Moon Gates game canvas"></canvas>
+  <div class="hud">
+    <div class="card">
+      <div class="stat">Score</div>
+      <div id="score" class="value">0</div>
+    </div>
+    <div id="rightStats" class="card">
+      <div class="stat">Time <span id="time">45</span> | Lives <span id="lives">3/3</span></div>
+      <div id="combo" class="value">x1</div>
+    </div>
+  </div>
+  <section id="title" class="overlay">
+    <div class="modal">
+      <h1>Moon<br>Gates</h1>
+      <p>Hold to slow the orbit. Aim the line. Release the moon into the matching colored gate before its orbit melts.</p>
+      <div class="rule">TOUCH: hold / drag / release<br>KEYS: arrows aim / hold space / release</div>
+      <button id="startBtn">Play 45-second round</button>
+      <div class="small">Soft summer orbitals / no reload needed</div>
+    </div>
+  </section>
+  <section id="over" class="overlay hidden">
+    <div class="modal">
+      <h2>Round Complete</h2>
+      <p id="result">Score 0</p>
+      <div id="targetPill"><span id="targetDot"></span><span id="targetText">next target</span></div>
+      <button id="againBtn">Play again</button>
+    </div>
+  </section>
+</div>
+<script>
+(() => {
+  "use strict";
+
+  const canvas = document.getElementById("game");
+  const ctx = canvas.getContext("2d", { alpha: true });
+  if (!ctx) {
+    document.body.innerHTML = '<div style="display:grid;place-items:center;width:100dvw;height:100dvh;padding:24px;font:16px system-ui;background:var(--bg);color:var(--ink)">Canvas is unavailable on this browser.</div>';
+    return;
+  }
+  const title = document.getElementById("title");
+  const over = document.getElementById("over");
+  const scoreEl = document.getElementById("score");
+  const timeEl = document.getElementById("time");
+  const livesEl = document.getElementById("lives");
+  const comboEl = document.getElementById("combo");
+  const resultEl = document.getElementById("result");
+  const targetText = document.getElementById("targetText");
+  const targetDot = document.getElementById("targetDot");
+  const TAU = Math.PI * 2;
+  const ROUND = 45;
+  const palette = [
+    { name: "sun gate", key: "--gold", hex: "#e6a93a" },
+    { name: "tide gate", key: "--teal", hex: "#24a99c" },
+    { name: "fog gate", key: "--blue", hex: "#4f93b7" }
+  ];
+
+  let W = 1, H = 1, DPR = 1, S = 1, cx = 1, cy = 1, ringR = 1;
+  let state = "title", last = 0, elapsed = 0, score = 0, combo = 0, lives = 3;
+  let moon, aiming = false, aimX = 0, aimY = 0, pointerId = null, keyAim = -Math.PI / 2;
+  let particles = [], bursts = [], shake = 0, flash = 0, pause = 0, best = 0, cleanHits = 0;
+  let audioCtx = null, style = {};
+
+  const clamp = (v, a, b) => Math.max(a, Math.min(b, v));
+  const lerp = (a, b, t) => a + (b - a) * t;
+  const mod = n => ((n % TAU) + TAU) % TAU;
+  const angleDiff = (a, b) => Math.atan2(Math.sin(a - b), Math.cos(a - b));
+
+  function readTheme(){
+    const cs = getComputedStyle(document.documentElement);
+    style = {
+      bg: cs.getPropertyValue("--bg").trim(),
+      ink: cs.getPropertyValue("--ink").trim(),
+      muted: cs.getPropertyValue("--muted").trim(),
+      line: cs.getPropertyValue("--line").trim(),
+      panel: cs.getPropertyValue("--panel").trim(),
+      danger: cs.getPropertyValue("--coral").trim()
+    };
+    palette.forEach(p => p.hex = cs.getPropertyValue(p.key).trim() || p.hex);
+  }
+
+  function resize(){
+    DPR = Math.min(2, window.devicePixelRatio || 1);
+    W = window.innerWidth;
+    H = window.innerHeight;
+    S = Math.min(W, H);
+    cx = W * 0.5;
+    cy = H * (H > W ? 0.56 : 0.55);
+    ringR = Math.min(S * 0.435, H * 0.36);
+    canvas.width = Math.floor(W * DPR);
+    canvas.height = Math.floor(H * DPR);
+    canvas.style.width = W + "px";
+    canvas.style.height = H + "px";
+    ctx.setTransform(DPR, 0, 0, DPR, 0, 0);
+    readTheme();
+  }
+
+  function progress(){
+    return clamp(elapsed / ROUND, 0, 1);
+  }
+
+  function orbitR(){
+    const p = progress();
+    return lerp(S * 0.285, S * 0.145, p);
+  }
+
+  function fuseMax(){
+    return lerp(4.6, 2.45, progress());
+  }
+
+  function gateWidth(){
+    return lerp(0.82, 0.44, progress());
+  }
+
+  function gateAngles(t = elapsed){
+    const p = progress();
+    const spin = t * lerp(0.34, 1.02, p) + Math.sin(t * 0.55) * 0.15;
+    return palette.map((_, i) => mod(-Math.PI / 2 + i * TAU / 3 + spin));
+  }
+
+  function newMoon(carryAngle){
+    const idx = Math.floor(Math.random() * palette.length);
+    const a = typeof carryAngle === "number" ? carryAngle : Math.random() * TAU;
+    moon = {
+      color: idx,
+      angle: a,
+      x: cx + Math.cos(a) * orbitR(),
+      y: cy + Math.sin(a) * orbitR(),
+      vx: 0,
+      vy: 0,
+      launched: false,
+      fuse: fuseMax(),
+      trail: []
+    };
+    keyAim = a;
+    updateTarget();
+  }
+
+  function start(){
+    unlockAudio();
+    state = "playing";
+    title.classList.add("hidden");
+    over.classList.add("hidden");
+    elapsed = 0; score = 0; combo = 0; lives = 3; cleanHits = 0;
+    particles = []; bursts = []; shake = 0; flash = 0; pause = 0; aiming = false;
+    newMoon(-Math.PI / 2);
+    updateHud();
+  }
+
+  function endRound(){
+    if (state !== "playing") return;
+    state = "over";
+    best = Math.max(best, score);
+    resultEl.textContent = `Score ${score} | Best ${best} | Clean hits ${cleanHits}`;
+    over.classList.remove("hidden");
+    aiming = false;
+    vibrate(24);
+    tone("over");
+  }
+
+  function updateHud(){
+    scoreEl.textContent = score;
+    timeEl.textContent = Math.max(0, Math.ceil(ROUND - elapsed));
+    livesEl.textContent = `${Math.max(0, lives)}/3`;
+    comboEl.textContent = "x" + Math.max(1, combo + 1);
+  }
+
+  function updateTarget(){
+    if (!moon) return;
+    targetText.textContent = "next: " + palette[moon.color].name;
+    targetDot.style.background = palette[moon.color].hex;
+    targetDot.style.color = palette[moon.color].hex;
+  }
+
+  function releaseMoon(x, y){
+    if (state !== "playing" || !moon || moon.launched) return;
+    const dx = x - moon.x, dy = y - moon.y;
+    const len = Math.hypot(dx, dy);
+    let dir = len > 22 ? Math.atan2(dy, dx) : keyAim;
+    const pull = clamp(len || S * 0.24, S * 0.18, S * 0.46);
+    const speed = lerp(S * 1.05, S * 2.35, (pull - S * 0.18) / (S * 0.28));
+    moon.vx = Math.cos(dir) * speed;
+    moon.vy = Math.sin(dir) * speed;
+    moon.launched = true;
+    moon.trail.length = 0;
+    aiming = false;
+    pause = 0.025;
+    tone("launch");
+  }
+
+  function collapse(){
+    combo = 0;
+    lives -= 1;
+    shake = Math.max(shake, 9);
+    burst(moon.x, moon.y, palette[moon.color].hex, 22, 1.2);
+    vibrate([18, 28, 18]);
+    tone("fail");
+    if (lives <= 0) endRound();
+    else newMoon(moon.angle + 1.1);
+  }
+
+  function resolveHit(kind, gate){
+    const good = kind === "gate" && gate && gate.idx === moon.color;
+    const hitAngle = Math.atan2(moon.y - cy, moon.x - cx);
+    if (good) {
+      const clean = Math.abs(angleDiff(hitAngle, gate.angle)) < gateWidth() * 0.18;
+      const add = 100 + combo * 25 + (clean ? 60 : 0);
+      score += add;
+      combo += 1;
+      if (clean) cleanHits += 1;
+      flash = Math.max(flash, clean ? 0.28 : 0.16);
+      pause = 0.055;
+      burst(moon.x, moon.y, palette[moon.color].hex, clean ? 42 : 28, clean ? 1.7 : 1.25);
+      floatingText("+" + add, moon.x, moon.y, palette[moon.color].hex);
+      vibrate(clean ? 18 : 10);
+      tone(clean ? "clean" : "success");
+      newMoon(hitAngle + 1.8);
+    } else {
+      combo = 0;
+      lives -= 1;
+      shake = Math.max(shake, 10);
+      burst(moon.x, moon.y, palette[moon.color].hex, 24, 1.1);
+      floatingText(kind === "wrong" ? "wrong gate" : "miss", moon.x, moon.y, style.ink);
+      vibrate([16, 26, 16]);
+      tone("fail");
+      if (lives <= 0) endRound();
+      else newMoon(hitAngle + 1.35);
+    }
+    updateHud();
+  }
+
+  function update(dt){
+    if (pause > 0) {
+      pause -= dt;
+      dt *= 0.15;
+    }
+    const p = progress();
+    flash = Math.max(0, flash - dt);
+    shake = Math.max(0, shake - dt * 22);
+    particles = particles.filter(q => (q.life -= dt) > 0);
+    particles.forEach(q => {
+      q.x += q.vx * dt; q.y += q.vy * dt;
+      q.vx *= 0.985; q.vy *= 0.985;
+    });
+    bursts = bursts.filter(b => (b.life -= dt) > 0);
+    bursts.forEach(b => { b.y -= dt * 28; b.alpha = clamp(b.life / b.max, 0, 1); });
+
+    if (state !== "playing") return;
+    elapsed += dt;
+    if (elapsed >= ROUND) return endRound();
+
+    if (!moon.launched) {
+      const slow = aiming ? 0.24 : 1;
+      moon.angle = mod(moon.angle + dt * lerp(1.25, 2.55, p) * slow);
+      const r = orbitR();
+      moon.x = cx + Math.cos(moon.angle) * r;
+      moon.y = cy + Math.sin(moon.angle) * r;
+      moon.fuse -= dt * (aiming ? 0.54 : 1);
+      if (moon.fuse <= 0) collapse();
+    } else {
+      const prevX = moon.x, prevY = moon.y;
+      const dx = cx - moon.x, dy = cy - moon.y;
+      const d = Math.max(80, Math.hypot(dx, dy));
+      const pull = S * lerp(0.10, 0.18, p);
+      moon.vx += (dx / d) * pull * dt;
+      moon.vy += (dy / d) * pull * dt;
+      moon.x += moon.vx * dt;
+      moon.y += moon.vy * dt;
+      moon.trail.push({ x: moon.x, y: moon.y });
+      if (moon.trail.length > 18) moon.trail.shift();
+
+      const was = Math.hypot(prevX - cx, prevY - cy);
+      const now = Math.hypot(moon.x - cx, moon.y - cy);
+      if (was < ringR - 16 && now >= ringR - 16) {
+        const a = mod(Math.atan2(moon.y - cy, moon.x - cx));
+        const gates = currentGates();
+        const hit = gates.find(g => Math.abs(angleDiff(a, g.angle)) < gateWidth() * 0.5);
+        if (hit) resolveHit(hit.idx === moon.color ? "gate" : "wrong", hit);
+        else resolveHit("miss");
+      } else if (moon.x < -80 || moon.x > W + 80 || moon.y < -80 || moon.y > H + 80) {
+        resolveHit("miss");
+      }
+    }
+    updateHud();
+  }
+
+  function currentGates(){
+    return gateAngles().map((angle, idx) => ({ angle, idx }));
+  }
+
+  function burst(x, y, color, count, force){
+    for (let i = 0; i < count; i++) {
+      const a = Math.random() * TAU;
+      const s = (60 + Math.random() * 190) * force;
+      particles.push({
+        x, y, vx: Math.cos(a) * s, vy: Math.sin(a) * s,
+        life: 0.35 + Math.random() * 0.55,
+        max: 0.9, size: 2 + Math.random() * 3.5, color
+      });
+    }
+  }
+
+  function floatingText(text, x, y, color){
+    bursts.push({ text, x, y, color, life: 0.85, max: 0.85, alpha: 1 });
+  }
+
+  function draw(){
+    ctx.save();
+    const sx = shake ? (Math.random() - 0.5) * shake : 0;
+    const sy = shake ? (Math.random() - 0.5) * shake : 0;
+    ctx.clearRect(0, 0, W, H);
+    drawBackground();
+    ctx.translate(sx, sy);
+    drawArena();
+    drawParticles();
+    drawTexts();
+    if (flash > 0) {
+      ctx.globalAlpha = flash * 0.18;
+      ctx.fillStyle = palette[moon ? moon.color : 0].hex;
+      ctx.fillRect(-sx, -sy, W, H);
+    }
+    ctx.restore();
+  }
+
+  function drawBackground(){
+    ctx.fillStyle = style.bg;
+    ctx.fillRect(0, 0, W, H);
+    const glow = ctx.createRadialGradient(cx, cy, S * 0.02, cx, cy, S * 0.72);
+    glow.addColorStop(0, "rgba(230,169,58,.16)");
+    glow.addColorStop(0.45, "rgba(36,169,156,.08)");
+    glow.addColorStop(1, "rgba(0,0,0,0)");
+    ctx.fillStyle = glow;
+    ctx.fillRect(0, 0, W, H);
+  }
+
+  function drawArena(){
+    ctx.lineCap = "round";
+    ctx.lineJoin = "round";
+    const p = progress();
+    const gates = currentGates();
+    const width = gateWidth();
+
+    ctx.strokeStyle = style.line;
+    ctx.lineWidth = 1;
+    for (let i = 1; i <= 4; i++) {
+      ctx.beginPath();
+      ctx.arc(cx, cy, ringR * (i / 4), 0, TAU);
+      ctx.stroke();
+    }
+    for (let i = 0; i < 18; i++) {
+      const a = i * TAU / 18 + elapsed * 0.03;
+      ctx.beginPath();
+      ctx.moveTo(cx + Math.cos(a) * ringR * 0.18, cy + Math.sin(a) * ringR * 0.18);
+      ctx.lineTo(cx + Math.cos(a) * ringR * 1.04, cy + Math.sin(a) * ringR * 1.04);
+      ctx.stroke();
+    }
+
+    ctx.strokeStyle = "rgba(80,80,80,.16)";
+    ctx.lineWidth = Math.max(28, S * 0.05);
+    ctx.beginPath();
+    ctx.arc(cx, cy, ringR, 0, TAU);
+    ctx.stroke();
+
+    gates.forEach(g => {
+      const color = palette[g.idx].hex;
+      ctx.strokeStyle = color;
+      ctx.lineWidth = Math.max(24, S * 0.045);
+      ctx.beginPath();
+      ctx.arc(cx, cy, ringR, g.angle - width / 2, g.angle + width / 2);
+      ctx.stroke();
+      ctx.globalAlpha = g.idx === (moon && moon.color) ? 0.95 : 0.38;
+      ctx.fillStyle = color;
+      ctx.font = `${Math.max(10, S * 0.026)}px ui-monospace, Menlo, monospace`;
+      ctx.textAlign = "center";
+      ctx.textBaseline = "middle";
+      const lx = cx + Math.cos(g.angle) * (ringR + S * 0.065);
+      const ly = cy + Math.sin(g.angle) * (ringR + S * 0.065);
+      ctx.fillText(palette[g.idx].name.split(" ")[0], lx, ly);
+      ctx.globalAlpha = 1;
+    });
+
+    if (state === "playing" && moon) {
+      const r = orbitR();
+      ctx.strokeStyle = palette[moon.color].hex;
+      ctx.globalAlpha = 0.4;
+      ctx.lineWidth = 2;
+      ctx.setLineDash([4, 10]);
+      ctx.beginPath();
+      ctx.arc(cx, cy, r, 0, TAU);
+      ctx.stroke();
+      ctx.setLineDash([]);
+      ctx.globalAlpha = 1;
+      drawMoon();
+      drawFuse(r);
+    } else {
+      drawIdleMoon();
+    }
+
+    const core = ctx.createRadialGradient(cx, cy, 2, cx, cy, S * 0.09);
+    core.addColorStop(0, "rgba(255,200,87,.9)");
+    core.addColorStop(0.45, "rgba(255,200,87,.22)");
+    core.addColorStop(1, "rgba(255,200,87,0)");
+    ctx.fillStyle = core;
+    ctx.beginPath();
+    ctx.arc(cx, cy, S * 0.09, 0, TAU);
+    ctx.fill();
+    ctx.fillStyle = style.ink;
+    ctx.globalAlpha = 0.82;
+    ctx.beginPath();
+    ctx.arc(cx, cy, Math.max(5, S * 0.012), 0, TAU);
+    ctx.fill();
+    ctx.globalAlpha = 1;
+
+    if (state === "playing" && moon && !moon.launched && aiming) drawAim();
+    if (state === "playing") drawTimeArc(p);
+  }
+
+  function drawMoon(){
+    if (moon.trail.length > 1) {
+      ctx.lineWidth = Math.max(4, S * 0.012);
+      for (let i = 1; i < moon.trail.length; i++) {
+        const a = i / moon.trail.length;
+        ctx.globalAlpha = a * 0.5;
+        ctx.strokeStyle = palette[moon.color].hex;
+        ctx.beginPath();
+        ctx.moveTo(moon.trail[i - 1].x, moon.trail[i - 1].y);
+        ctx.lineTo(moon.trail[i].x, moon.trail[i].y);
+        ctx.stroke();
+      }
+      ctx.globalAlpha = 1;
+    }
+    const color = palette[moon.color].hex;
+    const rad = Math.max(10, S * 0.026);
+    const glow = ctx.createRadialGradient(moon.x, moon.y, 2, moon.x, moon.y, rad * 3.3);
+    glow.addColorStop(0, color);
+    glow.addColorStop(0.34, color + "88");
+    glow.addColorStop(1, color + "00");
+    ctx.fillStyle = glow;
+    ctx.beginPath();
+    ctx.arc(moon.x, moon.y, rad * 3.3, 0, TAU);
+    ctx.fill();
+    ctx.fillStyle = color;
+    ctx.beginPath();
+    ctx.arc(moon.x, moon.y, rad, 0, TAU);
+    ctx.fill();
+    ctx.fillStyle = "rgba(255,255,255,.72)";
+    ctx.beginPath();
+    ctx.arc(moon.x - rad * 0.28, moon.y - rad * 0.32, rad * 0.28, 0, TAU);
+    ctx.fill();
+  }
+
+  function drawIdleMoon(){
+    const a = elapsed * 0.8 - Math.PI / 2;
+    const x = cx + Math.cos(a) * S * 0.23;
+    const y = cy + Math.sin(a) * S * 0.23;
+    ctx.fillStyle = palette[0].hex;
+    ctx.globalAlpha = 0.85;
+    ctx.beginPath();
+    ctx.arc(x, y, Math.max(10, S * 0.025), 0, TAU);
+    ctx.fill();
+    ctx.globalAlpha = 1;
+  }
+
+  function drawFuse(r){
+    const pct = clamp(moon.fuse / fuseMax(), 0, 1);
+    ctx.strokeStyle = pct < 0.25 ? style.danger : palette[moon.color].hex;
+    ctx.globalAlpha = 0.8;
+    ctx.lineWidth = 4;
+    ctx.beginPath();
+    ctx.arc(cx, cy, r + 9, -Math.PI / 2, -Math.PI / 2 + TAU * pct);
+    ctx.stroke();
+    ctx.globalAlpha = 1;
+  }
+
+  function drawAim(){
+    const dx = aimX - moon.x, dy = aimY - moon.y;
+    const len = Math.max(1, Math.hypot(dx, dy));
+    const ux = dx / len, uy = dy / len;
+    const endX = moon.x + ux * clamp(len, S * 0.18, S * 0.42);
+    const endY = moon.y + uy * clamp(len, S * 0.18, S * 0.42);
+    ctx.strokeStyle = palette[moon.color].hex;
+    ctx.lineWidth = 4;
+    ctx.globalAlpha = 0.86;
+    ctx.beginPath();
+    ctx.moveTo(moon.x, moon.y);
+    ctx.lineTo(endX, endY);
+    ctx.stroke();
+    ctx.beginPath();
+    ctx.arc(endX, endY, 6, 0, TAU);
+    ctx.fillStyle = palette[moon.color].hex;
+    ctx.fill();
+    ctx.globalAlpha = 1;
+  }
+
+  function drawTimeArc(p){
+    ctx.strokeStyle = style.ink;
+    ctx.globalAlpha = 0.55;
+    ctx.lineWidth = 3;
+    ctx.beginPath();
+    ctx.arc(cx, cy, ringR + Math.max(38, S * 0.074), -Math.PI / 2, -Math.PI / 2 + TAU * (1 - p));
+    ctx.stroke();
+    ctx.globalAlpha = 1;
+  }
+
+  function drawParticles(){
+    particles.forEach(q => {
+      const a = clamp(q.life / q.max, 0, 1);
+      ctx.globalAlpha = a;
+      ctx.fillStyle = q.color;
+      ctx.beginPath();
+      ctx.arc(q.x, q.y, q.size * a, 0, TAU);
+      ctx.fill();
+    });
+    ctx.globalAlpha = 1;
+  }
+
+  function drawTexts(){
+    bursts.forEach(b => {
+      ctx.globalAlpha = b.alpha;
+      ctx.fillStyle = b.color;
+      ctx.font = `800 ${Math.max(15, S * 0.038)}px ui-monospace, Menlo, monospace`;
+      ctx.textAlign = "center";
+      ctx.textBaseline = "middle";
+      ctx.fillText(b.text, b.x, b.y);
+    });
+    ctx.globalAlpha = 1;
+  }
+
+  function frame(now){
+    const t = now / 1000;
+    const dt = Math.min(0.033, Math.max(0, t - last || 0));
+    last = t;
+    if (state !== "title") update(dt);
+    else elapsed += dt * 0.22;
+    draw();
+    requestAnimationFrame(frame);
+  }
+
+  function pointerPoint(e){
+    return { x: e.clientX, y: e.clientY };
+  }
+
+  canvas.addEventListener("pointerdown", e => {
+    e.preventDefault();
+    unlockAudio();
+    if (state === "title") return start();
+    if (state === "over") return;
+    if (!moon || moon.launched) return;
+    pointerId = e.pointerId;
+    canvas.setPointerCapture?.(pointerId);
+    const p = pointerPoint(e);
+    aiming = true;
+    aimX = p.x; aimY = p.y;
+  }, { passive: false });
+
+  canvas.addEventListener("pointermove", e => {
+    if (!aiming || e.pointerId !== pointerId) return;
+    e.preventDefault();
+    const p = pointerPoint(e);
+    aimX = p.x; aimY = p.y;
+  }, { passive: false });
+
+  canvas.addEventListener("pointerup", e => {
+    if (!aiming || e.pointerId !== pointerId) return;
+    e.preventDefault();
+    const p = pointerPoint(e);
+    pointerId = null;
+    releaseMoon(p.x, p.y);
+  }, { passive: false });
+
+  canvas.addEventListener("pointercancel", e => {
+    if (e.pointerId === pointerId) {
+      e.preventDefault();
+      aiming = false;
+      pointerId = null;
+    }
+  }, { passive: false });
+
+  window.addEventListener("keydown", e => {
+    if (e.repeat) return;
+    if (e.code === "Enter" && state !== "playing") start();
+    if (state !== "playing" || !moon || moon.launched) return;
+    if (["ArrowUp","ArrowDown","ArrowLeft","ArrowRight","Space"].includes(e.code)) e.preventDefault();
+    if (e.code === "ArrowUp") keyAim = -Math.PI / 2;
+    if (e.code === "ArrowDown") keyAim = Math.PI / 2;
+    if (e.code === "ArrowLeft") keyAim = Math.PI;
+    if (e.code === "ArrowRight") keyAim = 0;
+    if (e.code === "Space") {
+      aiming = true;
+      aimX = moon.x + Math.cos(keyAim) * S * 0.34;
+      aimY = moon.y + Math.sin(keyAim) * S * 0.34;
+    }
+  });
+
+  window.addEventListener("keyup", e => {
+    if (e.code === "Space" && aiming && state === "playing" && moon && !moon.launched) {
+      e.preventDefault();
+      releaseMoon(aimX, aimY);
+    }
+  });
+
+  function unlockAudio(){
+    try {
+      if (audioCtx) {
+        if (audioCtx.state === "suspended") audioCtx.resume().catch(() => {});
+        return;
+      }
+      const AC = window.AudioContext || window.webkitAudioContext;
+      if (AC) audioCtx = new AC();
+    } catch (_) {}
+  }
+
+  function tone(kind){
+    if (!audioCtx) return;
+    try {
+      const t = audioCtx.currentTime;
+      const gain = audioCtx.createGain();
+      const osc = audioCtx.createOscillator();
+      const map = {
+        launch: [220, 0.045, "sine", 0.035],
+        success: [520 + combo * 20, 0.09, "sine", 0.055],
+        clean: [720 + combo * 18, 0.12, "triangle", 0.07],
+        fail: [120, 0.12, "sawtooth", 0.04],
+        over: [180, 0.18, "triangle", 0.04]
+      }[kind] || [300, 0.08, "sine", 0.04];
+      osc.type = map[2];
+      osc.frequency.setValueAtTime(map[0], t);
+      if (kind === "fail") osc.frequency.exponentialRampToValueAtTime(70, t + map[1]);
+      else osc.frequency.exponentialRampToValueAtTime(map[0] * 1.35, t + map[1]);
+      gain.gain.setValueAtTime(0.0001, t);
+      gain.gain.exponentialRampToValueAtTime(map[3], t + 0.01);
+      gain.gain.exponentialRampToValueAtTime(0.0001, t + map[1]);
+      osc.connect(gain).connect(audioCtx.destination);
+      osc.start(t);
+      osc.stop(t + map[1] + 0.02);
+    } catch (_) {}
+  }
+
+  function vibrate(pattern){
+    try { navigator.vibrate?.(pattern); } catch (_) {}
+  }
+
+  document.getElementById("startBtn").addEventListener("click", start);
+  document.getElementById("againBtn").addEventListener("click", start);
+  window.addEventListener("resize", resize);
+  const scheme = window.matchMedia?.("(prefers-color-scheme: dark)");
+  scheme?.addEventListener?.("change", readTheme);
+  resize();
+  newMoon(-Math.PI / 2);
+  updateHud();
+  requestAnimationFrame(frame);
+})();
+</script>
+</body>
+</html>
