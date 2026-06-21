@@ -77,15 +77,15 @@ jobs:
       date: ${{ steps.date.outputs.date }}
     steps:
       - name: Checkout repository
-        uses: actions/checkout@v4
+        uses: actions/checkout@v5
 
       - name: Setup pnpm
-        uses: pnpm/action-setup@v4
+        uses: pnpm/action-setup@v6
         with:
           version: ${{ env.PNPM_VERSION }}
 
       - name: Setup Node.js
-        uses: actions/setup-node@v4
+        uses: actions/setup-node@v5
         with:
           node-version: ${{ env.NODE_VERSION }}
           cache: 'pnpm'
@@ -144,7 +144,7 @@ jobs:
             -d '{"buildId":"'"$BUILD_ID"'","event":"aggregate.complete","timestamp":"'"$(date -u +%Y-%m-%dT%H:%M:%S.000Z)"'"}' || true
 
       - name: Upload data artifact
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v5
         with:
           name: aggregated-data
           path: |
@@ -162,15 +162,15 @@ jobs:
     timeout-minutes: 15
     steps:
       - name: Checkout repository
-        uses: actions/checkout@v4
+        uses: actions/checkout@v5
 
       - name: Setup pnpm
-        uses: pnpm/action-setup@v4
+        uses: pnpm/action-setup@v6
         with:
           version: ${{ env.PNPM_VERSION }}
 
       - name: Setup Node.js
-        uses: actions/setup-node@v4
+        uses: actions/setup-node@v5
         with:
           node-version: ${{ env.NODE_VERSION }}
           cache: 'pnpm'
@@ -179,7 +179,7 @@ jobs:
         run: pnpm install --frozen-lockfile
 
       - name: Download data artifact
-        uses: actions/download-artifact@v4
+        uses: actions/download-artifact@v5
         with:
           name: aggregated-data
           path: artifacts/
@@ -283,7 +283,7 @@ jobs:
             -d '{"buildId":"'"$BUILD_ID"'","event":"curator.complete","timestamp":"'"$(date -u +%Y-%m-%dT%H:%M:%S.000Z)"'"}' || true
 
       - name: Upload curator artifact
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v5
         with:
           name: curator-data
           path: |
@@ -303,15 +303,15 @@ jobs:
         model: [composer-2-fast, gpt-5.5-extra-high, claude-opus-4-7-thinking-max, gemini-3.1-pro]
     steps:
       - name: Checkout repository
-        uses: actions/checkout@v4
+        uses: actions/checkout@v5
 
       - name: Setup pnpm
-        uses: pnpm/action-setup@v4
+        uses: pnpm/action-setup@v6
         with:
           version: ${{ env.PNPM_VERSION }}
 
       - name: Setup Node.js
-        uses: actions/setup-node@v4
+        uses: actions/setup-node@v5
         with:
           node-version: ${{ env.NODE_VERSION }}
           cache: 'pnpm'
@@ -320,13 +320,13 @@ jobs:
         run: pnpm install --frozen-lockfile
 
       - name: Download data artifact
-        uses: actions/download-artifact@v4
+        uses: actions/download-artifact@v5
         with:
           name: aggregated-data
           path: artifacts/aggregated/
 
       - name: Download curator artifact
-        uses: actions/download-artifact@v4
+        uses: actions/download-artifact@v5
         with:
           name: curator-data
           path: artifacts/curator/
@@ -493,7 +493,7 @@ jobs:
           cp /tmp/build-output.json "public/builds/${DATE}/${MODEL}-output.json"
 
       - name: Upload build artifact
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v5
         with:
           name: build-${{ matrix.model }}
           path: |
@@ -514,15 +514,15 @@ jobs:
         model: [composer-2-fast, gpt-5.5-extra-high, claude-opus-4-7-thinking-max, gemini-3.1-pro]
     steps:
       - name: Checkout repository
-        uses: actions/checkout@v4
+        uses: actions/checkout@v5
 
       - name: Setup pnpm
-        uses: pnpm/action-setup@v4
+        uses: pnpm/action-setup@v6
         with:
           version: ${{ env.PNPM_VERSION }}
 
       - name: Setup Node.js
-        uses: actions/setup-node@v4
+        uses: actions/setup-node@v5
         with:
           node-version: ${{ env.NODE_VERSION }}
           cache: 'pnpm'
@@ -531,13 +531,13 @@ jobs:
         run: pnpm install --frozen-lockfile
 
       - name: Download data artifact
-        uses: actions/download-artifact@v4
+        uses: actions/download-artifact@v5
         with:
           name: aggregated-data
           path: artifacts/aggregated/
 
       - name: Download curator artifact
-        uses: actions/download-artifact@v4
+        uses: actions/download-artifact@v5
         with:
           name: curator-data
           path: artifacts/curator/
@@ -667,7 +667,7 @@ jobs:
           cp /tmp/game-build-output.json "public/games/${DATE}/${MODEL}-output.json"
 
       - name: Upload game build artifact
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v5
         with:
           name: game-build-${{ matrix.model }}
           path: |
@@ -687,15 +687,15 @@ jobs:
         model: [composer-2-fast, gpt-5.5-extra-high, claude-opus-4-7-thinking-max, gemini-3.1-pro]
     steps:
       - name: Checkout repository
-        uses: actions/checkout@v4
+        uses: actions/checkout@v5
 
       - name: Setup pnpm
-        uses: pnpm/action-setup@v4
+        uses: pnpm/action-setup@v6
         with:
           version: ${{ env.PNPM_VERSION }}
 
       - name: Setup Node.js
-        uses: actions/setup-node@v4
+        uses: actions/setup-node@v5
         with:
           node-version: ${{ env.NODE_VERSION }}
           cache: 'pnpm'
@@ -704,7 +704,7 @@ jobs:
         run: pnpm install --frozen-lockfile
 
       - name: Download build artifact
-        uses: actions/download-artifact@v4
+        uses: actions/download-artifact@v5
         with:
           name: build-${{ matrix.model }}
           path: artifacts/
@@ -768,7 +768,7 @@ jobs:
 
       - name: Download curator artifact for polish
         if: steps.validate.outputs.needs_polish == 'true'
-        uses: actions/download-artifact@v4
+        uses: actions/download-artifact@v5
         with:
           name: curator-data
           path: data/
@@ -806,7 +806,7 @@ jobs:
           pnpm run validate-build -- "generated/${{ matrix.model }}.html" || echo "Still has issues after polish"
 
       - name: Upload validated artifact
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v5
         with:
           name: validated-${{ matrix.model }}
           path: |
@@ -828,15 +828,15 @@ jobs:
         model: [composer-2-fast, gpt-5.5-extra-high, claude-opus-4-7-thinking-max, gemini-3.1-pro]
     steps:
       - name: Checkout repository
-        uses: actions/checkout@v4
+        uses: actions/checkout@v5
 
       - name: Setup pnpm
-        uses: pnpm/action-setup@v4
+        uses: pnpm/action-setup@v6
         with:
           version: ${{ env.PNPM_VERSION }}
 
       - name: Setup Node.js
-        uses: actions/setup-node@v4
+        uses: actions/setup-node@v5
         with:
           node-version: ${{ env.NODE_VERSION }}
           cache: 'pnpm'
@@ -848,7 +848,7 @@ jobs:
         run: npx playwright install chromium
 
       - name: Download game build artifact
-        uses: actions/download-artifact@v4
+        uses: actions/download-artifact@v5
         continue-on-error: true
         with:
           name: game-build-${{ matrix.model }}
@@ -900,7 +900,7 @@ jobs:
 
       - name: Download curator artifact for polish
         if: steps.static-validate.outputs.needs_polish == 'true'
-        uses: actions/download-artifact@v4
+        uses: actions/download-artifact@v5
         with:
           name: curator-data
           path: data/
@@ -1001,7 +1001,7 @@ jobs:
 
       - name: Upload validated game artifact
         if: steps.final.outputs.publish == 'true'
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v5
         with:
           name: validated-game-${{ matrix.model }}
           path: |
@@ -1017,15 +1017,15 @@ jobs:
     timeout-minutes: 10
     steps:
       - name: Checkout repository
-        uses: actions/checkout@v4
+        uses: actions/checkout@v5
 
       - name: Setup pnpm
-        uses: pnpm/action-setup@v4
+        uses: pnpm/action-setup@v6
         with:
           version: ${{ env.PNPM_VERSION }}
 
       - name: Setup Node.js
-        uses: actions/setup-node@v4
+        uses: actions/setup-node@v5
         with:
           node-version: ${{ env.NODE_VERSION }}
           cache: 'pnpm'
@@ -1042,13 +1042,13 @@ jobs:
             -d '{"buildId":"'"$BUILD_ID"'","event":"commit.started","timestamp":"'"$(date -u +%Y-%m-%dT%H:%M:%S.000Z)"'"}' || true
 
       - name: Download data artifact
-        uses: actions/download-artifact@v4
+        uses: actions/download-artifact@v5
         with:
           name: aggregated-data
           path: artifacts/aggregated/
 
       - name: Download curator artifact
-        uses: actions/download-artifact@v4
+        uses: actions/download-artifact@v5
         with:
           name: curator-data
           path: artifacts/curator/
@@ -1062,7 +1062,7 @@ jobs:
           echo "Data files organized"
 
       - name: Download all validated artifacts
-        uses: actions/download-artifact@v4
+        uses: actions/download-artifact@v5
         with:
           pattern: validated-*
           path: artifacts/
@@ -1223,15 +1223,15 @@ jobs:
     timeout-minutes: 10
     steps:
       - name: Checkout repository
-        uses: actions/checkout@v4
+        uses: actions/checkout@v5
 
       - name: Setup pnpm
-        uses: pnpm/action-setup@v4
+        uses: pnpm/action-setup@v6
         with:
           version: ${{ env.PNPM_VERSION }}
 
       - name: Setup Node.js
-        uses: actions/setup-node@v4
+        uses: actions/setup-node@v5
         with:
           node-version: ${{ env.NODE_VERSION }}
           cache: 'pnpm'
@@ -1240,7 +1240,7 @@ jobs:
         run: pnpm install --frozen-lockfile
 
       - name: Download data artifact
-        uses: actions/download-artifact@v4
+        uses: actions/download-artifact@v5
         with:
           name: aggregated-data
           path: artifacts/aggregated/
@@ -1252,7 +1252,7 @@ jobs:
           echo "Data files organized"
 
       - name: Download validated game artifacts
-        uses: actions/download-artifact@v4
+        uses: actions/download-artifact@v5
         continue-on-error: true
         with:
           pattern: validated-game-*
