@@ -49,12 +49,10 @@ class TweetErrorBoundary extends Component<
 
 export function TweetEmbed({ id }: TweetEmbedProps) {
   return (
-    <div className="my-8 flex justify-center not-prose [&_div]:!m-0">
-      <div className="w-full max-w-[550px]">
-        <TweetErrorBoundary id={id}>
-          <Tweet id={id} />
-        </TweetErrorBoundary>
-      </div>
+    <div className="flex justify-center not-prose">
+      <TweetErrorBoundary id={id}>
+        <Tweet id={id} />
+      </TweetErrorBoundary>
     </div>
   );
 }
