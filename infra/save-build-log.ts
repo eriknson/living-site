@@ -9,9 +9,9 @@ import { existsSync } from "fs";
 
 type BuildKind = "site" | "game";
 
-const DEFAULT_MODEL = "composer-2-fast";
+const DEFAULT_MODEL = "composer-2.5-fast";
 const DEFAULT_MODELS = [
-  "composer-2-fast",
+  "composer-2.5-fast",
   "gpt-5.5-extra-high",
   "claude-opus-4-7-thinking-max",
   "gemini-3.1-pro",

@@ -34,7 +34,7 @@ Read `data/latest.json` and write `data/brief.json`. This is raw context for gen
   ],
 
   "game_directions": {
-    "composer-2-fast": {
+    "composer-2.5-fast": {
       "concept": "A 1-2 sentence game idea. Be specific about the mechanic, not just a genre.",
       "mechanic": "The concrete core action, e.g. dodge/collect, flick, draw a path, sort, lane switch, rhythm tap.",
       "touch_control": "The one-thumb gesture: tap, hold/release, drag, swipe, or tilt-like input with touch fallback.",

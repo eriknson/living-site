@@ -233,7 +233,7 @@ jobs:
           # the generate jobs use without hanging) and a coreutils `timeout` so
           # a hang is killed and the fallback brief generator still runs.
           timeout --signal=KILL 8m \
-            cursor-agent -p --force --model composer-2-fast \
+            cursor-agent -p --force --model composer-2.5-fast \
             --output-format stream-json "$PROMPT" 2>&1 || true
 
       - name: Copy curator output or create fallback
@@ -260,7 +260,7 @@ jobs:
                 twitter: { recent_tweets: [], posts_this_week: 0, activity: 'dormant' },
                 world_signals: [latest.context?.season, weather.conditions].filter(Boolean).slice(0, 3),
                 game_directions: {
-                  'composer-2-fast': { concept: 'Catch bright signals while dodging shadows.', mechanic: 'dodge and collect', touch_control: 'drag anywhere', session_hook: 'quick score chase', escalation: 'density increases', aesthetic: 'monochrome with accent sparks' },
+                  'composer-2.5-fast': { concept: 'Catch bright signals while dodging shadows.', mechanic: 'dodge and collect', touch_control: 'drag anywhere', session_hook: 'quick score chase', escalation: 'density increases', aesthetic: 'monochrome with accent sparks' },
                   'gpt-5.5-extra-high': { concept: 'Flick orbiting moons into matching gates.', mechanic: 'physics flick', touch_control: 'hold, aim, release', session_hook: 'satisfying flicks', escalation: 'orbit shrinks', aesthetic: 'soft orbital diagrams' },
                   'claude-opus-4-7-thinking-max': { concept: 'Draw paths through a shifting map.', mechanic: 'path drawing', touch_control: 'draw with finger', session_hook: 'route-planning bursts', escalation: 'new hazards appear', aesthetic: 'misty map lines' },
                   'gemini-3.1-pro': { concept: 'Sort falling notes into columns.', mechanic: 'lane switching', touch_control: 'swipe left/right', session_hook: 'sorting flow', escalation: 'tempo rises', aesthetic: 'minimal music staff' }
@@ -300,7 +300,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        model: [composer-2-fast, gpt-5.5-extra-high, claude-opus-4-7-thinking-max, gemini-3.1-pro]
+        model: [composer-2.5-fast, gpt-5.5-extra-high, claude-opus-4-7-thinking-max, gemini-3.1-pro]
     steps:
       - name: Checkout repository
         uses: actions/checkout@v5
@@ -511,7 +511,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        model: [composer-2-fast, gpt-5.5-extra-high, claude-opus-4-7-thinking-max, gemini-3.1-pro]
+        model: [composer-2.5-fast, gpt-5.5-extra-high, claude-opus-4-7-thinking-max, gemini-3.1-pro]
     steps:
       - name: Checkout repository
         uses: actions/checkout@v5
@@ -684,7 +684,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        model: [composer-2-fast, gpt-5.5-extra-high, claude-opus-4-7-thinking-max, gemini-3.1-pro]
+        model: [composer-2.5-fast, gpt-5.5-extra-high, claude-opus-4-7-thinking-max, gemini-3.1-pro]
     steps:
       - name: Checkout repository
         uses: actions/checkout@v5
@@ -796,7 +796,7 @@ jobs:
           # job and skipping commit-site. timeout + stream-json keeps it bounded;
           # on hang/failure we keep the pre-polish file and re-validate below.
           timeout --signal=KILL 8m \
-            cursor-agent -p --force --model composer-2-fast \
+            cursor-agent -p --force --model composer-2.5-fast \
             --output-format stream-json "$PROMPT" 2>&1 || true
 
       - name: Re-validate after polish
@@ -825,7 +825,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        model: [composer-2-fast, gpt-5.5-extra-high, claude-opus-4-7-thinking-max, gemini-3.1-pro]
+        model: [composer-2.5-fast, gpt-5.5-extra-high, claude-opus-4-7-thinking-max, gemini-3.1-pro]
     steps:
       - name: Checkout repository
         uses: actions/checkout@v5
@@ -927,7 +927,7 @@ jobs:
           # timeout + stream-json keeps it within the job budget; on hang/failure
           # we keep the pre-polish file and re-validate below.
           timeout --signal=KILL 8m \
-            cursor-agent -p --force --model composer-2-fast \
+            cursor-agent -p --force --model composer-2.5-fast \
             --output-format stream-json "$PROMPT" 2>&1 || true
 
       - name: Re-validate after polish (static)
@@ -1185,7 +1185,7 @@ jobs:
         if: always() && env.BUILD_WEBHOOK_URL != ''
         run: |
           # Determine final status
-          if [ -f "generated/composer-2-fast.html" ] || [ -f "generated/gpt-5.5-extra-high.html" ] || [ -f "generated/claude-opus-4-7-thinking-max.html" ] || [ -f "generated/gemini-3.1-pro.html" ]; then
+          if [ -f "generated/composer-2.5-fast.html" ] || [ -f "generated/gpt-5.5-extra-high.html" ] || [ -f "generated/claude-opus-4-7-thinking-max.html" ] || [ -f "generated/gemini-3.1-pro.html" ]; then
             STATUS="build.complete"
           else
             STATUS="build.error"
