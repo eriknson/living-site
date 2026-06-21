@@ -218,6 +218,7 @@ jobs:
 
       - name: Run curator agent
         working-directory: /tmp/curator-workspace
+        timeout-minutes: 10
         env:
           CURSOR_API_KEY: ${{ secrets.CURSOR_API_KEY }}
         run: |
@@ -225,7 +226,15 @@ jobs:
           
           Read data/latest.json → Write data/brief.json"
           
-          cursor-agent -p --force --model composer-2-fast "$PROMPT" 2>&1 || true
+          # Hard-bound the agent call. cursor-agent can hang silently (esp. in
+          # plain -p text mode), which previously consumed the whole 15-min job
+          # timeout and got the job canceled — skipping the fallback below and
+          # cascading skips to every downstream job. Use stream-json (same mode
+          # the generate jobs use without hanging) and a coreutils `timeout` so
+          # a hang is killed and the fallback brief generator still runs.
+          timeout --signal=KILL 8m \
+            cursor-agent -p --force --model composer-2-fast \
+            --output-format stream-json "$PROMPT" 2>&1 || true
 
       - name: Copy curator output or create fallback
         run: |
@@ -408,9 +417,13 @@ jobs:
           ls -la data/brief.json || echo "brief.json NOT FOUND"
           ls -la data/identity.json || echo "identity.json NOT FOUND"
           
-          # Run cursor-agent and capture exit code properly
+          # Run cursor-agent and capture exit code properly.
+          # timeout guards against a silent hang: without it a stuck agent eats
+          # the 30-min job cap and the job is canceled (not just this step),
+          # which skips the downstream validate/commit jobs. With continue-on-error
+          # a killed agent just leaves no HTML for this model and the rest proceed.
           set -o pipefail
-          cursor-agent -p --force --model "${{ matrix.model }}" --output-format stream-json "$(cat /tmp/generation-prompt.txt)" 2>&1 | tee /tmp/build-output.json | while IFS= read -r line; do
+          timeout --signal=KILL 25m cursor-agent -p --force --model "${{ matrix.model }}" --output-format stream-json "$(cat /tmp/generation-prompt.txt)" 2>&1 | tee /tmp/build-output.json | while IFS= read -r line; do
             # Parse JSON and forward to webhook if it's a valid event
             if [ -n "$BUILD_WEBHOOK_URL" ]; then
               TYPE=$(echo "$line" | jq -r '.type // empty' 2>/dev/null)
@@ -595,8 +608,9 @@ jobs:
             exit 1
           fi
 
+          # timeout guards against a silent hang eating the 30-min job cap.
           set -o pipefail
-          cursor-agent -p --force --model "${{ matrix.model }}" --output-format stream-json "$(cat /tmp/game-generation-prompt.txt)" 2>&1 | tee /tmp/game-build-output.json | while IFS= read -r line; do
+          timeout --signal=KILL 25m cursor-agent -p --force --model "${{ matrix.model }}" --output-format stream-json "$(cat /tmp/game-generation-prompt.txt)" 2>&1 | tee /tmp/game-build-output.json | while IFS= read -r line; do
             if [ -n "$BUILD_WEBHOOK_URL" ]; then
               TYPE=$(echo "$line" | jq -r '.type // empty' 2>/dev/null)
               if [ -n "$TYPE" ]; then
@@ -761,6 +775,7 @@ jobs:
 
       - name: Run polish agent
         if: steps.validate.outputs.needs_polish == 'true'
+        timeout-minutes: 10
         env:
           CURSOR_API_KEY: ${{ secrets.CURSOR_API_KEY }}
         run: |
@@ -776,7 +791,13 @@ jobs:
           Read the file, fix the issues, write it back."
           
           echo "=== Running polish agent for ${{ matrix.model }} ==="
-          cursor-agent -p --force --model composer-2-fast "$PROMPT" 2>&1 || true
+          # Bound the agent: cursor-agent can hang silently in -p text mode and
+          # previously consumed the whole 15-min validate timeout, canceling the
+          # job and skipping commit-site. timeout + stream-json keeps it bounded;
+          # on hang/failure we keep the pre-polish file and re-validate below.
+          timeout --signal=KILL 8m \
+            cursor-agent -p --force --model composer-2-fast \
+            --output-format stream-json "$PROMPT" 2>&1 || true
 
       - name: Re-validate after polish
         if: steps.validate.outputs.needs_polish == 'true'
@@ -886,6 +907,7 @@ jobs:
 
       - name: Run game polish agent
         if: steps.static-validate.outputs.needs_polish == 'true'
+        timeout-minutes: 10
         env:
           CURSOR_API_KEY: ${{ secrets.CURSOR_API_KEY }}
         run: |
@@ -901,7 +923,12 @@ jobs:
           Read the file, fix the issues, write it back."
 
           echo "=== Running game polish agent for ${{ matrix.model }} ==="
-          cursor-agent -p --force --model composer-2-fast "$PROMPT" 2>&1 || true
+          # Bound the agent: cursor-agent can hang silently in -p text mode.
+          # timeout + stream-json keeps it within the job budget; on hang/failure
+          # we keep the pre-polish file and re-validate below.
+          timeout --signal=KILL 8m \
+            cursor-agent -p --force --model composer-2-fast \
+            --output-format stream-json "$PROMPT" 2>&1 || true
 
       - name: Re-validate after polish (static)
         id: revalidate
