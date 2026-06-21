@@ -263,7 +263,10 @@ export function BuildsPageClient({
                 <section key={batchKey}>
                   {/* Session header with prompt and GitHub icons */}
                   <div className="flex items-center gap-2 mb-2.5 px-1">
-                    <h2 className="text-[15px] font-medium text-black/70 dark:text-white/70">
+                    <h2
+                      className="text-[15px] font-medium text-black/70 dark:text-white/70"
+                      suppressHydrationWarning
+                    >
                       {formatBuildTime(batch.timestamp)}
                     </h2>
                     {batch.system_prompt && (

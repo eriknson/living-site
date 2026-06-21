@@ -1,4 +1,4 @@
-import { notFound } from "next/navigation";
+import { notFound, redirect } from "next/navigation";
 import Link from "next/link";
 import { getPost, getAllPostSlugs, getAllPosts } from "@/lib/posts";
 import { GlobalMenuBar } from "@/components/global-menu-bar";
@@ -57,6 +57,10 @@ export default async function PostPage({
 
   if (!post) {
     notFound();
+  }
+
+  if (post.externalUrl) {
+    redirect(post.externalUrl);
   }
 
   const allPosts = getAllPosts();

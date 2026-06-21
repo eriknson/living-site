@@ -250,7 +250,10 @@ export function HistoryPageClient({
                 <section key={batchKey}>
                   {/* Session header with prompt and GitHub icons */}
                   <div className="flex items-center gap-2 mb-2.5 px-1">
-                    <h2 className="text-sm font-medium text-neutral-700 dark:text-neutral-300">
+                    <h2
+                      className="text-sm font-medium text-neutral-700 dark:text-neutral-300"
+                      suppressHydrationWarning
+                    >
                       {formatBuildTime(batch.timestamp)}
                     </h2>
                     {batch.system_prompt && (

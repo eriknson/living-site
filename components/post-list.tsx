@@ -7,6 +7,7 @@ function formatDate(dateStr: string) {
     month: "long",
     day: "numeric",
     year: "numeric",
+    timeZone: "UTC",
   });
 }
 
@@ -51,7 +52,7 @@ export function PostList({ posts, excludeStaticLink = false }: PostListProps) {
                   {post.title}
                 </Link>
               )}
-              {post.readTime && (
+              {post.readTime > 0 && (
                 <span className="text-[14px] text-black/35 dark:text-white/35 whitespace-nowrap hidden sm:inline">
                   {post.readTime} min read
                 </span>
@@ -59,7 +60,7 @@ export function PostList({ posts, excludeStaticLink = false }: PostListProps) {
             </div>
             <span className="text-[14px] text-black/35 dark:text-white/35 whitespace-nowrap">
               {formatDate(post.publishedAt)}
-              {post.readTime && (
+              {post.readTime > 0 && (
                 <span className="sm:hidden"> · {post.readTime} min read</span>
               )}
             </span>
