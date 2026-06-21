@@ -1239,18 +1239,6 @@ jobs:
       - name: Install dependencies
         run: pnpm install --frozen-lockfile
 
-      - name: Download data artifact
-        uses: actions/download-artifact@v5
-        with:
-          name: aggregated-data
-          path: artifacts/aggregated/
-
-      - name: Organize data files
-        run: |
-          mkdir -p data
-          cp artifacts/aggregated/fetch-summary.json data/fetch-summary.json
-          echo "Data files organized"
-
       - name: Download validated game artifacts
         uses: actions/download-artifact@v5
         continue-on-error: true
@@ -1326,7 +1314,6 @@ jobs:
 
           git add public/games/
           git add generated/games/
-          git add data/fetch-summary.json
 
           if git diff --staged --quiet; then
             echo "No game changes to commit"
