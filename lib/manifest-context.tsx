@@ -18,7 +18,7 @@ import {
   getDefaultModelForBatch,
 } from "./manifest";
 
-const DEFAULT_MODEL_ID = "composer-2-fast";
+const DEFAULT_MODEL_ID = "composer-2.5-fast";
 
 interface ManifestContextValue {
   manifest: Manifest | null;

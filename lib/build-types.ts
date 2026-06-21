@@ -284,6 +284,10 @@ export function createInitialBuildState(buildId: string): BuildState {
       commit: "pending",
     },
     models: {
+      "composer-2.5-fast": {
+        status: "queued",
+        rawLog: [],
+      },
       "composer-2-fast": {
         status: "queued",
         rawLog: [],

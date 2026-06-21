@@ -66,6 +66,10 @@ const COMMAND_PAGES = SHOW_PLAY_IN_COMMAND_MENU
 // Agent models - each links to /agent?model=<slug>
 const AGENTS = [
   {
+    modelId: "composer-2.5-fast",
+    keywords: ["cursor", "composer", "2.5", "fast", "ai"],
+  },
+  {
     modelId: "composer-2-fast",
     keywords: ["cursor", "composer", "2", "fast", "ai"],
   },
@@ -88,6 +92,10 @@ const AGENTS = [
 }));
 
 const GAME_AGENTS = [
+  {
+    modelId: "composer-2.5-fast",
+    keywords: ["cursor", "composer", "2.5", "fast", "game", "play"],
+  },
   {
     modelId: "composer-2-fast",
     keywords: ["cursor", "composer", "2", "fast", "game", "play"],
