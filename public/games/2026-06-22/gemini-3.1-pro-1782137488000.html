@@ -1,0 +1,697 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Decrypt</title>
+<style>
+  :root {
+    --bg: #e4e4e7;
+    --fg: #18181b;
+    --glass-bg: rgba(255, 255, 255, 0.6);
+    --glass-border: rgba(255, 255, 255, 0.8);
+    --shadow: rgba(0, 0, 0, 0.1);
+  }
+  @media (prefers-color-scheme: dark) {
+    :root {
+      --bg: #121212;
+      --fg: #e4e4e7;
+      --glass-bg: rgba(255, 255, 255, 0.05);
+      --glass-border: rgba(255, 255, 255, 0.15);
+      --shadow: rgba(0, 0, 0, 0.5);
+    }
+  }
+  body, html {
+    margin: 0; padding: 0; width: 100%; height: 100%;
+    background-color: var(--bg);
+    color: var(--fg);
+    font-family: ui-monospace, 'SFMono-Regular', Menlo, monospace;
+    overflow: hidden;
+    touch-action: none;
+    user-select: none;
+    -webkit-user-select: none;
+  }
+  #gameCanvas {
+    display: block;
+    width: 100%; height: 100%;
+  }
+  #ui {
+    position: absolute; top: 0; left: 0; width: 100%; height: 100%;
+    pointer-events: none;
+    display: flex; flex-direction: column; justify-content: space-between;
+  }
+  .hud-top {
+    padding: 60px 20px 40px;
+    text-align: center;
+    font-size: 16px;
+    line-height: 1.6;
+    letter-spacing: 0.05em;
+    text-transform: uppercase;
+    background: linear-gradient(to bottom, var(--bg) 40%, transparent);
+    min-height: 80px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-wrap: wrap;
+  }
+  .hud-bottom {
+    padding: 20px 30px 40px;
+    display: flex; justify-content: space-between;
+    font-size: 14px;
+    background: linear-gradient(to top, var(--bg) 20%, transparent);
+    letter-spacing: 0.1em;
+  }
+  .overlay {
+    position: absolute; top: 0; left: 0; width: 100%; height: 100%;
+    background: var(--bg);
+    display: flex; flex-direction: column; align-items: center; justify-content: center;
+    pointer-events: auto;
+    transition: opacity 0.3s;
+    z-index: 10;
+  }
+  .overlay.hidden {
+    opacity: 0; pointer-events: none;
+  }
+  h1 { font-weight: normal; letter-spacing: 0.2em; margin-bottom: 10px; font-size: 24px; }
+  p { opacity: 0.7; margin-bottom: 40px; font-size: 14px; text-align: center; max-width: 280px; line-height: 1.5; }
+  button {
+    background: transparent; color: var(--fg);
+    border: 1px solid var(--fg);
+    padding: 14px 32px;
+    font-family: inherit; font-size: 14px; text-transform: uppercase; letter-spacing: 0.1em;
+    cursor: pointer;
+    border-radius: 2px;
+    transition: all 0.2s;
+  }
+  button:active { background: var(--fg); color: var(--bg); }
+  
+  .word { margin: 0 4px; display: inline-block; }
+  .word.hidden { opacity: 0.2; }
+</style>
+</head>
+<body>
+<canvas id="gameCanvas"></canvas>
+<div id="ui">
+  <div class="hud-top" id="phraseDisplay"></div>
+  <div class="hud-bottom">
+    <div id="scoreDisplay">SCORE: 0</div>
+    <div id="strikesDisplay">ERR: 0/3</div>
+  </div>
+</div>
+
+<div id="menu" class="overlay">
+  <h1>DECRYPT</h1>
+  <p>Flick encrypted bubbles into matching key slots before they decay.</p>
+  <button id="startBtn">INITIALIZE</button>
+</div>
+
+<div id="gameover" class="overlay hidden">
+  <h1>CONNECTION LOST</h1>
+  <p id="finalScore">SCORE: 0</p>
+  <button id="restartBtn">RECONNECT</button>
+</div>
+
+<script>
+const COLORS = ['#00e5ff', '#ffc400', '#ff1744', '#00e676'];
+const SHAPES = ['circle', 'triangle', 'square', 'hexagon'];
+const PHRASES = [
+  "the quiet argument over what end-to-end encryption really promises",
+  "diplomatic talks between distant powers pausing mid-sentence",
+  "tonnes of contraband unearthed from a hidden underground bunker",
+  "overcast morning before the fog lifts",
+  "shipping by sunrise",
+  "imagine the future"
+];
+
+let canvas, ctx;
+let width, height;
+let isDarkMode = false;
+let dpr = 1;
+
+let state = 'MENU';
+let score = 0;
+let strikes = 0;
+let level = 0;
+let phraseIndex = 0;
+let currentWords = [];
+let revealedCount = 0;
+
+let bins = [];
+let bubbles = [];
+let particles = [];
+let floatingTexts = [];
+
+let draggedBubble = null;
+let pointerHistory = [];
+let lastTime = 0;
+let spawnTimer = 0;
+let shakeTime = 0;
+let binSwapTimer = 0;
+
+let audioCtx;
+function playTone(freq, type, duration, vol=0.1) {
+  if (!audioCtx) return;
+  try {
+    const osc = audioCtx.createOscillator();
+    const gain = audioCtx.createGain();
+    osc.type = type;
+    osc.frequency.setValueAtTime(freq, audioCtx.currentTime);
+    gain.gain.setValueAtTime(vol, audioCtx.currentTime);
+    gain.gain.exponentialRampToValueAtTime(0.01, audioCtx.currentTime + duration);
+    osc.connect(gain);
+    gain.connect(audioCtx.destination);
+    osc.start();
+    osc.stop(audioCtx.currentTime + duration);
+  } catch(e) {}
+}
+
+function init() {
+  canvas = document.getElementById('gameCanvas');
+  ctx = canvas.getContext('2d', { alpha: false });
+  
+  const mq = window.matchMedia('(prefers-color-scheme: dark)');
+  isDarkMode = mq.matches;
+  mq.addEventListener('change', e => { isDarkMode = e.matches; generateNoise(); });
+  
+  resize();
+  window.addEventListener('resize', resize);
+  
+  canvas.addEventListener('pointerdown', onPointerDown);
+  canvas.addEventListener('pointermove', onPointerMove);
+  window.addEventListener('pointerup', onPointerUp);
+  
+  canvas.addEventListener('touchstart', e => e.preventDefault(), {passive: false});
+  
+  document.getElementById('startBtn').addEventListener('click', startGame);
+  document.getElementById('restartBtn').addEventListener('click', startGame);
+  
+  generateNoise();
+  requestAnimationFrame(loop);
+}
+
+let noiseCanvas, noiseCtx;
+function generateNoise() {
+  noiseCanvas = document.createElement('canvas');
+  noiseCanvas.width = 256; noiseCanvas.height = 256;
+  noiseCtx = noiseCanvas.getContext('2d');
+  const imgData = noiseCtx.createImageData(256, 256);
+  const data = imgData.data;
+  const alpha = isDarkMode ? 12 : 18;
+  const color = isDarkMode ? 255 : 0;
+  for(let i=0; i<data.length; i+=4) {
+    const val = Math.random() > 0.5 ? color : 255-color;
+    data[i] = data[i+1] = data[i+2] = val;
+    data[i+3] = Math.random() * alpha;
+  }
+  noiseCtx.putImageData(imgData, 0, 0);
+}
+
+function resize() {
+  dpr = window.devicePixelRatio || 1;
+  width = window.innerWidth;
+  height = window.innerHeight;
+  canvas.width = width * dpr;
+  canvas.height = height * dpr;
+  ctx.scale(dpr, dpr);
+}
+
+function startGame() {
+  if (!audioCtx) {
+    audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+  }
+  if (audioCtx.state === 'suspended') audioCtx.resume();
+  
+  document.getElementById('menu').classList.add('hidden');
+  document.getElementById('gameover').classList.add('hidden');
+  
+  state = 'PLAYING';
+  score = 0;
+  strikes = 0;
+  level = 0;
+  phraseIndex = 0;
+  bubbles = [];
+  particles = [];
+  floatingTexts = [];
+  draggedBubble = null;
+  
+  setupPhrase();
+  setupBins();
+  updateHUD();
+  
+  lastTime = performance.now();
+}
+
+function setupPhrase() {
+  currentWords = PHRASES[phraseIndex % PHRASES.length].split(' ');
+  revealedCount = 0;
+  updatePhraseDisplay();
+}
+
+function updatePhraseDisplay() {
+  const display = document.getElementById('phraseDisplay');
+  let html = '';
+  for (let i = 0; i < currentWords.length; i++) {
+    if (i < revealedCount) {
+      html += `<span class="word">${currentWords[i]}</span>`;
+    } else {
+      const underscores = '_'.repeat(currentWords[i].length);
+      html += `<span class="word hidden">${underscores}</span>`;
+    }
+  }
+  display.innerHTML = html;
+}
+
+function updateHUD() {
+  document.getElementById('scoreDisplay').innerText = `SCORE: ${score}`;
+  document.getElementById('strikesDisplay').innerText = `ERR: ${strikes}/3`;
+}
+
+function setupBins() {
+  bins = [];
+  const numBins = Math.min(2 + Math.floor(level / 2), 4);
+  const spacing = width / (numBins + 1);
+  for (let i = 0; i < numBins; i++) {
+    bins.push({
+      x: spacing * (i + 1),
+      y: 160,
+      radius: 32,
+      type: i,
+      color: COLORS[i],
+      shape: SHAPES[i],
+      pulse: 0
+    });
+  }
+}
+
+function spawnBubble() {
+  const numBins = Math.min(2 + Math.floor(level / 2), 4);
+  const type = Math.floor(Math.random() * numBins);
+  
+  bubbles.push({
+    x: 50 + Math.random() * (width - 100),
+    y: height + 60,
+    vx: (Math.random() - 0.5) * 50,
+    vy: -30 - Math.random() * 40,
+    radius: 36,
+    type: type,
+    color: COLORS[type],
+    shape: SHAPES[type],
+    life: 10 + Math.max(2, 10 - level),
+    maxLife: 10 + Math.max(2, 10 - level),
+    state: 'idle',
+    scale: 0,
+    trail: []
+  });
+}
+
+function onPointerDown(e) {
+  if (state !== 'PLAYING') return;
+  const rect = canvas.getBoundingClientRect();
+  const px = e.clientX - rect.left;
+  const py = e.clientY - rect.top;
+  
+  for (let i = bubbles.length - 1; i >= 0; i--) {
+    const b = bubbles[i];
+    const dx = b.x - px;
+    const dy = b.y - py;
+    if (dx*dx + dy*dy < (b.radius + 20)**2) {
+      draggedBubble = b;
+      b.state = 'dragged';
+      b.vx = 0; b.vy = 0;
+      b.trail = [];
+      pointerHistory = [{x: px, y: py, time: performance.now()}];
+      playTone(400, 'sine', 0.05, 0.05);
+      break;
+    }
+  }
+}
+
+function onPointerMove(e) {
+  if (!draggedBubble) return;
+  const rect = canvas.getBoundingClientRect();
+  const px = e.clientX - rect.left;
+  const py = e.clientY - rect.top;
+  
+  draggedBubble.x = px;
+  draggedBubble.y = py;
+  
+  const now = performance.now();
+  pointerHistory.push({x: px, y: py, time: now});
+  if (pointerHistory.length > 5) pointerHistory.shift();
+}
+
+function onPointerUp(e) {
+  if (!draggedBubble) return;
+  
+  const now = performance.now();
+  let vx = 0, vy = 0;
+  
+  if (pointerHistory.length > 1) {
+    const first = pointerHistory[0];
+    const last = pointerHistory[pointerHistory.length - 1];
+    const dt_ms = Math.max(1, now - first.time);
+    vx = ((last.x - first.x) / dt_ms) * 1000;
+    vy = ((last.y - first.y) / dt_ms) * 1000;
+  }
+  
+  const speed = Math.hypot(vx, vy);
+  if (speed > 2500) {
+    vx = (vx / speed) * 2500;
+    vy = (vy / speed) * 2500;
+  }
+  
+  draggedBubble.vx = vx;
+  draggedBubble.vy = vy;
+  draggedBubble.state = 'flicked';
+  
+  playTone(300, 'sine', 0.1, 0.05);
+  
+  draggedBubble = null;
+}
+
+function loop(time) {
+  requestAnimationFrame(loop);
+  const dt = Math.min((time - lastTime) / 1000, 0.05);
+  lastTime = time;
+  
+  update(dt);
+  draw();
+}
+
+function update(dt) {
+  if (state !== 'PLAYING') return;
+  
+  if (shakeTime > 0) shakeTime -= dt * 1000;
+  
+  const spawnRate = Math.max(0.8, 2.5 - level * 0.3);
+  spawnTimer += dt;
+  if (spawnTimer > spawnRate) {
+    spawnTimer = 0;
+    spawnBubble();
+  }
+  
+  if (level >= 2) {
+    binSwapTimer -= dt;
+    if (binSwapTimer <= 0) {
+      binSwapTimer = 8 + Math.random() * 4;
+      if (bins.length > 1) {
+        const i = Math.floor(Math.random() * bins.length);
+        let j = Math.floor(Math.random() * bins.length);
+        while (i === j) j = Math.floor(Math.random() * bins.length);
+        
+        const targetXi = bins[j].targetX || bins[j].x;
+        const targetXj = bins[i].targetX || bins[i].x;
+        
+        bins[i].targetX = targetXi;
+        bins[j].targetX = targetXj;
+      }
+    }
+  }
+  
+  bins.forEach(b => {
+    if (b.pulse > 0) b.pulse -= dt * 5;
+    if (b.targetX !== undefined) {
+      b.x += (b.targetX - b.x) * dt * 3;
+      if (Math.abs(b.targetX - b.x) < 2) {
+        b.x = b.targetX;
+        b.targetX = undefined;
+      }
+    }
+  });
+  
+  for (let i = bubbles.length - 1; i >= 0; i--) {
+    const b = bubbles[i];
+    
+    if (b.scale < 1 && b.state !== 'dying') b.scale += dt * 5;
+    
+    if (b.state === 'idle') {
+      b.x += b.vx * dt;
+      b.y += b.vy * dt;
+      
+      if (b.x < b.radius || b.x > width - b.radius) b.vx *= -1;
+      
+      b.life -= dt;
+      if (b.life <= 0) {
+        bubbleFailed(b, i);
+        continue;
+      }
+    } else if (b.state === 'flicked') {
+      b.x += b.vx * dt;
+      b.y += b.vy * dt;
+      b.vx -= b.vx * 2 * dt;
+      b.vy -= b.vy * 2 * dt;
+      
+      if (Math.random() > 0.5) {
+        b.trail.push({x: b.x, y: b.y});
+        if (b.trail.length > 8) b.trail.shift();
+      }
+      
+      if (b.x < b.radius) { b.x = b.radius; b.vx *= -0.8; }
+      if (b.x > width - b.radius) { b.x = width - b.radius; b.vx *= -0.8; }
+      if (b.y > height - b.radius) { b.y = height - b.radius; b.vy *= -0.8; }
+      
+      let hitBin = false;
+      for (let bin of bins) {
+        const dx = b.x - bin.x;
+        const dy = b.y - bin.y;
+        if (dx*dx + dy*dy < (b.radius + bin.radius)**2) {
+          hitBin = true;
+          if (b.type === bin.type) {
+            bubbleSuccess(b, bin, i);
+          } else {
+            bubbleFailed(b, i);
+          }
+          break;
+        }
+      }
+      if (hitBin) continue;
+      
+      if (Math.hypot(b.vx, b.vy) < 50) {
+        b.state = 'idle';
+        b.trail = [];
+      }
+    }
+  }
+  
+  for (let i = particles.length - 1; i >= 0; i--) {
+    const p = particles[i];
+    p.x += p.vx * dt; p.y += p.vy * dt;
+    p.life -= dt;
+    if (p.life <= 0) particles.splice(i, 1);
+  }
+  
+  for (let i = floatingTexts.length - 1; i >= 0; i--) {
+    const ft = floatingTexts[i];
+    ft.y -= dt * 40;
+    ft.life -= dt;
+    if (ft.life <= 0) floatingTexts.splice(i, 1);
+  }
+}
+
+function bubbleSuccess(b, bin, index) {
+  bubbles.splice(index, 1);
+  bin.pulse = 1;
+  score += 10;
+  revealedCount++;
+  
+  playTone(600, 'sine', 0.1, 0.1);
+  playTone(800, 'sine', 0.15, 0.1);
+  
+  floatingTexts.push({x: b.x, y: b.y, text: '+10', life: 1});
+  spawnParticles(b.x, b.y, b.color, 12);
+  
+  if (revealedCount >= currentWords.length) {
+    score += 50;
+    phraseIndex++;
+    level++;
+    setupPhrase();
+    setupBins();
+    playTone(400, 'square', 0.1, 0.1);
+    setTimeout(() => playTone(600, 'square', 0.2, 0.1), 100);
+  }
+  updatePhraseDisplay();
+  updateHUD();
+}
+
+function bubbleFailed(b, index) {
+  bubbles.splice(index, 1);
+  strikes++;
+  shakeTime = 200;
+  
+  playTone(200, 'sawtooth', 0.2, 0.1);
+  if (navigator.vibrate) navigator.vibrate(50);
+  
+  spawnParticles(b.x, b.y, isDarkMode ? '#fff' : '#000', 25);
+  updateHUD();
+  
+  if (strikes >= 3) {
+    gameOver();
+  }
+}
+
+function spawnParticles(x, y, color, count) {
+  for (let i=0; i<count; i++) {
+    particles.push({
+      x: x, y: y,
+      vx: (Math.random() - 0.5) * 600,
+      vy: (Math.random() - 0.5) * 600,
+      life: 0.2 + Math.random() * 0.4,
+      maxLife: 0.6,
+      color: color,
+      size: 2 + Math.random() * 4
+    });
+  }
+}
+
+function gameOver() {
+  state = 'GAMEOVER';
+  document.getElementById('gameover').classList.remove('hidden');
+  document.getElementById('finalScore').innerText = `SCORE: ${score}`;
+}
+
+function drawShape(ctx, shape, size) {
+  ctx.beginPath();
+  if (shape === 'circle') {
+    ctx.arc(0, 0, size, 0, Math.PI * 2);
+  } else if (shape === 'square') {
+    ctx.rect(-size, -size, size*2, size*2);
+  } else if (shape === 'triangle') {
+    ctx.moveTo(0, -size);
+    ctx.lineTo(size, size);
+    ctx.lineTo(-size, size);
+    ctx.closePath();
+  } else if (shape === 'hexagon') {
+    for (let i = 0; i < 6; i++) {
+      const angle = i * Math.PI / 3;
+      const x = Math.cos(angle) * size;
+      const y = Math.sin(angle) * size;
+      if (i === 0) ctx.moveTo(x, y);
+      else ctx.lineTo(x, y);
+    }
+    ctx.closePath();
+  }
+}
+
+function draw() {
+  ctx.fillStyle = isDarkMode ? '#121212' : '#e4e4e7';
+  ctx.fillRect(0, 0, width, height);
+  
+  if (noiseCanvas) {
+    ctx.fillStyle = ctx.createPattern(noiseCanvas, 'repeat');
+    ctx.fillRect(0, 0, width, height);
+  }
+  
+  ctx.save();
+  if (shakeTime > 0) {
+    const mag = (shakeTime / 200) * 8;
+    ctx.translate((Math.random()-0.5)*mag, (Math.random()-0.5)*mag);
+  }
+  
+  bins.forEach(bin => {
+    ctx.save();
+    ctx.translate(bin.x, bin.y);
+    const scale = 1 + bin.pulse * 0.2;
+    ctx.scale(scale, scale);
+    
+    ctx.beginPath();
+    ctx.arc(0, 0, bin.radius, 0, Math.PI * 2);
+    ctx.fillStyle = isDarkMode ? 'rgba(255,255,255,0.03)' : 'rgba(0,0,0,0.03)';
+    ctx.fill();
+    ctx.lineWidth = 2;
+    ctx.strokeStyle = isDarkMode ? 'rgba(255,255,255,0.15)' : 'rgba(0,0,0,0.15)';
+    ctx.setLineDash([4, 4]);
+    ctx.stroke();
+    ctx.setLineDash([]);
+    
+    ctx.strokeStyle = bin.color;
+    ctx.lineWidth = 3;
+    drawShape(ctx, bin.shape, 12);
+    ctx.stroke();
+    
+    ctx.restore();
+  });
+  
+  bubbles.forEach(b => {
+    ctx.save();
+    ctx.translate(b.x, b.y);
+    const s = b.scale * (b.state === 'dragged' ? 1.15 : 1);
+    ctx.scale(s, s);
+    
+    if (b.trail && b.trail.length > 0) {
+      ctx.beginPath();
+      ctx.moveTo(b.trail[0].x - b.x, b.trail[0].y - b.y);
+      for (let i=1; i<b.trail.length; i++) {
+        ctx.lineTo(b.trail[i].x - b.x, b.trail[i].y - b.y);
+      }
+      ctx.strokeStyle = b.color;
+      ctx.lineWidth = b.radius * 0.8;
+      ctx.lineCap = 'round';
+      ctx.lineJoin = 'round';
+      ctx.globalAlpha = 0.15;
+      ctx.stroke();
+      ctx.globalAlpha = 1.0;
+    }
+    
+    // Shadow
+    ctx.beginPath();
+    ctx.arc(2, 4, b.radius, 0, Math.PI * 2);
+    ctx.fillStyle = isDarkMode ? 'rgba(0,0,0,0.5)' : 'rgba(0,0,0,0.1)';
+    ctx.fill();
+    
+    // Glass Body
+    ctx.beginPath();
+    ctx.arc(0, 0, b.radius, 0, Math.PI * 2);
+    ctx.fillStyle = isDarkMode ? 'rgba(255,255,255,0.08)' : 'rgba(255,255,255,0.7)';
+    ctx.fill();
+    ctx.lineWidth = 1.5;
+    ctx.strokeStyle = isDarkMode ? 'rgba(255,255,255,0.3)' : 'rgba(255,255,255,0.9)';
+    ctx.stroke();
+    
+    const isGlitching = b.life / b.maxLife < 0.3 && Math.random() > 0.4;
+    if (isGlitching) {
+      ctx.fillStyle = isDarkMode ? '#fff' : '#000';
+      for(let i=0; i<6; i++) {
+        ctx.fillRect((Math.random()-0.5)*24, (Math.random()-0.5)*24, Math.random()*12, Math.random()*12);
+      }
+    } else {
+      ctx.strokeStyle = b.color;
+      ctx.lineWidth = 3;
+      drawShape(ctx, b.shape, 10);
+      ctx.stroke();
+    }
+    
+    ctx.beginPath();
+    const startAngle = -Math.PI / 2;
+    const endAngle = startAngle + (b.life / b.maxLife) * Math.PI * 2;
+    ctx.arc(0, 0, b.radius + 5, startAngle, endAngle);
+    ctx.strokeStyle = b.color;
+    ctx.lineWidth = 3;
+    ctx.lineCap = 'round';
+    ctx.stroke();
+    
+    ctx.restore();
+  });
+  
+  particles.forEach(p => {
+    ctx.fillStyle = p.color;
+    ctx.globalAlpha = p.life / p.maxLife;
+    ctx.fillRect(p.x - p.size/2, p.y - p.size/2, p.size, p.size);
+  });
+  ctx.globalAlpha = 1.0;
+  
+  floatingTexts.forEach(ft => {
+    ctx.fillStyle = isDarkMode ? '#fff' : '#000';
+    ctx.globalAlpha = ft.life;
+    ctx.font = 'bold 16px monospace';
+    ctx.textAlign = 'center';
+    ctx.fillText(ft.text, ft.x, ft.y);
+  });
+  ctx.globalAlpha = 1.0;
+  
+  ctx.restore();
+}
+
+window.onload = init;
+</script>
+</body>
+</html>
