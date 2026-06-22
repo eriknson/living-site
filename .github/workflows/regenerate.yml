@@ -32,16 +32,19 @@ concurrency:
 
 permissions:
   contents: write
+  issues: write
 
 env:
-  NODE_VERSION: '20'
+  NODE_VERSION: '22'
   PNPM_VERSION: '9'
   BUILD_ID: ${{ inputs.build_id || github.run_id }}
   BUILD_WEBHOOK_URL: ${{ secrets.BUILD_WEBHOOK_URL }}
   BUILD_WEBHOOK_SECRET: ${{ secrets.BUILD_WEBHOOK_SECRET }}
-  # Pinned cursor-agent version. The latest installer (2026.05.01-eea359f) hangs
-  # silently on Ubuntu runners in -p text mode, which broke the daily curator
-  # job starting May 1 2026. Bump deliberately after testing a new build.
+  # Pinned cursor-agent version. Some builds hang silently on Ubuntu runners
+  # (notably 2026.05.01-eea359f in -p text mode). Hangs are mitigated with
+  # stream-json output plus `timeout` wrappers on every agent call, so a stuck
+  # agent is killed rather than stalling the whole pipeline. Bump deliberately
+  # after testing a new build end-to-end.
   CURSOR_AGENT_VERSION: '2026.04.29-c83a488'
 
 jobs:
@@ -118,8 +121,10 @@ jobs:
         run: |
           pnpm run aggregate 2>&1 | while IFS= read -r line; do
             echo "$line"
-            # Send log lines to webhook (limit to avoid spam)
-            if [ -n "$BUILD_WEBHOOK_URL" ] && [[ "$line" == *"✓"* ]] || [[ "$line" == *"fetched"* ]] || [[ "$line" == *"Fetching"* ]]; then
+            # Send log lines to webhook (limit to avoid spam). The match group
+            # is braced so the URL guard applies to all alternatives — otherwise
+            # operator precedence fires curl against an empty URL when unset.
+            if [ -n "$BUILD_WEBHOOK_URL" ] && { [[ "$line" == *"✓"* ]] || [[ "$line" == *"fetched"* ]] || [[ "$line" == *"Fetching"* ]]; }; then
               curl -s -X POST "$BUILD_WEBHOOK_URL" \
                 -H "Authorization: Bearer $BUILD_WEBHOOK_SECRET" \
                 -H "Content-Type: application/json" \
@@ -296,7 +301,7 @@ jobs:
     needs: [aggregate, curator]
     if: inputs.dry_run != 'true'
     runs-on: ubuntu-latest
-    timeout-minutes: 30
+    timeout-minutes: 50
     strategy:
       fail-fast: false
       matrix:
@@ -383,6 +388,15 @@ jobs:
           Today: data/brief.json
 
           Output: generated/${{ matrix.model }}.html
+
+          ---
+
+          EFFORT: Treat this as a flagship piece, not a daily chore. Think hard,
+          explore more than one idea, and iterate before you finish. Push for a
+          genuinely great, surprising, and polished result — refine the layout,
+          interactions, typography, motion, and copy until it is something you
+          would be proud to ship. Do not stop at a safe first draft. Take all the
+          time and tokens you need; quality matters far more than speed or cost.
           PROMPT_END
           
           echo "=== Generation Prompt ==="
@@ -419,11 +433,13 @@ jobs:
           
           # Run cursor-agent and capture exit code properly.
           # timeout guards against a silent hang: without it a stuck agent eats
-          # the 30-min job cap and the job is canceled (not just this step),
-          # which skips the downstream validate/commit jobs. With continue-on-error
-          # a killed agent just leaves no HTML for this model and the rest proceed.
+          # the job cap and the job is canceled (not just this step), which skips
+          # the downstream validate/commit jobs. With continue-on-error a killed
+          # agent just leaves no HTML for this model and the rest proceed. The
+          # bound is generous (40m, under the 50m job cap) so models have room to
+          # iterate toward a high-quality result.
           set -o pipefail
-          timeout --signal=KILL 25m cursor-agent -p --force --model "${{ matrix.model }}" --output-format stream-json "$(cat /tmp/generation-prompt.txt)" 2>&1 | tee /tmp/build-output.json | while IFS= read -r line; do
+          timeout --signal=KILL 40m cursor-agent -p --force --model "${{ matrix.model }}" --output-format stream-json "$(cat /tmp/generation-prompt.txt)" 2>&1 | tee /tmp/build-output.json | while IFS= read -r line; do
             # Parse JSON and forward to webhook if it's a valid event
             if [ -n "$BUILD_WEBHOOK_URL" ]; then
               TYPE=$(echo "$line" | jq -r '.type // empty' 2>/dev/null)
@@ -507,7 +523,7 @@ jobs:
     if: inputs.dry_run != 'true'
     runs-on: ubuntu-latest
     continue-on-error: true
-    timeout-minutes: 30
+    timeout-minutes: 50
     strategy:
       fail-fast: false
       matrix:
@@ -591,6 +607,16 @@ jobs:
           Today: data/brief.json
 
           Output: generated/games/${{ matrix.model }}.html
+
+          ---
+
+          EFFORT: Treat this as a flagship piece, not a daily chore. Think hard,
+          prototype the core mechanic, and iterate before you finish. Push for a
+          genuinely great, surprising, and polished game — tune the feel, game
+          feel/juice, difficulty curve, controls, and visuals until it is
+          something you would be proud to ship. Do not stop at a safe first
+          draft. Take all the time and tokens you need; quality matters far more
+          than speed or cost.
           PROMPT_END
 
           echo "=== Game Generation Prompt ==="
@@ -608,9 +634,10 @@ jobs:
             exit 1
           fi
 
-          # timeout guards against a silent hang eating the 30-min job cap.
+          # timeout guards against a silent hang eating the job cap. Generous
+          # 40m bound (under the 50m job cap) gives models room to iterate.
           set -o pipefail
-          timeout --signal=KILL 25m cursor-agent -p --force --model "${{ matrix.model }}" --output-format stream-json "$(cat /tmp/game-generation-prompt.txt)" 2>&1 | tee /tmp/game-build-output.json | while IFS= read -r line; do
+          timeout --signal=KILL 40m cursor-agent -p --force --model "${{ matrix.model }}" --output-format stream-json "$(cat /tmp/game-generation-prompt.txt)" 2>&1 | tee /tmp/game-build-output.json | while IFS= read -r line; do
             if [ -n "$BUILD_WEBHOOK_URL" ]; then
               TYPE=$(echo "$line" | jq -r '.type // empty' 2>/dev/null)
               if [ -n "$TYPE" ]; then
@@ -1375,4 +1402,60 @@ jobs:
               echo "- ❌ ${model} (no game HTML generated)" >> $GITHUB_STEP_SUMMARY
             fi
           done
+
+  # Job 7: Alert on failure so a broken daily run can never go unnoticed again.
+  # Runs whenever any core job failed or was cancelled (e.g. a timeout/hang).
+  # continue-on-error jobs (generate-game, validate-game, commit-game) report
+  # success to `needs`, so this only fires on genuine pipeline-breaking failures.
+  notify-failure:
+    needs: [aggregate, curator, generate, generate-game, validate, validate-game, commit-site, commit-game]
+    if: ${{ always() && (contains(needs.*.result, 'failure') || contains(needs.*.result, 'cancelled')) }}
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - name: Summarize job results
+        id: summary
+        env:
+          NEEDS_JSON: ${{ toJSON(needs) }}
+        run: |
+          echo "$NEEDS_JSON" | jq -r 'to_entries[] | "\(.key): \(.value.result)"' | tee /tmp/job-results.txt
+          FAILED=$(echo "$NEEDS_JSON" | jq -r 'to_entries[] | select(.value.result=="failure" or .value.result=="cancelled") | .key' | paste -sd ", " -)
+          echo "failed=$FAILED" >> "$GITHUB_OUTPUT"
+          {
+            echo "## ❌ Regeneration failed"
+            echo ""
+            echo "**Failed/cancelled jobs:** $FAILED"
+            echo ""
+            echo '```'
+            cat /tmp/job-results.txt
+            echo '```'
+          } >> "$GITHUB_STEP_SUMMARY"
+
+      - name: Notify webhook of failure
+        if: env.BUILD_WEBHOOK_URL != ''
+        env:
+          FAILED: ${{ steps.summary.outputs.failed }}
+        run: |
+          PAYLOAD=$(jq -nc \
+            --arg buildId "$BUILD_ID" \
+            --arg data "$FAILED" \
+            --arg ts "$(date -u +%Y-%m-%dT%H:%M:%S.000Z)" \
+            '{buildId:$buildId, event:"build.failed", data:$data, timestamp:$ts}')
+          curl -s -X POST "$BUILD_WEBHOOK_URL" \
+            -H "Authorization: Bearer $BUILD_WEBHOOK_SECRET" \
+            -H "Content-Type: application/json" \
+            -d "$PAYLOAD" || true
+
+      - name: Open failure issue
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          RUN_URL: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}
+          FAILED: ${{ steps.summary.outputs.failed }}
+        run: |
+          DATE=$(date -u +%Y-%m-%d)
+          BODY=$(printf 'The scheduled **Regenerate Site** run failed.\n\n**Failed/cancelled jobs:** %s\n\n**Run:** %s\n\n### Job results\n```\n%s\n```\n' \
+            "$FAILED" "$RUN_URL" "$(cat /tmp/job-results.txt)")
+          gh issue create \
+            --title "Daily regeneration failed ($DATE)" \
+            --body "$BODY" 2>&1 || echo "Issue creation failed (continuing)"
 
