@@ -296,6 +296,10 @@ export function createInitialBuildState(buildId: string): BuildState {
         status: "queued",
         rawLog: [],
       },
+      "claude-opus-4-8-thinking-max-fast": {
+        status: "queued",
+        rawLog: [],
+      },
       "claude-opus-4-7-thinking-max": {
         status: "queued",
         rawLog: [],

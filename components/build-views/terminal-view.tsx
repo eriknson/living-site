@@ -17,6 +17,7 @@ export function TerminalView({ state, onStart, isStarting }: TerminalViewProps) 
     "composer-2.5-fast",
     "composer-2-fast",
     "gpt-5.5-extra-high",
+    "claude-opus-4-8-thinking-max-fast",
     "claude-opus-4-7-thinking-max",
     "gemini-3.1-pro",
   ];
@@ -198,6 +199,7 @@ function shortenModelName(model: string): string {
     "composer-2-fast": "composer-2-fast",
     "composer-2.5-fast": "composer-2.5-fast",
     "gpt-5.4-high-fast": "gpt-5.4-fast",
+    "claude-opus-4-8-thinking-max-fast": "opus-4.8-max",
     "claude-opus-4-7-thinking-max": "opus-4.7-max",
     "gemini-3.1-pro": "gemini-3.1-pro",
     "kimi-k2.5": "kimi-k2.5",

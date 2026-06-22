@@ -50,7 +50,7 @@ Read `data/latest.json` and write `data/brief.json`. This is raw context for gen
       "escalation": "A different pressure curve.",
       "aesthetic": "A different visual direction"
     },
-    "claude-opus-4-7-thinking-max": {
+    "claude-opus-4-8-thinking-max-fast": {
       "concept": "A third distinct game idea.",
       "mechanic": "A third core action.",
       "touch_control": "A third touch control.",
