@@ -991,15 +991,89 @@ jobs:
           mkdir -p "$SHOTS_DIR"
 
           set +e
+          RESULT=$(pnpm run smoke-game -- "$GAME_FILE" --screenshots-dir "$SHOTS_DIR" 2>&1)
+          SMOKE_EXIT=$?
+          set -e
+          echo "$RESULT"
+
+          if [ $SMOKE_EXIT -eq 0 ]; then
+            echo "smoke_passed=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "smoke_passed=false" >> "$GITHUB_OUTPUT"
+            ISSUES=$(echo "$RESULT" | grep -A20 "ISSUES" | head -15 || echo "$RESULT")
+            {
+              echo "smoke_issues<<SMOKE_EOF"
+              echo "$ISSUES"
+              echo "SMOKE_EOF"
+            } >> "$GITHUB_OUTPUT"
+            echo "::warning::${{ matrix.model }} game failed runtime smoke test"
+          fi
+
+      - name: Install Cursor CLI for smoke polish
+        if: steps.smoke.outputs.smoke_passed == 'false' && steps.static-validate.outputs.no_file != 'true'
+        run: |
+          mkdir -p ~/.local/share/cursor-agent/versions/${CURSOR_AGENT_VERSION} ~/.local/bin
+          curl -fsSL "https://downloads.cursor.com/lab/${CURSOR_AGENT_VERSION}/linux/x64/agent-cli-package.tar.gz" -o /tmp/cursor-agent.tar.gz
+          tar xzf /tmp/cursor-agent.tar.gz -C ~/.local/share/cursor-agent/versions/${CURSOR_AGENT_VERSION} --strip-components=1
+          ln -sf ~/.local/share/cursor-agent/versions/${CURSOR_AGENT_VERSION}/cursor-agent ~/.local/bin/cursor-agent
+          cursor-agent --version || echo "Failed to get cursor-agent version"
+
+      - name: Download curator artifact for smoke polish
+        if: steps.smoke.outputs.smoke_passed == 'false' && steps.static-validate.outputs.no_file != 'true'
+        uses: actions/download-artifact@v7
+        continue-on-error: true
+        with:
+          name: curator-data
+          path: data/
+
+      - name: Run smoke polish agent
+        if: steps.smoke.outputs.smoke_passed == 'false' && steps.static-validate.outputs.no_file != 'true'
+        timeout-minutes: 10
+        env:
+          CURSOR_API_KEY: ${{ secrets.CURSOR_API_KEY }}
+          # Runtime smoke issues passed via env (never inline ${{ }}) — multiline
+          # untrusted text would otherwise break shell quoting.
+          ISSUES: ${{ steps.smoke.outputs.smoke_issues }}
+          MODEL: ${{ matrix.model }}
+        run: |
+          PROMPT="Read infra/prompts/games-polish.md for instructions.
+
+          The game FAILED an automated headless-browser runtime smoke test. It
+          must load with a non-zero-height body, throw zero uncaught exceptions
+          on load / tap / start / restart, and expose real
+          <button data-smoke=\"start\"> and <button data-smoke=\"restart\">
+          controls that nothing overlays or intercepts.
+
+          Runtime issues to fix:
+          $ISSUES
+
+          File to fix: generated/games/${MODEL}.html
+
+          Read the file, fix the runtime errors, guarantee the data-smoke
+          start/restart buttons exist and are clickable, then write it back."
+
+          echo "=== Running smoke polish agent for ${{ matrix.model }} ==="
+          timeout --signal=KILL 8m \
+            cursor-agent -p --force --model composer-2.5-fast \
+            --output-format stream-json "$PROMPT" 2>&1 || true
+
+      - name: Re-run smoke test after polish
+        id: resmoke
+        if: steps.smoke.outputs.smoke_passed == 'false' && steps.static-validate.outputs.no_file != 'true'
+        run: |
+          GAME_FILE="generated/games/${{ matrix.model }}.html"
+          DATE="${{ needs.aggregate.outputs.date }}"
+          SHOTS_DIR="public/games/${DATE}/screenshots"
+          mkdir -p "$SHOTS_DIR"
+          set +e
           pnpm run smoke-game -- "$GAME_FILE" --screenshots-dir "$SHOTS_DIR" 2>&1
           SMOKE_EXIT=$?
           set -e
-
           if [ $SMOKE_EXIT -eq 0 ]; then
-            echo "smoke_passed=true" >> $GITHUB_OUTPUT
+            echo "smoke_passed=true" >> "$GITHUB_OUTPUT"
           else
-            echo "smoke_passed=false" >> $GITHUB_OUTPUT
-            echo "::warning::${{ matrix.model }} game failed runtime smoke test"
+            echo "smoke_passed=false" >> "$GITHUB_OUTPUT"
+            echo "::warning::${{ matrix.model }} game still fails smoke after polish"
           fi
 
       - name: Determine final status
@@ -1022,11 +1096,13 @@ jobs:
             exit 0
           fi
 
-          # Smoke test must pass
+          # Smoke test must pass — either on the first run, or after the
+          # smoke-polish retry below.
           SMOKE="${{ steps.smoke.outputs.smoke_passed }}"
-          if [ "$SMOKE" = "false" ]; then
-            echo "publish=false" >> $GITHUB_OUTPUT
-            echo "Smoke test failed — not publishing"
+          RESMOKE="${{ steps.resmoke.outputs.smoke_passed }}"
+          if [ "$SMOKE" != "true" ] && [ "$RESMOKE" != "true" ]; then
+            echo "publish=false" >> "$GITHUB_OUTPUT"
+            echo "Smoke test failed (even after polish) — not publishing"
             exit 0
           fi
 

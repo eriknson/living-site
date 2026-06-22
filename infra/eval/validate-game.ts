@@ -295,6 +295,37 @@ function validateGame(html: string, filePath: string): ValidationResult {
   if (!hasUserSelect)
     warnings.push("Missing user-select: none — text selection may interfere with gameplay");
 
+  // 16. Deterministic smoke-test control hooks (REQUIRED by the contract).
+  // The automated smoke test clicks a start and a restart control; without these
+  // hooks it can't reliably drive the game, so a missing hook is treated as a
+  // must-fix issue here (routing it into the polish loop) rather than letting it
+  // surface only as a flaky runtime smoke failure later.
+  const hasSmokeStart =
+    /<button[^>]*data-smoke\s*=\s*["']start["'][^>]*>/i.test(html);
+  checks["smoke-start-hook"] = {
+    passed: hasSmokeStart,
+    detail: hasSmokeStart
+      ? '<button data-smoke="start"> present'
+      : 'Missing <button data-smoke="start">',
+  };
+  if (!hasSmokeStart)
+    issues.push(
+      'Missing required start control: add a real <button data-smoke="start">…</button> that the smoke test can click to begin the game',
+    );
+
+  const hasSmokeRestart =
+    /<button[^>]*data-smoke\s*=\s*["']restart["'][^>]*>/i.test(html);
+  checks["smoke-restart-hook"] = {
+    passed: hasSmokeRestart,
+    detail: hasSmokeRestart
+      ? '<button data-smoke="restart"> present'
+      : 'Missing <button data-smoke="restart">',
+  };
+  if (!hasSmokeRestart)
+    issues.push(
+      'Missing required restart control: add a real <button data-smoke="restart">…</button> shown after game over for replay',
+    );
+
   return {
     passed: issues.length === 0,
     issues,

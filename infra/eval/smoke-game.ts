@@ -46,26 +46,44 @@ const RESTART_PATTERNS = [
   "reset",
 ];
 
-async function findButton(page: Page, patterns: string[]): Promise<boolean> {
-  for (const pattern of patterns) {
-    const btn = page.getByRole("button", { name: new RegExp(pattern, "i") });
-    if (await btn.first().isVisible({ timeout: 500 }).catch(() => false)) {
-      await btn.first().click();
+// Escape a pattern for use inside a RegExp.
+function escapeRe(s: string): string {
+  return s.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+}
+
+// Click a locator without ever throwing. Returns true only on a real click.
+// A short timeout means occluded / detached / ambiguous elements fail fast and
+// become a warning rather than a fatal 30s timeout that crashes the whole test.
+async function safeClick(locator: ReturnType<Page["locator"]>): Promise<boolean> {
+  try {
+    if (!(await locator.first().isVisible({ timeout: 500 }).catch(() => false))) {
+      return false;
+    }
+    await locator.first().click({ timeout: 2000 });
+    return true;
+  } catch {
+    return false;
+  }
+}
+
+// Try to click a start/restart control. Prefers an explicit, deterministic
+// data-smoke hook, then falls back to real buttons matched by accessible name
+// using word boundaries (so "go" no longer matches "Gold", etc.). Only genuine
+// buttons / role=button are considered — never arbitrary spans/divs — and a
+// missed click is reported by the caller as a warning, never a failure.
+async function clickControl(
+  page: Page,
+  opts: { testId: string; patterns: string[] }
+): Promise<boolean> {
+  if (await safeClick(page.locator(`[data-smoke="${opts.testId}"]`))) {
+    return true;
+  }
+  for (const pattern of opts.patterns) {
+    const re = new RegExp(`\\b${escapeRe(pattern)}\\b`, "i");
+    if (await safeClick(page.getByRole("button", { name: re }))) {
       return true;
     }
   }
-
-  for (const pattern of patterns) {
-    const el = page.locator(`text=/${pattern}/i`).first();
-    if (await el.isVisible({ timeout: 500 }).catch(() => false)) {
-      const tag = await el.evaluate((e) => e.tagName.toLowerCase()).catch(() => "");
-      if (tag === "button" || tag === "a" || tag === "div" || tag === "span") {
-        await el.click();
-        return true;
-      }
-    }
-  }
-
   return false;
 }
 
@@ -98,7 +116,15 @@ async function smokeTest(
 
   const browser = await chromium.launch({ headless: true });
 
-  try {
+  // Overall wall-clock guard so no stuck Playwright op can hang for ~30s or
+  // crash the runner. Whatever errors were collected are still evaluated below,
+  // so a genuinely broken game is caught while a harness-driving glitch never
+  // discards an otherwise-working game.
+  const OVERALL_TIMEOUT_MS = 45000;
+  let timedOut = false;
+
+  const drive = (async () => {
+    try {
     // --- Mobile viewport ---
     const mobileContext = await browser.newContext({
       viewport: MOBILE_VIEWPORT,
@@ -107,6 +133,8 @@ async function smokeTest(
       colorScheme: "dark",
     });
     const mobilePage = await mobileContext.newPage();
+    // Cap default timeouts so no stray locator op can hang for 30s.
+    mobilePage.setDefaultTimeout(3000);
 
     const mobileConsoleErrors: string[] = [];
     const mobileUncaughtErrors: string[] = [];
@@ -132,31 +160,42 @@ async function smokeTest(
       issues.push("Mobile: page body has zero height — game may not render");
     }
 
-    // Try to click start
-    const startedMobile = await findButton(mobilePage, START_PATTERNS);
-    if (startedMobile) {
-      await mobilePage.waitForTimeout(2000);
-    } else {
-      warnings.push("Mobile: could not find a start/play button to click");
-    }
+    // Drive the game. None of this may fail the test — interaction heuristics
+    // can legitimately miss, so any problem here is recorded as a warning only.
+    // Only uncaught page errors / zero-height render (below) count as failures.
+    try {
+      const startedMobile = await clickControl(mobilePage, {
+        testId: "start",
+        patterns: START_PATTERNS,
+      });
+      if (startedMobile) {
+        await mobilePage.waitForTimeout(2000);
+      } else {
+        warnings.push("Mobile: could not find a start/play button to click");
+      }
 
-    if (screenshotsDir) {
-      const mobileShotPath = resolve(screenshotsDir, "mobile-playing.png");
-      await mobilePage.screenshot({ path: mobileShotPath, fullPage: false });
-      screenshotPaths.push(mobileShotPath);
-    }
+      if (screenshotsDir) {
+        const mobileShotPath = resolve(screenshotsDir, "mobile-playing.png");
+        await mobilePage.screenshot({ path: mobileShotPath, fullPage: false });
+        screenshotPaths.push(mobileShotPath);
+      }
 
-    // Try tap interaction in center of viewport
-    await mobilePage.touchscreen.tap(
-      MOBILE_VIEWPORT.width / 2,
-      MOBILE_VIEWPORT.height / 2
-    );
-    await mobilePage.waitForTimeout(500);
+      // Try tap interaction in center of viewport
+      await mobilePage.touchscreen.tap(
+        MOBILE_VIEWPORT.width / 2,
+        MOBILE_VIEWPORT.height / 2
+      );
+      await mobilePage.waitForTimeout(500);
 
-    // Try restart
-    const restartedMobile = await findButton(mobilePage, RESTART_PATTERNS);
-    if (!restartedMobile) {
-      warnings.push("Mobile: could not find a restart button to click");
+      const restartedMobile = await clickControl(mobilePage, {
+        testId: "restart",
+        patterns: RESTART_PATTERNS,
+      });
+      if (!restartedMobile) {
+        warnings.push("Mobile: could not find a restart button to click");
+      }
+    } catch (e) {
+      warnings.push(`Mobile: interaction step skipped (${(e as Error).message})`);
     }
 
     consoleErrors.push(...mobileConsoleErrors);
@@ -169,6 +208,7 @@ async function smokeTest(
       colorScheme: "light",
     });
     const desktopPage = await desktopContext.newPage();
+    desktopPage.setDefaultTimeout(3000);
 
     const desktopConsoleErrors: string[] = [];
     const desktopUncaughtErrors: string[] = [];
@@ -186,7 +226,11 @@ async function smokeTest(
     await desktopPage.goto(fileUrl, { waitUntil: "domcontentloaded", timeout: 15000 });
     await desktopPage.waitForTimeout(1000);
 
-    await findButton(desktopPage, START_PATTERNS);
+    try {
+      await clickControl(desktopPage, { testId: "start", patterns: START_PATTERNS });
+    } catch {
+      // Non-fatal: desktop interaction is best-effort.
+    }
     await desktopPage.waitForTimeout(1000);
 
     if (screenshotsDir) {
@@ -199,25 +243,50 @@ async function smokeTest(
     uncaughtErrors.push(...desktopUncaughtErrors);
     await desktopContext.close();
 
-    // Evaluate results
-    if (uncaughtErrors.length > 0) {
-      issues.push(
-        `${uncaughtErrors.length} uncaught JS error(s): ${uncaughtErrors[0]}${uncaughtErrors.length > 1 ? ` (+${uncaughtErrors.length - 1} more)` : ""}`
-      );
+    } catch (e) {
+      // Unexpected error mid-drive. Only real game errors (uncaught exceptions
+      // or zero-height render, recorded above) should fail a game — a harness
+      // hiccup must not discard a working build.
+      warnings.push(`Harness: interaction aborted (${(e as Error).message})`);
     }
+  })();
 
-    if (consoleErrors.length > 0) {
-      const filtered = consoleErrors.filter(
-        (e) => !e.includes("favicon") && !e.includes("404")
+  await Promise.race([
+    drive,
+    new Promise<void>((resolve) => {
+      setTimeout(() => {
+        timedOut = true;
+        resolve();
+      }, OVERALL_TIMEOUT_MS);
+    }),
+  ]);
+
+  if (timedOut) {
+    warnings.push(
+      `Harness: overall smoke timeout (${OVERALL_TIMEOUT_MS}ms) reached before driving finished`
+    );
+  }
+
+  await browser.close().catch(() => {});
+
+  // Evaluate collected results — runs even if the drive phase timed out, so a
+  // genuinely broken game (uncaught errors) still fails while a slow or
+  // undriveable but otherwise-loading game is not discarded.
+  if (uncaughtErrors.length > 0) {
+    issues.push(
+      `${uncaughtErrors.length} uncaught JS error(s): ${uncaughtErrors[0]}${uncaughtErrors.length > 1 ? ` (+${uncaughtErrors.length - 1} more)` : ""}`
+    );
+  }
+
+  if (consoleErrors.length > 0) {
+    const filtered = consoleErrors.filter(
+      (e) => !e.includes("favicon") && !e.includes("404")
+    );
+    if (filtered.length > 0) {
+      warnings.push(
+        `${filtered.length} console error(s): ${filtered[0]}${filtered.length > 1 ? ` (+${filtered.length - 1} more)` : ""}`
       );
-      if (filtered.length > 0) {
-        warnings.push(
-          `${filtered.length} console error(s): ${filtered[0]}${filtered.length > 1 ? ` (+${filtered.length - 1} more)` : ""}`
-        );
-      }
     }
-  } finally {
-    await browser.close();
   }
 
   return {

@@ -2,6 +2,22 @@
 
 You are building a single self-contained browser game. Make it genuinely fun, polished, and surprising. Push yourself — this should feel like a tiny finished product, not a tech demo.
 
+> ⛔ **YOUR BUILD WILL BE AUTOMATICALLY REJECTED unless ALL of these are true.**
+> An automated headless browser opens your game and clicks the controls. The two
+> most common reasons good games get discarded:
+>
+> 1. **Missing control hooks.** You MUST include a real
+>    `<button data-smoke="start">…</button>` to begin the game and a real
+>    `<button data-smoke="restart">…</button>` shown after game over. Real
+>    `<button>` elements — never `<div>`/`<span>`, never a bare tap-the-canvas
+>    start with no button. Nothing may overlay or intercept these buttons.
+> 2. **Uncaught exceptions.** Any thrown error on load, on tapping the screen
+>    centre, or on clicking start then restart fails the build. Guard every CDN
+>    global before use and never crash if WebGL/a library is unavailable.
+>
+> Re-read the "Testability contract" and "Final self-check" sections below
+> before you output. These are hard gates, not suggestions.
+
 ## Today's brief
 
 Read `data/brief.json`. It contains:
@@ -61,6 +77,43 @@ Prefer small, legible archetypes that work while walking or commuting: dodge/col
 - `touch-action: none` on the game canvas to prevent scroll hijacking.
 - `user-select: none` on the game area.
 - `e.preventDefault()` on touch handlers to avoid double-firing with mouse events.
+
+## Testability contract (REQUIRED — an automated smoke test must pass)
+
+Every build is opened in a headless browser (mobile + desktop), checked for
+runtime errors, and driven by clicking the start and restart controls. Builds
+that throw or can't be started are discarded and never published. To pass:
+
+1. **Deterministic control hooks.** The primary start control must be a real
+   `<button data-smoke="start">…</button>`. The replay control after game over
+   must be a real `<button data-smoke="restart">…</button>`. Use real `<button>`
+   elements, not `<div>`/`<span>`.
+2. **Start button must be clickable — nothing may intercept it.** If the title
+   screen is an overlay, the overlay/instructions must not swallow the click.
+   Give the overlay container `pointer-events: none` and re-enable
+   `pointer-events: auto` only on the button itself, OR ensure the button is the
+   top-most element at its position. A common failure is an overlay layer
+   covering its own start button.
+3. **Render immediately.** The page body must have non-zero height right after
+   load. Do not gate all rendering behind a slow/optional CDN script.
+4. **Zero uncaught exceptions** — on load, on tapping the screen center, and on
+   clicking start then restart. Defensively guard every external global before
+   use (e.g. `if (typeof THREE === 'undefined') { /* fallback */ }`), and never
+   reference a CDN library before its script has loaded. If `getContext('webgl2')`
+   (or your CDN) is unavailable, fall back gracefully instead of throwing.
+5. **No stray "start-like" labels as fake buttons.** HUD labels are fine, but the
+   only real start/restart affordances should be the `data-smoke` buttons above.
+
+## Final self-check (do this before you output)
+
+Mentally run the automated test and confirm every item. If any fails, fix it first.
+
+- [ ] There is exactly one real `<button data-smoke="start">` that begins the game, and it is clickable (no overlay/instructions layer swallows the click — give overlays `pointer-events: none` and re-enable `pointer-events: auto` only on the button).
+- [ ] After game over there is a real `<button data-smoke="restart">` that replays without a page reload.
+- [ ] The page renders immediately — body has non-zero height on load, not gated behind a slow CDN script.
+- [ ] Zero uncaught exceptions on: load, tapping the screen centre, clicking start, then clicking restart.
+- [ ] Every external global (THREE, etc.) is guarded with `typeof X === 'undefined'` before use; `getContext('webgl2')`/CDN failures fall back gracefully instead of throwing.
+- [ ] Zero console errors. Phone-first, fills the viewport with `100dvh`/`100dvw`. Respects dark + light mode. No purple gradients. No persistence APIs. No runtime network calls.
 
 ## Output
 
