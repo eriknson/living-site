@@ -1,0 +1,377 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Erik Nilsson — colour of the day</title>
+<meta name="description" content="Erik Nilsson. Product designer at Cursor.">
+<meta name="theme-color" content="#ffbe2e">
+<meta name="color-scheme" content="light dark">
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='8' fill='%23ffbe2e'/%3E%3Ccircle cx='16' cy='16' r='6' fill='%23241a05'/%3E%3C/svg%3E">
+<style>
+  /* ── reset ─────────────────────────────────────────────── */
+  *,*::before,*::after{ box-sizing:border-box; margin:0; padding:0; }
+  :root{
+    color-scheme: light dark;
+
+    /* default field = "Sunrise" (luminous P3, hex fallback first) */
+    --field-fb:#ffbe2e;
+    --field: color(display-p3 1 0.74 0.2);
+    --ink-fb:#241a05;
+    --ink: color(display-p3 0.16 0.1 0.02);
+
+    --sans: system-ui, -apple-system, BlinkMacSystemFont, "SF Pro Display", "Segoe UI", Helvetica, Arial, sans-serif;
+    --mono: ui-monospace, "Berkeley Mono", "SF Mono", SFMono-Regular, Menlo, Consolas, monospace;
+
+    --ease: cubic-bezier(0.22, 0.61, 0.18, 1);
+    --t: 720ms var(--ease);  /* the colour settle */
+  }
+
+  /* secondary inks derived from the active ink, so they adapt per swatch */
+  .id, .top, .palette{ color: var(--ink-fb); color: var(--ink); }
+
+  html{ background:#f4f4f3; height:100%; }
+  body{
+    min-height:100dvh; min-height:100vh;
+    font-family: var(--sans);
+    -webkit-font-smoothing:antialiased; -moz-osx-font-smoothing:grayscale;
+    text-rendering:optimizeLegibility;
+    overflow:hidden;
+  }
+
+  /* ── the colour field (full bleed, flat, no gradient) ──── */
+  .field{
+    position:fixed; inset:0; z-index:0;
+    background: var(--field-fb);
+    background: var(--field);
+    transition: background-color var(--t);
+    will-change: filter;
+  }
+  /* a quiet breathing of pure luminance — flat colour, just brighter/dimmer */
+  @keyframes breathe{ 0%,100%{ filter:brightness(1); } 50%{ filter:brightness(1.045); } }
+  .field{ animation: breathe 9s ease-in-out infinite; }
+  /* one-shot bloom on selection */
+  @keyframes bloom{ 0%{ filter:brightness(1.16); } 100%{ filter:brightness(1); } }
+  .field.bloom{ animation: bloom 760ms cubic-bezier(0.2,0.7,0.2,1); }
+
+  /* matted-print frame */
+  .frame{
+    position:fixed; inset:14px; z-index:3; pointer-events:none; border-radius:3px;
+    border:1px solid color-mix(in oklab, var(--ink-fb) 16%, transparent);
+    border:1px solid color-mix(in oklab, var(--ink) 16%, transparent);
+    transition: border-color var(--t);
+  }
+
+  /* ── layout column ─────────────────────────────────────── */
+  .wrap{
+    position:relative; z-index:2;
+    max-width:640px; margin:0 auto;
+    min-height:100dvh; min-height:100vh;
+    padding: clamp(32px, 6vw, 54px) clamp(26px, 6vw, 40px);
+    display:flex; flex-direction:column;
+  }
+
+  /* ── top frame line ────────────────────────────────────── */
+  .top{
+    display:flex; justify-content:space-between; align-items:center;
+    font-family: var(--mono); font-size:12px; letter-spacing:0.04em;
+    text-transform:uppercase;
+    opacity:0; animation: rise 0.9s 0.05s var(--ease) forwards;
+  }
+  .top .muted{ opacity:0.62; }
+  .loc{ display:inline-flex; align-items:center; gap:8px; opacity:0.62; }
+  .dot{
+    width:6px; height:6px; border-radius:50%;
+    background: currentColor;
+    animation: pulse 3.4s ease-in-out infinite;
+  }
+  @keyframes pulse{ 0%,100%{ opacity:0.35; } 50%{ opacity:1; } }
+
+  /* ── identity ──────────────────────────────────────────── */
+  .id{ flex:1; display:flex; flex-direction:column; justify-content:center; }
+  .kicker{
+    font-family: var(--mono); font-size:13px; letter-spacing:0.02em;
+    opacity:0.6; margin-bottom:14px;
+    opacity:0; animation: rise 1s 0.16s var(--ease) forwards;
+  }
+  .name{
+    font-size: clamp(2.7rem, 9.4vw, 5.1rem);
+    font-weight:600; letter-spacing:-0.038em; line-height:0.96;
+    opacity:0; animation: rise 1s 0.24s var(--ease) forwards;
+  }
+  .role{
+    margin-top:18px; font-size: clamp(1rem, 2.6vw, 1.2rem);
+    font-weight:450; letter-spacing:-0.01em;
+    color: color-mix(in oklab, var(--ink-fb) 78%, transparent);
+    color: color-mix(in oklab, var(--ink) 78%, transparent);
+    opacity:0; animation: rise 1s 0.32s var(--ease) forwards;
+  }
+
+  /* links */
+  .links{
+    margin-top: clamp(26px, 5vw, 40px);
+    display:flex; flex-wrap:wrap; align-items:center;
+    gap: 8px 0;
+    font-family: var(--mono); font-size:13.5px; letter-spacing:0.01em;
+    opacity:0; animation: rise 1s 0.4s var(--ease) forwards;
+  }
+  .links a{
+    color:inherit; text-decoration:none; position:relative;
+    padding:3px 0; cursor:ne-resize;
+    transition: opacity 0.25s ease;
+  }
+  .links a::after{
+    content:""; position:absolute; left:0; right:100%; bottom:1px; height:1px;
+    background: currentColor; opacity:0.85;
+    transition: right 0.32s cubic-bezier(0.22,0.61,0.18,1);
+  }
+  .links a:hover::after, .links a:focus-visible::after{ right:0; }
+  .links .sep{ opacity:0.32; padding:0 14px; user-select:none; }
+  @media (hover:hover){ .links:hover a:not(:hover){ opacity:0.5; } }
+
+  /* ── palette / museum label ────────────────────────────── */
+  .palette{
+    display:flex; justify-content:space-between; align-items:flex-end; gap:20px;
+    opacity:0; animation: rise 1s 0.5s var(--ease) forwards;
+  }
+  .now{ display:flex; flex-direction:column; gap:4px; min-width:0; }
+  .now-name{
+    font-size:1.18rem; font-weight:600; letter-spacing:-0.02em;
+    line-height:1;
+    transition: opacity 0.18s ease;
+  }
+  .now-note{
+    font-family: var(--mono); font-size:11.5px; letter-spacing:0.05em;
+    text-transform:uppercase;
+    color: color-mix(in oklab, var(--ink-fb) 62%, transparent);
+    color: color-mix(in oklab, var(--ink) 62%, transparent);
+    transition: opacity 0.18s ease;
+  }
+  .now.flip .now-name, .now.flip .now-note{ opacity:0.18; }
+
+  .chips{ display:flex; align-items:center; gap:11px; }
+  .chip{
+    -webkit-appearance:none; appearance:none; border:none;
+    width:18px; height:18px; border-radius:5px; padding:0; cursor:pointer;
+    background: var(--cc-fb);
+    background: var(--cc);
+    box-shadow: 0 0 0 1px color-mix(in oklab, var(--ink-fb) 26%, transparent) inset;
+    box-shadow: 0 0 0 1px color-mix(in oklab, var(--ink) 26%, transparent) inset;
+    transition: transform 0.34s cubic-bezier(0.2,0.7,0.2,1), box-shadow 0.3s ease;
+    outline:none;
+  }
+  .chip:hover{ transform: translateY(-3px); }
+  .chip:focus-visible{ outline: 2px solid currentColor; outline-offset: 4px; }
+  .chip[aria-pressed="true"]{
+    transform: scale(1.34);
+    box-shadow: 0 0 0 1.5px color-mix(in oklab, var(--ink-fb) 50%, transparent) inset;
+    box-shadow: 0 0 0 1.5px color-mix(in oklab, var(--ink) 50%, transparent) inset;
+  }
+  .chip[aria-pressed="true"]:hover{ transform: scale(1.34) translateY(-2px); }
+
+  /* ── entrance ──────────────────────────────────────────── */
+  @keyframes rise{ from{ opacity:0; transform:translateY(9px); } to{ opacity:1; transform:none; } }
+
+  /* ── responsive ────────────────────────────────────────── */
+  @media (max-width:600px){
+    .frame{ inset:9px; }
+    .name{ line-height:0.98; }
+    .palette{ align-items:flex-end; }
+    .links{ font-size:13px; }
+    .links .sep{ padding:0 11px; }
+    .now-name{ font-size:1.05rem; }
+  }
+  @media (max-width:380px){
+    .links .sep{ padding:0 8px; }
+    .chips{ gap:9px; }
+  }
+
+  @media (prefers-reduced-motion: reduce){
+    *{ animation:none !important; transition:none !important; }
+    .top,.kicker,.name,.role,.links,.palette{ opacity:1 !important; }
+  }
+
+  /* ── dark scheme: deep luminous default ("Midnight") ───── */
+  @media (prefers-color-scheme: dark){
+    html{ background:#0a0a0b; }
+    :root{
+      --field-fb:#3322a8;
+      --field: color(display-p3 0.22 0.16 0.66);
+      --ink-fb:#e7eaff;
+      --ink: color(display-p3 0.9 0.92 1);
+    }
+  }
+  /* /end-scheme/ */
+</style>
+
+<style id="__living_site_scroll_guard">
+  /* Scroll guard injected at build time to ensure generated pages remain scrollable in iframes. */
+  html, body {
+    height: auto !important;
+    min-height: 100% !important;
+    max-height: none !important;
+    overflow-y: auto !important;
+    overflow-x: hidden !important;
+    position: static !important;
+    -webkit-overflow-scrolling: touch !important;
+    touch-action: pan-y !important;
+    overscroll-behavior-y: contain !important;
+  }
+  /* Avoid accidental fixed full-screen traps that break scrolling on mobile. */
+  body {
+    inset: auto !important;
+  }
+</style>
+</head>
+<body>
+  <div class="field" id="field" aria-hidden="true"></div>
+  <div class="frame" aria-hidden="true"></div>
+
+  <main class="wrap">
+    <header class="top">
+      <span class="loc"><span class="dot"></span> San Francisco</span>
+      <time class="muted" datetime="2026-06-22">2026 · 06 · 22</time>
+    </header>
+
+    <section class="id">
+      <p class="kicker">hej —</p>
+      <h1 class="name">Erik Nilsson</h1>
+      <p class="role">Product designer at Cursor.</p>
+      <nav class="links" aria-label="Elsewhere">
+        <a href="https://cursor.com" target="_blank" rel="noopener">Cursor</a>
+        <span class="sep" aria-hidden="true">·</span>
+        <a href="https://x.com/flowstated" target="_blank" rel="noopener">X</a>
+        <span class="sep" aria-hidden="true">·</span>
+        <a href="https://github.com/eriknson" target="_blank" rel="noopener">GitHub</a>
+        <span class="sep" aria-hidden="true">·</span>
+        <a href="https://linkedin.com/in/eriknson" target="_blank" rel="noopener">LinkedIn</a>
+        <span class="sep" aria-hidden="true">·</span>
+        <a href="mailto:contact@eriks.design?subject=Hej">Email</a>
+      </nav>
+    </section>
+
+    <footer class="palette">
+      <div class="now" aria-live="polite">
+        <span class="now-name" id="now-name">Sunrise</span>
+        <span class="now-note" id="now-note">ship by sunrise</span>
+      </div>
+      <div class="chips" id="chips" role="group" aria-label="Colour of the day">
+        <button class="chip" data-name="Sunrise"  data-note="ship by sunrise"
+          data-field="color(display-p3 1 0.74 0.2)"   data-field-fb="#ffbe2e"
+          data-ink="color(display-p3 0.16 0.1 0.02)"  data-ink-fb="#241a05"
+          style="--cc:color(display-p3 1 0.74 0.2);--cc-fb:#ffbe2e"
+          aria-label="Sunrise" aria-pressed="true"></button>
+        <button class="chip" data-name="Overcast" data-note="san francisco · 13°"
+          data-field="color(display-p3 0.5 0.72 1)"   data-field-fb="#5bb4ff"
+          data-ink="color(display-p3 0.05 0.09 0.18)" data-ink-fb="#0c1626"
+          style="--cc:color(display-p3 0.5 0.72 1);--cc-fb:#5bb4ff"
+          aria-label="Overcast" aria-pressed="false"></button>
+        <button class="chip" data-name="Dream"    data-note="beach house"
+          data-field="color(display-p3 0.82 0.66 1)"  data-field-fb="#cba6ff"
+          data-ink="color(display-p3 0.16 0.08 0.24)" data-ink-fb="#27123b"
+          style="--cc:color(display-p3 0.82 0.66 1);--cc-fb:#cba6ff"
+          aria-label="Dream" aria-pressed="false"></button>
+        <button class="chip" data-name="Stutter"  data-note="fred again.."
+          data-field="color(display-p3 1 0.28 0.62)"  data-field-fb="#ff3a96"
+          data-ink="color(display-p3 0.2 0.02 0.12)"  data-ink-fb="#33041f"
+          style="--cc:color(display-p3 1 0.28 0.62);--cc-fb:#ff3a96"
+          aria-label="Stutter" aria-pressed="false"></button>
+        <button class="chip" data-name="Signal"   data-note="agents, from a phone"
+          data-field="color(display-p3 0.46 0.96 0.5)" data-field-fb="#4af07f"
+          data-ink="color(display-p3 0.03 0.14 0.06)"  data-ink-fb="#07240f"
+          style="--cc:color(display-p3 0.46 0.96 0.5);--cc-fb:#4af07f"
+          aria-label="Signal" aria-pressed="false"></button>
+        <button class="chip" data-name="Midnight" data-note="imagine 2026"
+          data-field="color(display-p3 0.22 0.16 0.66)" data-field-fb="#3322a8"
+          data-ink="color(display-p3 0.9 0.92 1)"       data-ink-fb="#e7eaff"
+          style="--cc:color(display-p3 0.22 0.16 0.66);--cc-fb:#3322a8"
+          aria-label="Midnight" aria-pressed="false"></button>
+      </div>
+    </footer>
+  </main>
+
+<script>
+(function(){
+  var root = document.documentElement;
+  var field = document.getElementById('field');
+  var chips = Array.prototype.slice.call(document.querySelectorAll('.chip'));
+  var nowName = document.getElementById('now-name');
+  var nowNote = document.getElementById('now-note');
+  var nowBox = nowName.parentNode;
+  var theme = document.querySelector('meta[name="theme-color"]');
+  var reduce = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+  var current = -1;
+
+  function label(i, instant){
+    var c = chips[i];
+    if(instant || reduce){
+      nowName.textContent = c.dataset.name;
+      nowNote.textContent = c.dataset.note;
+      return;
+    }
+    nowBox.classList.add('flip');
+    setTimeout(function(){
+      nowName.textContent = c.dataset.name;
+      nowNote.textContent = c.dataset.note;
+      nowBox.classList.remove('flip');
+    }, 150);
+  }
+
+  // let the ambient breathe resume once a selection bloom finishes
+  field.addEventListener('animationend', function(e){
+    if(e.animationName === 'bloom') field.classList.remove('bloom');
+  });
+
+  function select(i, animate){
+    if(i === current) return;
+    var c = chips[i];
+    root.style.setProperty('--field', c.dataset.field);
+    root.style.setProperty('--field-fb', c.dataset.fieldFb);
+    root.style.setProperty('--ink', c.dataset.ink);
+    root.style.setProperty('--ink-fb', c.dataset.inkFb);
+    if(theme) theme.setAttribute('content', c.dataset.fieldFb);
+
+    chips.forEach(function(x,j){ x.setAttribute('aria-pressed', j===i ? 'true':'false'); });
+    label(i, !animate);
+    current = i;
+
+    if(animate && !reduce){
+      field.classList.remove('bloom'); void field.offsetWidth; field.classList.add('bloom');
+    }
+  }
+
+  chips.forEach(function(c,i){
+    c.addEventListener('click', function(e){ e.stopPropagation(); select(i, true); });
+    c.addEventListener('mouseenter', function(){
+      if(i === current) return;
+      nowName.textContent = c.dataset.name;
+      nowNote.textContent = c.dataset.note;
+    });
+    c.addEventListener('mouseleave', function(){
+      var a = chips[current];
+      if(a){ nowName.textContent = a.dataset.name; nowNote.textContent = a.dataset.note; }
+    });
+  });
+
+  // tap the field to drift to the next colour
+  document.addEventListener('click', function(e){
+    if(e.target.closest('a') || e.target.closest('.chip')) return;
+    select((current + 1) % chips.length, true);
+  });
+
+  // keyboard
+  document.addEventListener('keydown', function(e){
+    if(e.key === 'ArrowRight' || e.key === 'ArrowDown'){ e.preventDefault(); select((current+1)%chips.length, true); }
+    else if(e.key === 'ArrowLeft' || e.key === 'ArrowUp'){ e.preventDefault(); select((current-1+chips.length)%chips.length, true); }
+    else if(e.key >= '1' && e.key <= String(chips.length)){ select(parseInt(e.key,10)-1, true); }
+  });
+
+  // start on the colour that fits the current scheme
+  var dark = window.matchMedia('(prefers-color-scheme: dark)').matches;
+  var start = dark ? 5 : 0;
+  // apply without bloom; let it wash in from the CSS default
+  requestAnimationFrame(function(){ select(start, false); });
+})();
+</script>
+</body>
+</html>
