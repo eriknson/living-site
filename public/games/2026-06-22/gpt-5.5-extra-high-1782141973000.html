@@ -1,0 +1,776 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Seal Run</title>
+<style>
+:root{
+  color-scheme: light dark;
+  --bg:#e8ece8;
+  --panel:rgba(249,244,229,.86);
+  --panel-strong:#fbf5e5;
+  --ink:#263238;
+  --muted:#667876;
+  --line:rgba(38,50,56,.14);
+  --accent:#0f9f92;
+  --wax:#b94a35;
+  --gold:#d9902a;
+  --danger:#d1543f;
+  --shadow:rgba(40,50,48,.18);
+}
+@media (prefers-color-scheme: dark){
+  :root{
+    --bg:#101820;
+    --panel:rgba(25,36,43,.82);
+    --panel-strong:#1b2a32;
+    --ink:#edf2e9;
+    --muted:#9fb1ae;
+    --line:rgba(237,242,233,.13);
+    --accent:#69d6c8;
+    --wax:#d96b4c;
+    --gold:#e5b85a;
+    --danger:#ef6b54;
+    --shadow:rgba(0,0,0,.35);
+  }
+}
+*{box-sizing:border-box}
+html,body{margin:0;width:100%;height:100%;overflow:hidden;background:var(--bg);color:var(--ink);font-family:Inter,system-ui,-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif}
+body{position:fixed;inset:0}
+#game{position:fixed;inset:0;width:100dvw;height:100dvh;display:block;touch-action:none;user-select:none;background:var(--bg)}
+.hud{position:fixed;left:0;right:0;top:0;padding:calc(env(safe-area-inset-top) + 12px) 16px 0;display:flex;gap:10px;justify-content:space-between;align-items:flex-start;pointer-events:none;font-family:ui-monospace,"SFMono-Regular",Menlo,monospace;z-index:2}
+.pill{min-height:44px;padding:9px 12px;border:1px solid var(--line);border-radius:18px;background:var(--panel);box-shadow:0 12px 34px var(--shadow);backdrop-filter:blur(14px)}
+.label{font-size:10px;letter-spacing:.12em;text-transform:uppercase;color:var(--muted);white-space:nowrap}
+.value{font-size:18px;line-height:1.1;font-weight:800;color:var(--ink);white-space:nowrap}
+.stack{display:flex;gap:8px}
+#hint{position:fixed;left:50%;bottom:calc(env(safe-area-inset-bottom) + 18px);transform:translateX(-50%);min-width:min(340px,calc(100dvw - 32px));padding:11px 14px;border:1px solid var(--line);border-radius:17px;background:var(--panel);box-shadow:0 16px 40px var(--shadow);font-family:ui-monospace,"SFMono-Regular",Menlo,monospace;font-size:12px;text-align:center;color:var(--ink);opacity:0;transition:opacity .22s ease, transform .22s ease;pointer-events:none;z-index:3}
+#hint.show{opacity:1;transform:translateX(-50%) translateY(-4px)}
+.overlay{position:fixed;inset:0;display:grid;place-items:center;padding:22px;background:linear-gradient(180deg,rgba(15,24,32,.12),rgba(15,24,32,.28));transition:opacity .28s ease;z-index:4}
+.overlay.hide{opacity:0;pointer-events:none}
+.card{width:min(430px,calc(100dvw - 30px));padding:26px 22px 22px;border:1px solid var(--line);border-radius:28px;background:var(--panel);box-shadow:0 26px 70px var(--shadow);backdrop-filter:blur(18px);text-align:left}
+h1{margin:0 0 8px;font-size:clamp(40px,12vw,62px);line-height:.88;letter-spacing:-.08em;font-weight:950}
+.kicker{font-family:ui-monospace,"SFMono-Regular",Menlo,monospace;font-size:11px;letter-spacing:.14em;text-transform:uppercase;color:var(--muted);margin-bottom:14px}
+p{margin:0 0 15px;color:var(--ink);font-size:15px;line-height:1.45}
+.rules{display:grid;gap:8px;margin:18px 0 20px;font-family:ui-monospace,"SFMono-Regular",Menlo,monospace;font-size:12px;color:var(--muted)}
+.rule{padding:10px 12px;border:1px solid var(--line);border-radius:14px;background:rgba(255,255,255,.12)}
+button{width:100%;min-height:52px;border:0;border-radius:18px;background:var(--ink);color:var(--panel-strong);font:800 14px ui-monospace,"SFMono-Regular",Menlo,monospace;letter-spacing:.08em;text-transform:uppercase;cursor:pointer;touch-action:manipulation}
+button:active{transform:translateY(1px)}
+.small{margin-top:12px;font-family:ui-monospace,"SFMono-Regular",Menlo,monospace;font-size:11px;color:var(--muted);text-align:center}
+</style>
+</head>
+<body>
+<canvas id="game" aria-label="Seal Run game canvas"></canvas>
+<div class="hud" aria-hidden="true">
+  <div class="pill"><div class="label">Seal</div><div class="value" id="sealHud">0/7</div></div>
+  <div class="stack">
+    <div class="pill"><div class="label">Time</div><div class="value" id="timeHud">45</div></div>
+    <div class="pill"><div class="label">File</div><div class="value" id="lifeHud">III</div></div>
+  </div>
+</div>
+<div id="hint"></div>
+<div id="screen" class="overlay">
+  <section class="card">
+    <div class="kicker" id="kicker">Overcast inspection / one continuous line</div>
+    <h1 id="title">Seal Run</h1>
+    <p id="copy">Drag from the glowing entry. Open the numbered wax seals in order, then reach the exit before fog locks the blueprint behind you.</p>
+    <div class="rules" id="rules">
+      <div class="rule">Drag through corridor knots. Lift only if you must.</div>
+      <div class="rule">Wrong seals and patrols cut your route backward.</div>
+      <div class="rule">Keyboard: arrow keys or WASD.</div>
+    </div>
+    <button id="play">Begin Inspection</button>
+    <div class="small" id="small">A clean run lasts about 45 seconds.</div>
+  </section>
+</div>
+<script>
+(() => {
+  "use strict";
+
+  const canvas = document.getElementById("game");
+  const ctx = canvas.getContext("2d", { alpha: false });
+  const screen = document.getElementById("screen");
+  const title = document.getElementById("title");
+  const copy = document.getElementById("copy");
+  const kicker = document.getElementById("kicker");
+  const rules = document.getElementById("rules");
+  const play = document.getElementById("play");
+  const small = document.getElementById("small");
+  const sealHud = document.getElementById("sealHud");
+  const timeHud = document.getElementById("timeHud");
+  const lifeHud = document.getElementById("lifeHud");
+  const hint = document.getElementById("hint");
+  const mq = window.matchMedia ? matchMedia("(prefers-color-scheme: dark)") : { matches: false };
+
+  const COLS = 7, ROWS = 10, CHECKS = 7;
+  const startNode = { x: 0, y: 9 };
+  const exitNode = { x: 6, y: 0 };
+  const dirs = [
+    { x: 1, y: 0, k: "ArrowRight" }, { x: -1, y: 0, k: "ArrowLeft" },
+    { x: 0, y: 1, k: "ArrowDown" }, { x: 0, y: -1, k: "ArrowUp" }
+  ];
+
+  let W = 1, H = 1, dpr = 1, cell = 44, ox = 24, oy = 120;
+  let state = "title", last = 0, game = null, drag = false, audio = null;
+  let pointer = { x: 0, y: 0, down: false };
+  let toastTimer = 0;
+
+  const palette = () => mq.matches ? {
+    bg: "#101820", paper: "#182630", paper2: "#22343c", ink: "#edf2e9", muted: "#9fb1ae",
+    corridor: "#496069", corridorDim: "#2e4149", trail: "#69d6c8", trail2: "#d7f5ec",
+    wax: "#d96b4c", gold: "#e5b85a", danger: "#ef6b54", fog: "rgba(201,218,212,.25)",
+    shadow: "rgba(0,0,0,.32)", grid: "rgba(237,242,233,.055)", gate: "#f2d68a"
+  } : {
+    bg: "#e8ece8", paper: "#f6efdc", paper2: "#efe5cc", ink: "#263238", muted: "#667876",
+    corridor: "#9ab5b2", corridorDim: "#c5d3cf", trail: "#0f9f92", trail2: "#f6fbf3",
+    wax: "#b94a35", gold: "#d9902a", danger: "#d1543f", fog: "rgba(104,122,120,.26)",
+    shadow: "rgba(35,45,42,.18)", grid: "rgba(38,50,56,.07)", gate: "#c77d1d"
+  };
+
+  function nodeId(n) { return n.x + "," + n.y; }
+  function same(a, b) { return a && b && a.x === b.x && a.y === b.y; }
+  function edgeKey(a, b) {
+    const A = nodeId(a), B = nodeId(b);
+    return A < B ? A + "|" + B : B + "|" + A;
+  }
+  function pos(n) { return { x: ox + n.x * cell, y: oy + n.y * cell }; }
+  function dist(a, b) { return Math.hypot(a.x - b.x, a.y - b.y); }
+  function lerp(a, b, t) { return a + (b - a) * t; }
+  function clamp(v, a, b) { return Math.max(a, Math.min(b, v)); }
+  function shuffle(a) {
+    for (let i = a.length - 1; i > 0; i--) {
+      const j = Math.floor(Math.random() * (i + 1));
+      [a[i], a[j]] = [a[j], a[i]];
+    }
+    return a;
+  }
+
+  function resize() {
+    dpr = Math.min(2, window.devicePixelRatio || 1);
+    W = Math.max(1, window.innerWidth);
+    H = Math.max(1, window.innerHeight);
+    canvas.width = Math.floor(W * dpr);
+    canvas.height = Math.floor(H * dpr);
+    canvas.style.width = W + "px";
+    canvas.style.height = H + "px";
+    ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+    const top = Math.max(112, H * .15);
+    const bottom = Math.max(78, H * .09);
+    cell = Math.min((W - 54) / (COLS - 1), (H - top - bottom) / (ROWS - 1));
+    cell = Math.max(32, cell);
+    ox = (W - cell * (COLS - 1)) / 2;
+    oy = top + (H - top - bottom - cell * (ROWS - 1)) / 2;
+  }
+
+  function inBounds(x, y) { return x >= 0 && y >= 0 && x < COLS && y < ROWS; }
+
+  function makeEdges() {
+    const edges = new Set(), seen = new Set([nodeId(startNode)]), stack = [startNode];
+    while (stack.length) {
+      const cur = stack[stack.length - 1];
+      const opts = shuffle(dirs.map(d => ({ x: cur.x + d.x, y: cur.y + d.y }))
+        .filter(n => inBounds(n.x, n.y) && !seen.has(nodeId(n))));
+      if (!opts.length) { stack.pop(); continue; }
+      const next = opts[0];
+      edges.add(edgeKey(cur, next));
+      seen.add(nodeId(next));
+      stack.push(next);
+    }
+    for (let y = 0; y < ROWS; y++) for (let x = 0; x < COLS; x++) {
+      const n = { x, y };
+      if (x + 1 < COLS && Math.random() < .44) edges.add(edgeKey(n, { x: x + 1, y }));
+      if (y + 1 < ROWS && Math.random() < .44) edges.add(edgeKey(n, { x, y: y + 1 }));
+    }
+    return edges;
+  }
+
+  function makeChecks() {
+    const a = [
+      { x: 1, y: 7 }, { x: 5, y: 8 }, { x: 4, y: 5 }, { x: 1, y: 4 },
+      { x: 3, y: 2 }, { x: 6, y: 3 }, { x: 5, y: 1 }
+    ];
+    const b = [
+      { x: 2, y: 8 }, { x: 6, y: 7 }, { x: 5, y: 4 }, { x: 2, y: 5 },
+      { x: 1, y: 2 }, { x: 4, y: 1 }, { x: 6, y: 2 }
+    ];
+    return (Math.random() < .5 ? a : b).slice(0, CHECKS);
+  }
+
+  function existingEdges(edges) {
+    const out = [];
+    for (let y = 0; y < ROWS; y++) for (let x = 0; x < COLS; x++) {
+      const n = { x, y };
+      for (const d of [{ x: 1, y: 0 }, { x: 0, y: 1 }]) {
+        const m = { x: x + d.x, y: y + d.y };
+        if (inBounds(m.x, m.y) && edges.has(edgeKey(n, m))) out.push([n, m]);
+      }
+    }
+    return out;
+  }
+
+  function canReach(edges, from, target, blocked) {
+    const q = [from], seen = new Set([nodeId(from)]);
+    for (let r = 0; r < q.length; r++) {
+      const n = q[r];
+      if (same(n, target)) return true;
+      for (const d of dirs) {
+        const m = { x: n.x + d.x, y: n.y + d.y }, id = nodeId(m);
+        if (!inBounds(m.x, m.y) || seen.has(id) || blocked.has(id) || !edges.has(edgeKey(n, m))) continue;
+        seen.add(id);
+        q.push(m);
+      }
+    }
+    return false;
+  }
+
+  function routeOk(edges, checks) {
+    let from = startNode;
+    for (let i = 0; i < checks.length; i++) {
+      const blocked = new Set(checks.slice(i + 1).map(nodeId));
+      if (!canReach(edges, from, checks[i], blocked)) return false;
+      from = checks[i];
+    }
+    return canReach(edges, from, exitNode, new Set());
+  }
+
+  function makePatrol(edges, bias = 1) {
+    const all = existingEdges(edges).filter(([a, b]) => !same(a, startNode) && !same(b, startNode));
+    const [a, b] = all[Math.floor(Math.random() * all.length)] || [{ x: 3, y: 4 }, { x: 4, y: 4 }];
+    return {
+      a, b,
+      phase: Math.random() * Math.PI * 2,
+      speed: (.85 + Math.random() * .65) * bias,
+      r: .11 + Math.random() * .04,
+      flash: Math.random() < .5 ? -1 : 1
+    };
+  }
+
+  function newGame() {
+    const checks = makeChecks();
+    let edges = makeEdges();
+    for (let i = 0; i < 80 && !routeOk(edges, checks); i++) edges = makeEdges();
+    const patrols = [makePatrol(edges), makePatrol(edges, 1.05)];
+    return {
+      edges, checks, patrols, fog: new Set(), particles: [],
+      path: [startNode], check: 0, time: 48, score: 0, life: 3, combo: 0,
+      inv: 1.1, shake: 0, pause: 0, moved: false, unbroken: true,
+      reason: "", win: false, startAt: performance.now()
+    };
+  }
+
+  function head() { return game.path[game.path.length - 1]; }
+  function canEdge(a, b) { return game.edges.has(edgeKey(a, b)); }
+  function adjacent(a, b) { return Math.abs(a.x - b.x) + Math.abs(a.y - b.y) === 1; }
+  function nextNodes(n) {
+    return dirs.map(d => ({ x: n.x + d.x, y: n.y + d.y }))
+      .filter(m => inBounds(m.x, m.y) && canEdge(n, m));
+  }
+
+  function ensureAudio() {
+    if (audio) return;
+    try { audio = new (window.AudioContext || window.webkitAudioContext)(); }
+    catch (_) { audio = null; }
+  }
+
+  function tone(kind) {
+    if (!audio) return;
+    const now = audio.currentTime;
+    const o = audio.createOscillator();
+    const g = audio.createGain();
+    const freq = kind === "hit" ? 90 : kind === "win" ? 520 : kind === "start" ? 240 : 360;
+    o.type = kind === "hit" ? "sawtooth" : "sine";
+    o.frequency.setValueAtTime(freq, now);
+    o.frequency.exponentialRampToValueAtTime(kind === "hit" ? 42 : freq * 1.55, now + .13);
+    g.gain.setValueAtTime(.0001, now);
+    g.gain.exponentialRampToValueAtTime(kind === "hit" ? .09 : .055, now + .018);
+    g.gain.exponentialRampToValueAtTime(.0001, now + .18);
+    o.connect(g).connect(audio.destination);
+    o.start(now);
+    o.stop(now + .21);
+  }
+
+  function buzz(ms) { navigator.vibrate?.(ms); }
+
+  function toast(text, ms = 900) {
+    hint.textContent = text;
+    hint.classList.add("show");
+    toastTimer = ms / 1000;
+  }
+
+  function burst(n, color, count = 18) {
+    const p = pos(n);
+    for (let i = 0; i < count; i++) {
+      const a = Math.random() * Math.PI * 2;
+      const s = 60 + Math.random() * 170;
+      game.particles.push({
+        x: p.x, y: p.y, vx: Math.cos(a) * s, vy: Math.sin(a) * s,
+        life: .45 + Math.random() * .45, max: .8, color, size: 2 + Math.random() * 4
+      });
+    }
+  }
+
+  function recalcChecks() {
+    let c = 0;
+    for (const n of game.path) {
+      if (c < game.checks.length && same(n, game.checks[c])) c++;
+    }
+    game.check = c;
+  }
+
+  function sealFog() {
+    const limit = Math.max(5, 12 - Math.floor(game.check * 1.05));
+    for (let i = 0; i < game.path.length - limit; i++) {
+      game.fog.add(edgeKey(game.path[i], game.path[i + 1]));
+    }
+  }
+
+  function hurt(reason, cutIndex) {
+    if (game.inv > 0 || state !== "playing") return;
+    game.life -= 1;
+    game.combo = 0;
+    game.inv = .9;
+    game.pause = .11;
+    game.shake = 13;
+    tone("hit");
+    buzz([16, 24, 16]);
+    toast(reason);
+    const keep = cutIndex == null ? Math.max(1, game.path.length - 3) : Math.max(1, cutIndex);
+    game.path = game.path.slice(0, keep);
+    recalcChecks();
+    if (game.life <= 0) end(false, "The file was reversed by patrols.");
+  }
+
+  function collect() {
+    const p = palette();
+    game.combo += 1;
+    game.score += 100 + game.combo * 35 + Math.ceil(game.time);
+    game.check += 1;
+    game.shake = 4;
+    tone("seal");
+    buzz(12);
+    burst(head(), p.gold, 24);
+    toast(game.check === CHECKS ? "All seals open. Reach the exit." : "Seal " + game.check + " cleared.");
+    if (game.patrols.length < 2 + Math.floor(game.check / 2)) game.patrols.push(makePatrol(game.edges, 1 + game.check * .15));
+  }
+
+  function stepTo(n) {
+    if (!game || state !== "playing" || game.pause > 0) return;
+    const h = head();
+    if (!adjacent(h, n) || !canEdge(h, n)) return;
+    const e = edgeKey(h, n);
+    if (game.fog.has(e)) { hurt("Fog sealed that corridor.", game.path.length - 1); return; }
+    const prev = game.path[game.path.length - 2];
+    if (prev && same(prev, n)) {
+      game.path.pop();
+      recalcChecks();
+      return;
+    }
+    const earlier = game.path.findIndex(q => same(q, n));
+    if (earlier >= 0) {
+      game.path = game.path.slice(0, earlier + 1);
+      recalcChecks();
+      toast("Loop collapsed.");
+      return;
+    }
+    const future = game.checks.findIndex((q, i) => i > game.check && same(q, n));
+    if (future >= 0) {
+      hurt("Wrong wax seal.", game.path.length - 1);
+      return;
+    }
+    game.path.push(n);
+    game.moved = true;
+    sealFog();
+    if (game.check < game.checks.length && same(n, game.checks[game.check])) collect();
+    if (game.check >= CHECKS && same(n, exitNode)) end(true, "Inspection complete.");
+  }
+
+  function processPointer() {
+    if (!pointer.down || state !== "playing" || !game) return;
+    if (!drag) {
+      if (dist(pointer, pos(head())) < cell * .72) drag = true;
+      else return;
+    }
+    for (let i = 0; i < 4; i++) {
+      const h = head(), hp = pos(h);
+      let best = null, bestScore = dist(pointer, hp) - 9;
+      for (const n of nextNodes(h)) {
+        const np = pos(n);
+        const lineD = pointSeg(pointer, hp, np);
+        const score = dist(pointer, np);
+        if (lineD < cell * .48 && score < bestScore) {
+          best = n; bestScore = score;
+        }
+      }
+      if (!best) break;
+      stepTo(best);
+    }
+  }
+
+  function pointSeg(p, a, b) {
+    const vx = b.x - a.x, vy = b.y - a.y;
+    const wx = p.x - a.x, wy = p.y - a.y;
+    const c = clamp((vx * wx + vy * wy) / Math.max(.001, vx * vx + vy * vy), 0, 1);
+    return Math.hypot(p.x - (a.x + vx * c), p.y - (a.y + vy * c));
+  }
+
+  function update(dt) {
+    if (!game) return;
+    if (toastTimer > 0) {
+      toastTimer -= dt;
+      if (toastTimer <= 0) hint.classList.remove("show");
+    }
+    game.inv = Math.max(0, game.inv - dt);
+    game.shake = Math.max(0, game.shake - dt * 28);
+    if (game.pause > 0) { game.pause -= dt; return; }
+    game.time -= dt;
+    if (game.time <= 0) { end(false, "Fog closed the remaining doors."); return; }
+    processPointer();
+    const speed = 1 + game.check * .16 + Math.max(0, 25 - game.time) * .012;
+    for (const p of game.patrols) {
+      p.phase += dt * p.speed * speed;
+      const a = pos(p.a), b = pos(p.b), t = (Math.sin(p.phase) + 1) / 2;
+      p.x = lerp(a.x, b.x, t);
+      p.y = lerp(a.y, b.y, t);
+      if (game.inv <= 0 && dist({ x: p.x, y: p.y }, pos(head())) < cell * .26) hurt("Patrol clipped your lead.", game.path.length - 2);
+      if (game.inv <= 0) {
+        for (let i = 0; i < game.path.length - 2; i++) {
+          const d = pointSeg({ x: p.x, y: p.y }, pos(game.path[i]), pos(game.path[i + 1]));
+          if (d < cell * .18) { hurt("Patrol reversed the route.", i + 1); break; }
+        }
+      }
+    }
+    for (const p of game.particles) {
+      p.life -= dt;
+      p.x += p.vx * dt;
+      p.y += p.vy * dt;
+      p.vy += 220 * dt;
+    }
+    game.particles = game.particles.filter(p => p.life > 0);
+    updateHud();
+  }
+
+  function start() {
+    ensureAudio();
+    if (audio?.state === "suspended") audio.resume().catch(() => {});
+    game = newGame();
+    state = "playing";
+    drag = false;
+    pointer.down = false;
+    screen.classList.add("hide");
+    hint.classList.remove("show");
+    toastTimer = 0;
+    tone("start");
+    updateHud();
+  }
+
+  function end(win, reason) {
+    if (state !== "playing") return;
+    state = "over";
+    game.win = win;
+    game.reason = reason;
+    game.score += win ? Math.round(game.time * 12) + (game.unbroken ? 400 : 0) : 0;
+    tone(win ? "win" : "hit");
+    buzz(win ? [18, 40, 18] : 30);
+    showEnd();
+  }
+
+  function showEnd() {
+    const clean = game.win && game.unbroken && game.life === 3;
+    kicker.textContent = game.win ? (clean ? "Flawless unbroken inspection" : "Inspection complete") : "Inspection failed";
+    title.textContent = game.win ? "Seals Open" : "Route Reversed";
+    copy.textContent = game.reason + " Score " + Math.max(0, Math.round(game.score)) + ". " +
+      (clean ? "No lifts, no hits: the blueprint stayed clean." : "Try a tighter route and watch the patrol timing.");
+    rules.innerHTML =
+      '<div class="rule">Seals cleared: ' + game.check + "/" + CHECKS + '</div>' +
+      '<div class="rule">Remaining time: ' + Math.max(0, Math.ceil(game.time)) + "s</div>" +
+      '<div class="rule">Chain: ' + (game.unbroken ? "unbroken" : "cracked by a lift") + '</div>';
+    play.textContent = "Run It Again";
+    small.textContent = "Restart is instant. No reload needed.";
+    screen.classList.remove("hide");
+    updateHud();
+  }
+
+  function updateHud() {
+    if (!game) return;
+    sealHud.textContent = game.check + "/" + CHECKS;
+    timeHud.textContent = String(Math.max(0, Math.ceil(game.time)));
+    lifeHud.textContent = "III".slice(0, game.life) || "0";
+  }
+
+  function roundRect(x, y, w, h, r) {
+    ctx.beginPath();
+    ctx.moveTo(x + r, y);
+    ctx.arcTo(x + w, y, x + w, y + h, r);
+    ctx.arcTo(x + w, y + h, x, y + h, r);
+    ctx.arcTo(x, y + h, x, y, r);
+    ctx.arcTo(x, y, x + w, y, r);
+    ctx.closePath();
+  }
+
+  function drawBackground(p) {
+    ctx.fillStyle = p.bg;
+    ctx.fillRect(0, 0, W, H);
+    const g = ctx.createLinearGradient(0, 0, 0, H);
+    g.addColorStop(0, p.paper);
+    g.addColorStop(1, p.paper2);
+    ctx.save();
+    ctx.shadowColor = p.shadow;
+    ctx.shadowBlur = 38;
+    ctx.shadowOffsetY = 18;
+    roundRect(14, Math.max(82, oy - cell * .75), W - 28, cell * (ROWS - 1) + cell * 1.5, 28);
+    ctx.fillStyle = g;
+    ctx.fill();
+    ctx.restore();
+    ctx.strokeStyle = p.grid;
+    ctx.lineWidth = 1;
+    for (let x = 0; x < W; x += 24) { ctx.beginPath(); ctx.moveTo(x, 0); ctx.lineTo(x, H); ctx.stroke(); }
+    for (let y = 0; y < H; y += 24) { ctx.beginPath(); ctx.moveTo(0, y); ctx.lineTo(W, y); ctx.stroke(); }
+  }
+
+  function drawCorridors(p) {
+    ctx.lineCap = "round";
+    for (let y = 0; y < ROWS; y++) for (let x = 0; x < COLS; x++) {
+      const n = { x, y };
+      for (const d of [{ x: 1, y: 0 }, { x: 0, y: 1 }]) {
+        const m = { x: x + d.x, y: y + d.y };
+        if (!inBounds(m.x, m.y)) continue;
+        const a = pos(n), b = pos(m);
+        if (game.edges.has(edgeKey(n, m))) {
+          const fogged = game.fog.has(edgeKey(n, m));
+          ctx.strokeStyle = fogged ? p.fog : p.corridor;
+          ctx.lineWidth = fogged ? 14 : 9;
+          ctx.beginPath(); ctx.moveTo(a.x, a.y); ctx.lineTo(b.x, b.y); ctx.stroke();
+          ctx.strokeStyle = fogged ? "rgba(255,255,255,.13)" : p.corridorDim;
+          ctx.lineWidth = 2;
+          ctx.beginPath(); ctx.moveTo(a.x, a.y); ctx.lineTo(b.x, b.y); ctx.stroke();
+        } else {
+          const mx = (a.x + b.x) / 2, my = (a.y + b.y) / 2;
+          ctx.save();
+          ctx.translate(mx, my);
+          ctx.rotate(d.x ? 0 : Math.PI / 2);
+          ctx.globalAlpha = .18;
+          ctx.strokeStyle = p.wax;
+          ctx.lineWidth = 2;
+          ctx.beginPath();
+          ctx.moveTo(-7, -5); ctx.lineTo(7, 5);
+          ctx.moveTo(7, -5); ctx.lineTo(-7, 5);
+          ctx.stroke();
+          ctx.fillStyle = p.wax;
+          ctx.beginPath(); ctx.arc(0, 0, 3.4, 0, Math.PI * 2); ctx.fill();
+          ctx.restore();
+        }
+      }
+    }
+    for (let y = 0; y < ROWS; y++) for (let x = 0; x < COLS; x++) {
+      const q = pos({ x, y });
+      ctx.fillStyle = p.paper2;
+      ctx.beginPath(); ctx.arc(q.x, q.y, 4.2, 0, Math.PI * 2); ctx.fill();
+      ctx.strokeStyle = p.corridor; ctx.lineWidth = 1.5; ctx.stroke();
+    }
+  }
+
+  function drawTrail(p) {
+    if (!game.path.length) return;
+    ctx.lineCap = "round";
+    ctx.lineJoin = "round";
+    ctx.shadowColor = p.trail;
+    ctx.shadowBlur = 14;
+    ctx.strokeStyle = p.trail;
+    ctx.lineWidth = 8;
+    ctx.beginPath();
+    game.path.forEach((n, i) => {
+      const q = pos(n);
+      if (i) ctx.lineTo(q.x, q.y); else ctx.moveTo(q.x, q.y);
+    });
+    ctx.stroke();
+    ctx.shadowBlur = 0;
+    ctx.strokeStyle = p.trail2;
+    ctx.lineWidth = 2;
+    ctx.stroke();
+    if (drag && pointer.down && state === "playing") {
+      const h = pos(head());
+      ctx.strokeStyle = "rgba(255,255,255,.35)";
+      ctx.lineWidth = 2;
+      ctx.setLineDash([5, 7]);
+      ctx.beginPath(); ctx.moveTo(h.x, h.y); ctx.lineTo(pointer.x, pointer.y); ctx.stroke();
+      ctx.setLineDash([]);
+    }
+    const hp = pos(head());
+    ctx.shadowColor = p.trail;
+    ctx.shadowBlur = 18;
+    ctx.fillStyle = p.trail;
+    ctx.beginPath(); ctx.arc(hp.x, hp.y, cell * .18 + Math.sin(performance.now() * .008) * 1.8, 0, Math.PI * 2); ctx.fill();
+    ctx.shadowBlur = 0;
+  }
+
+  function drawWax(n, index, mode, p) {
+    const q = pos(n), r = mode === "active" ? cell * .25 : cell * .2;
+    ctx.save();
+    ctx.translate(q.x, q.y);
+    const color = mode === "done" ? p.trail : mode === "active" ? p.gold : p.wax;
+    if (mode === "active") {
+      ctx.strokeStyle = p.gold;
+      ctx.lineWidth = 2;
+      ctx.globalAlpha = .55 + Math.sin(performance.now() * .007) * .18;
+      ctx.beginPath(); ctx.arc(0, 0, r + 10, 0, Math.PI * 2); ctx.stroke();
+      ctx.globalAlpha = 1;
+    }
+    ctx.fillStyle = color;
+    for (let i = 0; i < 10; i++) {
+      const a = i / 10 * Math.PI * 2;
+      ctx.beginPath(); ctx.arc(Math.cos(a) * r * .72, Math.sin(a) * r * .72, r * .36, 0, Math.PI * 2); ctx.fill();
+    }
+    ctx.beginPath(); ctx.arc(0, 0, r, 0, Math.PI * 2); ctx.fill();
+    ctx.fillStyle = mode === "active" ? "#2b2414" : "#fff6e2";
+    ctx.font = "800 " + Math.max(12, r * .92) + "px ui-monospace,monospace";
+    ctx.textAlign = "center"; ctx.textBaseline = "middle";
+    ctx.fillText(mode === "done" ? "OK" : String(index + 1), 0, 1);
+    ctx.restore();
+  }
+
+  function drawGate(p) {
+    const s = pos(startNode), e = pos(exitNode);
+    ctx.save();
+    ctx.fillStyle = p.trail;
+    ctx.strokeStyle = p.ink;
+    ctx.lineWidth = 2;
+    ctx.beginPath(); ctx.arc(s.x, s.y, cell * .2, 0, Math.PI * 2); ctx.fill(); ctx.stroke();
+    ctx.fillStyle = p.ink;
+    ctx.font = "800 10px ui-monospace,monospace";
+    ctx.textAlign = "center"; ctx.fillText("IN", s.x, s.y + 3);
+    ctx.translate(e.x, e.y);
+    ctx.strokeStyle = game.check >= CHECKS ? p.gate : p.muted;
+    ctx.fillStyle = game.check >= CHECKS ? "rgba(229,184,90,.16)" : "rgba(80,90,88,.12)";
+    ctx.lineWidth = 3;
+    roundRect(-cell * .22, -cell * .27, cell * .44, cell * .54, 7);
+    ctx.fill(); ctx.stroke();
+    ctx.beginPath(); ctx.moveTo(-cell * .11, 0); ctx.lineTo(cell * .12, 0); ctx.stroke();
+    ctx.restore();
+  }
+
+  function drawPatrols(p) {
+    for (const z of game.patrols) {
+      const a = pos(z.a), b = pos(z.b);
+      const ang = Math.atan2(b.y - a.y, b.x - a.x);
+      ctx.save();
+      ctx.translate(z.x || a.x, z.y || a.y);
+      ctx.rotate(ang);
+      ctx.globalAlpha = .28;
+      ctx.fillStyle = p.danger;
+      ctx.beginPath();
+      ctx.moveTo(0, 0);
+      ctx.lineTo(z.flash * cell * .72, -cell * .22);
+      ctx.lineTo(z.flash * cell * .72, cell * .22);
+      ctx.closePath();
+      ctx.fill();
+      ctx.globalAlpha = 1;
+      ctx.fillStyle = p.danger;
+      ctx.beginPath(); ctx.arc(0, 0, cell * .13, 0, Math.PI * 2); ctx.fill();
+      ctx.fillStyle = p.paper;
+      ctx.beginPath(); ctx.arc(cell * .035, -cell * .035, cell * .035, 0, Math.PI * 2); ctx.fill();
+      ctx.restore();
+    }
+  }
+
+  function drawParticles() {
+    for (const q of game.particles) {
+      ctx.globalAlpha = Math.max(0, q.life / q.max);
+      ctx.fillStyle = q.color;
+      ctx.beginPath(); ctx.arc(q.x, q.y, q.size, 0, Math.PI * 2); ctx.fill();
+    }
+    ctx.globalAlpha = 1;
+  }
+
+  function drawLabels(p) {
+    ctx.save();
+    ctx.font = "800 11px ui-monospace,monospace";
+    ctx.textAlign = "center";
+    ctx.textBaseline = "middle";
+    ctx.fillStyle = p.muted;
+    const next = game.check < CHECKS ? pos(game.checks[game.check]) : pos(exitNode);
+    const txt = game.check < CHECKS ? "NEXT SEAL" : "EXIT";
+    ctx.fillText(txt, next.x, next.y - cell * .48);
+    ctx.restore();
+  }
+
+  function draw() {
+    const p = palette();
+    if (!game) game = newGame();
+    ctx.save();
+    const sx = game.shake ? (Math.random() - .5) * game.shake : 0;
+    const sy = game.shake ? (Math.random() - .5) * game.shake : 0;
+    ctx.translate(sx, sy);
+    drawBackground(p);
+    drawCorridors(p);
+    drawGate(p);
+    for (let i = 0; i < game.checks.length; i++) {
+      drawWax(game.checks[i], i, i < game.check ? "done" : i === game.check ? "active" : "idle", p);
+    }
+    drawTrail(p);
+    drawPatrols(p);
+    drawParticles();
+    drawLabels(p);
+    ctx.restore();
+    if (state === "title") {
+      ctx.save();
+      ctx.globalAlpha = .42;
+      ctx.fillStyle = p.bg;
+      ctx.fillRect(0, 0, W, H);
+      ctx.restore();
+    }
+  }
+
+  function loop(ts) {
+    const dt = Math.min(.033, (ts - last) / 1000 || 0);
+    last = ts;
+    if (state === "playing") update(dt);
+    draw();
+    requestAnimationFrame(loop);
+  }
+
+  canvas.addEventListener("pointerdown", e => {
+    e.preventDefault();
+    pointer = { x: e.clientX, y: e.clientY, down: true };
+    if (state === "playing" && dist(pointer, pos(head())) >= cell * .72) toast("Start from the glowing lead dot.");
+    drag = false;
+    canvas.setPointerCapture?.(e.pointerId);
+  }, { passive: false });
+
+  canvas.addEventListener("pointermove", e => {
+    e.preventDefault();
+    pointer.x = e.clientX; pointer.y = e.clientY;
+  }, { passive: false });
+
+  function releasePointer(e) {
+    e.preventDefault();
+    if (state === "playing" && game?.moved && pointer.down) {
+      game.unbroken = false;
+      toast("Chain cracked. Keep drawing to finish.");
+    }
+    pointer.down = false;
+    drag = false;
+  }
+  canvas.addEventListener("pointerup", releasePointer, { passive: false });
+  canvas.addEventListener("pointercancel", releasePointer, { passive: false });
+
+  document.addEventListener("keydown", e => {
+    const key = e.key;
+    if ((key === "Enter" || key === " ") && state !== "playing") { e.preventDefault(); start(); return; }
+    if (state !== "playing") return;
+    const map = { w: "ArrowUp", a: "ArrowLeft", s: "ArrowDown", d: "ArrowRight" };
+    const use = map[key.toLowerCase()] || key;
+    const d = dirs.find(v => v.k === use);
+    if (!d) return;
+    e.preventDefault();
+    stepTo({ x: head().x + d.x, y: head().y + d.y });
+  });
+
+  play.addEventListener("click", start);
+  window.addEventListener("resize", resize);
+  resize();
+  game = newGame();
+  updateHud();
+  requestAnimationFrame(loop);
+})();
+</script>
+</body>
+</html>

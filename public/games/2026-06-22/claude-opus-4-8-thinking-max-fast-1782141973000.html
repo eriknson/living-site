@@ -1,0 +1,1807 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+<meta name="color-scheme" content="light dark" />
+<meta name="theme-color" content="#e7edf0" media="(prefers-color-scheme: light)" />
+<meta name="theme-color" content="#0b1220" media="(prefers-color-scheme: dark)" />
+<title>LOFT — a kite above Karl the fog</title>
+<style>
+  :root {
+    --mono: ui-monospace, 'SFMono-Regular', 'SF Mono', Menlo, Consolas, monospace;
+    --ink: #242a2f;
+    --ink-soft: rgba(36, 42, 47, 0.58);
+    --line: rgba(36, 42, 47, 0.14);
+    --panel: rgba(247, 250, 251, 0.66);
+    --panel-strong: rgba(248, 251, 252, 0.94);
+    --gold: #d99a2b;
+    --gold-bright: #f0b94e;
+    --orange: #c14a2b;
+    --teal: #12877a;
+    --shadow: rgba(40, 56, 70, 0.16);
+  }
+  @media (prefers-color-scheme: dark) {
+    :root {
+      --ink: #e9eff3;
+      --ink-soft: rgba(233, 239, 243, 0.6);
+      --line: rgba(233, 239, 243, 0.16);
+      --panel: rgba(13, 20, 32, 0.7);
+      --panel-strong: rgba(12, 19, 30, 0.95);
+      --gold: #f0b94e;
+      --gold-bright: #ffd673;
+      --orange: #e2683f;
+      --teal: #35cdbb;
+      --shadow: rgba(0, 0, 0, 0.4);
+    }
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; -webkit-tap-highlight-color: transparent; }
+  html, body { width: 100%; height: 100%; }
+  body {
+    width: 100dvw; height: 100dvh;
+    color: var(--ink);
+    font-family: var(--mono);
+    background: #11161d;
+    overflow: hidden;
+    overscroll-behavior: none;
+    user-select: none; -webkit-user-select: none;
+    touch-action: none;
+    -webkit-font-smoothing: antialiased;
+  }
+  #app { position: fixed; inset: 0; width: 100dvw; height: 100dvh; overflow: hidden; }
+  canvas#game {
+    position: absolute; inset: 0;
+    width: 100%; height: 100%;
+    display: block;
+    touch-action: none;
+    user-select: none; -webkit-user-select: none;
+  }
+
+  /* ---- HUD ---- */
+  .hud {
+    position: absolute; inset: 0;
+    pointer-events: none;
+    z-index: 5;
+    padding: max(14px, env(safe-area-inset-top)) max(16px, env(safe-area-inset-right)) max(16px, env(safe-area-inset-bottom)) max(16px, env(safe-area-inset-left));
+  }
+  .hud-row {
+    position: absolute; top: max(14px, env(safe-area-inset-top));
+    left: max(16px, env(safe-area-inset-left));
+    right: max(16px, env(safe-area-inset-right));
+    display: flex; justify-content: space-between; align-items: flex-start;
+    font-size: 12px; letter-spacing: 0.14em; text-transform: uppercase;
+  }
+  .stat .label { color: var(--ink-soft); font-size: 10px; letter-spacing: 0.22em; }
+  .stat .value { font-size: 26px; font-weight: 600; letter-spacing: 0.02em; font-variant-numeric: tabular-nums; line-height: 1.05; }
+  .stat.right { text-align: right; }
+  #scoreVal { color: var(--ink); }
+  #bestVal { color: var(--ink-soft); font-size: 18px; }
+
+  .combo {
+    position: absolute; top: 23%; left: 50%;
+    transform: translateX(-50%);
+    text-align: center;
+    opacity: 0;
+    transition: opacity 0.18s ease;
+  }
+  .combo .x { font-size: 40px; font-weight: 700; color: var(--gold-bright); letter-spacing: 0.02em; text-shadow: 0 2px 18px var(--shadow); font-variant-numeric: tabular-nums; }
+  .combo .cap { font-size: 10px; letter-spacing: 0.3em; color: var(--ink-soft); text-transform: uppercase; }
+  .combo.show { opacity: 1; }
+
+  /* sound toggle */
+  #sound {
+    position: absolute; top: max(52px, calc(env(safe-area-inset-top) + 40px));
+    right: max(16px, env(safe-area-inset-right));
+    width: 44px; height: 44px;
+    display: grid; place-items: center;
+    pointer-events: auto;
+    background: var(--panel); border: 1px solid var(--line); border-radius: 12px;
+    color: var(--ink-soft); cursor: pointer;
+    backdrop-filter: blur(8px); -webkit-backdrop-filter: blur(8px);
+    z-index: 6;
+  }
+  #sound svg { width: 20px; height: 20px; display: block; }
+  #sound:active { transform: scale(0.94); }
+
+  /* ---- Overlays ---- */
+  .overlay {
+    position: absolute; inset: 0;
+    z-index: 10;
+    display: flex; flex-direction: column;
+    align-items: center; justify-content: center;
+    text-align: center;
+    padding: 28px;
+    gap: 18px;
+    pointer-events: none;
+    opacity: 0;
+    transition: opacity 0.45s ease;
+  }
+  .overlay.show { opacity: 1; }
+  .overlay .panel {
+    background: var(--panel);
+    border: 1px solid var(--line);
+    border-radius: 22px;
+    padding: 30px 26px 26px;
+    max-width: 380px; width: 100%;
+    backdrop-filter: blur(14px) saturate(1.1); -webkit-backdrop-filter: blur(14px) saturate(1.1);
+    box-shadow: 0 24px 60px -20px var(--shadow);
+    transform: translateY(10px) scale(0.99);
+    transition: transform 0.45s cubic-bezier(.2,.9,.25,1);
+  }
+  .overlay.show .panel { transform: translateY(0) scale(1); }
+
+  .title {
+    font-size: clamp(52px, 19vw, 96px);
+    font-weight: 700; letter-spacing: 0.18em;
+    margin-left: 0.18em;
+    line-height: 0.92;
+    background: linear-gradient(180deg, var(--gold-bright), var(--orange));
+    -webkit-background-clip: text; background-clip: text;
+    -webkit-text-fill-color: transparent; color: var(--orange);
+  }
+  .sub { font-size: 12.5px; letter-spacing: 0.18em; text-transform: uppercase; color: var(--ink-soft); margin-top: 6px; }
+  .how {
+    margin: 14px 0 4px; font-size: 13px; line-height: 1.7; color: var(--ink);
+    display: flex; flex-direction: column; gap: 7px; align-items: center;
+  }
+  .how .k {
+    display: inline-flex; align-items: center; gap: 8px; justify-content: center;
+  }
+  .chip {
+    font-size: 11px; letter-spacing: 0.06em;
+    border: 1px solid var(--line); border-radius: 8px;
+    padding: 4px 9px; color: var(--ink-soft);
+    background: rgba(127,127,127,0.06);
+    white-space: nowrap;
+  }
+  .how .desc { color: var(--ink-soft); }
+
+  .btn {
+    pointer-events: auto;
+    margin-top: 10px;
+    font-family: var(--mono);
+    font-size: 15px; font-weight: 600; letter-spacing: 0.16em; text-transform: uppercase;
+    color: #1a1205;
+    background: linear-gradient(180deg, var(--gold-bright), var(--gold));
+    border: none; border-radius: 14px;
+    padding: 16px 34px; min-height: 52px; min-width: 200px;
+    cursor: pointer;
+    box-shadow: 0 12px 28px -10px var(--shadow), inset 0 1px 0 rgba(255,255,255,0.35);
+    transition: transform 0.12s ease, filter 0.12s ease;
+  }
+  .btn:active { transform: translateY(2px) scale(0.985); filter: brightness(1.04); }
+  .hint { font-size: 11px; letter-spacing: 0.16em; color: var(--ink-soft); text-transform: uppercase; margin-top: 2px; }
+
+  .go-head { font-size: 13px; letter-spacing: 0.28em; text-transform: uppercase; color: var(--orange); }
+  .go-score { font-size: 64px; font-weight: 700; line-height: 1; font-variant-numeric: tabular-nums; margin: 2px 0; }
+  .go-stats { display: flex; gap: 22px; justify-content: center; margin: 6px 0 2px; }
+  .go-stats .s { text-align: center; }
+  .go-stats .s .v { font-size: 22px; font-weight: 600; font-variant-numeric: tabular-nums; }
+  .go-stats .s .l { font-size: 9.5px; letter-spacing: 0.2em; text-transform: uppercase; color: var(--ink-soft); margin-top: 2px; }
+  .newbest { color: var(--gold); font-size: 11px; letter-spacing: 0.22em; text-transform: uppercase; height: 14px; }
+
+  .fadein { animation: fade 0.5s ease both; }
+  @keyframes fade { from { opacity: 0; } to { opacity: 1; } }
+</style>
+</head>
+<body>
+<div id="app">
+  <canvas id="game"></canvas>
+
+  <!-- HUD -->
+  <div class="hud" id="hud" aria-hidden="true">
+    <div class="hud-row">
+      <div class="stat"><div class="label">Score</div><div class="value" id="scoreVal">0</div></div>
+      <div class="stat right"><div class="label">Best</div><div class="value" id="bestVal">0</div></div>
+    </div>
+    <div class="combo" id="combo"><div class="x" id="comboX">x2</div><div class="cap">combo</div></div>
+  </div>
+
+  <button id="sound" aria-label="Toggle sound" title="Toggle sound">
+    <svg id="soundIcon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M4 9v6h4l5 4V5L8 9H4z"/><path d="M16 8.5a4 4 0 0 1 0 7"/><path d="M18.5 6a7 7 0 0 1 0 12"/></svg>
+  </button>
+
+  <!-- Title -->
+  <div class="overlay show" id="titleScreen">
+    <div class="panel">
+      <div class="title">LOFT</div>
+      <div class="sub">a kite above Karl the fog</div>
+      <div class="how">
+        <div class="k"><span class="chip">Hold</span> <span class="desc">charge the loft</span></div>
+        <div class="k"><span class="chip">Release</span> <span class="desc">sail the golden arc</span></div>
+        <div class="desc" style="margin-top:6px; font-size:12px; line-height:1.6;">Thread the thermals, dodge the wires,<br/>and keep the fog beneath you.</div>
+      </div>
+      <button class="btn" id="startBtn">Fly</button>
+      <div class="hint">tap &nbsp;·&nbsp; hold &nbsp;·&nbsp; space</div>
+    </div>
+  </div>
+
+  <!-- Game over -->
+  <div class="overlay" id="overScreen">
+    <div class="panel">
+      <div class="go-head" id="overHead">tangled</div>
+      <div class="go-score" id="overScore">0</div>
+      <div class="newbest" id="newBest"></div>
+      <div class="go-stats">
+        <div class="s"><div class="v" id="statThermals">0</div><div class="l">thermals</div></div>
+        <div class="s"><div class="v" id="statPerfect">0</div><div class="l">perfect</div></div>
+        <div class="s"><div class="v" id="statSun">0</div><div class="l">sun gaps</div></div>
+      </div>
+      <button class="btn" id="againBtn">Play again</button>
+      <div class="hint">tap &nbsp;·&nbsp; space &nbsp;·&nbsp; enter</div>
+    </div>
+  </div>
+</div>
+
+<script>
+"use strict";
+(function () {
+  // ----------------------------------------------------------------------
+  //  LOFT — hold/release kite lofting above Karl the Fog.
+  //  Pure Canvas 2D, no external requests. Phone-first, one-thumb.
+  // ----------------------------------------------------------------------
+
+  var canvas = document.getElementById('game');
+  var ctx = canvas.getContext('2d', { alpha: false });
+
+  // ---- DOM refs ----
+  var elScore = document.getElementById('scoreVal');
+  var elBest = document.getElementById('bestVal');
+  var elCombo = document.getElementById('combo');
+  var elComboX = document.getElementById('comboX');
+  var titleScreen = document.getElementById('titleScreen');
+  var overScreen = document.getElementById('overScreen');
+  var overHead = document.getElementById('overHead');
+  var overScore = document.getElementById('overScore');
+  var newBest = document.getElementById('newBest');
+  var statThermals = document.getElementById('statThermals');
+  var statPerfect = document.getElementById('statPerfect');
+  var statSun = document.getElementById('statSun');
+  var startBtn = document.getElementById('startBtn');
+  var againBtn = document.getElementById('againBtn');
+  var soundBtn = document.getElementById('sound');
+  var soundIcon = document.getElementById('soundIcon');
+
+  // ---- math helpers ----
+  var clamp = function (v, a, b) { return v < a ? a : (v > b ? b : v); };
+  var lerp = function (a, b, t) { return a + (b - a) * t; };
+  var rand = function (a, b) { return a + Math.random() * (b - a); };
+  var randi = function (a, b) { return Math.floor(rand(a, b + 1)); };
+  var easeOut = function (t) { return 1 - Math.pow(1 - t, 3); };
+  var easeInOut = function (t) { return t < 0.5 ? 4 * t * t * t : 1 - Math.pow(-2 * t + 2, 3) / 2; };
+  var TAU = Math.PI * 2;
+
+  // ---- palette ----
+  var darkMQ = window.matchMedia('(prefers-color-scheme: dark)');
+  var PAL;
+  function buildPalette() {
+    var dark = darkMQ.matches;
+    if (dark) {
+      PAL = {
+        dark: true,
+        skyTop: '#0a111d', skyMid: '#102137', skyLow: '#21344b', skyWarm: '#3a3a3e',
+        fogEdge: '#2c3b50', fogCore: '#5b7088', fogLip: '#7d93ab',
+        bridge: '#bb4d30', bridgeFar: '#7a3a2a',
+        pole: '#aeb9c5', wire: '#d3dde7', wireShadow: 'rgba(0,0,0,0.35)',
+        kiteA: '#ffd060', kiteB: '#f08a38', kiteLine: '#3a2410',
+        thermal: '#ffd873', thermalCore: '#fff3cf',
+        sun: '#ffe6a6', sunRay: 'rgba(255,224,150,0.5)', sunCore: '#fff6df',
+        spark: '#ffd982',
+        ink: 'rgba(233,239,243,0.92)', inkSoft: 'rgba(233,239,243,0.5)',
+        teal: '#35cdbb',
+        grain: 0.05
+      };
+    } else {
+      PAL = {
+        dark: false,
+        skyTop: '#e9eef1', skyMid: '#d8e1e6', skyLow: '#eee2c6', skyWarm: '#f4e7c8',
+        fogEdge: 'rgba(206,215,221,0.0)', fogCore: '#eef3f5', fogLip: '#ffffff',
+        bridge: '#bb4d30', bridgeFar: '#cf7a5e',
+        pole: '#586068', wire: '#3b424b', wireShadow: 'rgba(40,56,70,0.18)',
+        kiteA: '#f4bd47', kiteB: '#df7a34', kiteLine: '#6e431d',
+        thermal: '#f0a82e', thermalCore: '#fff0c6',
+        sun: '#fff0bd', sunRay: 'rgba(255,214,128,0.55)', sunCore: '#fff8e0',
+        spark: '#f3b94e',
+        ink: 'rgba(36,42,47,0.92)', inkSoft: 'rgba(36,42,47,0.5)',
+        teal: '#12877a',
+        grain: 0.035
+      };
+    }
+    buildSprites();
+  }
+
+  // pre-rendered soft glow sprites cut per-frame gradient churn
+  function buildSprites() {
+    var s = 128, h = s / 2;
+    glowSprite = document.createElement('canvas'); glowSprite.width = s; glowSprite.height = s;
+    var gx = glowSprite.getContext('2d');
+    var gg = gx.createRadialGradient(h, h, 0, h, h, h);
+    gg.addColorStop(0, PAL.thermalCore); gg.addColorStop(0.42, PAL.thermal); gg.addColorStop(1, 'rgba(255,200,90,0)');
+    gx.fillStyle = gg; gx.fillRect(0, 0, s, s);
+
+    cloudSprite = document.createElement('canvas'); cloudSprite.width = s; cloudSprite.height = s;
+    var cx = cloudSprite.getContext('2d');
+    var cg = cx.createRadialGradient(h, h, 0, h, h, h);
+    cg.addColorStop(0, 'rgba(255,255,255,1)'); cg.addColorStop(1, 'rgba(255,255,255,0)');
+    cx.fillStyle = cg; cx.fillRect(0, 0, s, s);
+
+    fogSprite = document.createElement('canvas'); fogSprite.width = s; fogSprite.height = s;
+    var fx = fogSprite.getContext('2d');
+    var fg = fx.createRadialGradient(h, h, 0, h, h, h);
+    fg.addColorStop(0, PAL.fogCore); fg.addColorStop(1, 'rgba(255,255,255,0)');
+    fx.fillStyle = fg; fx.fillRect(0, 0, s, s);
+  }
+
+  // cached full-screen gradients (rebuilt on resize / theme change)
+  function buildGradients() {
+    if (W < 1 || H < 1) return;
+    skyGrad = ctx.createLinearGradient(0, 0, 0, H);
+    skyGrad.addColorStop(0, PAL.skyTop); skyGrad.addColorStop(0.52, PAL.skyMid); skyGrad.addColorStop(1, PAL.skyLow);
+    vignetteGrad = ctx.createRadialGradient(W * 0.5, H * 0.45, H * 0.3, W * 0.5, H * 0.5, H * 0.85);
+    vignetteGrad.addColorStop(0, 'rgba(0,0,0,0)');
+    vignetteGrad.addColorStop(1, PAL.dark ? 'rgba(0,0,0,0.42)' : 'rgba(40,56,70,0.14)');
+  }
+  buildPalette();
+
+  // ---- view metrics (CSS px) ----
+  var W = 0, H = 0, DPR = 1;
+  var KX = 0;          // kite screen x
+  var bandTop = 0, bandBot = 0;
+  var G = 0;           // gravity px/s^2
+  var IMP_MIN = 0, IMP_MAX = 0;
+  var kiteR = 0;
+  var grainCanvas = null, bridgeCanvas = null, bridgeW = 0;
+  var glowSprite = null, cloudSprite = null, fogSprite = null;
+  var skyGrad = null, vignetteGrad = null;
+
+  function recompute() {
+    DPR = clamp(window.devicePixelRatio || 1, 1, 2);
+    W = Math.round(canvas.clientWidth);
+    H = Math.round(canvas.clientHeight);
+    if (W < 1 || H < 1) return;
+    canvas.width = Math.round(W * DPR);
+    canvas.height = Math.round(H * DPR);
+    ctx.setTransform(DPR, 0, 0, DPR, 0, 0);
+
+    KX = clamp(W * 0.30, 66, W * 0.42);
+    bandTop = H * 0.085;
+    bandBot = H * 0.92;
+    G = 2.0 * H;
+    IMP_MIN = 0.32 * H;
+    IMP_MAX = 0.98 * H;
+    kiteR = clamp(H * 0.019, 12, 22);
+
+    buildGrain();
+    buildBridge();
+    buildGradients();
+  }
+
+  // pre-rendered paper grain tile
+  function buildGrain() {
+    var s = 140;
+    var g = document.createElement('canvas');
+    g.width = s; g.height = s;
+    var gx = g.getContext('2d');
+    var img = gx.createImageData(s, s);
+    var d = img.data;
+    for (var i = 0; i < d.length; i += 4) {
+      var v = 128 + (Math.random() * 2 - 1) * 90;
+      d[i] = d[i + 1] = d[i + 2] = v;
+      d[i + 3] = 255;
+    }
+    gx.putImageData(img, 0, 0);
+    grainCanvas = g;
+  }
+
+  // pre-rendered Golden Gate silhouette strip (loops horizontally)
+  function buildBridge() {
+    bridgeW = Math.max(W * 1.6, 640);
+    var bc = document.createElement('canvas');
+    bc.width = Math.round(bridgeW * DPR);
+    bc.height = Math.round(H * DPR);
+    var b = bc.getContext('2d');
+    b.setTransform(DPR, 0, 0, DPR, 0, 0);
+
+    var deckY = H * 0.80;
+    var towerTop = H * 0.40;
+    var col = PAL.bridge;
+    // two towers positioned within the strip
+    var towers = [bridgeW * 0.30, bridgeW * 0.74];
+    var span = towers[1] - towers[0];
+
+    b.lineCap = 'round';
+    b.lineJoin = 'round';
+
+    // main suspension catenary between towers + side droops
+    b.strokeStyle = col;
+    b.globalAlpha = 0.5;
+    b.lineWidth = Math.max(2.2, H * 0.004);
+    function cat(x0, x1, ytop, ymid) {
+      b.beginPath();
+      for (var x = x0; x <= x1; x += 6) {
+        var t = (x - x0) / (x1 - x0);
+        var y = ytop + (ymid - ytop) * (1 - Math.pow(2 * t - 1, 2));
+        if (x === x0) b.moveTo(x, y); else b.lineTo(x, y);
+      }
+      b.stroke();
+    }
+    cat(towers[0], towers[1], towerTop + H * 0.02, deckY - H * 0.02);
+    cat(towers[0] - span * 0.55, towers[0], deckY * 0.92, towerTop + H * 0.02);
+    cat(towers[1], towers[1] + span * 0.55, towerTop + H * 0.02, deckY * 0.92);
+
+    // vertical hanger cables
+    b.globalAlpha = 0.28;
+    b.lineWidth = Math.max(1, H * 0.0016);
+    for (var hx = towers[0]; hx <= towers[1]; hx += span / 22) {
+      var t2 = (hx - towers[0]) / span;
+      var cy = (towerTop + H * 0.02) + (deckY - H * 0.02 - (towerTop + H * 0.02)) * (1 - Math.pow(2 * t2 - 1, 2));
+      b.beginPath(); b.moveTo(hx, cy); b.lineTo(hx, deckY); b.stroke();
+    }
+
+    // deck
+    b.globalAlpha = 0.5;
+    b.lineWidth = Math.max(3, H * 0.006);
+    b.beginPath(); b.moveTo(0, deckY); b.lineTo(bridgeW, deckY); b.stroke();
+
+    // towers
+    b.globalAlpha = 0.55;
+    var tw = Math.max(10, H * 0.018);
+    for (var ti = 0; ti < towers.length; ti++) {
+      var tx = towers[ti];
+      b.lineWidth = tw;
+      b.beginPath(); b.moveTo(tx - tw * 0.55, deckY + H * 0.02); b.lineTo(tx - tw * 0.55, towerTop); b.stroke();
+      b.beginPath(); b.moveTo(tx + tw * 0.55, deckY + H * 0.02); b.lineTo(tx + tw * 0.55, towerTop); b.stroke();
+      // cross braces
+      b.lineWidth = Math.max(2, H * 0.004);
+      for (var cyb = towerTop + H * 0.04; cyb < deckY; cyb += H * 0.06) {
+        b.beginPath(); b.moveTo(tx - tw * 0.55, cyb); b.lineTo(tx + tw * 0.55, cyb); b.stroke();
+      }
+    }
+    b.globalAlpha = 1;
+    bridgeCanvas = bc;
+  }
+
+  // ----------------------------------------------------------------------
+  //  Audio (Web Audio API) — lazy, gentle ambient + crisp sfx
+  // ----------------------------------------------------------------------
+  var AC = null, master = null, soundOn = true;
+  var ambGain = null, padNodes = [], chargeOsc = null, chargeGain = null;
+  function initAudio() {
+    if (AC) return;
+    try {
+      AC = new (window.AudioContext || window.webkitAudioContext)();
+    } catch (e) { AC = null; return; }
+    master = AC.createGain();
+    master.gain.value = soundOn ? 0.9 : 0.0001;
+    master.connect(AC.destination);
+    startAmbient();
+  }
+  function resumeAudio() { if (AC && AC.state === 'suspended') AC.resume(); }
+
+  function startAmbient() {
+    if (!AC) return;
+    ambGain = AC.createGain();
+    ambGain.gain.value = 0.0;
+    var ambFilter = AC.createBiquadFilter();
+    ambFilter.type = 'lowpass';
+    ambFilter.frequency.value = 520;
+    ambFilter.Q.value = 0.6;
+    ambGain.connect(ambFilter);
+    ambFilter.connect(master);
+    // warm low pad — root + fifth + soft high (no harshness)
+    var freqs = [110, 164.81, 220];
+    for (var i = 0; i < freqs.length; i++) {
+      var o = AC.createOscillator();
+      o.type = i === 2 ? 'triangle' : 'sine';
+      o.frequency.value = freqs[i];
+      var detune = AC.createOscillator();
+      detune.frequency.value = 0.05 + i * 0.03;
+      var detAmt = AC.createGain();
+      detAmt.gain.value = 3 + i;
+      detune.connect(detAmt); detAmt.connect(o.detune);
+      var g = AC.createGain();
+      g.gain.value = i === 2 ? 0.12 : 0.3;
+      o.connect(g); g.connect(ambGain);
+      o.start(); detune.start();
+      padNodes.push(o, detune);
+    }
+    // slow filter sweep LFO
+    var lfo = AC.createOscillator(); lfo.frequency.value = 0.05;
+    var lfoG = AC.createGain(); lfoG.gain.value = 260;
+    lfo.connect(lfoG); lfoG.connect(ambFilter.frequency); lfo.start();
+    padNodes.push(lfo);
+    ambGain.gain.setTargetAtTime(0.16, AC.currentTime, 3);
+  }
+  function setAmbientIntensity(x) {
+    if (ambGain && AC) ambGain.gain.setTargetAtTime(0.12 + x * 0.16, AC.currentTime, 0.6);
+  }
+
+  function blip(freq, dur, type, vol, when, glideTo) {
+    if (!AC || !soundOn) return;
+    var t = (when || AC.currentTime);
+    var o = AC.createOscillator();
+    o.type = type || 'sine';
+    o.frequency.setValueAtTime(freq, t);
+    if (glideTo) o.frequency.exponentialRampToValueAtTime(glideTo, t + dur);
+    var g = AC.createGain();
+    g.gain.setValueAtTime(0.0001, t);
+    g.gain.exponentialRampToValueAtTime(vol || 0.2, t + 0.012);
+    g.gain.exponentialRampToValueAtTime(0.0001, t + dur);
+    o.connect(g); g.connect(master);
+    o.start(t); o.stop(t + dur + 0.02);
+  }
+  function noiseBurst(dur, lp, vol, sweepTo) {
+    if (!AC || !soundOn) return;
+    var n = Math.floor(AC.sampleRate * dur);
+    var buf = AC.createBuffer(1, n, AC.sampleRate);
+    var d = buf.getChannelData(0);
+    for (var i = 0; i < n; i++) d[i] = (Math.random() * 2 - 1) * (1 - i / n);
+    var src = AC.createBufferSource(); src.buffer = buf;
+    var f = AC.createBiquadFilter(); f.type = 'bandpass';
+    f.frequency.setValueAtTime(lp, AC.currentTime);
+    if (sweepTo) f.frequency.exponentialRampToValueAtTime(sweepTo, AC.currentTime + dur);
+    f.Q.value = 0.8;
+    var g = AC.createGain(); g.gain.value = vol || 0.2;
+    src.connect(f); f.connect(g); g.connect(master);
+    src.start();
+  }
+  // sfx
+  function sfxLoft(power) {
+    noiseBurst(0.26, 380, 0.16 + power * 0.1, 1100 + power * 900);
+  }
+  function sfxThermal(combo) {
+    var base = 660 * Math.pow(1.0595, Math.min(combo, 14));
+    blip(base, 0.16, 'triangle', 0.18);
+    blip(base * 1.5, 0.12, 'sine', 0.08, AC ? AC.currentTime + 0.02 : 0);
+  }
+  function sfxPerfect() {
+    if (!AC) return;
+    var t = AC.currentTime;
+    blip(523.25, 0.18, 'triangle', 0.16, t);
+    blip(659.25, 0.2, 'triangle', 0.15, t + 0.06);
+    blip(783.99, 0.3, 'sine', 0.14, t + 0.12);
+  }
+  function sfxSun() {
+    if (!AC) return;
+    var t = AC.currentTime;
+    var notes = [392, 493.88, 587.33, 783.99];
+    for (var i = 0; i < notes.length; i++) blip(notes[i], 0.7, i < 2 ? 'triangle' : 'sine', 0.13, t + i * 0.05);
+    noiseBurst(0.5, 900, 0.06, 3000);
+  }
+  function sfxCharge(p) {
+    if (!AC || !soundOn) return;
+    if (!chargeOsc) {
+      chargeOsc = AC.createOscillator(); chargeOsc.type = 'sine';
+      chargeGain = AC.createGain(); chargeGain.gain.value = 0.0001;
+      var f = AC.createBiquadFilter(); f.type = 'lowpass'; f.frequency.value = 900;
+      chargeOsc.connect(chargeGain); chargeGain.connect(f); f.connect(master);
+      chargeOsc.start();
+    }
+    chargeOsc.frequency.setTargetAtTime(180 + p * 360, AC.currentTime, 0.02);
+    chargeGain.gain.setTargetAtTime(0.05 + p * 0.05, AC.currentTime, 0.02);
+  }
+  function sfxChargeStop() {
+    if (chargeGain && AC) chargeGain.gain.setTargetAtTime(0.0001, AC.currentTime, 0.04);
+  }
+  function sfxCrash() {
+    noiseBurst(0.5, 220, 0.3, 80);
+    if (AC) blip(160, 0.5, 'sine', 0.18, AC.currentTime, 50);
+  }
+  function sfxUI() { blip(540, 0.08, 'triangle', 0.1); blip(720, 0.1, 'sine', 0.06, AC ? AC.currentTime + 0.04 : 0); }
+
+  function setSound(on) {
+    soundOn = on;
+    soundBtn.style.color = on ? 'var(--ink)' : 'var(--ink-soft)';
+    soundIcon.innerHTML = on
+      ? '<path d="M4 9v6h4l5 4V5L8 9H4z"/><path d="M16 8.5a4 4 0 0 1 0 7"/><path d="M18.5 6a7 7 0 0 1 0 12"/>'
+      : '<path d="M4 9v6h4l5 4V5L8 9H4z"/><path d="M17 9l5 6"/><path d="M22 9l-5 6"/>';
+    if (master && AC) master.gain.setTargetAtTime(on ? 0.9 : 0.0001, AC.currentTime, 0.05);
+  }
+
+  // ----------------------------------------------------------------------
+  //  Game state
+  // ----------------------------------------------------------------------
+  var STATE = { TITLE: 0, PLAY: 1, DEAD: 2 };
+  var state = STATE.TITLE;
+
+  var kite = { y: 0, vy: 0, angle: 0, tail: [] };
+  var cameraX = 0;        // world distance traveled
+  var scrollSpeed = 0;
+  var holding = false, chargeT = 0, holdStart = 0;
+  var elapsed = 0;        // active seconds this round
+  var difficulty = 0;     // 0..1 normalized ramp
+
+  var spans = [];         // power-line obstacles
+  var thermals = [];      // collectibles
+  var sunGaps = [];       // ceiling openings
+  var clouds = [];        // parallax atmosphere
+  var particles = [];
+  var floaters = [];      // score popups
+  var windStreaks = [];
+
+  var nextSpanX = 0, nextThermalX = 0, nextSunX = 0;
+  var prevCorridor = 0.5;
+
+  var fogFrac = 0;        // 0 = below screen, 1 = high
+  var fogTargetRelief = 0;
+  var gust = 0, gustTimer = 0;
+
+  var score = 0, scoreF = 0, best = 0, combo = 0, comboTimer = 0, comboMax = 0;
+  var nThermals = 0, nPerfect = 0, nSun = 0;
+  var sunMode = 0;        // golden-hour glow timer
+  var warm = 0;           // palette warmth 0..1 (sun break)
+
+  var hitstop = 0, shake = 0, flash = 0, flashCol = null, vignettePulse = 0;
+  var deathCause = '';
+  var lastT = 0;
+
+  function fogY() { return lerp(H * 1.06, H * 0.30, fogFrac); }
+  function ceilY() { return bandTop; }
+  function safeBotY() { return Math.min(bandBot - H * 0.05, lerp(H * 1.06, H * 0.30, clamp(fogFrac + 0.07, 0, 1.2)) - H * 0.11); }
+
+  // ---- spawning ----
+  function resetWorld() {
+    cameraX = 0;
+    spans.length = 0; thermals.length = 0; sunGaps.length = 0;
+    particles.length = 0; floaters.length = 0; windStreaks.length = 0;
+    kite.y = H * 0.40; kite.vy = -0.08 * H; kite.angle = 0;
+    kite.tail = [];
+    for (var i = 0; i < 14; i++) kite.tail.push({ x: KX, y: kite.y });
+    fogFrac = 0.085; fogTargetRelief = 0;
+    elapsed = 0; difficulty = 0; gust = 0; gustTimer = rand(7, 11);
+    score = 0; scoreF = 0; combo = 0; comboTimer = 0; comboMax = 0;
+    nThermals = 0; nPerfect = 0; nSun = 0;
+    sunMode = 0; warm = 0;
+    holding = false; chargeT = 0;
+    scrollSpeed = 0.30 * H;
+    nextSpanX = cameraX + W * 1.35 + 40;
+    nextThermalX = cameraX + W * 0.75;
+    nextSunX = cameraX + W + H * 2.2;
+    prevCorridor = 0.42;
+    ensureClouds(true);
+  }
+
+  function ensureClouds(initial) {
+    if (clouds.length === 0 || initial) {
+      clouds.length = 0;
+      var n = 7;
+      for (var i = 0; i < n; i++) {
+        clouds.push(makeCloud(rand(0, W * 1.4)));
+      }
+    }
+  }
+  function makeCloud(x) {
+    return {
+      x: x,
+      y: rand(H * 0.12, H * 0.78),
+      s: rand(0.55, 1.5),
+      par: rand(0.18, 0.5),
+      a: rand(0.12, 0.34),
+      drift: rand(-4, 4)
+    };
+  }
+
+  // spawn a group of power-line spans guaranteeing a clear corridor
+  function spawnSpanGroup() {
+    var worldX = nextSpanX;
+    // keep corridors comfortably above where the fog will be on arrival
+    var futureFogY = lerp(H * 1.06, H * 0.30, clamp(fogFrac + 0.07, 0, 1.2));
+    var maxFrac = clamp((futureFogY - H * 0.13 - bandTop) / (bandBot - bandTop), 0.22, 0.84);
+    // target corridor center as a fraction of the band, reachable from previous
+    var maxStep = lerp(0.11, 0.19, difficulty);
+    var corridor = clamp(prevCorridor + rand(-maxStep, maxStep), 0.16, maxFrac);
+    prevCorridor = corridor;
+
+    var clearance = lerp(0.135, 0.085, difficulty) * H; // gap from corridor to nearest wire point
+    var halfW = lerp(0.20, 0.34, difficulty) * W;
+    var corridorY = lerp(bandTop, bandBot, corridor);
+
+    var pattern = Math.random();
+    var thick = Math.max(2.4, H * 0.0055);
+
+    // edgeY is the lethal boundary; sag is compensated so the wire's nearest
+    // point to the corridor sits exactly at edgeY (top gates sag toward corridor)
+    function addSpan(wx, edgeY, anchor) {
+      var sag = rand(0.010, 0.020) * H;
+      spans.push({
+        worldX: wx + rand(-W * 0.015, W * 0.015),
+        halfW: halfW * rand(0.92, 1.1),
+        y: anchor === 'top' ? edgeY - sag : edgeY,
+        thick: thick,
+        anchor: anchor,
+        sag: sag,
+        hit: false,
+        glow: 0
+      });
+    }
+
+    if (difficulty < 0.2 || pattern < 0.5) {
+      // single one-sided gate (go under a high wire OR over a low wire)
+      if (corridorY < H * 0.5) addSpan(worldX, corridorY - clearance, 'top');
+      else addSpan(worldX, corridorY + clearance, 'bottom');
+    } else if (pattern < 0.85) {
+      // needle: wire above and below corridor
+      addSpan(worldX, corridorY - clearance, 'top');
+      addSpan(worldX, corridorY + clearance, 'bottom');
+    } else {
+      // staircase: two offset gates -> forces a weave
+      if (corridorY < H * 0.5) addSpan(worldX, corridorY - clearance, 'top');
+      else addSpan(worldX, corridorY + clearance, 'bottom');
+      var corr2 = clamp(corridor + (corridor < 0.5 ? 1 : -1) * rand(0.14, 0.24), 0.16, maxFrac);
+      var y2 = lerp(bandTop, bandBot, corr2);
+      var sp2x = worldX + halfW * 1.8;
+      if (y2 < H * 0.5) addSpan(sp2x, y2 - clearance, 'top');
+      else addSpan(sp2x, y2 + clearance, 'bottom');
+      prevCorridor = corr2;
+      dropThermalLine(sp2x, y2, 2);
+    }
+
+    // reward thermals along the safe corridor
+    dropThermalLine(worldX, corridorY, randi(2, 3));
+
+    // schedule next group
+    var gap = lerp(W * 1.0, W * 0.62, difficulty) * rand(0.92, 1.1);
+    nextSpanX = worldX + Math.max(gap, halfW * 1.5 + W * 0.34);
+  }
+
+  function dropThermalLine(worldX, cy, count) {
+    var spread = W * 0.22;
+    for (var i = 0; i < count; i++) {
+      thermals.push({
+        worldX: worldX + (i - (count - 1) / 2) * (spread / Math.max(1, count - 1) || spread),
+        y: cy + Math.sin(i * 1.1) * H * 0.02,
+        r: H * 0.018,
+        got: false,
+        ph: rand(0, TAU),
+        big: false
+      });
+    }
+  }
+
+  // a graceful arc of thermals between groups
+  function spawnThermalArc() {
+    var botY = safeBotY();
+    var startY = clamp(lerp(bandTop, bandBot, prevCorridor) + rand(-H * 0.1, H * 0.1), bandTop + H * 0.05, botY);
+    var n = randi(3, 5);
+    var amp = rand(H * 0.06, H * 0.16) * (Math.random() < 0.5 ? 1 : -1);
+    var worldX = nextThermalX;
+    for (var i = 0; i < n; i++) {
+      var t = i / (n - 1);
+      thermals.push({
+        worldX: worldX + i * W * 0.085,
+        y: clamp(startY + Math.sin(t * Math.PI) * amp, bandTop + H * 0.04, botY),
+        r: H * 0.018, got: false, ph: rand(0, TAU), big: false
+      });
+    }
+    nextThermalX = worldX + rand(W * 0.7, W * 1.3);
+  }
+
+  function spawnSunGap() {
+    var worldX = nextSunX;
+    var gx = worldX;
+    sunGaps.push({
+      worldX: gx,
+      halfW: W * rand(0.16, 0.24),
+      used: false,
+      glow: 0
+    });
+    // a tempting trail of thermals climbing toward the gap
+    var baseY = Math.min(lerp(bandTop, bandBot, clamp(prevCorridor, 0.4, 0.8)), safeBotY());
+    var n = 4;
+    for (var i = 0; i < n; i++) {
+      var t = i / (n - 1);
+      thermals.push({
+        worldX: gx - W * 0.34 + i * W * 0.11,
+        y: lerp(baseY, bandTop + H * 0.03, easeOut(t)),
+        r: H * 0.02, got: false, ph: rand(0, TAU), big: i === n - 1
+      });
+    }
+    nextSunX = worldX + rand(H * 2.6, H * 3.8);
+  }
+
+  // ----------------------------------------------------------------------
+  //  Input
+  // ----------------------------------------------------------------------
+  function beginHold() {
+    if (state !== STATE.PLAY) return;
+    if (holding) return;
+    holding = true; holdStart = performance.now(); chargeT = 0;
+  }
+  function endHold() {
+    if (state !== STATE.PLAY) { holding = false; return; }
+    if (!holding) return;
+    holding = false;
+    releaseLoft();
+  }
+  function releaseLoft() {
+    var c = easeOut(chargeT);
+    var perfect = chargeT >= 0.9;
+    var imp = lerp(IMP_MIN, IMP_MAX, c);
+    if (perfect) imp *= 1.08;
+    kite.vy = -imp;
+    var power = c;
+    sfxChargeStop();
+    sfxLoft(power);
+    // loft particles
+    for (var i = 0; i < Math.floor(6 + power * 10); i++) {
+      particles.push({
+        type: 'wind', x: KX + rand(-8, 8), y: kite.y + rand(-6, 14),
+        vx: -rand(60, 220) - scrollSpeed * 0.2, vy: rand(40, 160),
+        life: rand(0.3, 0.6), t: 0, len: rand(8, 22)
+      });
+    }
+    if (perfect) {
+      nPerfect++;
+      fogTargetRelief += 0.03;
+      addFloater(KX, kite.y - kiteR * 2, 'PERFECT', PAL.kiteA, 1.0);
+      sfxPerfect();
+      flashWarm(0.12);
+      haptic([8, 30, 8]);
+      for (var j = 0; j < 14; j++) burstSpark(KX, kite.y, PAL.kiteA, 1.2);
+    } else {
+      haptic(6);
+    }
+    chargeT = 0;
+  }
+
+  function onPress() {
+    initAudio(); resumeAudio();
+    if (state === STATE.TITLE) { startGame(); return; }
+    if (state === STATE.DEAD) {
+      if (performance.now() - deadAt > 280) startGame();
+      return;
+    }
+    beginHold();
+  }
+  function onRelease() {
+    if (state === STATE.PLAY) endHold();
+  }
+
+  // pointer events cover mouse + touch + pen; touch-action:none stops scroll
+  canvas.addEventListener('pointerdown', function (e) { e.preventDefault(); if (e.isTrusted) gestured = true; onPress(); }, { passive: false });
+  window.addEventListener('pointerup', function (e) { onRelease(); }, { passive: false });
+  window.addEventListener('pointercancel', function () { onRelease(); });
+  // explicit touch guard against double-fire / scroll
+  canvas.addEventListener('touchstart', function (e) { e.preventDefault(); }, { passive: false });
+  canvas.addEventListener('touchmove', function (e) { e.preventDefault(); }, { passive: false });
+  window.addEventListener('blur', function () { holding = false; sfxChargeStop(); });
+
+  document.addEventListener('keydown', function (e) {
+    if (e.isTrusted) gestured = true;
+    if (e.code === 'Space' || e.code === 'ArrowUp' || e.code === 'KeyW') {
+      e.preventDefault();
+      if (e.repeat) return;
+      initAudio(); resumeAudio();
+      if (state === STATE.PLAY) beginHold();
+      else if (state === STATE.TITLE) startGame();
+      else if (state === STATE.DEAD && performance.now() - deadAt > 280) startGame();
+    } else if (e.code === 'Enter') {
+      e.preventDefault();
+      initAudio(); resumeAudio();
+      if (state === STATE.TITLE) startGame();
+      else if (state === STATE.DEAD) startGame();
+    } else if (e.code === 'KeyM') {
+      setSound(!soundOn);
+    }
+  });
+  document.addEventListener('keyup', function (e) {
+    if (e.code === 'Space' || e.code === 'ArrowUp' || e.code === 'KeyW') {
+      e.preventDefault();
+      if (state === STATE.PLAY) endHold();
+    }
+  });
+
+  startBtn.addEventListener('click', function (e) { e.stopPropagation(); if (e.isTrusted) gestured = true; initAudio(); resumeAudio(); sfxUI(); startGame(); });
+  againBtn.addEventListener('click', function (e) { e.stopPropagation(); if (e.isTrusted) gestured = true; initAudio(); resumeAudio(); sfxUI(); startGame(); });
+  soundBtn.addEventListener('click', function (e) { e.stopPropagation(); if (e.isTrusted) gestured = true; initAudio(); resumeAudio(); setSound(!soundOn); });
+
+  var gestured = false;
+  function haptic(p) { if (!gestured) return; try { if (navigator.vibrate) navigator.vibrate(p); } catch (e) {} }
+
+  // ----------------------------------------------------------------------
+  //  State transitions
+  // ----------------------------------------------------------------------
+  var deadAt = 0;
+  function startGame() {
+    resetWorld();
+    state = STATE.PLAY;
+    titleScreen.classList.remove('show');
+    overScreen.classList.remove('show');
+    setAmbientIntensity(0.2);
+  }
+  function gameOver(cause) {
+    if (state !== STATE.PLAY) return;
+    state = STATE.DEAD;
+    deadAt = performance.now();
+    deathCause = cause;
+    hitstop = 0.10; shake = 1; flash = 1; flashCol = PAL.orange;
+    sfxCrash();
+    haptic([16, 40, 16, 40, 30]);
+    sfxChargeStop();
+    holding = false;
+    // shatter kite
+    for (var i = 0; i < 22; i++) {
+      particles.push({
+        type: 'shard', x: KX, y: kite.y,
+        vx: rand(-220, -40) - scrollSpeed * 0.3, vy: rand(-260, 120),
+        rot: rand(0, TAU), vr: rand(-8, 8),
+        life: rand(0.7, 1.3), t: 0, size: rand(4, 10), col: i % 2 ? PAL.kiteA : PAL.kiteB
+      });
+    }
+    if (cause === 'fog') {
+      for (var k = 0; k < 18; k++) burstPuff(KX, kite.y);
+    }
+    if (score > best) { best = Math.floor(score); newBest.textContent = 'new best'; }
+    else newBest.textContent = '';
+    overHead.textContent = cause === 'fog' ? 'swallowed by karl' : 'tangled in the wires';
+    overScore.textContent = Math.floor(score);
+    statThermals.textContent = nThermals;
+    statPerfect.textContent = nPerfect;
+    statSun.textContent = nSun;
+    elBest.textContent = best;
+    // delay overlay slightly so the crash reads
+    setTimeout(function () { if (state === STATE.DEAD) overScreen.classList.add('show'); }, 360);
+    setAmbientIntensity(0.0);
+  }
+
+  // ----------------------------------------------------------------------
+  //  Particles & floaters
+  // ----------------------------------------------------------------------
+  function burstSpark(x, y, col, scale) {
+    particles.push({
+      type: 'spark', x: x, y: y,
+      vx: rand(-1, 1) * 160 * (scale || 1), vy: rand(-1, 1) * 160 * (scale || 1),
+      life: rand(0.4, 0.8), t: 0, size: rand(2, 5) * (scale || 1), col: col
+    });
+  }
+  function burstPuff(x, y) {
+    particles.push({
+      type: 'puff', x: x + rand(-20, 20), y: y + rand(-10, 20),
+      vx: rand(-30, 10), vy: rand(-30, -5),
+      life: rand(0.6, 1.2), t: 0, size: rand(18, 40)
+    });
+  }
+  function addFloater(x, y, text, col, scale) {
+    floaters.push({ x: x, y: y, text: text, col: col, t: 0, life: 0.9, scale: scale || 1 });
+  }
+
+  // ----------------------------------------------------------------------
+  //  Effects helpers
+  // ----------------------------------------------------------------------
+  function flashWarm(amt) { warm = Math.min(1, warm + amt); }
+
+  // ----------------------------------------------------------------------
+  //  Update
+  // ----------------------------------------------------------------------
+  function update(dt) {
+    // ambient parallax always animates (even on title)
+    for (var c = 0; c < clouds.length; c++) {
+      var cl = clouds[c];
+      cl.x -= (scrollSpeed * cl.par + 6 + gust * 40) * dt;
+      cl.y += cl.drift * dt;
+      if (cl.x < -W * 0.6) { clouds[c] = makeCloud(W + rand(0, W * 0.5)); }
+    }
+
+    if (state === STATE.TITLE) {
+      // idle kite bob
+      kite.vy += Math.sin(performance.now() * 0.002) * 6;
+      kite.y = lerp(kite.y, H * 0.5 + Math.sin(performance.now() * 0.0016) * H * 0.04, 0.04);
+      kite.vy *= 0.9;
+      updateTail(dt, 0);
+      fogFrac = lerp(fogFrac, 0.06, 0.02);
+      return;
+    }
+    if (state === STATE.DEAD) {
+      updateParticles(dt);
+      updateFloaters(dt);
+      fogFrac += 0.04 * dt;
+      return;
+    }
+
+    // ---- PLAY ----
+    elapsed += dt;
+    difficulty = clamp(elapsed / 95, 0, 1);
+    scrollSpeed = lerp(0.30 * H, 0.50 * H, easeInOut(difficulty)) * (1 + gust * 0.32);
+
+    // gusts
+    gustTimer -= dt;
+    if (gustTimer <= 0 && difficulty > 0.2) {
+      gust = 1; gustTimer = rand(4, 8) - difficulty * 2;
+      for (var gw = 0; gw < 10; gw++) windStreaks.push({ x: rand(0, W), y: rand(0, H), len: rand(30, 90), life: rand(0.4, 1) , t: 0});
+    }
+    gust = Math.max(0, gust - dt * 0.6);
+
+    cameraX += scrollSpeed * dt;
+
+    // charge
+    if (holding) {
+      chargeT = clamp((performance.now() - holdStart) / 520, 0, 1);
+      sfxCharge(chargeT);
+    }
+
+    // kite physics (ballistic); gravity eases in over the first moment so the
+    // opening is gentle and readable. terminal velocity keeps falls recoverable.
+    var gscale = lerp(0.5, 1, clamp(elapsed / 1.6, 0, 1));
+    kite.vy += G * gscale * dt;
+    if (kite.vy > 1.12 * H) kite.vy = 1.12 * H;
+    kite.y += kite.vy * dt;
+
+    // ceiling: soft unless inside an active sun gap
+    var inSun = currentSunGap();
+    var topLimit = inSun ? -H * 0.12 : ceilY();
+    if (kite.y < topLimit) {
+      kite.y = topLimit;
+      if (kite.vy < 0) kite.vy *= -0.25;
+    }
+
+    updateTail(dt, kite.vy);
+
+    // angle from velocity
+    var targetAngle = clamp(kite.vy / (IMP_MAX * 1.1), -1, 1) * 0.9;
+    kite.angle = lerp(kite.angle, targetAngle, 0.16);
+
+    // fog dynamics
+    var rise = lerp(0.018, 0.052, difficulty) * dt;
+    fogFrac += rise;
+    if (fogTargetRelief > 0) {
+      var step = Math.min(fogTargetRelief, dt * 0.9);
+      fogFrac -= step; fogTargetRelief -= step;
+    }
+    fogFrac = clamp(fogFrac, 0, 1.2);
+
+    // sun glow decay
+    if (sunMode > 0) sunMode = Math.max(0, sunMode - dt);
+    warm = Math.max(0, warm - dt * 0.5);
+
+    // spawns
+    if (cameraX + W + 80 > nextSpanX) spawnSpanGroup();
+    if (cameraX + W + 80 > nextThermalX) spawnThermalArc();
+    if (cameraX + W + 80 > nextSunX) spawnSunGap();
+
+    // combo timer
+    if (comboTimer > 0) { comboTimer -= dt; if (comboTimer <= 0) { combo = 0; } }
+
+    // collisions & cleanup
+    handleSpans();
+    handleThermals();
+    handleSunGaps(inSun);
+
+    // death: fog
+    if (kite.y > fogY() - kiteR * 0.4) {
+      gameOver('fog'); return;
+    }
+
+    // scoring: distance + survive
+    scoreF += dt * (10 + difficulty * 14) * (sunMode > 0 ? 1.5 : 1);
+    score = scoreF;
+
+    updateParticles(dt);
+    updateFloaters(dt);
+    updateWind(dt);
+
+    setAmbientIntensity(difficulty);
+  }
+
+  function currentSunGap() {
+    var kx = cameraX + KX;
+    for (var i = 0; i < sunGaps.length; i++) {
+      var s = sunGaps[i];
+      if (Math.abs(s.worldX - kx) < s.halfW) return s;
+    }
+    return null;
+  }
+
+  function updateTail(dt, vy) {
+    var t = kite.tail;
+    t[0].x = KX - Math.sin(kite.angle) * kiteR * 0.5;
+    t[0].y = kite.y + kiteR * 0.95;
+    var follow = 1 - Math.pow(0.5, dt * 60); // dt-stable spring
+    for (var i = 1; i < t.length; i++) {
+      var p = t[i], prev = t[i - 1];
+      p.x += (prev.x - p.x) * follow;
+      p.y += (prev.y - p.y) * follow;
+      // stream backward with the wind and sag a touch
+      p.x -= (50 + scrollSpeed * 0.12) * dt;
+      p.y += (22 + (vy > 0 ? vy : 0) * 0.04) * dt;
+    }
+  }
+
+  function handleSpans() {
+    var kx = cameraX + KX;
+    for (var i = spans.length - 1; i >= 0; i--) {
+      var s = spans[i];
+      s.glow = Math.max(0, s.glow - 0.02);
+      if (s.worldX - cameraX < -W * 0.8 - s.halfW) { spans.splice(i, 1); continue; }
+      // collision against the sagged wire near the kite
+      if (Math.abs(s.worldX - kx) < s.halfW + kiteR * 0.6) {
+        var wy = wireYAt(s, kx);
+        if (Math.abs(kite.y - wy) < s.thick * 0.5 + kiteR * 0.78) {
+          s.hit = true;
+          gameOver('wire'); return;
+        }
+      }
+    }
+  }
+  function wireYAt(s, worldXAt) {
+    var t = (worldXAt - (s.worldX - s.halfW)) / (s.halfW * 2); // 0..1 across span
+    t = clamp(t, 0, 1);
+    var sag = Math.sin(t * Math.PI) * s.sag;
+    return s.y + sag;
+  }
+
+  function handleThermals() {
+    var kx = cameraX + KX;
+    for (var i = thermals.length - 1; i >= 0; i--) {
+      var th = thermals[i];
+      th.ph += 0.05;
+      if (th.worldX - cameraX < -W * 0.4) { thermals.splice(i, 1); continue; }
+      if (th.got) continue;
+      var dx = th.worldX - kx, dy = th.y - kite.y;
+      var rr = th.r + kiteR;
+      if (dx * dx + dy * dy < rr * rr) {
+        th.got = true;
+        nThermals++;
+        combo++; comboMax = Math.max(comboMax, combo); comboTimer = 2.4;
+        var mult = 1 + Math.min(combo, 20) * 0.12;
+        var gain = (th.big ? 26 : 12) * mult * (sunMode > 0 ? 1.5 : 1);
+        scoreF += gain;
+        fogTargetRelief += th.big ? 0.05 : 0.026;
+        sfxThermal(combo);
+        var sx = th.worldX - cameraX;
+        for (var p = 0; p < (th.big ? 12 : 7); p++) burstSpark(sx, th.y, PAL.thermal, th.big ? 1.3 : 0.9);
+        addFloater(sx, th.y, '+' + Math.round(gain), PAL.thermal, th.big ? 1.15 : 0.9);
+        showCombo();
+        haptic(4);
+        thermals.splice(i, 1);
+      }
+    }
+  }
+
+  function handleSunGaps(inSun) {
+    var kx = cameraX + KX;
+    for (var i = sunGaps.length - 1; i >= 0; i--) {
+      var s = sunGaps[i];
+      s.glow = lerp(s.glow, (Math.abs(s.worldX - kx) < s.halfW + W * 0.3) ? 1 : 0.3, 0.08);
+      if (s.worldX - cameraX < -W * 0.6) { sunGaps.splice(i, 1); continue; }
+      if (!s.used && inSun === s && kite.y < ceilY() - H * 0.005) {
+        s.used = true;
+        nSun++;
+        sunMode = 3.4; warm = 1;
+        fogTargetRelief += 0.34;
+        scoreF += 120 * (1 + Math.min(combo, 20) * 0.1);
+        combo += 3; comboTimer = 3; comboMax = Math.max(comboMax, combo);
+        addFloater(KX, kite.y + H * 0.04, 'SUN BREAK +120', PAL.sun, 1.4);
+        sfxSun();
+        haptic([10, 30, 10, 30, 40]);
+        hitstop = 0.06; flash = 0.8; flashCol = PAL.sun; shake = 0.5;
+        for (var p = 0; p < 40; p++) {
+          var ang = rand(0, TAU), sp = rand(80, 360);
+          particles.push({ type: 'spark', x: KX, y: kite.y, vx: Math.cos(ang) * sp, vy: Math.sin(ang) * sp, life: rand(0.5, 1.1), t: 0, size: rand(2, 6), col: PAL.sun });
+        }
+        showCombo();
+      }
+    }
+  }
+
+  function showCombo() {
+    if (combo >= 2) {
+      elComboX.textContent = 'x' + combo;
+      elCombo.classList.add('show');
+      clearTimeout(showCombo._t);
+      showCombo._t = setTimeout(function () { elCombo.classList.remove('show'); }, 1400);
+    }
+  }
+
+  function updateParticles(dt) {
+    for (var i = particles.length - 1; i >= 0; i--) {
+      var p = particles[i];
+      p.t += dt;
+      if (p.t >= p.life) { particles.splice(i, 1); continue; }
+      if (p.type === 'spark') {
+        p.vx *= 0.92; p.vy = p.vy * 0.92 + 40 * dt;
+        p.x += p.vx * dt; p.y += p.vy * dt;
+      } else if (p.type === 'shard') {
+        p.vy += G * 0.5 * dt; p.x += p.vx * dt; p.y += p.vy * dt; p.rot += p.vr * dt;
+        p.x -= scrollSpeed * dt; // drift with world
+      } else if (p.type === 'puff') {
+        p.x += p.vx * dt; p.y += p.vy * dt; p.size += 20 * dt;
+      } else if (p.type === 'wind') {
+        p.x += p.vx * dt; p.y += p.vy * dt;
+      }
+    }
+  }
+  function updateFloaters(dt) {
+    for (var i = floaters.length - 1; i >= 0; i--) {
+      var f = floaters[i]; f.t += dt;
+      f.y -= 36 * dt;
+      if (f.t >= f.life) floaters.splice(i, 1);
+    }
+  }
+  function updateWind(dt) {
+    for (var i = windStreaks.length - 1; i >= 0; i--) {
+      var s = windStreaks[i]; s.t += dt; s.x -= (200 + scrollSpeed) * dt;
+      if (s.t >= s.life || s.x < -100) windStreaks.splice(i, 1);
+    }
+  }
+
+  // ----------------------------------------------------------------------
+  //  Render
+  // ----------------------------------------------------------------------
+  function render() {
+    ctx.save();
+    // screen shake
+    if (shake > 0.001) {
+      var sm = shake * 12;
+      ctx.translate(rand(-sm, sm), rand(-sm, sm));
+    }
+
+    drawSky();
+    drawBridge();
+    drawClouds();
+    drawSunGaps();
+    drawSpans();
+    drawThermals();
+    if (holding && state === STATE.PLAY) drawTrajectory();
+    drawParticlesBack();
+    drawKite();
+    drawParticlesFront();
+    drawFog();
+    drawWind();
+    drawFloaters();
+    drawVignette();
+    drawGrain();
+
+    ctx.restore();
+
+    // flash overlay (not shaken)
+    if (flash > 0.001) {
+      ctx.save();
+      ctx.globalAlpha = flash * 0.5;
+      ctx.fillStyle = flashCol || '#fff';
+      ctx.fillRect(0, 0, W, H);
+      ctx.restore();
+    }
+    if (state === STATE.PLAY) drawChargeMeter();
+  }
+
+  function drawSky() {
+    ctx.fillStyle = skyGrad || PAL.skyMid;
+    ctx.fillRect(0, 0, W, H);
+
+    // warm sun-break wash from the top
+    if (warm > 0.001 || sunMode > 0) {
+      var amt = Math.max(warm, sunMode > 0 ? 0.4 : 0);
+      var wg = ctx.createRadialGradient(W * 0.5, -H * 0.1, H * 0.1, W * 0.5, -H * 0.1, H * 1.1);
+      wg.addColorStop(0, PAL.sun);
+      wg.addColorStop(1, 'rgba(255,225,150,0)');
+      ctx.save();
+      ctx.globalAlpha = amt * (PAL.dark ? 0.5 : 0.6);
+      ctx.globalCompositeOperation = PAL.dark ? 'screen' : 'source-over';
+      ctx.fillStyle = wg;
+      ctx.fillRect(0, 0, W, H);
+      ctx.restore();
+    }
+
+    // soft watercolor blotches drifting
+    ctx.save();
+    ctx.globalAlpha = PAL.dark ? 0.12 : 0.16;
+    var tms = performance.now() * 0.00004;
+    var blots = 4;
+    for (var i = 0; i < blots; i++) {
+      var bx = (Math.sin(tms + i * 2.1) * 0.5 + 0.5) * W;
+      var by = (Math.cos(tms * 1.3 + i) * 0.5 + 0.5) * H * 0.7;
+      var br = H * (0.25 + 0.1 * Math.sin(i + tms));
+      var bg = ctx.createRadialGradient(bx, by, 0, bx, by, br);
+      bg.addColorStop(0, i % 2 ? PAL.skyWarm : PAL.fogCore);
+      bg.addColorStop(1, 'rgba(255,255,255,0)');
+      ctx.fillStyle = bg;
+      ctx.beginPath(); ctx.arc(bx, by, br, 0, TAU); ctx.fill();
+    }
+    ctx.restore();
+  }
+
+  function drawBridge() {
+    if (!bridgeCanvas) return;
+    ctx.save();
+    ctx.globalAlpha = PAL.dark ? 0.5 : 0.42;
+    var par = 0.12;
+    var off = (cameraX * par) % bridgeW;
+    var x = -off;
+    while (x < W) {
+      ctx.drawImage(bridgeCanvas, 0, 0, bridgeCanvas.width, bridgeCanvas.height, x, 0, bridgeW, H);
+      x += bridgeW;
+    }
+    ctx.restore();
+  }
+
+  function drawClouds() {
+    if (!cloudSprite) return;
+    for (var i = 0; i < clouds.length; i++) {
+      var c = clouds[i];
+      var r = H * 0.16 * c.s;
+      var rw = r * 1.7;
+      ctx.globalAlpha = c.a * (PAL.dark ? 0.5 : 1);
+      ctx.drawImage(cloudSprite, c.x - rw, c.y - r, rw * 2, r * 2);
+    }
+    ctx.globalAlpha = 1;
+  }
+
+  function drawSunGaps() {
+    for (var i = 0; i < sunGaps.length; i++) {
+      var s = sunGaps[i];
+      var sx = s.worldX - cameraX;
+      if (sx < -W * 0.5 || sx > W * 1.5) continue;
+      var topY = ceilY();
+      var glow = 0.4 + s.glow * 0.6;
+      // halo behind ceiling
+      var g = ctx.createRadialGradient(sx, topY - H * 0.02, 0, sx, topY - H * 0.02, s.halfW * 1.5);
+      g.addColorStop(0, PAL.sunCore);
+      g.addColorStop(0.4, PAL.sun);
+      g.addColorStop(1, 'rgba(255,225,150,0)');
+      ctx.save();
+      ctx.globalAlpha = glow * (PAL.dark ? 1 : 0.85);
+      ctx.globalCompositeOperation = PAL.dark ? 'screen' : 'source-over';
+      ctx.fillStyle = g;
+      ctx.beginPath();
+      ctx.ellipse(sx, topY - H * 0.01, s.halfW * 1.3, H * 0.18, 0, 0, TAU);
+      ctx.fill();
+      // rays
+      ctx.globalAlpha = glow * 0.5;
+      ctx.strokeStyle = PAL.sunRay;
+      ctx.lineWidth = 2;
+      for (var r = 0; r < 7; r++) {
+        var rx = sx + lerp(-s.halfW, s.halfW, r / 6);
+        ctx.beginPath();
+        ctx.moveTo(rx, topY);
+        ctx.lineTo(rx + (rx - sx) * 0.3, topY + H * 0.3);
+        ctx.stroke();
+      }
+      ctx.restore();
+    }
+  }
+
+  function drawSpans() {
+    for (var i = 0; i < spans.length; i++) {
+      var s = spans[i];
+      var cx = s.worldX - cameraX;
+      if (cx < -s.halfW - W * 0.4 || cx - s.halfW > W) continue;
+      var x0 = cx - s.halfW, x1 = cx + s.halfW;
+      // pole at the anchored end
+      var anchorY = s.anchor === 'top' ? ceilY() - H * 0.04 : Math.min(fogY(), bandBot + H * 0.06);
+      var poleX = cx;
+
+      // pole
+      ctx.save();
+      ctx.strokeStyle = PAL.pole;
+      ctx.lineWidth = Math.max(3, H * 0.006);
+      ctx.lineCap = 'round';
+      ctx.globalAlpha = 0.9;
+      ctx.beginPath();
+      ctx.moveTo(poleX, anchorY);
+      ctx.lineTo(poleX, s.y);
+      ctx.stroke();
+      // crossarm
+      ctx.lineWidth = Math.max(2, H * 0.004);
+      ctx.beginPath();
+      ctx.moveTo(poleX - W * 0.03, s.y + (s.anchor === 'top' ? -H * 0.01 : H * 0.01));
+      ctx.lineTo(poleX + W * 0.03, s.y + (s.anchor === 'top' ? -H * 0.01 : H * 0.01));
+      ctx.stroke();
+      ctx.restore();
+
+      // the sagging wire (the lethal line)
+      ctx.save();
+      // glow when grazed/near
+      if (s.glow > 0.01) {
+        ctx.strokeStyle = PAL.kiteA;
+        ctx.globalAlpha = s.glow * 0.5;
+        ctx.lineWidth = s.thick + 6;
+        drawWirePath(s, x0, x1);
+      }
+      ctx.globalAlpha = 1;
+      ctx.strokeStyle = PAL.wire;
+      ctx.lineWidth = s.thick;
+      ctx.lineCap = 'round';
+      drawWirePath(s, x0, x1);
+      // a couple of decorative parallel wires toward the blocked side
+      ctx.globalAlpha = 0.5;
+      ctx.lineWidth = s.thick * 0.7;
+      for (var k = 1; k <= 2; k++) {
+        var off = (s.anchor === 'top' ? -1 : 1) * k * H * 0.016;
+        ctx.beginPath();
+        for (var x = x0; x <= x1; x += 8) {
+          var t = (x - x0) / (x1 - x0);
+          var y = s.y + off + Math.sin(t * Math.PI) * s.sag * 0.8;
+          if (x === x0) ctx.moveTo(x, y); else ctx.lineTo(x, y);
+        }
+        ctx.stroke();
+      }
+      ctx.restore();
+    }
+  }
+  function drawWirePath(s, x0, x1) {
+    ctx.beginPath();
+    for (var x = x0; x <= x1; x += 7) {
+      var t = (x - x0) / (x1 - x0);
+      var y = s.y + Math.sin(t * Math.PI) * s.sag;
+      if (x === x0) ctx.moveTo(x, y); else ctx.lineTo(x, y);
+    }
+    ctx.stroke();
+  }
+
+  function drawThermals() {
+    for (var i = 0; i < thermals.length; i++) {
+      var th = thermals[i];
+      if (th.got) continue;
+      var x = th.worldX - cameraX, y = th.y;
+      if (x < -30 || x > W + 30) continue;
+      var pulse = 0.5 + 0.5 * Math.sin(th.ph);
+      var r = th.r * (1 + pulse * 0.12);
+      ctx.save();
+      // 'screen' blooms on dark; on light it washes out, so layer normally
+      ctx.globalCompositeOperation = PAL.dark ? 'screen' : 'source-over';
+      ctx.globalAlpha = PAL.dark ? 0.9 : 0.6;
+      var d = r * 4.8;
+      if (glowSprite) ctx.drawImage(glowSprite, x - d / 2, y - d / 2, d, d);
+      ctx.restore();
+      // solid core + ring so it reads in both themes
+      ctx.save();
+      ctx.globalAlpha = 0.95;
+      ctx.fillStyle = PAL.thermalCore;
+      ctx.beginPath(); ctx.arc(x, y, r * (0.4 + pulse * 0.08), 0, TAU); ctx.fill();
+      ctx.globalAlpha = 0.92;
+      ctx.strokeStyle = PAL.thermal;
+      ctx.lineWidth = th.big ? 3 : 2.2;
+      ctx.beginPath(); ctx.arc(x, y, r * (0.82 + pulse * 0.08), 0, TAU); ctx.stroke();
+      ctx.restore();
+    }
+  }
+
+  function drawTrajectory() {
+    var c = easeOut(chargeT);
+    var imp = lerp(IMP_MIN, IMP_MAX, c) * (chargeT >= 0.9 ? 1.08 : 1);
+    var vy0 = -imp;
+    var ss = scrollSpeed;
+    var perfect = chargeT >= 0.9;
+    ctx.save();
+    ctx.setLineDash([2, 9]);
+    ctx.lineDashOffset = -(performance.now() * 0.02) % 11;
+    ctx.lineWidth = 3;
+    ctx.lineCap = 'round';
+    ctx.strokeStyle = perfect ? PAL.kiteA : PAL.thermal;
+    ctx.globalAlpha = 0.85;
+    ctx.beginPath();
+    var moved = false;
+    var apexX = KX, apexY = kite.y, minY = kite.y;
+    for (var t = 0; t <= 1.4; t += 0.02) {
+      var px = KX + ss * t;
+      var py = kite.y + vy0 * t + 0.5 * G * t * t;
+      if (py < minY) { minY = py; apexX = px; apexY = py; }
+      if (px > W + 10) break;
+      if (py > fogY()) break;
+      if (!moved) { ctx.moveTo(px, py); moved = true; } else ctx.lineTo(px, py);
+    }
+    ctx.stroke();
+    ctx.setLineDash([]);
+    // apex marker
+    ctx.globalAlpha = 0.9;
+    ctx.fillStyle = perfect ? PAL.kiteA : PAL.thermal;
+    ctx.beginPath(); ctx.arc(apexX, apexY, perfect ? 6 : 4, 0, TAU); ctx.fill();
+    if (perfect) {
+      ctx.globalAlpha = 0.5;
+      ctx.beginPath(); ctx.arc(apexX, apexY, 11, 0, TAU); ctx.stroke();
+    }
+    ctx.restore();
+  }
+
+  function drawKite() {
+    // once the death freeze ends, the kite is gone — shards carry the moment
+    if (state === STATE.DEAD && hitstop <= 0) return;
+    // tail first
+    var t = kite.tail;
+    ctx.save();
+    ctx.strokeStyle = PAL.kiteB;
+    ctx.lineCap = 'round';
+    ctx.lineJoin = 'round';
+    ctx.globalAlpha = 0.92;
+    for (var i = 1; i < t.length; i++) {
+      ctx.beginPath();
+      ctx.lineWidth = Math.max(1, kiteR * 0.5 * (1 - i / t.length));
+      ctx.moveTo(t[i - 1].x, t[i - 1].y);
+      ctx.lineTo(t[i].x, t[i].y);
+      ctx.stroke();
+      // little bows
+      if (i % 3 === 0) {
+        ctx.save();
+        ctx.globalAlpha = 0.85;
+        ctx.fillStyle = i % 2 ? PAL.kiteA : PAL.kiteB;
+        ctx.beginPath();
+        ctx.arc(t[i].x, t[i].y, kiteR * 0.22 * (1 - i / t.length) + 1, 0, TAU);
+        ctx.fill();
+        ctx.restore();
+      }
+    }
+    ctx.restore();
+
+    // body
+    ctx.save();
+    ctx.translate(KX, kite.y);
+    ctx.rotate(kite.angle * 0.5);
+    var r = kiteR;
+    // soft shadow/glow
+    if ((sunMode > 0 || chargeT > 0) && glowSprite) {
+      ctx.save();
+      ctx.globalCompositeOperation = 'screen';
+      ctx.globalAlpha = sunMode > 0 ? 0.55 : chargeT * 0.45;
+      var gd = r * 6;
+      ctx.drawImage(glowSprite, -gd / 2, -gd / 2, gd, gd);
+      ctx.restore();
+    }
+    // diamond kite, two-tone
+    var grd = ctx.createLinearGradient(-r, -r * 1.4, r, r * 1.4);
+    grd.addColorStop(0, PAL.kiteA);
+    grd.addColorStop(1, PAL.kiteB);
+    ctx.fillStyle = grd;
+    ctx.strokeStyle = PAL.kiteLine;
+    ctx.lineWidth = Math.max(1.2, r * 0.1);
+    ctx.lineJoin = 'round';
+    // left half lighter, right half darker for facet feel
+    ctx.beginPath();
+    ctx.moveTo(0, -r * 1.45);
+    ctx.lineTo(r * 1.0, 0);
+    ctx.lineTo(0, r * 1.45);
+    ctx.lineTo(-r * 1.0, 0);
+    ctx.closePath();
+    ctx.fill();
+    // facet shade
+    ctx.save();
+    ctx.globalAlpha = 0.18;
+    ctx.fillStyle = PAL.kiteLine;
+    ctx.beginPath();
+    ctx.moveTo(0, -r * 1.45); ctx.lineTo(r * 1.0, 0); ctx.lineTo(0, r * 1.45); ctx.closePath();
+    ctx.fill();
+    ctx.restore();
+    // spars
+    ctx.globalAlpha = 0.5;
+    ctx.beginPath();
+    ctx.moveTo(0, -r * 1.45); ctx.lineTo(0, r * 1.45);
+    ctx.moveTo(-r * 1.0, 0); ctx.lineTo(r * 1.0, 0);
+    ctx.stroke();
+    ctx.globalAlpha = 1;
+    ctx.beginPath();
+    ctx.moveTo(0, -r * 1.45);
+    ctx.lineTo(r * 1.0, 0);
+    ctx.lineTo(0, r * 1.45);
+    ctx.lineTo(-r * 1.0, 0);
+    ctx.closePath();
+    ctx.stroke();
+    ctx.restore();
+  }
+
+  function drawParticlesBack() { drawParticles(false); }
+  function drawParticlesFront() { drawParticles(true); }
+  function drawParticles(front) {
+    for (var i = 0; i < particles.length; i++) {
+      var p = particles[i];
+      var isFront = (p.type === 'spark' || p.type === 'shard');
+      if (isFront !== front) continue;
+      var a = 1 - p.t / p.life;
+      if (p.type === 'spark') {
+        ctx.save();
+        ctx.globalCompositeOperation = PAL.dark ? 'screen' : 'source-over';
+        ctx.globalAlpha = a;
+        ctx.fillStyle = p.col || PAL.spark;
+        ctx.beginPath(); ctx.arc(p.x, p.y, p.size * a, 0, TAU); ctx.fill();
+        ctx.restore();
+      } else if (p.type === 'shard') {
+        ctx.save();
+        ctx.globalAlpha = a;
+        ctx.translate(p.x, p.y); ctx.rotate(p.rot);
+        ctx.fillStyle = p.col;
+        ctx.fillRect(-p.size / 2, -p.size / 2, p.size, p.size);
+        ctx.restore();
+      } else if (p.type === 'puff') {
+        ctx.save();
+        ctx.globalAlpha = a * 0.4;
+        var g = ctx.createRadialGradient(p.x, p.y, 0, p.x, p.y, p.size);
+        g.addColorStop(0, PAL.fogCore);
+        g.addColorStop(1, 'rgba(255,255,255,0)');
+        ctx.fillStyle = g;
+        ctx.beginPath(); ctx.arc(p.x, p.y, p.size, 0, TAU); ctx.fill();
+        ctx.restore();
+      } else if (p.type === 'wind') {
+        ctx.save();
+        ctx.globalAlpha = a * 0.5;
+        ctx.strokeStyle = PAL.dark ? 'rgba(255,255,255,0.6)' : 'rgba(255,255,255,0.8)';
+        ctx.lineWidth = 1.5;
+        ctx.beginPath();
+        ctx.moveTo(p.x, p.y); ctx.lineTo(p.x - p.len, p.y + 2);
+        ctx.stroke();
+        ctx.restore();
+      }
+    }
+  }
+
+  function drawFog() {
+    var fy = fogY();
+    if (fy > H * 1.2) return;
+    // billowing top edge
+    var tms = performance.now() * 0.0004;
+    ctx.save();
+    var grd = ctx.createLinearGradient(0, fy - H * 0.12, 0, H);
+    grd.addColorStop(0, PAL.fogEdge);
+    grd.addColorStop(0.35, PAL.fogCore);
+    grd.addColorStop(1, PAL.fogLip);
+    ctx.fillStyle = grd;
+    ctx.beginPath();
+    ctx.moveTo(0, H);
+    ctx.lineTo(0, fy);
+    var step = Math.max(16, W / 28);
+    for (var x = 0; x <= W; x += step) {
+      var y = fy
+        + Math.sin(x * 0.012 + tms * 6) * H * 0.018
+        + Math.sin(x * 0.03 + tms * 9) * H * 0.01;
+      ctx.lineTo(x, y);
+    }
+    ctx.lineTo(W, H);
+    ctx.closePath();
+    ctx.fill();
+    // soft lip highlight
+    ctx.globalAlpha = 0.5;
+    ctx.strokeStyle = PAL.fogLip;
+    ctx.lineWidth = 2;
+    ctx.beginPath();
+    for (var x2 = 0; x2 <= W; x2 += step) {
+      var y2 = fy + Math.sin(x2 * 0.012 + tms * 6) * H * 0.018 + Math.sin(x2 * 0.03 + tms * 9) * H * 0.01;
+      if (x2 === 0) ctx.moveTo(x2, y2); else ctx.lineTo(x2, y2);
+    }
+    ctx.stroke();
+    // drifting wisps above the surface
+    if (fogSprite) {
+      ctx.globalAlpha = 0.2;
+      for (var i = 0; i < 4; i++) {
+        var wx = ((i * W * 0.3 + performance.now() * 0.01 * (i + 1)) % (W * 1.3)) - W * 0.15;
+        var wy = fy - H * 0.04 - i * H * 0.02;
+        var wr = H * (0.08 + i * 0.02);
+        ctx.drawImage(fogSprite, wx - wr * 1.6, wy - wr, wr * 3.2, wr * 2);
+      }
+    }
+    ctx.restore();
+  }
+
+  function drawWind() {
+    for (var i = 0; i < windStreaks.length; i++) {
+      var s = windStreaks[i];
+      var a = (1 - s.t / s.life);
+      ctx.save();
+      ctx.globalAlpha = a * 0.4;
+      ctx.strokeStyle = PAL.dark ? 'rgba(255,255,255,0.5)' : 'rgba(255,255,255,0.7)';
+      ctx.lineWidth = 1.5;
+      ctx.beginPath(); ctx.moveTo(s.x, s.y); ctx.lineTo(s.x + s.len, s.y); ctx.stroke();
+      ctx.restore();
+    }
+  }
+
+  function drawFloaters() {
+    ctx.save();
+    ctx.textAlign = 'center';
+    ctx.textBaseline = 'middle';
+    for (var i = 0; i < floaters.length; i++) {
+      var f = floaters[i];
+      var a = 1 - easeOut(f.t / f.life);
+      ctx.globalAlpha = a;
+      ctx.font = '700 ' + Math.round(15 * f.scale) + 'px ' + 'ui-monospace, Menlo, monospace';
+      ctx.fillStyle = f.col;
+      ctx.fillText(f.text, f.x, f.y);
+    }
+    ctx.restore();
+  }
+
+  function drawChargeMeter() {
+    if (!holding) return;
+    // ring around kite shows charge
+    var c = chargeT;
+    var perfect = c >= 0.9;
+    ctx.save();
+    ctx.translate(KX, kite.y);
+    var r = kiteR * 2.3;
+    ctx.lineWidth = 4;
+    ctx.strokeStyle = PAL.inkSoft;
+    ctx.globalAlpha = 0.25;
+    ctx.beginPath(); ctx.arc(0, 0, r, 0, TAU); ctx.stroke();
+    ctx.globalAlpha = 1;
+    ctx.strokeStyle = perfect ? PAL.kiteA : PAL.thermal;
+    ctx.lineCap = 'round';
+    ctx.beginPath();
+    ctx.arc(0, 0, r, -Math.PI / 2, -Math.PI / 2 + TAU * c);
+    ctx.stroke();
+    // perfect tick
+    ctx.globalAlpha = 0.8;
+    ctx.strokeStyle = PAL.kiteA;
+    ctx.lineWidth = 3;
+    var pa = -Math.PI / 2 + TAU * 0.9;
+    ctx.beginPath();
+    ctx.moveTo(Math.cos(pa) * (r - 6), Math.sin(pa) * (r - 6));
+    ctx.lineTo(Math.cos(pa) * (r + 6), Math.sin(pa) * (r + 6));
+    ctx.stroke();
+    ctx.restore();
+  }
+
+  function drawVignette() {
+    if (!vignetteGrad) return;
+    ctx.fillStyle = vignetteGrad;
+    ctx.fillRect(0, 0, W, H);
+  }
+
+  function drawGrain() {
+    if (!grainCanvas) return;
+    ctx.save();
+    ctx.globalAlpha = PAL.grain;
+    ctx.globalCompositeOperation = PAL.dark ? 'screen' : 'multiply';
+    var pat = ctx.createPattern(grainCanvas, 'repeat');
+    ctx.fillStyle = pat;
+    ctx.fillRect(0, 0, W, H);
+    ctx.restore();
+  }
+
+  // ----------------------------------------------------------------------
+  //  Main loop
+  // ----------------------------------------------------------------------
+  function frame(now) {
+    var dt = (now - lastT) / 1000;
+    lastT = now;
+    if (!(dt > 0)) dt = 0.016;
+    dt = Math.min(dt, 1 / 30);
+
+    // decays that run regardless
+    if (shake > 0) shake = Math.max(0, shake - dt * 2.4);
+    if (flash > 0) flash = Math.max(0, flash - dt * 2.2);
+
+    if (hitstop > 0) {
+      hitstop -= dt;
+    } else {
+      update(dt);
+    }
+    render();
+
+    // HUD
+    if (state === STATE.PLAY) {
+      elScore.textContent = Math.floor(score);
+    }
+
+    requestAnimationFrame(frame);
+  }
+
+  // ----------------------------------------------------------------------
+  //  Boot
+  // ----------------------------------------------------------------------
+  function onResize() {
+    var oldH = H;
+    recompute();
+    if (oldH > 0 && H > 0 && Math.abs(H - oldH) > 1 && (state === STATE.PLAY || state === STATE.DEAD)) {
+      var r = H / oldH;
+      kite.y *= r; kite.vy *= r;
+      for (var i = 0; i < kite.tail.length; i++) kite.tail[i].y *= r;
+    }
+    if (state === STATE.TITLE) {
+      if (kite.tail.length === 0) { kite.y = H * 0.5; for (var j = 0; j < 14; j++) kite.tail.push({ x: KX, y: kite.y }); }
+    }
+  }
+  window.addEventListener('resize', onResize);
+  window.addEventListener('orientationchange', function () { setTimeout(onResize, 200); });
+  var onTheme = function () { buildPalette(); buildGradients(); buildBridge(); };
+  if (darkMQ.addEventListener) darkMQ.addEventListener('change', onTheme); else darkMQ.addListener(onTheme);
+
+  recompute();
+  // init title kite
+  kite.y = H * 0.5;
+  for (var bi = 0; bi < 14; bi++) kite.tail.push({ x: KX, y: kite.y });
+  ensureClouds(true);
+  elBest.textContent = best;
+  setSound(true);
+
+  lastT = performance.now();
+  requestAnimationFrame(frame);
+})();
+</script>
+</body>
+</html>
