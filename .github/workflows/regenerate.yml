@@ -144,7 +144,7 @@ jobs:
             -d '{"buildId":"'"$BUILD_ID"'","event":"aggregate.complete","timestamp":"'"$(date -u +%Y-%m-%dT%H:%M:%S.000Z)"'"}' || true
 
       - name: Upload data artifact
-        uses: actions/upload-artifact@v5
+        uses: actions/upload-artifact@v6
         with:
           name: aggregated-data
           path: |
@@ -179,7 +179,7 @@ jobs:
         run: pnpm install --frozen-lockfile
 
       - name: Download data artifact
-        uses: actions/download-artifact@v5
+        uses: actions/download-artifact@v7
         with:
           name: aggregated-data
           path: artifacts/
@@ -283,7 +283,7 @@ jobs:
             -d '{"buildId":"'"$BUILD_ID"'","event":"curator.complete","timestamp":"'"$(date -u +%Y-%m-%dT%H:%M:%S.000Z)"'"}' || true
 
       - name: Upload curator artifact
-        uses: actions/upload-artifact@v5
+        uses: actions/upload-artifact@v6
         with:
           name: curator-data
           path: |
@@ -320,13 +320,13 @@ jobs:
         run: pnpm install --frozen-lockfile
 
       - name: Download data artifact
-        uses: actions/download-artifact@v5
+        uses: actions/download-artifact@v7
         with:
           name: aggregated-data
           path: artifacts/aggregated/
 
       - name: Download curator artifact
-        uses: actions/download-artifact@v5
+        uses: actions/download-artifact@v7
         with:
           name: curator-data
           path: artifacts/curator/
@@ -493,7 +493,7 @@ jobs:
           cp /tmp/build-output.json "public/builds/${DATE}/${MODEL}-output.json"
 
       - name: Upload build artifact
-        uses: actions/upload-artifact@v5
+        uses: actions/upload-artifact@v6
         with:
           name: build-${{ matrix.model }}
           path: |
@@ -531,13 +531,13 @@ jobs:
         run: pnpm install --frozen-lockfile
 
       - name: Download data artifact
-        uses: actions/download-artifact@v5
+        uses: actions/download-artifact@v7
         with:
           name: aggregated-data
           path: artifacts/aggregated/
 
       - name: Download curator artifact
-        uses: actions/download-artifact@v5
+        uses: actions/download-artifact@v7
         with:
           name: curator-data
           path: artifacts/curator/
@@ -667,7 +667,7 @@ jobs:
           cp /tmp/game-build-output.json "public/games/${DATE}/${MODEL}-output.json"
 
       - name: Upload game build artifact
-        uses: actions/upload-artifact@v5
+        uses: actions/upload-artifact@v6
         with:
           name: game-build-${{ matrix.model }}
           path: |
@@ -704,7 +704,7 @@ jobs:
         run: pnpm install --frozen-lockfile
 
       - name: Download build artifact
-        uses: actions/download-artifact@v5
+        uses: actions/download-artifact@v7
         with:
           name: build-${{ matrix.model }}
           path: artifacts/
@@ -768,7 +768,7 @@ jobs:
 
       - name: Download curator artifact for polish
         if: steps.validate.outputs.needs_polish == 'true'
-        uses: actions/download-artifact@v5
+        uses: actions/download-artifact@v7
         with:
           name: curator-data
           path: data/
@@ -778,15 +778,19 @@ jobs:
         timeout-minutes: 10
         env:
           CURSOR_API_KEY: ${{ secrets.CURSOR_API_KEY }}
+          # Pass validation output through the environment, never inline ${{ }}.
+          # The issues text is multiline/untrusted; interpolating it directly
+          # into the script breaks quoting and bash tries to execute stray lines
+          # (caused "command not found" / exit 127). MODEL is passed the same way.
+          ISSUES: ${{ steps.validate.outputs.issues }}
+          MODEL: ${{ matrix.model }}
         run: |
-          ISSUES="${{ steps.validate.outputs.issues }}"
-          
           PROMPT="Read infra/prompts/polish.md for instructions.
           
           Validation issues to fix:
           $ISSUES
           
-          File to fix: generated/${{ matrix.model }}.html
+          File to fix: generated/${MODEL}.html
           
           Read the file, fix the issues, write it back."
           
@@ -806,7 +810,7 @@ jobs:
           pnpm run validate-build -- "generated/${{ matrix.model }}.html" || echo "Still has issues after polish"
 
       - name: Upload validated artifact
-        uses: actions/upload-artifact@v5
+        uses: actions/upload-artifact@v6
         with:
           name: validated-${{ matrix.model }}
           path: |
@@ -848,7 +852,7 @@ jobs:
         run: npx playwright install chromium
 
       - name: Download game build artifact
-        uses: actions/download-artifact@v5
+        uses: actions/download-artifact@v7
         continue-on-error: true
         with:
           name: game-build-${{ matrix.model }}
@@ -900,7 +904,7 @@ jobs:
 
       - name: Download curator artifact for polish
         if: steps.static-validate.outputs.needs_polish == 'true'
-        uses: actions/download-artifact@v5
+        uses: actions/download-artifact@v7
         with:
           name: curator-data
           path: data/
@@ -910,15 +914,18 @@ jobs:
         timeout-minutes: 10
         env:
           CURSOR_API_KEY: ${{ secrets.CURSOR_API_KEY }}
+          # Pass validation output through the environment, never inline ${{ }}.
+          # Multiline/untrusted issues text broke shell quoting and caused bash
+          # to execute stray lines ("command not found" / exit 127).
+          ISSUES: ${{ steps.static-validate.outputs.issues }}
+          MODEL: ${{ matrix.model }}
         run: |
-          ISSUES="${{ steps.static-validate.outputs.issues }}"
-
           PROMPT="Read infra/prompts/games-polish.md for instructions.
 
           Validation issues to fix:
           $ISSUES
 
-          File to fix: generated/games/${{ matrix.model }}.html
+          File to fix: generated/games/${MODEL}.html
 
           Read the file, fix the issues, write it back."
 
@@ -1001,7 +1008,7 @@ jobs:
 
       - name: Upload validated game artifact
         if: steps.final.outputs.publish == 'true'
-        uses: actions/upload-artifact@v5
+        uses: actions/upload-artifact@v6
         with:
           name: validated-game-${{ matrix.model }}
           path: |
@@ -1042,13 +1049,13 @@ jobs:
             -d '{"buildId":"'"$BUILD_ID"'","event":"commit.started","timestamp":"'"$(date -u +%Y-%m-%dT%H:%M:%S.000Z)"'"}' || true
 
       - name: Download data artifact
-        uses: actions/download-artifact@v5
+        uses: actions/download-artifact@v7
         with:
           name: aggregated-data
           path: artifacts/aggregated/
 
       - name: Download curator artifact
-        uses: actions/download-artifact@v5
+        uses: actions/download-artifact@v7
         with:
           name: curator-data
           path: artifacts/curator/
@@ -1062,7 +1069,7 @@ jobs:
           echo "Data files organized"
 
       - name: Download all validated artifacts
-        uses: actions/download-artifact@v5
+        uses: actions/download-artifact@v7
         with:
           pattern: validated-*
           path: artifacts/
@@ -1240,7 +1247,7 @@ jobs:
         run: pnpm install --frozen-lockfile
 
       - name: Download validated game artifacts
-        uses: actions/download-artifact@v5
+        uses: actions/download-artifact@v7
         continue-on-error: true
         with:
           pattern: validated-game-*
