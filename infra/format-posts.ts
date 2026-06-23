@@ -40,7 +40,7 @@ function parsePostFile(filename: string): PostMeta | null {
       slug: data.slug || slug,
       title: data.title || "Untitled",
       publishedAt: data.publishedAt || new Date().toISOString().split("T")[0],
-      readTime: data.externalUrl ? 0 : calculateReadingTime(body),
+      readTime: data.readTime ?? (data.externalUrl ? 0 : calculateReadingTime(body)),
       status: data.status || "draft",
       ...(data.externalUrl && { externalUrl: data.externalUrl }),
     };

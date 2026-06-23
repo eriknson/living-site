@@ -22,6 +22,7 @@ import {
   readdirSync,
 } from "fs";
 import path from "path";
+import matter from "gray-matter";
 import { calculateReadingTime } from "../../lib/post-html-renderer";
 
 const notion = new Client({ auth: process.env.NOTION_TOKEN });
@@ -282,6 +283,18 @@ function cleanMarkdown(markdown: string): string {
   return result.trim();
 }
 
+function readReadTimeFromFrontmatter(slug: string): number | undefined {
+  const mdPath = path.join(POSTS_DIR, `${slug}.md`);
+  if (!existsSync(mdPath)) return undefined;
+
+  try {
+    const { data } = matter(readFileSync(mdPath, "utf-8"));
+    return typeof data.readTime === "number" ? data.readTime : undefined;
+  } catch {
+    return undefined;
+  }
+}
+
 /**
  * Fetch and save a single post
  */
@@ -292,13 +305,17 @@ async function fetchPost(post: NotionPost): Promise<string | null> {
   if (post.externalUrl) {
     console.log("  (external URL - skipping content fetch)");
 
+    const readTime = readReadTimeFromFrontmatter(post.slug);
+    const readTimeLine =
+      readTime !== undefined ? `readTime: ${readTime}\n` : "";
+
     // Still create a placeholder file for external posts
     const frontmatter = `---
 title: "${post.title}"
 slug: "${post.slug}"
 publishedAt: "${post.publishedAt}"
 status: "${post.status}"
-externalUrl: "${post.externalUrl}"
+${readTimeLine}externalUrl: "${post.externalUrl}"
 notionPageId: "${post.id}"
 ---
 
@@ -371,7 +388,9 @@ function updatePostsIndex(posts: NotionPost[], contentMap: Map<string, string>):
     .filter((p) => p.status === "published")
     .map((p) => {
       const content = contentMap.get(p.slug);
-      const readTime = content ? calculateReadingTime(content) : 0;
+      const readTime = content
+        ? calculateReadingTime(content)
+        : (readReadTimeFromFrontmatter(p.slug) ?? 0);
       return {
         slug: p.slug,
         title: p.title,

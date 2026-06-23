@@ -57,7 +57,7 @@ export function getPost(slug: string): Post | null {
       slug: data.slug || slug,
       title: data.title || "Untitled",
       publishedAt: data.publishedAt || new Date().toISOString().split("T")[0],
-      readTime: 0,
+      readTime: data.readTime ?? 0,
       status: data.status || "draft",
       content: "",
       contentHtml: "",
