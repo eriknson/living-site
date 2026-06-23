@@ -283,7 +283,7 @@ export default function CommandMenuDialog({ open, onOpenChange }: CommandMenuDia
                   <span className="flex-1 truncate">
                     {post.title}
                     {post.readTime && (
-                      <span className="text-[11px] text-black/30 dark:text-white/30 font-normal ml-1.5">{post.readTime} min read</span>
+                      <span className="text-[11px] text-black/30 dark:text-white/30 font-normal ml-1.5">{post.readTime} min</span>
                     )}
                   </span>
                   {isCurrent && (

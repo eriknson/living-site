@@ -17,6 +17,6 @@ export default async function Image({
     return createOgImage("Post not found");
   }
 
-  const subtitle = post.readTime ? `${post.readTime} min read` : undefined;
+  const subtitle = post.readTime ? `${post.readTime} min` : undefined;
   return createOgImage(post.title, subtitle);
 }

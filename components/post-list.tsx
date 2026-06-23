@@ -54,14 +54,14 @@ export function PostList({ posts, excludeStaticLink = false }: PostListProps) {
               )}
               {post.readTime > 0 && (
                 <span className="text-[14px] text-black/35 dark:text-white/35 whitespace-nowrap hidden sm:inline">
-                  {post.readTime} min read
+                  {post.readTime} min
                 </span>
               )}
             </div>
             <span className="text-[14px] text-black/35 dark:text-white/35 whitespace-nowrap">
               {formatDate(post.publishedAt)}
               {post.readTime > 0 && (
-                <span className="sm:hidden"> · {post.readTime} min read</span>
+                <span className="sm:hidden"> · {post.readTime} min</span>
               )}
             </span>
           </li>
@@ -80,12 +80,12 @@ export function PostList({ posts, excludeStaticLink = false }: PostListProps) {
                 <span className="text-black/35 dark:text-white/35">↗</span>
               </a>
               <span className="text-[14px] text-black/35 dark:text-white/35 whitespace-nowrap hidden sm:inline">
-                45 min read
+                45 min
               </span>
             </div>
             <span className="text-[14px] text-black/35 dark:text-white/35 whitespace-nowrap">
               August 4, 2020
-              <span className="sm:hidden"> · 45 min read</span>
+              <span className="sm:hidden"> · 45 min</span>
             </span>
           </li>
         )}

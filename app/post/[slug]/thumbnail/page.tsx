@@ -112,7 +112,7 @@ export default async function ThumbnailPreviewPage({
                   color: "rgba(255, 255, 255, 0.5)",
                 }}
               >
-                {post.readTime} min read
+                {post.readTime} min
               </div>
             </div>
           </div>

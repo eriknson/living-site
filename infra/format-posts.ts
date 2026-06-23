@@ -80,7 +80,7 @@ function main() {
     const meta = parsePostFile(file);
     if (meta && meta.status === "published") {
       posts.push(meta);
-      console.log(`  ✓ ${meta.title} (${meta.readTime} min read)`);
+      console.log(`  ✓ ${meta.title} (${meta.readTime} min)`);
     } else if (meta) {
       console.log(`  ○ ${meta.title} (draft - skipped)`);
     }

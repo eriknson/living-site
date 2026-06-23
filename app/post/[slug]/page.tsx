@@ -41,7 +41,7 @@ export async function generateMetadata({
     twitter: {
       card: "summary_large_image",
       title: post.title,
-      description: `${formattedDate} · ${post.readTime} min read`,
+      description: `${formattedDate} · ${post.readTime} min`,
       creator: "@flowstated",
     },
   };
@@ -93,7 +93,7 @@ export default async function PostPage({
           </h1>
           <p className="text-black/50 dark:text-white/50 text-sm">
             {formattedDate}
-            {post.readTime && ` · ${post.readTime} min read`}
+            {post.readTime && ` · ${post.readTime} min`}
           </p>
         </header>
 
