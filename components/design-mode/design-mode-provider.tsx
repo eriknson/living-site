@@ -106,10 +106,9 @@ export function DesignModeProvider({ children }: { children: ReactNode }) {
   const deactivate = useCallback(() => {
     setActive(false);
     setError(null);
-    // Drop the working snapshot + agent so each design session starts clean.
-    resetDesignSession();
-    setAgentIdState(null);
-    setStatus("idle");
+    // Keep the working snapshot + agent so the result stays visible after
+    // leaving design mode. A hard refresh resets everything (module re-eval).
+    setStatus(session.agentId ? "ready" : "idle");
   }, []);
 
   // Keyboard shortcut: Cmd/Ctrl+Shift+D toggles Design Mode.
@@ -119,9 +118,8 @@ export function DesignModeProvider({ children }: { children: ReactNode }) {
         e.preventDefault();
         setActive((prev) => {
           if (prev) {
-            resetDesignSession();
-            setAgentIdState(null);
-            setStatus("idle");
+            // Leave design mode but keep the edited result (resets on refresh).
+            setStatus(session.agentId ? "ready" : "idle");
             return false;
           }
           setError(null);

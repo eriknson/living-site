@@ -78,6 +78,17 @@ export function DesignModeSurface({ children }: { children: ReactNode }) {
   const [errorMsg, setErrorMsg] = useState<string | null>(null);
   const [canUndo, setCanUndo] = useState(false);
   const [canRedo, setCanRedo] = useState(false);
+  // True once the session snapshot differs from the original. Kept in the
+  // module-level session store so it survives exiting design mode and soft
+  // navigation, and resets on a hard refresh.
+  const [hasEdits, setHasEdits] = useState(() => {
+    const s = getDesignSession();
+    return s.workingHtml != null && s.workingHtml !== s.original;
+  });
+
+  // Show the edited snapshot whenever editing OR when edits should persist
+  // after leaving design mode.
+  const showSnapshot = active || hasEdits;
 
   useEffect(() => setMounted(true), []);
 
@@ -95,39 +106,52 @@ export function DesignModeSurface({ children }: { children: ReactNode }) {
       (host.firstElementChild as HTMLElement | null);
   }, []);
 
-  // Snapshot the live content into the editable host once on activation.
+  // Populate the editable host whenever the snapshot should be shown (either in
+  // design mode, or persisting the result after exit). On first entry it snapshots
+  // the live content; otherwise it restores the session's working HTML.
   useEffect(() => {
-    if (!active) {
-      setSelection(null);
-      setHover(null);
-      setInstruction("");
-      setErrorMsg(null);
+    if (!showSnapshot) return;
+    const host = hostRef.current;
+    if (!host) return;
+    if (host.childElementCount > 0) {
+      if (!rootRef.current) captureRoot();
       return;
     }
-    const host = hostRef.current;
     const live = liveRef.current;
-    if (!host || !live) return;
-
     const s = getDesignSession();
-    let html = s.workingHtml;
-    if (!html) {
-      const root = live.querySelector(DESIGN_ROOT_SELECTOR);
-      html = root ? root.outerHTML : live.innerHTML;
-      s.original = html;
-      s.workingHtml = html;
+    if (s.workingHtml) {
+      host.innerHTML = s.workingHtml;
+      captureRoot();
+    } else {
+      const root = live?.querySelector(DESIGN_ROOT_SELECTOR);
+      host.innerHTML = root ? root.outerHTML : live?.innerHTML ?? "";
+      captureRoot();
+      // Normalize original from the parsed/serialized form so dirty-checks are
+      // exact comparisons.
+      s.original = host.innerHTML;
+      s.workingHtml = host.innerHTML;
       s.past = [];
       s.future = [];
     }
-    host.innerHTML = html;
-    captureRoot();
     refreshHistoryFlags();
+    setHasEdits(s.workingHtml != null && s.workingHtml !== s.original);
+  }, [showSnapshot, captureRoot, refreshHistoryFlags]);
+
+  // Clear transient picker UI whenever we leave edit mode.
+  useEffect(() => {
+    if (active) return;
     setSelection(null);
     setHover(null);
-  }, [active, captureRoot, refreshHistoryFlags]);
+    setInstruction("");
+    setErrorMsg(null);
+  }, [active]);
 
   const syncWorking = useCallback(() => {
     const host = hostRef.current;
-    if (host) getDesignSession().workingHtml = host.innerHTML;
+    if (!host) return;
+    const s = getDesignSession();
+    s.workingHtml = host.innerHTML;
+    setHasEdits(s.workingHtml !== s.original);
   }, []);
 
   const pushHistory = useCallback(() => {
@@ -209,9 +233,10 @@ export function DesignModeSurface({ children }: { children: ReactNode }) {
     };
   }, [active]);
 
-  // Auto-size widget iframes from height messages they post.
+  // Auto-size widget iframes from height messages they post (also in the
+  // read-only persisted view after exiting design mode).
   useEffect(() => {
-    if (!active) return;
+    if (!showSnapshot) return;
     const onMessage = (e: MessageEvent) => {
       const data = e.data as { __designWidget?: boolean; height?: number } | null;
       if (!data || data.__designWidget !== true || typeof data.height !== "number") return;
@@ -233,7 +258,7 @@ export function DesignModeSurface({ children }: { children: ReactNode }) {
     };
     window.addEventListener("message", onMessage);
     return () => window.removeEventListener("message", onMessage);
-  }, [active]);
+  }, [showSnapshot]);
 
   // ----- History actions -----
   const restore = useCallback(
@@ -425,16 +450,19 @@ export function DesignModeSurface({ children }: { children: ReactNode }) {
 
   return (
     <>
-      <div ref={liveRef} style={{ display: active ? "none" : "contents" }}>
+      <div ref={liveRef} style={{ display: showSnapshot ? "none" : "contents" }}>
         {children}
       </div>
 
-      {active && (
+      {showSnapshot && (
         <div
           ref={hostRef}
           data-design-edit-host
           className="flex flex-col flex-1 min-h-0"
-          style={{ userSelect: "none", cursor: busy ? "progress" : "crosshair" }}
+          style={{
+            userSelect: active ? "none" : undefined,
+            cursor: active ? (busy ? "progress" : "crosshair") : undefined,
+          }}
         />
       )}
 
