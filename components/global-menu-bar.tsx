@@ -3,8 +3,9 @@
 import { useEffect, useState } from "react";
 import dynamic from "next/dynamic";
 import Link from "next/link";
-import { ArrowLeft, ArrowUpRight, Clock, Home, Zap } from "lucide-react";
+import { ArrowLeft, ArrowUpRight, Clock, Home, Wand2, X, Zap } from "lucide-react";
 import { VersionSelector } from "./version-selector";
+import { useDesignModeOptional } from "@/components/design-mode/design-mode-provider";
 import { BuildTime } from "./build-time";
 import { SearchIcon } from "@/components/icons/search-icon";
 import {
@@ -348,6 +349,76 @@ function BuildStatus() {
   );
 }
 
+// Design Mode toggle — only renders when a DesignModeProvider is present (homepage)
+function DesignModeToggle() {
+  const designMode = useDesignModeOptional();
+  const isMobile = useIsMobile();
+  const [showHint, setShowHint] = useState(false);
+
+  useEffect(() => {
+    if (!designMode) return;
+    try {
+      if (!localStorage.getItem("dm-hint-seen")) setShowHint(true);
+    } catch {
+      // ignore storage errors
+    }
+  }, [designMode]);
+
+  if (!designMode) return null;
+
+  const dismissHint = () => {
+    setShowHint(false);
+    try {
+      localStorage.setItem("dm-hint-seen", "1");
+    } catch {
+      // ignore
+    }
+  };
+
+  const toggle = () => {
+    dismissHint();
+    if (designMode.active) designMode.deactivate();
+    else designMode.activate();
+  };
+
+  return (
+    <div className="relative">
+      <button
+        onClick={toggle}
+        title="Design mode (⌘⇧D)"
+        aria-label="Toggle design mode"
+        aria-pressed={designMode.active}
+        className={`flex items-center gap-1.5 h-8 px-3 rounded-full transition-colors select-none cursor-pointer ${
+          designMode.active
+            ? "bg-blue-500 text-white"
+            : "bg-black/[0.03] dark:bg-white/[0.06] active:bg-black/[0.08] dark:active:bg-white/[0.12] text-black/60 dark:text-white/60"
+        }`}
+        style={{ touchAction: "manipulation", WebkitTapHighlightColor: "transparent" }}
+      >
+        <Wand2 className="h-[1em] w-[1em]" />
+        {!isMobile && <span className="text-[0.85em]">Design</span>}
+      </button>
+
+      {showHint && !designMode.active && (
+        <div className="absolute right-0 top-full mt-2 w-[220px] rounded-lg bg-gray-900 dark:bg-white text-white dark:text-gray-900 text-[12px] leading-relaxed px-3 py-2.5 shadow-xl z-50">
+          <div className="flex items-start justify-between gap-2">
+            <span>
+              New: <strong>Design Mode</strong> — click any element and prompt to remix this page live.
+            </span>
+            <button
+              onClick={dismissHint}
+              aria-label="Dismiss"
+              className="shrink-0 opacity-60 hover:opacity-100 transition-opacity"
+            >
+              <X className="h-3 w-3" />
+            </button>
+          </div>
+        </div>
+      )}
+    </div>
+  );
+}
+
 interface GlobalMenuBarProps {
   currentRoute: RouteType;
   // Manifest and model info (needed for both / and /agent)
@@ -440,7 +511,10 @@ export function GlobalMenuBar({
               Built in {buildTotalTime}s
             </span>
           )}
-          
+
+          {/* Design Mode toggle - homepage only */}
+          {currentRoute === "/" && <DesignModeToggle />}
+
           {/* Command menu trigger button - always rendered */}
           <button
             onClick={() => setCommandOpen(true)}
