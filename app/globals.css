@@ -242,3 +242,175 @@ a[href^="https://"],
 a[href^="mailto:"] {
   cursor: ne-resize;
 }
+
+/* ==========================================================================
+   Vibrant P3 mode
+   A richer home-page theme that taps the Display-P3 wide-gamut color space.
+   Colors are authored in sRGB first (universal fallback), then upgraded to
+   their more saturated P3 equivalents on capable displays via @supports.
+   ========================================================================== */
+
+.vibrant-home {
+  /* sRGB fallbacks - already lively, used on non-P3 displays */
+  --v-accent: #e6007a;
+  --v-accent-2: #7c3aed;
+  --v-accent-3: #00b4d8;
+  --v-bg-tint-1: rgba(230, 0, 122, 0.10);
+  --v-bg-tint-2: rgba(124, 58, 237, 0.10);
+  --v-bg-tint-3: rgba(0, 180, 216, 0.10);
+  --v-link: #d6006e;
+  --v-link-hover: #ff1493;
+
+  transition: background 0.6s ease, color 0.6s ease;
+  background:
+    radial-gradient(120% 120% at 0% 0%, var(--v-bg-tint-1) 0%, transparent 45%),
+    radial-gradient(120% 120% at 100% 0%, var(--v-bg-tint-3) 0%, transparent 45%),
+    radial-gradient(140% 140% at 50% 120%, var(--v-bg-tint-2) 0%, transparent 50%),
+    var(--color-bg) !important;
+}
+
+/* Upgrade to wide-gamut P3 where supported - noticeably more saturated */
+@supports (color: color(display-p3 1 1 1)) {
+  .vibrant-home {
+    --v-accent: color(display-p3 1 0 0.45);
+    --v-accent-2: color(display-p3 0.55 0.2 1);
+    --v-accent-3: color(display-p3 0 0.78 1);
+    --v-bg-tint-1: color(display-p3 1 0 0.45 / 0.13);
+    --v-bg-tint-2: color(display-p3 0.55 0.2 1 / 0.13);
+    --v-bg-tint-3: color(display-p3 0 0.78 1 / 0.12);
+    --v-link: color(display-p3 1 0 0.4);
+    --v-link-hover: color(display-p3 1 0.1 0.55);
+  }
+}
+
+@media (prefers-color-scheme: dark) {
+  .vibrant-home {
+    --v-bg-tint-1: rgba(255, 0, 115, 0.16);
+    --v-bg-tint-2: rgba(124, 58, 237, 0.18);
+    --v-bg-tint-3: rgba(0, 180, 216, 0.14);
+    --v-link: #ff3d9a;
+    --v-link-hover: #ff66b3;
+  }
+}
+
+@supports (color: color(display-p3 1 1 1)) {
+  @media (prefers-color-scheme: dark) {
+    .vibrant-home {
+      --v-bg-tint-1: color(display-p3 1 0 0.45 / 0.20);
+      --v-bg-tint-2: color(display-p3 0.55 0.2 1 / 0.22);
+      --v-bg-tint-3: color(display-p3 0 0.78 1 / 0.18);
+      --v-link: color(display-p3 1 0.2 0.6);
+      --v-link-hover: color(display-p3 1 0.35 0.7);
+    }
+  }
+}
+
+/* Animated wide-gamut gradient headline */
+.vibrant-heading {
+  background-image: linear-gradient(
+    100deg,
+    var(--v-accent) 0%,
+    var(--v-accent-2) 50%,
+    var(--v-accent-3) 100%
+  );
+  background-size: 200% auto;
+  -webkit-background-clip: text;
+  background-clip: text;
+  -webkit-text-fill-color: transparent;
+  color: transparent;
+  animation: vibrant-pan 6s linear infinite;
+  font-weight: 600;
+}
+
+@keyframes vibrant-pan {
+  to {
+    background-position: 200% center;
+  }
+}
+
+/* Links inside vibrant mode pick up the saturated accent */
+.vibrant-home article a {
+  color: var(--v-link);
+  text-decoration-color: color-mix(in srgb, var(--v-link) 45%, transparent);
+  transition: color 0.15s ease, text-decoration-color 0.15s ease;
+}
+
+.vibrant-home article a:hover {
+  color: var(--v-link-hover);
+  text-decoration-color: var(--v-link-hover);
+}
+
+/* P3 gamut demo: each swatch shows the sRGB-clamped color (left) next to
+   the true wide-gamut P3 color (right). On a P3 display the right half is
+   visibly more saturated; on sRGB displays both halves match. */
+.gamut-swatch {
+  position: relative;
+  height: 64px;
+  border-radius: 12px;
+  overflow: hidden;
+  border: 1px solid var(--color-border);
+}
+
+.gamut-swatch::before,
+.gamut-swatch::after {
+  content: "";
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  width: 50%;
+}
+
+.gamut-swatch::before {
+  left: 0;
+  background: var(--swatch-srgb);
+}
+
+.gamut-swatch::after {
+  right: 0;
+  background: var(--swatch-srgb);
+}
+
+@supports (color: color(display-p3 1 1 1)) {
+  .gamut-swatch::after {
+    background: var(--swatch-p3);
+  }
+}
+
+.gamut-swatch .swatch-divider {
+  position: absolute;
+  left: 50%;
+  top: 0;
+  bottom: 0;
+  width: 1px;
+  background: rgba(255, 255, 255, 0.55);
+  transform: translateX(-0.5px);
+  z-index: 1;
+}
+
+/* Animated full-width P3 gradient bar for the demo */
+.gamut-bar {
+  height: 56px;
+  border-radius: 12px;
+  background-image: linear-gradient(
+    90deg,
+    color(display-p3 1 0 0.3),
+    color(display-p3 1 0.55 0),
+    color(display-p3 0.85 1 0),
+    color(display-p3 0 0.85 0.55),
+    color(display-p3 0 0.6 1),
+    color(display-p3 0.6 0.2 1),
+    color(display-p3 1 0 0.3)
+  );
+  background-size: 200% 100%;
+  animation: vibrant-pan 8s linear infinite;
+}
+
+/* sRGB fallback for the gradient bar */
+@supports not (color: color(display-p3 1 1 1)) {
+  .gamut-bar {
+    background-image: linear-gradient(
+      90deg,
+      #ff004d, #ff8c00, #d9ff00, #00d98c, #0099ff, #9933ff, #ff004d
+    );
+  }
+}
