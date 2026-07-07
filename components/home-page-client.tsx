@@ -4,6 +4,8 @@ import { useState, useCallback, useEffect } from "react";
 import { motion } from "motion/react";
 import { GlobalMenuBar } from "@/components/global-menu-bar";
 import { PostList } from "@/components/post-list";
+import { DesignModeProvider } from "@/components/design-mode/design-mode-provider";
+import { DesignModeSurface } from "@/components/design-mode/design-mode-surface";
 import type { PostMeta } from "@/lib/posts";
 
 // Smooth ease for classy feel
@@ -100,47 +102,57 @@ function Link({
 
 export function HomePageClient({ posts }: { posts: PostMeta[] }) {
   return (
-    <LinkTooltipProvider>
-      <div className="min-h-dvh flex flex-col bg-[#fafaf9] dark:bg-[#0a0a0a] text-[#1a1a1a] dark:text-[#e5e5e5]">
-        {/* Menu Bar - fixed at top */}
-        <div className="sticky top-0 z-50">
-          <GlobalMenuBar currentRoute="/" />
-        </div>
+    <DesignModeProvider>
+      <LinkTooltipProvider>
+        <div className="min-h-dvh flex flex-col bg-[#fafaf9] dark:bg-[#0a0a0a] text-[#1a1a1a] dark:text-[#e5e5e5]">
+          {/* Menu Bar - fixed at top */}
+          <div className="sticky top-0 z-50">
+            <GlobalMenuBar currentRoute="/" />
+          </div>
 
-        {/* Animated content */}
-        <motion.div
-          initial={{ opacity: 0 }}
-          animate={{ opacity: 1 }}
-          transition={{ duration: 0.4, ease: smoothEase }}
-          className="flex-1 flex flex-col"
-        >
-          {/* Main Content */}
-          <main className="max-w-[640px] mx-auto px-6 pt-16 w-full">
-            <article className="text-[15px] leading-[1.5] text-black/85 dark:text-white/85 space-y-4">
-              <p>Hej, I'm Erik.</p>
+          {/* Animated content */}
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            transition={{ duration: 0.4, ease: smoothEase }}
+            className="flex-1 flex flex-col"
+          >
+            {/* Main Content — editable surface in Design Mode.
+                The inner background div is a selectable child of the design root
+                so visitors can recolor the page background too. */}
+            <DesignModeSurface>
+              <div data-design-root className="flex flex-col flex-1">
+                <div className="flex flex-col flex-1 bg-[#fafaf9] dark:bg-[#0a0a0a]">
+                  <main className="max-w-[640px] mx-auto px-6 pt-16 w-full">
+                    <article className="text-[15px] leading-[1.5] text-black/85 dark:text-white/85 space-y-4">
+                      <p>Hej, I'm Erik.</p>
 
-              <p>
-                This site is my playground to try things and write about what I learn. Follow me on{" "}
-                <Link href="https://x.com/flowstated" external>
-                  X
-                </Link>
-                , checkout my{" "}
-                <Link href="https://github.com/eriknson" external>
-                  GitHub
-                </Link>
-                , or send me an{" "}
-                <Link href="mailto:contact@eriks.design?subject=Hej">email</Link>.
-              </p>
-            </article>
+                      <p>
+                        This site is my playground to try things and write about what I learn. Follow me on{" "}
+                        <Link href="https://x.com/flowstated" external>
+                          X
+                        </Link>
+                        , checkout my{" "}
+                        <Link href="https://github.com/eriknson" external>
+                          GitHub
+                        </Link>
+                        , or send me an{" "}
+                        <Link href="mailto:contact@eriks.design?subject=Hej">email</Link>.
+                      </p>
+                    </article>
 
-            {posts.length > 0 && (
-              <div className="mt-12">
-                <PostList posts={posts} />
+                    {posts.length > 0 && (
+                      <div className="mt-12">
+                        <PostList posts={posts} />
+                      </div>
+                    )}
+                  </main>
+                </div>
               </div>
-            )}
-          </main>
-        </motion.div>
-      </div>
-    </LinkTooltipProvider>
+            </DesignModeSurface>
+          </motion.div>
+        </div>
+      </LinkTooltipProvider>
+    </DesignModeProvider>
   );
 }
