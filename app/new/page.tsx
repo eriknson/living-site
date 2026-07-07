@@ -285,7 +285,7 @@ export default function NewBuildPage() {
   const hasStreamedHtml = htmlContent.length > 0 && isStreaming;
 
   return (
-    <div className="h-dvh flex flex-col bg-[#fafaf9] dark:bg-[#0a0a0a]">
+    <div className="h-dvh flex flex-col bg-page">
       <GlobalMenuBar
         currentRoute="/new"
         buildComplete={isComplete}

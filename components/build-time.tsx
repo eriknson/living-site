@@ -88,7 +88,7 @@ export function BuildTime({ currentRoute, manifest, currentModel, currentDate, c
   // Home page: just informational text, no link, with fade-shimmer animation
   if (isHome) {
     return (
-      <span className="h-full px-2 text-black/35 dark:text-white/35 flex items-center select-text whitespace-nowrap">
+      <span className="h-full px-2 text-tertiary flex items-center select-text whitespace-nowrap">
         <FadeShimmerText 
           text={`Updated ${relativeTime}`} 
           delay={150} 
@@ -104,7 +104,7 @@ export function BuildTime({ currentRoute, manifest, currentModel, currentDate, c
   return (
     <Link 
       href="/builds"
-      className="h-full px-2 text-black/35 dark:text-white/35 hover:text-black/60 dark:hover:text-white/60 flex items-center transition-colors whitespace-nowrap"
+      className="h-full px-2 text-tertiary hover:text-secondary flex items-center transition-colors whitespace-nowrap"
     >
       <FadeShimmerText 
         text={agentDisplayText} 

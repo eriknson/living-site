@@ -71,7 +71,7 @@ export default async function PostPage({
   });
 
   return (
-    <div className="min-h-dvh bg-[#fafaf9] dark:bg-[#0a0a0a] text-[#1a1a1a] dark:text-[#e5e5e5]">
+    <div className="min-h-dvh bg-page text-primary">
       <div className="sticky top-0 z-50">
         <GlobalMenuBar currentRoute="/" />
       </div>

@@ -83,18 +83,18 @@ export default async function PostPage({
   });
 
   return (
-    <div className="min-h-dvh bg-[#fafaf9] dark:bg-[#0a0a0a] text-[#1a1a1a] dark:text-[#e5e5e5]">
+    <div className="min-h-dvh bg-page text-primary">
       <div className="sticky top-0 z-50">
         <GlobalMenuBar currentRoute="/posts" />
       </div>
 
       <main className="max-w-[640px] mx-auto px-6 pt-16 pb-16">
-        {/* Header */}
+        {/* Header - flat title, same size as body (Emil-style) */}
         <header className="mb-10">
-          <h1 className="text-2xl font-medium mb-3 leading-tight">
+          <h1 className="font-medium mb-0.5">
             {post.title}
           </h1>
-          <p className="text-black/50 dark:text-white/50 text-sm">
+          <p className="text-sm text-tertiary">
             {formattedDate}
             {post.readTime && ` · ${post.readTime} min`}
           </p>
@@ -104,12 +104,13 @@ export default async function PostPage({
         <article
           className="
             prose prose-neutral dark:prose-invert
-            text-base leading-[1.75]
-            prose-headings:font-medium prose-headings:tracking-tight
-            prose-h2:text-xl prose-h2:mt-10 prose-h2:mb-4
-            prose-p:text-black/85 dark:prose-p:text-white/85
-            prose-a:underline prose-a:decoration-black/20 dark:prose-a:decoration-white/20
-            prose-a:underline-offset-2 hover:prose-a:decoration-black/40 dark:hover:prose-a:decoration-white/40
+            text-base leading-[1.65]
+            prose-headings:text-base prose-headings:font-[550] prose-headings:text-primary
+            prose-h2:mt-10 prose-h2:mb-4
+            prose-p:text-primary
+            prose-a:font-medium prose-a:text-primary prose-a:underline prose-a:decoration-underline prose-a:decoration-[1.5px]
+            prose-a:underline-offset-2 hover:prose-a:decoration-tertiary
+            prose-strong:text-primary prose-li:text-primary
             max-w-none
           "
         >

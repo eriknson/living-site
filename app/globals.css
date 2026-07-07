@@ -18,18 +18,21 @@
   --menu-bar-logo-size: 17px;
   color-scheme: light dark;
   
-  /* Anysphere color palette - Light mode */
-  --color-bg: #f7f7f4;
-  --color-text: #26251e;
-  --color-muted: #8a897f;
-  --color-text-muted: #8a897f;
-  --color-border: rgba(38, 37, 30, 0.08);
-  --color-hover: rgba(38, 37, 30, 0.05);
-  --color-active: rgba(38, 37, 30, 0.10);
+  /* Warm gray palette (Radix Sand-esque) - Light mode */
+  --color-bg: #fdfdfc;
+  --color-text: #21201c;
+  --color-text-secondary: #63635e;
+  --color-text-tertiary: #82827c;
+  --color-muted: #82827c;
+  --color-text-muted: #82827c;
+  --color-border: #e9e9e7;
+  --color-hover: #f5f4f4;
+  --color-active: #f1f0ef;
+  --color-underline: #bcbbb5;
   
   /* Syntax highlighting - Light mode */
-  --code-bg: #fafafa;
-  --code-border: rgba(0, 0, 0, 0.08);
+  --code-bg: #f9f9f8;
+  --code-border: #e9e9e7;
   --code-text: rgba(0, 0, 0, 0.7);
   --code-muted: rgba(0, 0, 0, 0.4);
   --code-keyword: #7c3aed;
@@ -45,18 +48,21 @@
 
 @media (prefers-color-scheme: dark) {
   :root {
-    /* Anysphere color palette - Dark mode */
-    --color-bg: #0a0a0a;
-    --color-text: #e5e5e5;
-    --color-muted: #737373;
-    --color-text-muted: #737373;
-    --color-border: rgba(255, 255, 255, 0.08);
-    --color-hover: rgba(255, 255, 255, 0.05);
-    --color-active: rgba(255, 255, 255, 0.10);
+    /* Warm gray palette (Radix Sand-esque) - Dark mode */
+    --color-bg: #111110;
+    --color-text: #eeeeec;
+    --color-text-secondary: #b5b3ad;
+    --color-text-tertiary: #7c7b74;
+    --color-muted: #7c7b74;
+    --color-text-muted: #7c7b74;
+    --color-border: #2a2a28;
+    --color-hover: #191918;
+    --color-active: #222221;
+    --color-underline: #62605b;
     
     /* Syntax highlighting - Dark mode */
-    --code-bg: #0a0a0a;
-    --code-border: rgba(255, 255, 255, 0.08);
+    --code-bg: #191918;
+    --code-border: #2a2a28;
     --code-text: rgba(255, 255, 255, 0.7);
     --code-muted: rgba(255, 255, 255, 0.4);
     --code-keyword: #a78bfa;
@@ -81,7 +87,9 @@
 html, body {
   margin: 0;
   padding: 0;
-  font-family: -apple-system, BlinkMacSystemFont, "SF Pro Text", "Segoe UI", Roboto, sans-serif;
+  font-family: var(--font-sans), -apple-system, BlinkMacSystemFont, "SF Pro Text", "Segoe UI", Roboto, sans-serif;
+  /* Inter alternates: single-story a (cv01), curved quotes/commas (ss03) */
+  font-feature-settings: "cv01", "ss03";
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
 }
@@ -167,10 +175,10 @@ html {
   opacity: var(--label-hover-opacity, 0.7);
 }
 
-/* Inline code styling - subtle and refined */
+/* Inline code styling - neutral and quiet (Emil-style) */
 .prose code:not(pre code) {
-  background: rgba(0, 0, 0, 0.04);
-  color: #b45309;
+  background: var(--color-hover);
+  color: var(--color-text);
   font-family: ui-monospace, SFMono-Regular, "SF Mono", Menlo, Monaco, "Cascadia Mono", monospace;
   font-size: 0.875em;
   font-weight: 450;
@@ -178,13 +186,6 @@ html {
   border-radius: 4px;
   -webkit-box-decoration-break: clone;
   box-decoration-break: clone;
-}
-
-@media (prefers-color-scheme: dark) {
-  .prose code:not(pre code) {
-    background: rgba(255, 255, 255, 0.06);
-    color: #fcd34d;
-  }
 }
 
 /* Reset prose-code styles inside pre blocks - only inline code should have background */

@@ -83,29 +83,29 @@ function IdleMobileDrawerContent({ countdown, nextBuildTime, onLinkClick }: {
   return (
     <div className="px-3 pb-8 space-y-3">
       <div className="bg-black/[0.03] dark:bg-white/[0.05] rounded-2xl px-4 py-3.5">
-        <p className="text-base text-black/60 dark:text-white/60 leading-relaxed">
+        <p className="text-base text-secondary leading-relaxed">
           This website regenerates daily via Cursor CLI agents running on GitHub Actions. Redeploys via Vercel automatically.
         </p>
       </div>
       <div className="bg-black/[0.03] dark:bg-white/[0.05] rounded-2xl px-4 py-3">
         <div className="flex justify-between items-baseline py-1">
-          <span className="text-base text-black/50 dark:text-white/50">Next build</span>
-          <span className="text-base text-black/90 dark:text-white/90">{formatNextBuildTime(nextBuildTime)}</span>
+          <span className="text-base text-secondary">Next build</span>
+          <span className="text-base text-primary">{formatNextBuildTime(nextBuildTime)}</span>
         </div>
         <div className="flex justify-between items-baseline py-1">
-          <span className="text-base text-black/50 dark:text-white/50">Countdown</span>
-          <span className="text-base text-black/90 dark:text-white/90">{countdown}</span>
+          <span className="text-base text-secondary">Countdown</span>
+          <span className="text-base text-primary">{countdown}</span>
         </div>
         <div className="flex justify-between items-baseline py-1">
-          <span className="text-base text-black/50 dark:text-white/50">Schedule</span>
-          <span className="text-base text-black/90 dark:text-white/90">Daily at 6am Pacific</span>
+          <span className="text-base text-secondary">Schedule</span>
+          <span className="text-base text-primary">Daily at 6am Pacific</span>
         </div>
       </div>
       <div className="flex gap-2">
         <Link
           href="/"
           onClick={onLinkClick}
-          className="flex-1 flex items-center justify-center gap-2 px-4 py-3 rounded-xl text-base font-medium text-black/70 dark:text-white/70 bg-black/[0.06] dark:bg-white/[0.08] active:bg-black/10 dark:active:bg-white/15 transition-colors"
+          className="flex-1 flex items-center justify-center gap-2 px-4 py-3 rounded-xl text-base font-medium text-secondary bg-black/[0.06] dark:bg-white/[0.08] active:bg-black/10 dark:active:bg-white/15 transition-colors"
         >
           <Home className="h-4 w-4" />
           <span>View Latest</span>
@@ -115,7 +115,7 @@ function IdleMobileDrawerContent({ countdown, nextBuildTime, onLinkClick }: {
           target="_blank"
           rel="noopener noreferrer"
           onClick={onLinkClick}
-          className="flex-1 flex items-center justify-center gap-2 px-4 py-3 rounded-xl text-base font-medium text-black/70 dark:text-white/70 bg-black/[0.06] dark:bg-white/[0.08] active:bg-black/10 dark:active:bg-white/15 transition-colors"
+          className="flex-1 flex items-center justify-center gap-2 px-4 py-3 rounded-xl text-base font-medium text-secondary bg-black/[0.06] dark:bg-white/[0.08] active:bg-black/10 dark:active:bg-white/15 transition-colors"
         >
           <ArrowUpRight className="h-4 w-4" />
           <span>Source</span>
@@ -149,17 +149,17 @@ function BuildingMobileDrawerContent({ state, elapsed, onLinkClick }: {
       </div>
       <div className="bg-black/[0.03] dark:bg-white/[0.05] rounded-2xl px-4 py-3">
         <div className="flex justify-between items-baseline py-1">
-          <span className="text-base text-black/50 dark:text-white/50">Elapsed</span>
-          <span className="text-base text-black/90 dark:text-white/90">{elapsed}</span>
+          <span className="text-base text-secondary">Elapsed</span>
+          <span className="text-base text-primary">{elapsed}</span>
         </div>
         <div className="flex justify-between items-baseline py-1">
-          <span className="text-base text-black/50 dark:text-white/50">Phase</span>
-          <span className="text-base text-black/90 dark:text-white/90">{phaseLabel}</span>
+          <span className="text-base text-secondary">Phase</span>
+          <span className="text-base text-primary">{phaseLabel}</span>
         </div>
         {activeModels.length > 0 && (
           <div className="flex justify-between items-baseline py-1">
-            <span className="text-base text-black/50 dark:text-white/50">Active</span>
-            <span className="text-base text-black/90 dark:text-white/90">{activeModels.join(", ")}</span>
+            <span className="text-base text-secondary">Active</span>
+            <span className="text-base text-primary">{activeModels.join(", ")}</span>
           </div>
         )}
       </div>
@@ -169,7 +169,7 @@ function BuildingMobileDrawerContent({ state, elapsed, onLinkClick }: {
           target="_blank"
           rel="noopener noreferrer"
           onClick={onLinkClick}
-          className="flex-1 flex items-center justify-center gap-2 px-4 py-3 rounded-xl text-base font-medium text-black/70 dark:text-white/70 bg-black/[0.06] dark:bg-white/[0.08] active:bg-black/10 dark:active:bg-white/15 transition-colors"
+          className="flex-1 flex items-center justify-center gap-2 px-4 py-3 rounded-xl text-base font-medium text-secondary bg-black/[0.06] dark:bg-white/[0.08] active:bg-black/10 dark:active:bg-white/15 transition-colors"
         >
           <ArrowUpRight className="h-4 w-4" />
           <span>View on GitHub</span>
@@ -224,7 +224,7 @@ function BuildStatus() {
   const isBuilding = buildState?.status === "running";
 
   const TriggerButton = (
-    <button className="outline-none flex items-center gap-1.5 cursor-pointer text-black/40 dark:text-white/40 hover:text-black/70 dark:hover:text-white/70 transition-colors whitespace-nowrap">
+    <button className="outline-none flex items-center gap-1.5 cursor-pointer text-tertiary hover:text-secondary transition-colors whitespace-nowrap">
       {isBuilding ? (
         <>
           <span className="w-2 h-2 bg-blue-500 rounded-full animate-pulse" />
@@ -274,24 +274,24 @@ function BuildStatus() {
                 <Zap className="h-3.5 w-3.5 text-blue-500" />
                 <span className="text-blue-600 dark:text-blue-400 font-medium">Build in progress</span>
               </div>
-              <p className="text-sm text-black/50 dark:text-white/50 mt-1">
+              <p className="text-sm text-secondary mt-1">
                 {getPhaseLabel(buildState)}
               </p>
             </div>
             <DropdownMenuSeparator />
             <div className="px-3 py-2.5 space-y-1">
               <div className="flex justify-between items-baseline text-sm">
-                <span className="text-black/50 dark:text-white/50">Elapsed</span>
-                <span className="text-black/90 dark:text-white/90">{elapsed}</span>
+                <span className="text-secondary">Elapsed</span>
+                <span className="text-primary">{elapsed}</span>
               </div>
               <div className="flex justify-between items-baseline text-sm">
-                <span className="text-black/50 dark:text-white/50">Phase</span>
-                <span className="text-black/90 dark:text-white/90">{getPhaseLabel(buildState)}</span>
+                <span className="text-secondary">Phase</span>
+                <span className="text-primary">{getPhaseLabel(buildState)}</span>
               </div>
               {getActiveModels(buildState).length > 0 && (
                 <div className="flex justify-between items-baseline text-sm">
-                  <span className="text-black/50 dark:text-white/50">Active</span>
-                  <span className="text-black/90 dark:text-white/90">{getActiveModels(buildState).join(", ")}</span>
+                  <span className="text-secondary">Active</span>
+                  <span className="text-primary">{getActiveModels(buildState).join(", ")}</span>
                 </div>
               )}
             </div>
@@ -301,31 +301,31 @@ function BuildStatus() {
                 href="https://github.com/eriknson/living-site/actions"
                 target="_blank"
                 rel="noopener noreferrer"
-                className="flex items-center justify-between px-2 py-2 rounded-sm text-sm text-black/80 dark:text-white/80 hover:bg-black/5 dark:hover:bg-white/10 active:bg-black/10 dark:active:bg-white/15 transition-colors"
+                className="flex items-center justify-between px-2 py-2 rounded-sm text-sm text-primary hover:bg-black/5 dark:hover:bg-white/10 active:bg-black/10 dark:active:bg-white/15 transition-colors"
               >
                 <span>View on GitHub Actions</span>
-                <ArrowUpRight className="h-3.5 w-3.5 text-black/40 dark:text-white/40" />
+                <ArrowUpRight className="h-3.5 w-3.5 text-tertiary" />
               </a>
             </div>
           </>
         ) : (
           <>
-            <div className="px-3 py-2.5 text-sm text-black/60 dark:text-white/60 leading-relaxed">
+            <div className="px-3 py-2.5 text-sm text-secondary leading-relaxed">
               This website regenerates daily via Cursor CLI agents running on GitHub Actions. Redeploys via Vercel automatically.
             </div>
             <DropdownMenuSeparator />
             <div className="px-3 py-2.5 space-y-1">
               <div className="flex justify-between items-baseline text-sm">
-                <span className="text-black/50 dark:text-white/50">Next build</span>
-                <span className="text-black/90 dark:text-white/90">{formatNextBuildTime(nextBuildTime)}</span>
+                <span className="text-secondary">Next build</span>
+                <span className="text-primary">{formatNextBuildTime(nextBuildTime)}</span>
               </div>
               <div className="flex justify-between items-baseline text-sm">
-                <span className="text-black/50 dark:text-white/50">Countdown</span>
-                <span className="text-black/90 dark:text-white/90">{countdown}</span>
+                <span className="text-secondary">Countdown</span>
+                <span className="text-primary">{countdown}</span>
               </div>
               <div className="flex justify-between items-baseline text-sm">
-                <span className="text-black/50 dark:text-white/50">Schedule</span>
-                <span className="text-black/90 dark:text-white/90 flex items-center gap-1.5">
+                <span className="text-secondary">Schedule</span>
+                <span className="text-primary flex items-center gap-1.5">
                   <Clock className="h-3 w-3" />
                   Daily at 6am Pacific
                 </span>
@@ -335,10 +335,10 @@ function BuildStatus() {
             <div className="px-1 py-1">
               <Link
                 href="/"
-                className="flex items-center justify-between px-2 py-2 rounded-sm text-sm text-black/80 dark:text-white/80 hover:bg-black/5 dark:hover:bg-white/10 active:bg-black/10 dark:active:bg-white/15 transition-colors"
+                className="flex items-center justify-between px-2 py-2 rounded-sm text-sm text-primary hover:bg-black/5 dark:hover:bg-white/10 active:bg-black/10 dark:active:bg-white/15 transition-colors"
               >
                 <span>View Latest</span>
-                <Home className="h-3.5 w-3.5 text-black/40 dark:text-white/40" />
+                <Home className="h-3.5 w-3.5 text-tertiary" />
               </Link>
             </div>
           </>
@@ -401,7 +401,7 @@ export function GlobalMenuBar({
   }, []);
 
   return (
-    <nav className="shrink-0 py-4 pt-[calc(1rem+env(safe-area-inset-top))] z-50 text-[length:var(--menu-bar-font-size)] text-anysphere-text select-none border-b border-black/[0.06] dark:border-white/[0.06] bg-[#fafaf9] dark:bg-[#0a0a0a] md:sticky md:top-0">
+    <nav className="shrink-0 py-4 pt-[calc(1rem+env(safe-area-inset-top))] z-50 text-[length:var(--menu-bar-font-size)] text-primary select-none border-b border-subtle bg-page md:sticky md:top-0">
       <div className="max-w-[640px] mx-auto w-full h-full flex items-center justify-between px-6">
         <div className="flex items-center h-full gap-1">
           {/* Version selector - shown on all pages */}
@@ -453,7 +453,7 @@ export function GlobalMenuBar({
           >
             <SearchIcon className="h-[1em] w-[1em] opacity-50" />
             {!isMobile && (
-              <span className="text-black/40 dark:text-white/40 text-sm">
+              <span className="text-tertiary text-sm">
                 ⌘K
               </span>
             )}

@@ -1,15 +1,23 @@
 import type { Metadata, Viewport } from "next";
+import { Inter } from "next/font/google";
 import { Analytics } from "@vercel/analytics/next";
 import { AnalyticsProvider } from "@/components/analytics-provider";
 import "./globals.css";
+
+// Variable Inter with a system fallback; feature settings applied in globals.css
+const inter = Inter({
+  subsets: ["latin"],
+  display: "swap",
+  variable: "--font-sans",
+});
 
 export const viewport: Viewport = {
   width: "device-width",
   initialScale: 1,
   viewportFit: "cover",
   themeColor: [
-    { media: "(prefers-color-scheme: light)", color: "#fafaf9" },
-    { media: "(prefers-color-scheme: dark)", color: "#0a0a0a" },
+    { media: "(prefers-color-scheme: light)", color: "#fdfdfc" },
+    { media: "(prefers-color-scheme: dark)", color: "#111110" },
   ],
 };
 
@@ -48,7 +56,7 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <html lang="en">
+    <html lang="en" className={inter.variable}>
       <head>
         <link rel="preconnect" href="https://va.vercel-scripts.com" />
       </head>

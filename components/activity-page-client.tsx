@@ -146,7 +146,7 @@ export function ActivityPageClient() {
       : 0;
 
   return (
-    <div className="min-h-screen min-h-dvh bg-[#fafaf9] dark:bg-[#0a0a0a] text-[#1a1a1a] dark:text-[#e5e5e5]">
+    <div className="min-h-screen min-h-dvh bg-page text-primary">
       <GlobalMenuBar currentRoute={"/builds" as never} />
 
       <main className="max-w-[640px] mx-auto px-6 pt-10 pb-20">

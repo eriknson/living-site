@@ -16,6 +16,16 @@ interface PostListProps {
   excludeStaticLink?: boolean;
 }
 
+// Emil-style row: the whole row is the link, no underline, hover pill
+const rowClass =
+  "-mx-3 flex flex-col sm:flex-row sm:items-baseline sm:justify-between gap-1 sm:gap-4 rounded-md px-3 py-2 no-underline hover:bg-hover transition-colors";
+
+function RowMeta({ children }: { children: React.ReactNode }) {
+  return (
+    <span className="text-sm text-tertiary whitespace-nowrap">{children}</span>
+  );
+}
+
 export function PostList({ posts, excludeStaticLink = false }: PostListProps) {
   if (posts.length === 0) return null;
 
@@ -27,66 +37,75 @@ export function PostList({ posts, excludeStaticLink = false }: PostListProps) {
 
   return (
     <div>
-      <ul className="space-y-3">
+      <ul className="flex flex-col gap-1">
         {sortedPosts.map((post) => (
-          <li
-            key={post.slug}
-            className="flex flex-col sm:flex-row sm:items-baseline sm:justify-between gap-1 sm:gap-4"
-          >
-            <div className="flex items-baseline gap-3 min-w-0">
-              {post.externalUrl ? (
-                <a
-                  href={post.externalUrl}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="underline underline-offset-2 decoration-black/20 dark:decoration-white/20 hover:decoration-black/40 dark:hover:decoration-white/40 transition-colors truncate cursor-ne-resize"
-                >
-                  {post.title}{" "}
-                  <span className="text-black/35 dark:text-white/35">↗</span>
-                </a>
-              ) : (
-                <Link
-                  href={`/posts/${post.slug}`}
-                  className="underline underline-offset-2 decoration-black/20 dark:decoration-white/20 hover:decoration-black/40 dark:hover:decoration-white/40 transition-colors"
-                >
-                  {post.title}
-                </Link>
-              )}
-              {post.readTime > 0 && (
-                <span className="text-sm text-black/35 dark:text-white/35 whitespace-nowrap hidden sm:inline">
-                  {post.readTime} min
+          <li key={post.slug}>
+            {post.externalUrl ? (
+              <a
+                href={post.externalUrl}
+                target="_blank"
+                rel="noopener noreferrer"
+                className={`${rowClass} cursor-ne-resize`}
+              >
+                <span className="flex items-baseline gap-3 min-w-0">
+                  <span className="text-primary truncate">
+                    {post.title} <span className="text-tertiary">↗</span>
+                  </span>
+                  {post.readTime > 0 && (
+                    <span className="text-sm text-tertiary whitespace-nowrap hidden sm:inline">
+                      {post.readTime} min
+                    </span>
+                  )}
                 </span>
-              )}
-            </div>
-            <span className="text-sm text-black/35 dark:text-white/35 whitespace-nowrap">
-              {formatDate(post.publishedAt)}
-              {post.readTime > 0 && (
-                <span className="sm:hidden"> · {post.readTime} min</span>
-              )}
-            </span>
+                <RowMeta>
+                  {formatDate(post.publishedAt)}
+                  {post.readTime > 0 && (
+                    <span className="sm:hidden"> · {post.readTime} min</span>
+                  )}
+                </RowMeta>
+              </a>
+            ) : (
+              <Link href={`/posts/${post.slug}`} className={rowClass}>
+                <span className="flex items-baseline gap-3 min-w-0">
+                  <span className="text-primary truncate">{post.title}</span>
+                  {post.readTime > 0 && (
+                    <span className="text-sm text-tertiary whitespace-nowrap hidden sm:inline">
+                      {post.readTime} min
+                    </span>
+                  )}
+                </span>
+                <RowMeta>
+                  {formatDate(post.publishedAt)}
+                  {post.readTime > 0 && (
+                    <span className="sm:hidden"> · {post.readTime} min</span>
+                  )}
+                </RowMeta>
+              </Link>
+            )}
           </li>
         ))}
         {/* Static external link */}
         {!excludeStaticLink && (
-          <li className="flex flex-col sm:flex-row sm:items-baseline sm:justify-between gap-1 sm:gap-4">
-            <div className="flex items-baseline gap-3 min-w-0">
-              <a
-                href="https://uu.diva-portal.org/smash/record.jsf?pid=diva2:1453018"
-                target="_blank"
-                rel="noopener noreferrer"
-                className="underline underline-offset-2 decoration-black/20 dark:decoration-white/20 hover:decoration-black/40 dark:hover:decoration-white/40 transition-colors truncate cursor-ne-resize"
-              >
-                Go with the flow{" "}
-                <span className="text-black/35 dark:text-white/35">↗</span>
-              </a>
-              <span className="text-sm text-black/35 dark:text-white/35 whitespace-nowrap hidden sm:inline">
-                45 min
+          <li>
+            <a
+              href="https://uu.diva-portal.org/smash/record.jsf?pid=diva2:1453018"
+              target="_blank"
+              rel="noopener noreferrer"
+              className={`${rowClass} cursor-ne-resize`}
+            >
+              <span className="flex items-baseline gap-3 min-w-0">
+                <span className="text-primary truncate">
+                  Go with the flow <span className="text-tertiary">↗</span>
+                </span>
+                <span className="text-sm text-tertiary whitespace-nowrap hidden sm:inline">
+                  45 min
+                </span>
               </span>
-            </div>
-            <span className="text-sm text-black/35 dark:text-white/35 whitespace-nowrap">
-              August 4, 2020
-              <span className="sm:hidden"> · 45 min</span>
-            </span>
+              <RowMeta>
+                August 4, 2020
+                <span className="sm:hidden"> · 45 min</span>
+              </RowMeta>
+            </a>
           </li>
         )}
       </ul>

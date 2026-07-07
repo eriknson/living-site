@@ -16,8 +16,16 @@ module.exports = {
         base: ["15px", { lineHeight: "1.5" }],
       },
       colors: {
-        // Anysphere color palette - light mode values
-        // Dark mode handled via CSS variables in globals.css
+        // Semantic palette backed by CSS variables (dark mode flips in globals.css)
+        page: 'var(--color-bg)',
+        primary: 'var(--color-text)',
+        secondary: 'var(--color-text-secondary)',
+        tertiary: 'var(--color-text-tertiary)',
+        subtle: 'var(--color-border)',
+        hover: 'var(--color-hover)',
+        active: 'var(--color-active)',
+        underline: 'var(--color-underline)',
+        // Legacy alias used across pages
         anysphere: {
           bg: 'var(--color-bg)',
           text: 'var(--color-text)',

@@ -90,7 +90,7 @@ function Link({
   return (
     <a
       href={href}
-      className={`underline decoration-black/20 dark:decoration-white/20 underline-offset-2 hover:decoration-black/40 dark:hover:decoration-white/40 transition-colors ${external ? "cursor-ne-resize" : ""}`}
+      className={`font-medium text-primary underline decoration-underline decoration-[1.5px] underline-offset-2 hover:decoration-tertiary transition-colors ${external ? "cursor-ne-resize" : ""}`}
       {...(external && { target: "_blank", rel: "noopener noreferrer" })}
     >
       {children}
@@ -101,7 +101,7 @@ function Link({
 export function HomePageClient({ posts }: { posts: PostMeta[] }) {
   return (
     <LinkTooltipProvider>
-      <div className="min-h-dvh flex flex-col bg-[#fafaf9] dark:bg-[#0a0a0a] text-[#1a1a1a] dark:text-[#e5e5e5]">
+      <div className="min-h-dvh flex flex-col bg-page text-primary">
         {/* Menu Bar - fixed at top */}
         <div className="sticky top-0 z-50">
           <GlobalMenuBar currentRoute="/" />
@@ -116,7 +116,7 @@ export function HomePageClient({ posts }: { posts: PostMeta[] }) {
         >
           {/* Main Content */}
           <main className="max-w-[640px] mx-auto px-6 pt-16 w-full">
-            <article className="text-black/85 dark:text-white/85 space-y-4">
+            <article className="text-secondary leading-[1.65] space-y-4">
               <p>Hej, I'm Erik.</p>
 
               <p>
