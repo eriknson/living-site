@@ -9,6 +9,12 @@ module.exports = {
   ],
   theme: {
     extend: {
+      // Two-step type scale: base (body) and sm (meta/labels).
+      // Hierarchy comes from color/weight, not size variety.
+      fontSize: {
+        sm: ["13px", { lineHeight: "1.4" }],
+        base: ["15px", { lineHeight: "1.5" }],
+      },
       colors: {
         // Anysphere color palette - light mode values
         // Dark mode handled via CSS variables in globals.css

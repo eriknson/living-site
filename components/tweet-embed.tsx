@@ -37,7 +37,7 @@ class TweetErrorBoundary extends Component<
           href={`https://x.com/i/status/${this.props.id}`}
           target="_blank"
           rel="noopener noreferrer"
-          className="block rounded-xl border border-black/10 dark:border-white/10 px-4 py-3 text-[14px] text-black/60 dark:text-white/60 hover:text-black/80 dark:hover:text-white/80 transition-colors"
+          className="block rounded-xl border border-black/10 dark:border-white/10 px-4 py-3 text-sm text-black/60 dark:text-white/60 hover:text-black/80 dark:hover:text-white/80 transition-colors"
         >
           View tweet on X ↗
         </a>

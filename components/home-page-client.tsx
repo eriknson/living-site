@@ -64,7 +64,7 @@ function LinkTooltipProvider({ children }: { children: React.ReactNode }) {
       {children}
       {tooltip && (
         <div
-          className="fixed pointer-events-none z-50 px-2.5 py-1.5 text-[15px] bg-black/80 dark:bg-white/90 text-white dark:text-black rounded-md shadow-lg backdrop-blur-sm -translate-x-1/2"
+          className="fixed pointer-events-none z-50 px-2.5 py-1.5 text-sm bg-black/80 dark:bg-white/90 text-white dark:text-black rounded-md shadow-lg backdrop-blur-sm -translate-x-1/2"
           style={{
             left: tooltip.x,
             top: tooltip.y + 20,
@@ -116,7 +116,7 @@ export function HomePageClient({ posts }: { posts: PostMeta[] }) {
         >
           {/* Main Content */}
           <main className="max-w-[640px] mx-auto px-6 pt-16 w-full">
-            <article className="text-[15px] leading-[1.5] text-black/85 dark:text-white/85 space-y-4">
+            <article className="text-black/85 dark:text-white/85 space-y-4">
               <p>Hej, I'm Erik.</p>
 
               <p>

@@ -104,9 +104,10 @@ export default async function PostPage({
         <article
           className="
             prose prose-neutral dark:prose-invert
+            text-base leading-[1.75]
             prose-headings:font-medium prose-headings:tracking-tight
             prose-h2:text-xl prose-h2:mt-10 prose-h2:mb-4
-            prose-p:text-[15px] prose-p:leading-[1.75] prose-p:text-black/85 dark:prose-p:text-white/85
+            prose-p:text-black/85 dark:prose-p:text-white/85
             prose-a:underline prose-a:decoration-black/20 dark:prose-a:decoration-white/20
             prose-a:underline-offset-2 hover:prose-a:decoration-black/40 dark:hover:prose-a:decoration-white/40
             max-w-none
