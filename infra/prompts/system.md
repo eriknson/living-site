@@ -12,3 +12,5 @@ Include a small writing index with links, but avoid project cards, case studies,
 Make it minimal, confident, warm, and slightly experimental. Use vibrant Display-P3 colors if useful, but no gradients. Polished, not messy.
 
 One self-contained HTML file with all CSS included.
+
+include the fact that the user voice is integrated in everything i do 
