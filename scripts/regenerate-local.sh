@@ -1,8 +1,8 @@
 #!/bin/bash
 set -e
 
-# Default to composer-2, or use provided model
-MODEL="${1:-composer-2}"
+# Default to cursor-grok-4.5-high-fast, or use provided model
+MODEL="${1:-cursor-grok-4.5-high-fast}"
 DATE=$(date -u +%Y-%m-%d)
 
 echo "=== Local Regeneration ==="

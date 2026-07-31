@@ -34,7 +34,7 @@ Read `data/latest.json` and write `data/brief.json`. This is raw context for gen
   ],
 
   "game_directions": {
-    "composer-2.5-fast": {
+    "cursor-grok-4.5-high-fast": {
       "concept": "A 1-2 sentence game idea. Be specific about the mechanic, not just a genre.",
       "mechanic": "The concrete core action, e.g. dodge/collect, flick, draw a path, sort, lane switch, rhythm tap.",
       "touch_control": "The one-thumb gesture: tap, hold/release, drag, swipe, or tilt-like input with touch fallback.",
@@ -42,7 +42,7 @@ Read `data/latest.json` and write `data/brief.json`. This is raw context for gen
       "escalation": "How pressure increases during the round.",
       "aesthetic": "A visual direction hint (e.g. 'neon wireframe', 'paper cutout', 'watercolor')"
     },
-    "gpt-5.5-extra-high": {
+    "gpt-5.6-sol-xhigh": {
       "concept": "A different game idea. Each model MUST get a distinct concept — never repeat.",
       "mechanic": "A different concrete core action.",
       "touch_control": "A different one-thumb gesture.",
@@ -50,7 +50,7 @@ Read `data/latest.json` and write `data/brief.json`. This is raw context for gen
       "escalation": "A different pressure curve.",
       "aesthetic": "A different visual direction"
     },
-    "claude-opus-4-8-thinking-max-fast": {
+    "claude-fable-5-thinking-max": {
       "concept": "A third distinct game idea.",
       "mechanic": "A third core action.",
       "touch_control": "A third touch control.",
@@ -58,7 +58,7 @@ Read `data/latest.json` and write `data/brief.json`. This is raw context for gen
       "escalation": "A third pressure curve.",
       "aesthetic": "A third visual direction"
     },
-    "gemini-3.1-pro": {
+    "gemini-3.6-flash-high": {
       "concept": "A fourth distinct game idea.",
       "mechanic": "A fourth core action.",
       "touch_control": "A fourth touch control.",

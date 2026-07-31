@@ -133,6 +133,14 @@ export function VersionSelector({
   const getDisplayName = () => {
     if (isHome) return "Erik";
     if ((isAgent || isPlay) && currentModel) {
+      if (currentModel === "gpt-5.6-sol-xhigh") {
+        return (
+          <>
+            <span className="sm:hidden">GPT-5.6 Sol</span>
+            <span className="hidden sm:inline">GPT-5.6 Sol Extra High</span>
+          </>
+        );
+      }
       if (currentModel === "gpt-5.5-extra-high") {
         return (
           <>

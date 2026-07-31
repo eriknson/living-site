@@ -179,7 +179,13 @@ export async function POST(request: NextRequest) {
         console.log("[/api/generate] SDK imported, creating agent...");
         agent = await Agent.create({
           apiKey: CURSOR_API_KEY,
-          model: { id: "composer-2", params: [{ id: "fast", value: "true" }] },
+          model: {
+            id: "grok-4.5",
+            params: [
+              { id: "effort", value: "high" },
+              { id: "fast", value: "true" },
+            ],
+          },
           cloud: {},
         });
         console.log("[/api/generate] Agent created:", agent.agentId);

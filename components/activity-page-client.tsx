@@ -37,14 +37,16 @@ function useSystemTheme(): "light" | "dark" {
 }
 
 const MODEL_FAMILIES: [string, string[]][] = [
+  ["Grok", ["cursor-grok-4.5-high-fast"]],
   ["Composer", ["composer-2.5-fast", "composer-2-fast", "composer-1.5", "composer-1"]],
-  ["GPT", ["gpt-5.5-extra-high", "gpt-5.4-high-fast", "gpt-5.3-codex-xhigh", "gpt-5.1-codex", "gpt-5.1-codex-max-low-fast"]],
+  ["GPT", ["gpt-5.6-sol-xhigh", "gpt-5.5-extra-high", "gpt-5.4-high-fast", "gpt-5.3-codex-xhigh", "gpt-5.1-codex", "gpt-5.1-codex-max-low-fast"]],
+  ["Fable", ["claude-fable-5-thinking-max"]],
   ["Claude", ["claude-opus-4-8-thinking-max-fast", "claude-opus-4-7-thinking-max"]],
   ["Kimi", ["kimi-k2.5", "kimi-k2.6"]],
   ["Gemma", ["google-gemma-4-31b-it"]],
   ["Nougat", ["claude-nougat-eap-thinking-max"]],
   ["Opus", ["opus-4.6-thinking", "claude-4.6-opus-max-thinking", "claude-4.5-opus-high-thinking"]],
-  ["Gemini", ["gemini-3.1-pro", "gemini-3-pro"]],
+  ["Gemini", ["gemini-3.6-flash-high", "gemini-3.1-pro", "gemini-3-pro"]],
 ];
 
 /** Compute a trailing 7-day rolling average from daily contribution points */

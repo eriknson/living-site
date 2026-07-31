@@ -18,7 +18,7 @@ import {
   getDefaultModelForBatch,
 } from "./manifest";
 
-const DEFAULT_MODEL_ID = "composer-2.5-fast";
+const DEFAULT_MODEL_ID = "cursor-grok-4.5-high-fast";
 
 interface ManifestContextValue {
   manifest: Manifest | null;

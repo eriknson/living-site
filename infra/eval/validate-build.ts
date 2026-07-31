@@ -3,8 +3,8 @@
  * Validate a generated HTML build for quality issues.
  * 
  * Usage:
- *   pnpm run validate-build -- generated/gemini-3-pro.html
- *   pnpm run validate-build -- generated/composer-1.html --json
+ *   pnpm run validate-build -- generated/gemini-3.6-flash-high.html
+ *   pnpm run validate-build -- generated/cursor-grok-4.5-high-fast.html --json
  */
 
 import { readFileSync } from 'fs';
