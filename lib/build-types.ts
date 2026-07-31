@@ -284,27 +284,19 @@ export function createInitialBuildState(buildId: string): BuildState {
       commit: "pending",
     },
     models: {
-      "composer-2.5-fast": {
+      "cursor-grok-4.5-high-fast": {
         status: "queued",
         rawLog: [],
       },
-      "composer-2-fast": {
+      "gpt-5.6-sol-xhigh": {
         status: "queued",
         rawLog: [],
       },
-      "gpt-5.5-extra-high": {
+      "claude-fable-5-thinking-max": {
         status: "queued",
         rawLog: [],
       },
-      "claude-opus-4-8-thinking-max-fast": {
-        status: "queued",
-        rawLog: [],
-      },
-      "claude-opus-4-7-thinking-max": {
-        status: "queued",
-        rawLog: [],
-      },
-      "gemini-3.1-pro": {
+      "gemini-3.6-flash-high": {
         status: "queued",
         rawLog: [],
       },

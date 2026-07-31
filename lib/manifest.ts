@@ -34,6 +34,10 @@ export interface Manifest {
 }
 
 export const modelDisplayNames: Record<string, string> = {
+  "cursor-grok-4.5-high-fast": "Grok 4.5 Fast",
+  "gpt-5.6-sol-xhigh": "GPT-5.6 Sol Extra High",
+  "claude-fable-5-thinking-max": "Fable 5 Thinking Max",
+  "gemini-3.6-flash-high": "Gemini 3.6 Flash",
   "composer-2": "Composer 2",
   "composer-1.5": "Composer 1.5",
   "composer-2-fast": "Composer 2 Fast",
@@ -60,6 +64,10 @@ export const modelDisplayNames: Record<string, string> = {
 
 // URL-friendly slugs
 export const modelSlugs: Record<string, string> = {
+  "cursor-grok-4.5-high-fast": "grok-4.5-fast",
+  "gpt-5.6-sol-xhigh": "gpt-5.6-sol-xhigh",
+  "claude-fable-5-thinking-max": "fable-5-thinking-max",
+  "gemini-3.6-flash-high": "gemini-3.6-flash",
   "composer-2": "composer-2",
   "composer-1.5": "composer-1.5",
   "composer-2-fast": "composer-2-fast",

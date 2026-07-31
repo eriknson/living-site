@@ -66,12 +66,24 @@ const COMMAND_PAGES = SHOW_PLAY_IN_COMMAND_MENU
 // Agent models - each links to /agent?model=<slug>
 const AGENTS = [
   {
-    modelId: "composer-2.5-fast",
-    keywords: ["cursor", "composer", "2.5", "fast", "ai"],
+    modelId: "cursor-grok-4.5-high-fast",
+    keywords: ["cursor", "xai", "grok", "4.5", "fast", "ai"],
   },
   {
-    modelId: "composer-2-fast",
-    keywords: ["cursor", "composer", "2", "fast", "ai"],
+    modelId: "gpt-5.6-sol-xhigh",
+    keywords: ["openai", "gpt", "5.6", "sol", "extra", "high", "ai"],
+  },
+  {
+    modelId: "claude-fable-5-thinking-max",
+    keywords: ["claude", "anthropic", "fable", "5", "thinking", "max", "ai"],
+  },
+  {
+    modelId: "gemini-3.6-flash-high",
+    keywords: ["google", "gemini", "3.6", "flash", "ai"],
+  },
+  {
+    modelId: "composer-2.5-fast",
+    keywords: ["cursor", "composer", "2.5", "fast", "ai"],
   },
   {
     modelId: "gpt-5.5-extra-high",
@@ -80,10 +92,6 @@ const AGENTS = [
   {
     modelId: "claude-opus-4-8-thinking-max-fast",
     keywords: ["claude", "anthropic", "opus", "4.8", "thinking", "max", "fast", "ai"],
-  },
-  {
-    modelId: "claude-opus-4-7-thinking-max",
-    keywords: ["claude", "anthropic", "opus", "4.7", "thinking", "max", "ai"],
   },
   {
     modelId: "gemini-3.1-pro",
@@ -97,12 +105,24 @@ const AGENTS = [
 
 const GAME_AGENTS = [
   {
-    modelId: "composer-2.5-fast",
-    keywords: ["cursor", "composer", "2.5", "fast", "game", "play"],
+    modelId: "cursor-grok-4.5-high-fast",
+    keywords: ["cursor", "xai", "grok", "4.5", "fast", "game", "play"],
   },
   {
-    modelId: "composer-2-fast",
-    keywords: ["cursor", "composer", "2", "fast", "game", "play"],
+    modelId: "gpt-5.6-sol-xhigh",
+    keywords: ["openai", "gpt", "5.6", "sol", "extra", "high", "game", "play"],
+  },
+  {
+    modelId: "claude-fable-5-thinking-max",
+    keywords: ["claude", "anthropic", "fable", "5", "thinking", "max", "game", "play"],
+  },
+  {
+    modelId: "gemini-3.6-flash-high",
+    keywords: ["google", "gemini", "3.6", "flash", "game", "play"],
+  },
+  {
+    modelId: "composer-2.5-fast",
+    keywords: ["cursor", "composer", "2.5", "fast", "game", "play"],
   },
   {
     modelId: "gpt-5.5-extra-high",
@@ -111,10 +131,6 @@ const GAME_AGENTS = [
   {
     modelId: "claude-opus-4-8-thinking-max-fast",
     keywords: ["claude", "anthropic", "opus", "4.8", "thinking", "max", "fast", "game", "play"],
-  },
-  {
-    modelId: "claude-opus-4-7-thinking-max",
-    keywords: ["claude", "anthropic", "opus", "4.7", "thinking", "max", "game", "play"],
   },
   {
     modelId: "gemini-3.1-pro",

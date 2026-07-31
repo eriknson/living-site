@@ -9,12 +9,12 @@ import { existsSync } from "fs";
 
 type BuildKind = "site" | "game";
 
-const DEFAULT_MODEL = "composer-2.5-fast";
+const DEFAULT_MODEL = "cursor-grok-4.5-high-fast";
 const DEFAULT_MODELS = [
-  "composer-2.5-fast",
-  "gpt-5.5-extra-high",
-  "claude-opus-4-8-thinking-max-fast",
-  "gemini-3.1-pro",
+  "cursor-grok-4.5-high-fast",
+  "gpt-5.6-sol-xhigh",
+  "claude-fable-5-thinking-max",
+  "gemini-3.6-flash-high",
 ];
 
 const KIND_CONFIG: Record<BuildKind, {

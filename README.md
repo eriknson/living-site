@@ -56,12 +56,12 @@ Runs daily at 6am Pacific daylight time via GitHub Actions.
 │   └── history/              # Weekly snapshots per source
 │
 ├── generated/                # Agent-written HTML (one per model)
-│   ├── composer-2-fast.html  # Site builds
-│   ├── gpt-5.5-extra-high.html
-│   ├── claude-opus-4-7-thinking-max.html
-│   ├── gemini-3.1-pro.html
+│   ├── cursor-grok-4.5-high-fast.html  # Site builds
+│   ├── gpt-5.6-sol-xhigh.html
+│   ├── claude-fable-5-thinking-max.html
+│   ├── gemini-3.6-flash-high.html
 │   └── games/               # Game builds
-│       ├── composer-2-fast.html
+│       ├── cursor-grok-4.5-high-fast.html
 │       └── ...
 │
 ├── public/builds/            # Archived site builds by date
