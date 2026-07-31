@@ -6,9 +6,69 @@
     "gemini-3.1-pro",
     "gpt-5.5-extra-high"
   ],
-  "latest_date": "2026-07-30",
-  "latest_timestamp": "2026-07-30T15:14:01.000Z",
+  "latest_date": "2026-07-31",
+  "latest_timestamp": "2026-07-31T07:16:39.000Z",
   "dates": [
+    {
+      "date": "2026-07-31",
+      "batches": [
+        {
+          "timestamp": "2026-07-31T07:16:39.000Z",
+          "github_run_url": "https://github.com/eriknson/living-site/actions/runs/30610845036",
+          "system_prompt": "# Game Generator\n\nYou are building a single self-contained browser game. Make it genuinely fun, polished, and surprising. Push yourself — this should feel like a tiny finished product, not a tech demo.\n\n> ⛔ **YOUR BUILD WILL BE AUTOMATICALLY REJECTED unless ALL of these are true.**\n> An automated headless browser opens your game and clicks the controls. The two\n> most common reasons good games get discarded:\n>\n> 1. **Missing control hooks.** You MUST include a real\n>    `<button data-smoke=\"start\">…</button>` to begin the game and a real\n>    `<button data-smoke=\"restart\">…</button>` shown after game over. Real\n>    `<button>` elements — never `<div>`/`<span>`, never a bare tap-the-canvas\n>    start with no button. Nothing may overlay or intercept these buttons.\n> 2. **Uncaught exceptions.** Any thrown error on load, on tapping the screen\n>    centre, or on clicking start then restart fails the build. Guard every CDN\n>    global before use and never crash if WebGL/a library is unavailable.\n>\n> Re-read the \"Testability contract\" and \"Final self-check\" sections below\n> before you output. These are hard gates, not suggestions.\n\n## Today's brief\n\nRead `data/brief.json`. It contains:\n\n- **mood, weather, music, season** — use these to flavor the theme, palette, or setting.\n- **world_signals** — a handful of real-world observations from today. Let them inspire the game concept loosely. Do NOT make a literal \"news game\" — instead, let signals shape the vibe, setting, characters, or mechanics.\n- **game_directions.{your-model}** — a concept seed assigned specifically to you. Treat `concept` and `aesthetic` as the baseline, and use `mechanic`, `touch_control`, `session_hook`, and `escalation` when present. You may evolve or reinterpret the direction, but don't ignore it entirely.\n\n## Design process\n\nBefore writing any code, think through:\n\n1. **Core loop** — what does the player actively do every 1-3 seconds?\n2. **Controls** — what is the one-thumb touch gesture? How does keyboard work?\n3. **Win/lose** — what ends a round? What's the score or goal?\n4. **Start/restart** — clear title screen, immediate restart after game over.\n5. **Escalation** — how do speed, density, combo, risk/reward, shrinking space, or changing rules increase pressure during one round?\n6. **Polish** — juice (hit pause, particles, easing), sound cues via Web Audio if you want, and guarded haptics (`navigator.vibrate?.(...)`) for important events.\n\n## Hard constraints\n\n1. **Single HTML file.** Output to `generated/games/{model}.html`. All markup, styles, and scripts inline.\n2. **CDN allowlist.** You may load libraries from `unpkg.com`, `esm.sh`, `cdn.jsdelivr.net`. No other external requests — no fetch, XMLHttpRequest, WebSocket, or EventSource calls at runtime. No external images, fonts, or CSS via `url(...)`.\n3. **Max 200 KB** for the HTML file (excluding CDN payloads at load time).\n4. **Viewport meta required:** `<meta name=\"viewport\" content=\"width=device-width, initial-scale=1, viewport-fit=cover\">`\n5. **Phone-first and one-thumb playable.** The game MUST fill the entire viewport on a phone in portrait orientation. Use `100dvh` / `100dvw`, not fixed pixel sizes. The primary input must be tap, hold/release, drag, or swipe. Tilt-like controls are allowed only with a touch fallback. Keyboard controls should also work for desktop.\n6. **Instant clarity.** The player should understand what to do within 3 seconds. A single round should last 30-60 seconds.\n7. **Active play.** Do not make a passive visual demo. The player must make meaningful input every 1-3 seconds.\n8. **Restart control.** Visible restart / play-again button after game over. The player must be able to replay without reloading.\n9. **Dark and light mode.** Respect `prefers-color-scheme`. Both must look polished — not an afterthought.\n10. **No persistence.** Do not use `localStorage`, `sessionStorage`, `IndexedDB`, or cookies.\n11. **No purple gradients.** Never use purple in gradients or as a dominant color.\n\n## Good mobile game shapes\n\nPrefer small, legible archetypes that work while walking or commuting: dodge/collect, timing, rhythm, physics flick, path drawing, sorting, lane switching, memory/pattern, tiny roguelite survival, or one-screen puzzle. Avoid generic Pong, Snake, and Flappy clones unless the remix creates a meaningfully new decision loop.\n\n## Graphics\n\n- **Canvas 2D** is great for most games. Use it confidently.\n- **WebGL / Three.js** is allowed and encouraged when the concept calls for it (3D terrain, particle systems, shader effects). Load Three.js from CDN if needed. But: you MUST provide a graceful fallback or simplified mode if `getContext('webgl2')` returns null. Never crash on WebGL failure.\n- **DOM animation** is fine for card games, word games, UI-heavy mechanics.\n- Pick whichever rendering approach fits the game. Don't default to the simplest option — pick the one that makes the game feel best.\n\n## Visual direction\n\n- Menus, HUD, and overlays: restrained and elegant. Think Swiss modernism — monospace font for scores/labels (`ui-monospace, 'SFMono-Regular', Menlo, monospace`), clean layout, generous whitespace.\n- The game arena itself can be vibrant, textured, or stylized — match the concept.\n- Smooth transitions between states (title → playing → game over). No jarring jumps.\n\n## Quality bar\n\n- Zero console errors.\n- No uncaught exceptions.\n- 60fps on modern phones, 30fps minimum.\n- Touch targets at least 44px.\n- `touch-action: none` on the game canvas to prevent scroll hijacking.\n- `user-select: none` on the game area.\n- `e.preventDefault()` on touch handlers to avoid double-firing with mouse events.\n\n## Testability contract (REQUIRED — an automated smoke test must pass)\n\nEvery build is opened in a headless browser (mobile + desktop), checked for\nruntime errors, and driven by clicking the start and restart controls. Builds\nthat throw or can't be started are discarded and never published. To pass:\n\n1. **Deterministic control hooks.** The primary start control must be a real\n   `<button data-smoke=\"start\">…</button>`. The replay control after game over\n   must be a real `<button data-smoke=\"restart\">…</button>`. Use real `<button>`\n   elements, not `<div>`/`<span>`.\n2. **Start button must be clickable — nothing may intercept it.** If the title\n   screen is an overlay, the overlay/instructions must not swallow the click.\n   Give the overlay container `pointer-events: none` and re-enable\n   `pointer-events: auto` only on the button itself, OR ensure the button is the\n   top-most element at its position. A common failure is an overlay layer\n   covering its own start button.\n3. **Render immediately.** The page body must have non-zero height right after\n   load. Do not gate all rendering behind a slow/optional CDN script.\n4. **Zero uncaught exceptions** — on load, on tapping the screen center, and on\n   clicking start then restart. Defensively guard every external global before\n   use (e.g. `if (typeof THREE === 'undefined') { /* fallback */ }`), and never\n   reference a CDN library before its script has loaded. If `getContext('webgl2')`\n   (or your CDN) is unavailable, fall back gracefully instead of throwing.\n5. **No stray \"start-like\" labels as fake buttons.** HUD labels are fine, but the\n   only real start/restart affordances should be the `data-smoke` buttons above.\n\n## Final self-check (do this before you output)\n\nMentally run the automated test and confirm every item. If any fails, fix it first.\n\n- [ ] There is exactly one real `<button data-smoke=\"start\">` that begins the game, and it is clickable (no overlay/instructions layer swallows the click — give overlays `pointer-events: none` and re-enable `pointer-events: auto` only on the button).\n- [ ] After game over there is a real `<button data-smoke=\"restart\">` that replays without a page reload.\n- [ ] The page renders immediately — body has non-zero height on load, not gated behind a slow CDN script.\n- [ ] Zero uncaught exceptions on: load, tapping the screen centre, clicking start, then clicking restart.\n- [ ] Every external global (THREE, etc.) is guarded with `typeof X === 'undefined'` before use; `getContext('webgl2')`/CDN failures fall back gracefully instead of throwing.\n- [ ] Zero console errors. Phone-first, fills the viewport with `100dvh`/`100dvw`. Respects dark + light mode. No purple gradients. No persistence APIs. No runtime network calls.\n\n## Output\n\nWrite the game to `generated/games/{model}.html`.",
+          "builds": [
+            {
+              "model": "claude-opus-4-8-thinking-max-fast",
+              "status": "success",
+              "duration_ms": 1348024,
+              "line_count": 1590,
+              "path": "games/2026-07-31/claude-opus-4-8-thinking-max-fast-1785482199000.html",
+              "game_meta": {
+                "title": "WHITEOUT — Alpine Escape",
+                "renderer": "canvas2d",
+                "has_audio": true
+              }
+            },
+            {
+              "model": "composer-2.5-fast",
+              "status": "success",
+              "duration_ms": 101602,
+              "line_count": 852,
+              "path": "games/2026-07-31/composer-2.5-fast-1785482199000.html",
+              "game_meta": {
+                "title": "Thermal Gate",
+                "renderer": "canvas2d",
+                "has_audio": true
+              }
+            },
+            {
+              "model": "gemini-3.1-pro",
+              "status": "success",
+              "duration_ms": 258139,
+              "line_count": 745,
+              "path": "games/2026-07-31/gemini-3.1-pro-1785482199000.html",
+              "game_meta": {
+                "title": "Dawn Cargo",
+                "renderer": "canvas2d",
+                "has_audio": true
+              }
+            },
+            {
+              "model": "gpt-5.5-extra-high",
+              "status": "success",
+              "duration_ms": 333257,
+              "line_count": 705,
+              "path": "games/2026-07-31/gpt-5.5-extra-high-1785482199000.html",
+              "game_meta": {
+                "title": "Orbit Desk",
+                "renderer": "canvas2d",
+                "has_audio": true
+              }
+            }
+          ]
+        }
+      ]
+    },
     {
       "date": "2026-07-30",
       "batches": [
@@ -781,66 +841,6 @@
               "path": "games/2026-07-18/gpt-5.5-extra-high-1784385018000.html",
               "game_meta": {
                 "title": "Convex Collapse",
-                "renderer": "canvas2d",
-                "has_audio": true
-              }
-            }
-          ]
-        }
-      ]
-    },
-    {
-      "date": "2026-07-17",
-      "batches": [
-        {
-          "timestamp": "2026-07-17T14:36:42.000Z",
-          "github_run_url": "https://github.com/eriknson/living-site/actions/runs/29587789417",
-          "system_prompt": "# Game Generator\n\nYou are building a single self-contained browser game. Make it genuinely fun, polished, and surprising. Push yourself — this should feel like a tiny finished product, not a tech demo.\n\n> ⛔ **YOUR BUILD WILL BE AUTOMATICALLY REJECTED unless ALL of these are true.**\n> An automated headless browser opens your game and clicks the controls. The two\n> most common reasons good games get discarded:\n>\n> 1. **Missing control hooks.** You MUST include a real\n>    `<button data-smoke=\"start\">…</button>` to begin the game and a real\n>    `<button data-smoke=\"restart\">…</button>` shown after game over. Real\n>    `<button>` elements — never `<div>`/`<span>`, never a bare tap-the-canvas\n>    start with no button. Nothing may overlay or intercept these buttons.\n> 2. **Uncaught exceptions.** Any thrown error on load, on tapping the screen\n>    centre, or on clicking start then restart fails the build. Guard every CDN\n>    global before use and never crash if WebGL/a library is unavailable.\n>\n> Re-read the \"Testability contract\" and \"Final self-check\" sections below\n> before you output. These are hard gates, not suggestions.\n\n## Today's brief\n\nRead `data/brief.json`. It contains:\n\n- **mood, weather, music, season** — use these to flavor the theme, palette, or setting.\n- **world_signals** — a handful of real-world observations from today. Let them inspire the game concept loosely. Do NOT make a literal \"news game\" — instead, let signals shape the vibe, setting, characters, or mechanics.\n- **game_directions.{your-model}** — a concept seed assigned specifically to you. Treat `concept` and `aesthetic` as the baseline, and use `mechanic`, `touch_control`, `session_hook`, and `escalation` when present. You may evolve or reinterpret the direction, but don't ignore it entirely.\n\n## Design process\n\nBefore writing any code, think through:\n\n1. **Core loop** — what does the player actively do every 1-3 seconds?\n2. **Controls** — what is the one-thumb touch gesture? How does keyboard work?\n3. **Win/lose** — what ends a round? What's the score or goal?\n4. **Start/restart** — clear title screen, immediate restart after game over.\n5. **Escalation** — how do speed, density, combo, risk/reward, shrinking space, or changing rules increase pressure during one round?\n6. **Polish** — juice (hit pause, particles, easing), sound cues via Web Audio if you want, and guarded haptics (`navigator.vibrate?.(...)`) for important events.\n\n## Hard constraints\n\n1. **Single HTML file.** Output to `generated/games/{model}.html`. All markup, styles, and scripts inline.\n2. **CDN allowlist.** You may load libraries from `unpkg.com`, `esm.sh`, `cdn.jsdelivr.net`. No other external requests — no fetch, XMLHttpRequest, WebSocket, or EventSource calls at runtime. No external images, fonts, or CSS via `url(...)`.\n3. **Max 200 KB** for the HTML file (excluding CDN payloads at load time).\n4. **Viewport meta required:** `<meta name=\"viewport\" content=\"width=device-width, initial-scale=1, viewport-fit=cover\">`\n5. **Phone-first and one-thumb playable.** The game MUST fill the entire viewport on a phone in portrait orientation. Use `100dvh` / `100dvw`, not fixed pixel sizes. The primary input must be tap, hold/release, drag, or swipe. Tilt-like controls are allowed only with a touch fallback. Keyboard controls should also work for desktop.\n6. **Instant clarity.** The player should understand what to do within 3 seconds. A single round should last 30-60 seconds.\n7. **Active play.** Do not make a passive visual demo. The player must make meaningful input every 1-3 seconds.\n8. **Restart control.** Visible restart / play-again button after game over. The player must be able to replay without reloading.\n9. **Dark and light mode.** Respect `prefers-color-scheme`. Both must look polished — not an afterthought.\n10. **No persistence.** Do not use `localStorage`, `sessionStorage`, `IndexedDB`, or cookies.\n11. **No purple gradients.** Never use purple in gradients or as a dominant color.\n\n## Good mobile game shapes\n\nPrefer small, legible archetypes that work while walking or commuting: dodge/collect, timing, rhythm, physics flick, path drawing, sorting, lane switching, memory/pattern, tiny roguelite survival, or one-screen puzzle. Avoid generic Pong, Snake, and Flappy clones unless the remix creates a meaningfully new decision loop.\n\n## Graphics\n\n- **Canvas 2D** is great for most games. Use it confidently.\n- **WebGL / Three.js** is allowed and encouraged when the concept calls for it (3D terrain, particle systems, shader effects). Load Three.js from CDN if needed. But: you MUST provide a graceful fallback or simplified mode if `getContext('webgl2')` returns null. Never crash on WebGL failure.\n- **DOM animation** is fine for card games, word games, UI-heavy mechanics.\n- Pick whichever rendering approach fits the game. Don't default to the simplest option — pick the one that makes the game feel best.\n\n## Visual direction\n\n- Menus, HUD, and overlays: restrained and elegant. Think Swiss modernism — monospace font for scores/labels (`ui-monospace, 'SFMono-Regular', Menlo, monospace`), clean layout, generous whitespace.\n- The game arena itself can be vibrant, textured, or stylized — match the concept.\n- Smooth transitions between states (title → playing → game over). No jarring jumps.\n\n## Quality bar\n\n- Zero console errors.\n- No uncaught exceptions.\n- 60fps on modern phones, 30fps minimum.\n- Touch targets at least 44px.\n- `touch-action: none` on the game canvas to prevent scroll hijacking.\n- `user-select: none` on the game area.\n- `e.preventDefault()` on touch handlers to avoid double-firing with mouse events.\n\n## Testability contract (REQUIRED — an automated smoke test must pass)\n\nEvery build is opened in a headless browser (mobile + desktop), checked for\nruntime errors, and driven by clicking the start and restart controls. Builds\nthat throw or can't be started are discarded and never published. To pass:\n\n1. **Deterministic control hooks.** The primary start control must be a real\n   `<button data-smoke=\"start\">…</button>`. The replay control after game over\n   must be a real `<button data-smoke=\"restart\">…</button>`. Use real `<button>`\n   elements, not `<div>`/`<span>`.\n2. **Start button must be clickable — nothing may intercept it.** If the title\n   screen is an overlay, the overlay/instructions must not swallow the click.\n   Give the overlay container `pointer-events: none` and re-enable\n   `pointer-events: auto` only on the button itself, OR ensure the button is the\n   top-most element at its position. A common failure is an overlay layer\n   covering its own start button.\n3. **Render immediately.** The page body must have non-zero height right after\n   load. Do not gate all rendering behind a slow/optional CDN script.\n4. **Zero uncaught exceptions** — on load, on tapping the screen center, and on\n   clicking start then restart. Defensively guard every external global before\n   use (e.g. `if (typeof THREE === 'undefined') { /* fallback */ }`), and never\n   reference a CDN library before its script has loaded. If `getContext('webgl2')`\n   (or your CDN) is unavailable, fall back gracefully instead of throwing.\n5. **No stray \"start-like\" labels as fake buttons.** HUD labels are fine, but the\n   only real start/restart affordances should be the `data-smoke` buttons above.\n\n## Final self-check (do this before you output)\n\nMentally run the automated test and confirm every item. If any fails, fix it first.\n\n- [ ] There is exactly one real `<button data-smoke=\"start\">` that begins the game, and it is clickable (no overlay/instructions layer swallows the click — give overlays `pointer-events: none` and re-enable `pointer-events: auto` only on the button).\n- [ ] After game over there is a real `<button data-smoke=\"restart\">` that replays without a page reload.\n- [ ] The page renders immediately — body has non-zero height on load, not gated behind a slow CDN script.\n- [ ] Zero uncaught exceptions on: load, tapping the screen centre, clicking start, then clicking restart.\n- [ ] Every external global (THREE, etc.) is guarded with `typeof X === 'undefined'` before use; `getContext('webgl2')`/CDN failures fall back gracefully instead of throwing.\n- [ ] Zero console errors. Phone-first, fills the viewport with `100dvh`/`100dvw`. Respects dark + light mode. No purple gradients. No persistence APIs. No runtime network calls.\n\n## Output\n\nWrite the game to `generated/games/{model}.html`.",
-          "builds": [
-            {
-              "model": "claude-opus-4-8-thinking-max-fast",
-              "status": "success",
-              "duration_ms": 580942,
-              "line_count": 894,
-              "path": "games/2026-07-17/claude-opus-4-8-thinking-max-fast-1784299002000.html",
-              "game_meta": {
-                "title": "Ship by Sunrise",
-                "renderer": "canvas2d",
-                "has_audio": true
-              }
-            },
-            {
-              "model": "composer-2.5-fast",
-              "status": "success",
-              "duration_ms": 139203,
-              "line_count": 698,
-              "path": "games/2026-07-17/composer-2.5-fast-1784299002000.html",
-              "game_meta": {
-                "title": "Mist Sync",
-                "renderer": "canvas2d",
-                "has_audio": true
-              }
-            },
-            {
-              "model": "gemini-3.1-pro",
-              "status": "success",
-              "duration_ms": 142850,
-              "line_count": 630,
-              "path": "games/2026-07-17/gemini-3.1-pro-1784299002000.html",
-              "game_meta": {
-                "title": "Summer Sort",
-                "renderer": "canvas2d",
-                "has_audio": true
-              }
-            },
-            {
-              "model": "gpt-5.5-extra-high",
-              "status": "success",
-              "duration_ms": 298986,
-              "line_count": 294,
-              "path": "games/2026-07-17/gpt-5.5-extra-high-1784299002000.html",
-              "game_meta": {
-                "title": "Cloud Wire Compiler",
                 "renderer": "canvas2d",
                 "has_audio": true
               }
