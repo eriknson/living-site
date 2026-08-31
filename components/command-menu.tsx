@@ -16,6 +16,7 @@ import {
   BookOpen,
   Activity,
   Gamepad2,
+  Globe2,
 } from "lucide-react";
 import { SearchIcon } from "@/components/icons/search-icon";
 import { useIsMobile } from "@/lib/use-media-query";
@@ -56,6 +57,12 @@ const PAGES = [
     label: "Activity",
     icon: Activity,
     keywords: ["github", "contributions", "activity", "stats", "charts"],
+  },
+  {
+    path: "/countries",
+    label: "Biggest Countries",
+    icon: Globe2,
+    keywords: ["countries", "population", "gdp", "area", "dashboard", "world"],
   },
 ];
 
