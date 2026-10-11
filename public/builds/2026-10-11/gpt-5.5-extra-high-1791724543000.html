@@ -1,0 +1,664 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <meta name="color-scheme" content="light dark">
+  <meta name="description" content="Erik Nilsson is a product designer at Cursor, designing how people build software with AI.">
+  <title>Erik Nilsson — Editorial Notebook</title>
+  <style>
+    :root {
+      color-scheme: light dark;
+      --bg: #fbf7ee;
+      --paper: #fffdf8;
+      --paper-soft: #f5efe3;
+      --ink: #17130f;
+      --muted: #73695d;
+      --quiet: #a69a8c;
+      --line: rgba(23, 19, 15, 0.14);
+      --line-strong: rgba(23, 19, 15, 0.28);
+      --accent: color(display-p3 0.98 0.25 0.12);
+      --accent-two: color(display-p3 0.10 0.24 0.95);
+      --accent-three: color(display-p3 0.00 0.58 0.38);
+      --shadow: rgba(72, 44, 22, 0.10);
+      --serif: "Iowan Old Style", "Palatino Linotype", Palatino, Georgia, serif;
+      --sans: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+      --mono: "SFMono-Regular", "SF Mono", Consolas, "Liberation Mono", Menlo, monospace;
+      --hand: "Bradley Hand", "Segoe Print", "Comic Sans MS", cursive;
+    }
+
+    @media (prefers-color-scheme: dark) {
+      :root {
+        --bg: #10100e;
+        --paper: #171613;
+        --paper-soft: #201e19;
+        --ink: #f4efe4;
+        --muted: #b8ac9b;
+        --quiet: #81786c;
+        --line: rgba(244, 239, 228, 0.15);
+        --line-strong: rgba(244, 239, 228, 0.30);
+        --accent: color(display-p3 1.00 0.34 0.20);
+        --accent-two: color(display-p3 0.45 0.60 1.00);
+        --accent-three: color(display-p3 0.22 0.84 0.56);
+        --shadow: rgba(0, 0, 0, 0.32);
+      }
+    }
+
+    * {
+      box-sizing: border-box;
+    }
+
+    html {
+      background: var(--bg);
+      color: var(--ink);
+      -webkit-text-size-adjust: 100%;
+      text-rendering: optimizeLegibility;
+    }
+
+    body {
+      margin: 0;
+      min-height: 100vh;
+      min-height: 100dvh;
+      background: var(--bg);
+      color: var(--ink);
+      font-family: var(--sans);
+      font-size: 16px;
+      line-height: 1.55;
+      -webkit-font-smoothing: antialiased;
+      font-feature-settings: "kern", "liga", "ss01";
+    }
+
+    a {
+      color: inherit;
+      text-decoration-color: color-mix(in srgb, var(--ink), transparent 70%);
+      text-decoration-thickness: 1px;
+      text-underline-offset: 0.18em;
+      transition: color 180ms ease, text-decoration-color 180ms ease, transform 180ms ease;
+    }
+
+    a:hover {
+      color: var(--accent);
+      text-decoration-color: currentColor;
+    }
+
+    a:focus-visible {
+      outline: 2px solid var(--accent-two);
+      outline-offset: 4px;
+      border-radius: 4px;
+    }
+
+    ::selection {
+      background: color(display-p3 1 0.82 0.35);
+      color: #17130f;
+    }
+
+    .sheet {
+      width: min(100%, 640px);
+      max-width: 640px;
+      margin: 0 auto;
+      padding: 30px 22px 52px;
+      position: relative;
+    }
+
+    .sheet::before {
+      content: "";
+      position: fixed;
+      inset: 0 auto 0 calc(50% - 341px);
+      width: 1px;
+      background: var(--line);
+      pointer-events: none;
+    }
+
+    .topline {
+      display: flex;
+      align-items: baseline;
+      justify-content: space-between;
+      gap: 18px;
+      padding: 6px 0 26px;
+      font-family: var(--mono);
+      font-size: 11px;
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+      color: var(--muted);
+    }
+
+    .topline a {
+      text-decoration: none;
+    }
+
+    .nav {
+      display: flex;
+      gap: 12px;
+      white-space: nowrap;
+    }
+
+    .masthead {
+      position: relative;
+      padding: 24px 0 34px;
+      border-top: 1px solid var(--line-strong);
+      border-bottom: 1px solid var(--line-strong);
+    }
+
+    .edition {
+      display: grid;
+      grid-template-columns: 1fr auto;
+      gap: 14px;
+      align-items: start;
+      margin-bottom: 18px;
+      font-family: var(--mono);
+      font-size: 12px;
+      color: var(--muted);
+    }
+
+    .edition strong {
+      display: block;
+      color: var(--ink);
+      font-weight: 600;
+    }
+
+    h1 {
+      margin: 0;
+      max-width: 10.4em;
+      font-family: var(--serif);
+      font-weight: 500;
+      font-size: clamp(54px, 13vw, 112px);
+      line-height: 0.86;
+      letter-spacing: -0.075em;
+    }
+
+    .dek {
+      max-width: 35rem;
+      margin: 20px 0 0;
+      color: var(--muted);
+      font-size: clamp(18px, 4vw, 23px);
+      line-height: 1.28;
+      letter-spacing: -0.025em;
+    }
+
+    .mark {
+      display: inline-block;
+      color: var(--accent);
+      font-family: var(--hand);
+      font-size: 0.95em;
+      font-weight: 700;
+      letter-spacing: -0.02em;
+      transform: rotate(-2deg);
+    }
+
+    .annotation {
+      position: absolute;
+      right: 2px;
+      top: 114px;
+      max-width: 128px;
+      color: var(--accent-two);
+      font-family: var(--hand);
+      font-size: 17px;
+      line-height: 1.05;
+      transform: rotate(5deg);
+    }
+
+    .annotation::before {
+      content: "";
+      display: block;
+      width: 38px;
+      height: 22px;
+      margin: 0 0 4px -28px;
+      border-left: 1.5px solid currentColor;
+      border-bottom: 1.5px solid currentColor;
+      border-radius: 0 0 0 20px;
+      transform: skewX(-12deg);
+    }
+
+    .section {
+      padding: 28px 0;
+      border-bottom: 1px solid var(--line);
+    }
+
+    .section-title {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 16px;
+      margin: 0 0 16px;
+      color: var(--muted);
+      font-family: var(--mono);
+      font-size: 12px;
+      font-weight: 500;
+      letter-spacing: 0.10em;
+      text-transform: uppercase;
+    }
+
+    .section-title::after {
+      content: "";
+      height: 1px;
+      flex: 1;
+      background: var(--line);
+    }
+
+    .today {
+      display: grid;
+      grid-template-columns: 1fr 1.2fr;
+      gap: 24px;
+      align-items: start;
+    }
+
+    .weather-note {
+      min-height: 152px;
+      padding: 18px 18px 16px;
+      border: 1px solid var(--line);
+      background: var(--paper);
+      box-shadow: 0 18px 44px var(--shadow);
+      transform: rotate(-1.2deg);
+    }
+
+    .weather-note .temp {
+      display: block;
+      color: var(--accent);
+      font-family: var(--serif);
+      font-size: 62px;
+      line-height: 0.9;
+      letter-spacing: -0.08em;
+    }
+
+    .weather-note p {
+      margin: 12px 0 0;
+      color: var(--muted);
+      font-family: var(--hand);
+      font-size: 18px;
+      line-height: 1.15;
+    }
+
+    .brief {
+      margin: 0;
+      color: var(--ink);
+      font-family: var(--serif);
+      font-size: 28px;
+      line-height: 1.08;
+      letter-spacing: -0.045em;
+    }
+
+    .brief + p {
+      margin: 14px 0 0;
+      color: var(--muted);
+    }
+
+    .signal-list {
+      display: grid;
+      gap: 0;
+      margin: 0;
+      padding: 0;
+      list-style: none;
+      counter-reset: signal;
+    }
+
+    .signal-list li {
+      display: grid;
+      grid-template-columns: 44px 1fr;
+      gap: 14px;
+      padding: 14px 0;
+      border-top: 1px solid var(--line);
+      counter-increment: signal;
+    }
+
+    .signal-list li:first-child {
+      border-top: 0;
+      padding-top: 0;
+    }
+
+    .signal-list li::before {
+      content: "0" counter(signal);
+      color: var(--quiet);
+      font-family: var(--mono);
+      font-size: 11px;
+      letter-spacing: 0.08em;
+      padding-top: 0.28em;
+    }
+
+    .signal-list span {
+      color: var(--ink);
+      font-family: var(--serif);
+      font-size: 22px;
+      line-height: 1.16;
+      letter-spacing: -0.025em;
+    }
+
+    .writing-index {
+      margin: 0;
+      padding: 0;
+      list-style: none;
+    }
+
+    .writing-index li {
+      display: grid;
+      grid-template-columns: 1fr auto;
+      gap: 18px;
+      align-items: baseline;
+      padding: 13px 0;
+      border-top: 1px solid var(--line);
+    }
+
+    .writing-index li:first-child {
+      border-top: 0;
+      padding-top: 0;
+    }
+
+    .writing-index a {
+      font-family: var(--serif);
+      font-size: 25px;
+      line-height: 1.05;
+      letter-spacing: -0.04em;
+      text-decoration: none;
+    }
+
+    .writing-index a::after {
+      content: " ↗";
+      color: var(--quiet);
+      font-family: var(--sans);
+      font-size: 0.62em;
+      letter-spacing: 0;
+      vertical-align: 0.1em;
+    }
+
+    .writing-index time {
+      color: var(--muted);
+      font-family: var(--mono);
+      font-size: 11px;
+      letter-spacing: 0.05em;
+      white-space: nowrap;
+    }
+
+    .notes {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 12px;
+    }
+
+    .note {
+      min-height: 134px;
+      padding: 14px;
+      border: 1px solid var(--line);
+      background: var(--paper-soft);
+      color: var(--ink);
+      text-decoration: none;
+      transition: transform 180ms ease, border-color 180ms ease, background-color 180ms ease;
+    }
+
+    .note:nth-child(1) {
+      transform: rotate(-1.3deg);
+    }
+
+    .note:nth-child(2) {
+      transform: rotate(0.8deg);
+    }
+
+    .note:nth-child(3) {
+      transform: rotate(-0.4deg);
+    }
+
+    .note:hover {
+      color: var(--ink);
+      border-color: color-mix(in srgb, var(--accent), transparent 45%);
+      transform: translateY(-3px) rotate(0deg);
+    }
+
+    .note p {
+      margin: 0;
+      font-family: var(--hand);
+      font-size: 18px;
+      line-height: 1.12;
+      letter-spacing: -0.02em;
+    }
+
+    .note time {
+      display: block;
+      margin-top: 16px;
+      color: var(--muted);
+      font-family: var(--mono);
+      font-size: 10px;
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+    }
+
+    .contact {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 10px 16px;
+      align-items: baseline;
+      justify-content: space-between;
+      padding: 24px 0 0;
+      color: var(--muted);
+      font-size: 14px;
+    }
+
+    .contact .links {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 12px;
+      font-family: var(--mono);
+      font-size: 11px;
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+    }
+
+    .contact a {
+      text-decoration: none;
+    }
+
+    @media (prefers-reduced-motion: no-preference) {
+      .sheet {
+        animation: arrive 700ms cubic-bezier(0.2, 0.8, 0.2, 1) both;
+      }
+
+      .mark {
+        animation: pulse-ink 4.8s ease-in-out infinite;
+      }
+    }
+
+    @keyframes arrive {
+      from {
+        opacity: 0;
+        transform: translateY(10px);
+      }
+      to {
+        opacity: 1;
+        transform: translateY(0);
+      }
+    }
+
+    @keyframes pulse-ink {
+      0%, 100% {
+        opacity: 0.86;
+      }
+      50% {
+        opacity: 1;
+      }
+    }
+
+    @media (max-width: 640px) {
+      .sheet {
+        padding: 20px 18px 42px;
+      }
+
+      .sheet::before {
+        display: none;
+      }
+
+      .topline {
+        display: grid;
+        gap: 12px;
+        padding-bottom: 20px;
+      }
+
+      .nav {
+        white-space: normal;
+      }
+
+      .masthead {
+        padding-top: 20px;
+      }
+
+      .edition {
+        grid-template-columns: 1fr;
+      }
+
+      .annotation {
+        position: static;
+        max-width: 220px;
+        margin-top: 16px;
+        transform: rotate(-2deg);
+      }
+
+      .annotation::before {
+        display: none;
+      }
+
+      .today {
+        grid-template-columns: 1fr;
+      }
+
+      .weather-note {
+        min-height: auto;
+      }
+
+      .notes {
+        grid-template-columns: 1fr;
+      }
+
+      .writing-index li {
+        grid-template-columns: 1fr;
+        gap: 6px;
+      }
+    }
+  </style>
+
+<style id="__living_site_scroll_guard">
+  /* Scroll guard injected at build time to ensure generated pages remain scrollable in iframes. */
+  html, body {
+    height: auto !important;
+    min-height: 100% !important;
+    max-height: none !important;
+    overflow-y: auto !important;
+    overflow-x: hidden !important;
+    position: static !important;
+    -webkit-overflow-scrolling: touch !important;
+    touch-action: pan-y !important;
+    overscroll-behavior-y: contain !important;
+  }
+  /* Avoid accidental fixed full-screen traps that break scrolling on mobile. */
+  body {
+    inset: auto !important;
+  }
+</style>
+</head>
+<body>
+  <main class="sheet" aria-label="Erik Nilsson editorial notebook">
+    <header class="topline">
+      <a href="https://eriks.design" aria-label="eriks.design">eriks.design</a>
+      <nav class="nav" aria-label="Primary links">
+        <a href="https://cursor.com">Cursor</a>
+        <a href="https://x.com/flowstated">X</a>
+        <a href="https://github.com/eriknson">GitHub</a>
+        <a href="mailto:contact@eriks.design">Email</a>
+      </nav>
+    </header>
+
+    <section class="masthead" aria-labelledby="page-title">
+      <div class="edition">
+        <div>
+          <strong>Erik Nilsson</strong>
+          Product Designer at Cursor · San Francisco
+        </div>
+        <div>Autumn / 2026-10-11</div>
+      </div>
+      <h1 id="page-title">Designing in the margin.</h1>
+      <p class="dek">
+        A quiet page for a designer working on how people build software with AI.
+        Part magazine leaf, part <span class="mark">living notebook</span>.
+      </p>
+      <p class="annotation" aria-label="Handwritten annotation">
+        keep it simple until every detail feels inevitable
+      </p>
+    </section>
+
+    <section class="section" aria-labelledby="today-title">
+      <h2 class="section-title" id="today-title">Today</h2>
+      <div class="today">
+        <aside class="weather-note" aria-label="Weather note">
+          <span class="temp">10°</span>
+          <p>clear autumn night over San Francisco, still enough to hear the pixels settle.</p>
+        </aside>
+        <div>
+          <p class="brief">The public feed is quiet, which makes the small signals louder.</p>
+          <p>
+            Side projects stay in the background; the main thread is still the same:
+            shape better tools, keep builders in flow, and make software feel easier to touch.
+          </p>
+        </div>
+      </div>
+    </section>
+
+    <section class="section" aria-labelledby="signals-title">
+      <h2 class="section-title" id="signals-title">Observed</h2>
+      <ol class="signal-list">
+        <li><span>tilde characters hiding in forgotten file paths</span></li>
+        <li><span>a new breed of borrow checking for memory-safe code</span></li>
+        <li><span>ancient DNA rewriting Scandinavia's first harvest</span></li>
+        <li><span>monsoon waters claiming bridges in the Himalayas</span></li>
+      </ol>
+    </section>
+
+    <section class="section" aria-labelledby="writing-title">
+      <h2 class="section-title" id="writing-title">Writing Index</h2>
+      <ol class="writing-index">
+        <li>
+          <a href="https://cursor.com/blog/design-mode">Directing agents visually</a>
+          <time datetime="2026-06-05">Jun 2026</time>
+        </li>
+        <li>
+          <a href="/posts/a-living-site">A living site</a>
+          <time datetime="2025-12-26">Dec 2025</time>
+        </li>
+        <li>
+          <a href="/posts/surgical-edits">Surgical edits</a>
+          <time datetime="2025-11-23">Nov 2025</time>
+        </li>
+        <li>
+          <a href="/posts/familiar-differentiation">Familiar differentiation</a>
+          <time datetime="2024-11-15">Nov 2024</time>
+        </li>
+        <li>
+          <a href="/posts/hackathon-energy-but-add-users">Hackathon energy, but add users</a>
+          <time datetime="2022-10-15">Oct 2022</time>
+        </li>
+      </ol>
+    </section>
+
+    <section class="section" aria-labelledby="notes-title">
+      <h2 class="section-title" id="notes-title">Recent Notes</h2>
+      <div class="notes">
+        <a class="note" href="https://x.com/flowstated/status/2002167999353241901">
+          <p>imagine 2026</p>
+          <time datetime="2025-12-20">Dec 20</time>
+        </a>
+        <a class="note" href="https://x.com/flowstated/status/2000889983562080578">
+          <p>shipping by sunrise</p>
+          <time datetime="2025-12-16">Dec 16</time>
+        </a>
+        <a class="note" href="https://x.com/flowstated/status/2000691637190861180">
+          <p>iOS shortcuts × GitHub Actions × Cursor CLI</p>
+          <time datetime="2025-12-15">Dec 15</time>
+        </a>
+      </div>
+    </section>
+
+    <footer class="contact">
+      <span>Erik Nilsson · Product Designer at Cursor</span>
+      <span class="links">
+        <a href="https://linkedin.com/in/eriknson">LinkedIn</a>
+        <a href="https://github.com/eriknson">GitHub</a>
+        <a href="https://x.com/flowstated">X</a>
+      </span>
+    </footer>
+  </main>
+</body>
+</html>

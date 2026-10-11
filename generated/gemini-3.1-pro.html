@@ -4,539 +4,487 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Erik Nilsson — Product Designer</title>
-  <link rel="preconnect" href="https://fonts.googleapis.com">
-  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=Caveat:wght@500&family=Instrument+Serif:ital@0;1&family=Newsreader:ital,opsz,wght@0,6..72,300..500;1,6..72,300..500&family=JetBrains+Mono:wght@400&display=swap" rel="stylesheet">
   <style>
+    @import url('https://fonts.googleapis.com/css2?family=Newsreader:ital,opsz,wght@0,6..72,300..600;1,6..72,300..600&family=Inter:wght@400;500;600&family=Caveat:wght@500&display=swap');
+
     :root {
-      --bg: #F7F5F0;
-      --surface: #FDFCFB;
-      --text: #191817;
-      --text-muted: #807D78;
-      --border: rgba(25, 24, 23, 0.12);
-      --accent-red: #E83A30;
-      --accent-blue: #2444E8;
-      
-      @supports (color: color(display-p3 1 1 1)) {
-        --accent-red: color(display-p3 0.95 0.15 0.1);
-        --accent-blue: color(display-p3 0.1 0.25 0.95);
+      --bg: #F4F3F0;
+      --text: #191816;
+      --text-muted: #82807A;
+      --rule: #E6E4DD;
+      --p3-red: #FF3333;
+      --p3-blue: #0044FF;
+    }
+
+    @supports (color: color(display-p3 1 1 1)) {
+      :root {
+        --p3-red: color(display-p3 0.95 0.1 0.1);
+        --p3-blue: color(display-p3 0.1 0.3 0.95);
       }
     }
 
     @media (prefers-color-scheme: dark) {
       :root {
-        --bg: #1a1a1a;
-        --surface: #141414;
-        --text: #e0e0e0;
-        --text-muted: #9a9690;
-        --border: rgba(224, 224, 224, 0.12);
+        --bg: #1a1a18;
+        --text: #e8e6e1;
+        --text-muted: #9a9893;
+        --rule: #33322e;
       }
 
-      .page-frame {
-        background-image:
-          linear-gradient(to right, rgba(224, 224, 224, 0.03) 1px, transparent 1px),
-          linear-gradient(to bottom, rgba(224, 224, 224, 0.03) 1px, transparent 1px);
-        box-shadow: 0 20px 40px rgba(0, 0, 0, 0.3);
+      body {
+        background-image: url("data:image/svg+xml,%3Csvg width='24' height='24' viewBox='0 0 24 24' xmlns='http://www.w3.org/2000/svg'%3E%3Ccircle cx='2' cy='2' r='1' fill='%234A4A46'/%3E%3C/svg%3E");
       }
     }
 
     body {
       background-color: var(--bg);
       color: var(--text);
+      font-family: 'Inter', sans-serif;
       margin: 0;
-      padding: 3vw;
-      font-family: 'Newsreader', serif;
+      padding: 0;
+      min-height: 100vh;
+      display: flex;
+      justify-content: center;
+      background-image: url("data:image/svg+xml,%3Csvg width='24' height='24' viewBox='0 0 24 24' xmlns='http://www.w3.org/2000/svg'%3E%3Ccircle cx='2' cy='2' r='1' fill='%23DCDAD2'/%3E%3C/svg%3E");
+      background-position: center top;
       -webkit-font-smoothing: antialiased;
       -moz-osx-font-smoothing: grayscale;
     }
 
-    .page-frame {
-      max-width: 40rem;
+    .layout {
+      max-width: 640px;
       margin: 0 auto;
+      padding: 12vh 4vw;
       display: grid;
-      grid-template-columns: 280px 1fr 280px;
-      grid-template-rows: auto 1fr;
-      border: 1px solid var(--border);
-      background-color: var(--surface);
-      box-shadow: 0 20px 40px rgba(0,0,0,0.03);
-      background-image: 
-        linear-gradient(to right, rgba(25, 24, 23, 0.03) 1px, transparent 1px),
-        linear-gradient(to bottom, rgba(25, 24, 23, 0.03) 1px, transparent 1px);
-      background-size: 2rem 2rem;
-      background-position: center top;
-      overflow: hidden;
+      grid-template-columns: 200px 1fr 200px;
+      gap: 5vw;
+      align-items: start;
     }
 
-    .top-bar {
-      grid-column: 1 / -1;
-      border-bottom: 1px solid var(--border);
-      display: grid;
-      grid-template-columns: 280px 1fr 280px;
-      font-family: 'JetBrains Mono', monospace;
-      font-size: 0.7rem;
+    /* TYPOGRAPHY & BLOCKS */
+    h4 {
+      font-family: 'Inter', sans-serif;
+      font-size: 0.65rem;
       text-transform: uppercase;
-      letter-spacing: 0.06em;
+      letter-spacing: 0.1em;
       color: var(--text-muted);
+      margin-top: 0;
+      margin-bottom: 0.75rem;
+      font-weight: 600;
+    }
+    
+    .meta-block {
+      margin-bottom: 3.5rem;
+      font-size: 0.85rem;
+      line-height: 1.6;
     }
 
-    .top-bar > div {
-      padding: 1.2rem 1.5rem;
-      display: flex;
-      align-items: center;
+    .meta-block p {
+      margin: 0;
     }
-
-    .top-bar .weather {
-      border-left: 1px solid var(--border);
-      border-right: 1px solid var(--border);
-      justify-content: center;
+    
+    .meta-block ul {
+      list-style: none;
+      padding: 0;
+      margin: 0;
     }
-
-    .top-bar .date {
-      justify-content: flex-end;
-    }
-
-    .left-gutter {
-      grid-column: 1;
-      grid-row: 2;
-      border-right: 1px solid var(--border);
-      padding: 3rem 1.5rem;
+    
+    .meta-block a {
+      color: var(--text);
+      text-decoration: none;
       position: relative;
     }
 
-    .center-content {
-      grid-column: 2;
-      grid-row: 2;
-      padding: 6rem 5rem;
-      position: relative;
+    .meta-block a::after {
+      content: "";
+      position: absolute;
+      bottom: -2px;
+      left: 0;
+      width: 100%;
+      height: 1px;
+      background-color: var(--text-muted);
+      opacity: 0.3;
+      transition: opacity 0.2s ease;
     }
 
-    .right-gutter {
-      grid-column: 3;
-      grid-row: 2;
-      border-left: 1px solid var(--border);
-      padding: 3rem 1.5rem;
-      position: relative;
+    .meta-block a:hover::after {
+      opacity: 1;
     }
 
-    /* Typography */
-    h1 {
-      font-family: 'Instrument Serif', serif;
-      font-size: clamp(4rem, 8vw, 8rem);
-      font-weight: 400;
-      line-height: 0.9;
-      margin: 0 0 1.5rem -0.05em;
-      letter-spacing: -0.02em;
+    /* LEFT COLUMN: SIGNALS */
+    .col-left {
+      margin-top: 2vh;
     }
 
-    h1 em {
+    .signal-list {
+      list-style: none;
+      padding: 0;
+      margin: 0;
+      counter-reset: signal;
+    }
+    
+    .signal-list li {
+      margin-bottom: 1.25rem;
+      color: var(--text-muted);
+      font-family: 'Newsreader', serif;
+      font-size: 1.05rem;
       font-style: italic;
-      color: var(--accent-red);
-      padding-right: 0.1em;
-    }
-
-    .role-badge {
-      font-family: 'JetBrains Mono', monospace;
-      font-size: 0.75rem;
-      text-transform: uppercase;
-      letter-spacing: 0.06em;
-      display: inline-flex;
-      align-items: center;
-      gap: 0.6rem;
-      border: 1px solid var(--border);
-      padding: 0.5rem 1rem;
-      border-radius: 2rem;
-      margin-bottom: 5rem;
-      transition: background-color 0.3s, color 0.3s, border-color 0.3s;
-      cursor: default;
-    }
-
-    .role-badge::before {
-      content: '';
-      display: block;
-      width: 6px;
-      height: 6px;
-      border-radius: 50%;
-      background-color: var(--accent-blue);
-      transition: background-color 0.3s;
-    }
-
-    .role-badge:hover {
-      background-color: var(--text);
-      color: var(--bg);
-      border-color: var(--text);
-    }
-
-    .role-badge:hover::before {
-      background-color: var(--accent-red);
-    }
-
-    .bio {
-      font-size: clamp(1.5rem, 2.5vw, 2.25rem);
       line-height: 1.35;
+      position: relative;
+      padding-left: 1.5rem;
+      counter-increment: signal;
+    }
+    
+    .signal-list li::before {
+      content: "0" counter(signal);
+      position: absolute;
+      left: 0;
+      top: 0.15rem;
+      font-size: 0.6rem;
+      color: var(--text-muted);
+      font-family: 'Inter', sans-serif;
+      font-style: normal;
+      font-weight: 500;
+      opacity: 0.5;
+    }
+
+    /* MIDDLE COLUMN: MAIN BIO */
+    .col-main {
+      margin-top: 6vh;
+    }
+
+    .bio-text {
+      font-family: 'Newsreader', serif;
+      font-size: clamp(2rem, 3.5vw, 3.4rem);
+      line-height: 1.15;
       font-weight: 300;
-      max-width: 30ch;
-      margin-bottom: 6rem;
+      letter-spacing: -0.02em;
+      margin: 0;
       color: var(--text);
     }
 
-    .bio em {
-      font-style: italic;
+    .bio-text.secondary {
+      font-size: clamp(1.4rem, 2.2vw, 2.1rem);
+      color: var(--text-muted);
+      margin-top: 2rem;
+      max-width: 95%;
     }
 
-    .bio a {
+    .cursor-link {
       color: inherit;
       text-decoration: none;
-    }
-
-    .bio a:hover {
-      color: var(--accent-blue);
-    }
-
-    .asterisk {
-      font-family: 'JetBrains Mono', monospace;
-      color: var(--accent-blue);
-      font-size: 1rem;
-      margin-left: 0.2rem;
-      vertical-align: super;
-    }
-
-    /* Index */
-    .index-section {
       position: relative;
+      display: inline-block;
+    }
+    
+    .cursor-link::after {
+      content: "";
+      position: absolute;
+      bottom: 0.1em;
+      left: 0;
+      width: 100%;
+      height: 1px;
+      background-color: var(--text);
+      transform-origin: right;
+      transform: scaleX(1);
+      transition: transform 0.3s cubic-bezier(0.65, 0, 0.35, 1);
+    }
+    
+    .cursor-link:hover::after {
+      transform-origin: left;
+      transform: scaleX(0);
     }
 
-    .section-label {
-      font-family: 'JetBrains Mono', monospace;
-      font-size: 0.7rem;
-      text-transform: uppercase;
-      letter-spacing: 0.06em;
-      color: var(--text-muted);
-      margin-bottom: 2.5rem;
+    .highlight {
+      position: relative;
+      display: inline-block;
+      white-space: nowrap;
+      color: var(--text);
+    }
+
+    .annotation-text {
+      position: absolute;
+      top: -1.4rem;
+      right: -1rem;
+      font-family: 'Caveat', cursive;
+      font-size: 1.1rem;
+      color: var(--p3-red);
+      transform: rotate(4deg);
+      pointer-events: none;
+    }
+
+    .scribble {
+      position: absolute;
+      bottom: -6px;
+      left: -5%;
+      width: 110%;
+      height: 24px;
+      pointer-events: none;
+      overflow: visible;
+    }
+
+    /* WRITING INDEX */
+    .writing-index {
+      margin-top: 6rem;
+    }
+    
+    .section-header {
       display: flex;
       align-items: center;
-      gap: 1rem;
+      margin-bottom: 2rem;
     }
-
-    .section-label::after {
-      content: '';
-      flex: 1;
+    
+    .section-header h2 {
+      font-family: 'Inter', sans-serif;
+      font-size: 0.65rem;
+      text-transform: uppercase;
+      letter-spacing: 0.1em;
+      color: var(--text-muted);
+      margin: 0;
+      white-space: nowrap;
+      margin-right: 1rem;
+    }
+    
+    .section-header .line {
       height: 1px;
-      background-color: var(--border);
+      flex-grow: 1;
+      background-color: var(--rule);
     }
-
+    
     .index-list {
       list-style: none;
       padding: 0;
       margin: 0;
     }
-
+    
     .index-list li {
+      border-bottom: 1px solid var(--rule);
+    }
+    
+    .index-list li:first-child {
+      border-top: 1px solid var(--rule);
+    }
+    
+    .index-item {
       display: flex;
-      align-items: baseline;
-      gap: 1rem;
+      justify-content: space-between;
+      align-items: center;
       padding: 1.25rem 0;
-      border-bottom: 1px solid var(--border);
+      text-decoration: none;
+      color: var(--text);
+    }
+    
+    .index-title {
+      font-family: 'Newsreader', serif;
+      font-size: 1.35rem;
+      font-weight: 300;
+      transition: transform 0.3s ease, color 0.3s ease;
       position: relative;
-      transition: padding-left 0.3s ease;
     }
 
-    .index-list li::before {
-      content: '→';
+    .index-title::before {
+      content: "→";
       position: absolute;
-      left: 0;
+      left: -24px;
       opacity: 0;
-      color: var(--accent-blue);
-      font-family: 'JetBrains Mono', monospace;
+      transition: opacity 0.3s ease;
+      font-family: 'Inter', sans-serif;
+      font-size: 1.1rem;
+      color: var(--p3-red);
+      top: 50%;
+      transform: translateY(-50%);
+    }
+    
+    .index-meta {
+      font-family: 'Inter', sans-serif;
+      font-size: 0.75rem;
+      color: var(--text-muted);
+      letter-spacing: 0.05em;
       transition: opacity 0.3s ease;
     }
 
-    .index-list li:hover {
-      padding-left: 1.5rem;
+    .index-item:hover .index-title {
+      transform: translateX(24px);
+      color: var(--p3-red);
     }
 
-    .index-list li:hover::before {
+    .index-item:hover .index-title::before {
       opacity: 1;
     }
 
-    .index-list a {
-      font-family: 'Newsreader', serif;
-      font-size: 1.5rem;
-      color: var(--text);
-      text-decoration: none;
-      transition: color 0.2s, font-style 0.2s;
-      flex-shrink: 0;
+    .index-item:hover .index-meta {
+      opacity: 0.5;
     }
 
-    .index-list li:hover a {
-      color: var(--accent-blue);
-      font-style: italic;
+    /* RIGHT COLUMN: LINKS & NOTES */
+    .col-right {
+      margin-top: 4vh;
     }
 
-    .index-list .leader {
-      flex-grow: 1;
-      border-bottom: 1px dotted var(--text-muted);
-      opacity: 0.3;
-      margin: 0 0.5rem;
+    .links li {
+      margin-bottom: 0.75rem;
     }
 
-    .index-list .date {
-      font-family: 'JetBrains Mono', monospace;
-      font-size: 0.75rem;
-      color: var(--text-muted);
-      flex-shrink: 0;
-    }
-
-    /* Links */
-    .links-list {
-      list-style: none;
-      padding: 0;
-      margin: 0;
-      display: flex;
-      flex-direction: column;
-      gap: 1.25rem;
-    }
-
-    .links-list a {
-      font-family: 'JetBrains Mono', monospace;
-      font-size: 0.75rem;
-      text-transform: uppercase;
-      letter-spacing: 0.06em;
-      color: var(--text);
-      text-decoration: none;
-      display: inline-block;
+    .has-note {
       position: relative;
-      transition: color 0.2s;
     }
 
-    .links-list a:hover {
-      color: var(--accent-red);
-    }
-
-    /* Handwritten notes */
-    .handwritten {
+    .handwritten-note {
+      position: absolute;
+      left: 0;
+      top: 100%;
+      width: 180px;
+      margin-top: 25px;
+      margin-left: 20px;
       font-family: 'Caveat', cursive;
-      font-size: 1.4rem;
+      font-size: 1.15rem;
       line-height: 1.2;
-      position: absolute;
+      color: var(--p3-blue);
+      transform: rotate(-3deg);
       pointer-events: none;
-      max-width: 220px;
     }
 
-    .note-1 {
-      top: 18rem;
-      left: 1.5rem;
-      transform: rotate(-2deg);
-      color: var(--accent-blue);
-    }
-
-    .note-2 {
-      bottom: 12rem;
-      left: 1.5rem;
-      transform: rotate(3deg);
-      color: var(--accent-red);
-    }
-
-    .note-3 {
-      top: -1rem;
-      right: 0;
-      transform: rotate(-4deg);
-      color: var(--accent-blue);
-    }
-
-    /* Circle SVG */
-    .circled {
-      position: relative;
-      display: inline-block;
-      white-space: nowrap;
-    }
-
-    .circle-svg {
+    .handwritten-note .arrow {
       position: absolute;
-      top: -25%;
-      left: -10%;
-      width: 120%;
-      height: 150%;
-      pointer-events: none;
+      left: -20px;
+      top: -30px;
+      width: 35px;
+      height: 35px;
       overflow: visible;
     }
 
-    .circle-svg path {
-      stroke-dasharray: 400;
-      stroke-dashoffset: 400;
-      animation: drawCircle 1s cubic-bezier(0.4, 0, 0.2, 1) forwards 1.2s;
-    }
-
-    @keyframes drawCircle {
-      to {
-        stroke-dashoffset: 0;
-      }
-    }
-
-    /* Animations */
-    @keyframes fadeIn {
-      from { opacity: 0; transform: translateY(10px); }
-      to { opacity: 1; transform: translateY(0); }
-    }
-
-    .center-content > * {
-      opacity: 0;
-      animation: fadeIn 0.8s cubic-bezier(0.4, 0, 0.2, 1) forwards;
-    }
-
-    .center-content h1 { animation-delay: 0.1s; }
-    .center-content .role-badge { animation-delay: 0.2s; }
-    .center-content .bio { animation-delay: 0.3s; }
-    .center-content .index-section { animation-delay: 0.4s; }
-
-    .handwritten {
-      opacity: 0;
-      animation: fadeIn 0.8s cubic-bezier(0.4, 0, 0.2, 1) forwards 0.8s;
-    }
-
-    /* Responsive */
-    @media (max-width: 640px) {
-      body {
-        padding: 1rem;
-      }
-      .center-content {
-        padding: 3rem 1.5rem;
-      }
-      h1 {
-        font-size: clamp(2.5rem, 12vw, 4rem);
-      }
-      .bio {
-        font-size: clamp(1.25rem, 4vw, 1.5rem);
-      }
-    }
-
-    @media (max-width: 1024px) {
-      .page-frame {
+    /* RESPONSIVE */
+    @media (max-width: 900px) {
+      .layout {
         grid-template-columns: 1fr;
-        grid-template-rows: auto auto auto auto;
+        gap: 4rem;
+        padding: 8vw 6vw;
       }
-      .top-bar {
-        grid-template-columns: 1fr;
-        text-align: center;
+      .col-main {
+        margin-top: 0;
+        grid-row: 1;
       }
-      .top-bar .weather, .top-bar .date {
-        border: none;
-        border-top: 1px solid var(--border);
-        justify-content: center;
-      }
-      .left-gutter {
-        grid-column: 1;
-        grid-row: 3;
-        border-right: none;
-        border-top: 1px solid var(--border);
-        padding: 3rem 2rem;
-      }
-      .center-content {
-        grid-column: 1;
+      .col-left {
         grid-row: 2;
-        padding: 4rem 2rem;
+        margin-top: 0;
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 2rem;
       }
-      .right-gutter {
-        grid-column: 1;
-        grid-row: 4;
-        border-left: none;
-        border-top: 1px solid var(--border);
-        padding: 3rem 2rem;
+      .signals {
+        grid-column: 1 / -1;
       }
-      .handwritten {
-        position: static;
-        transform: none !important;
-        margin-top: 1.5rem;
-        max-width: 100%;
+      .col-right {
+        grid-row: 3;
+        margin-top: 0;
       }
-      .note-3 {
+      .handwritten-note {
         position: relative;
-        top: 0;
+        left: 0;
+        margin-top: 15px;
+        margin-left: 10px;
+        width: 80%;
       }
-      .note-3 svg {
+      .handwritten-note .arrow {
         display: none;
       }
-      .index-list .leader {
-        display: none;
+    }
+
+    @media (max-width: 500px) {
+      .col-left {
+        grid-template-columns: 1fr;
       }
-      .index-list li {
-        flex-direction: column;
-        gap: 0.5rem;
-      }
-      .index-list li:hover {
-        padding-left: 0;
-      }
-      .index-list li::before {
-        display: none;
+      .bio-text.secondary {
+        max-width: 100%;
       }
     }
   </style>
 </head>
 <body>
-  <div class="page-frame">
-    <header class="top-bar">
-      <div class="location">San Francisco, CA</div>
-      <div class="weather">14°C, mostly clear</div>
-      <div class="date">2026-10-10</div>
-    </header>
 
-    <aside class="left-gutter">
-      <div class="handwritten note-1">
-        * evening shipping windows closing before sunrise on the other coast
+  <div class="layout">
+    
+    <!-- LEFT COLUMN -->
+    <aside class="col-left">
+      <div class="meta-block">
+        <h4>Erik Nilsson</h4>
+        <p>San Francisco, CA<br>Product Designer</p>
+      </div>
+      
+      <div class="meta-block">
+        <h4>Today</h4>
+        <p>2026.10.11<br>Clear autumn night<br>10°C and still.</p>
+      </div>
+      
+      <div class="meta-block signals">
+        <h4>Observed</h4>
+        <ol class="signal-list">
+          <li>Tilde characters hiding in forgotten file paths</li>
+          <li>Ancient dna rewriting scandinavia's first harvest</li>
+          <li>Monsoon waters claiming bridges in the himalayas</li>
+        </ol>
       </div>
     </aside>
 
-    <main class="center-content">
-      <h1>Erik <em>Nilsson</em></h1>
-      <div class="role-badge">Product Designer at Cursor</div>
+    <!-- MIDDLE COLUMN -->
+    <main class="col-main">
+      <div class="bio-text">
+        I'm a product designer at <a href="https://cursor.com" class="cursor-link">Cursor</a>, working on how people build software with AI.
+      </div>
+      <div class="bio-text secondary">
+        Off-hours, I'm tinkering with <span class="highlight">living-site<span class="annotation-text">rebuilt daily</span><svg class="scribble" viewBox="0 0 120 40" preserveAspectRatio="none"><path d="M5,25 C30,35 90,35 115,20 C100,28 40,32 10,22" fill="none" stroke="var(--p3-red)" stroke-width="2.5" stroke-linecap="round" vector-effect="non-scaling-stroke"/></svg></span> — agents rebuild this corner of the web from fresh activity data.
+      </div>
       
-      <p class="bio">
-        I'm a product designer at <em><a href="https://cursor.com">Cursor</a></em>, working on how people build software with AI. 
-        Off-hours, I'm tinkering with <span class="circled">living-site<svg class="circle-svg" viewBox="0 0 100 40" preserveAspectRatio="none"><path d="M 15,25 C 10,10 80,5 90,20 C 95,35 25,40 12,25 C 8,18 15,12 25,15" fill="none" stroke="var(--accent-red)" stroke-width="1.5" stroke-linecap="round" /></svg></span><sup class="asterisk">*</sup> — agents rebuild this corner of the web from fresh activity data each day.
-      </p>
-
-      <section class="index-section">
-        <h2 class="section-label">Index / Notes</h2>
-        
-        <div class="handwritten note-3">
-          recent thoughts
-          <svg width="40" height="40" viewBox="0 0 40 40" style="position:absolute; top: 100%; left: 20%; overflow: visible;">
-            <path d="M 10,5 Q 30,20 20,35 M 20,35 L 28,30 M 20,35 L 15,28" fill="none" stroke="var(--accent-blue)" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
-          </svg>
+      <section class="writing-index">
+        <div class="section-header">
+          <h2>Index</h2>
+          <div class="line"></div>
         </div>
-
         <ul class="index-list">
           <li>
-            <a href="https://x.com/flowstated/status/2002167999353241901">imagine 2026</a>
-            <div class="leader"></div>
-            <span class="date">Dec 20</span>
+            <a href="https://x.com/flowstated/status/2002167999353241901" class="index-item">
+              <span class="index-title">imagine 2026</span>
+              <span class="index-meta">2025.12.20</span>
+            </a>
           </li>
           <li>
-            <a href="https://x.com/flowstated/status/2000889983562080578">shipping by sunrise</a>
-            <div class="leader"></div>
-            <span class="date">Dec 16</span>
+            <a href="https://x.com/flowstated/status/2000889983562080578" class="index-item">
+              <span class="index-title">shipping by sunrise</span>
+              <span class="index-meta">2025.12.16</span>
+            </a>
           </li>
           <li>
-            <a href="https://x.com/flowstated/status/2000691637190861180">exploring ways to spin up agents from my phone</a>
-            <div class="leader"></div>
-            <span class="date">Dec 15</span>
+            <a href="https://x.com/flowstated/status/2000691637190861180" class="index-item">
+              <span class="index-title">spinning up agents from my phone</span>
+              <span class="index-meta">2025.12.15</span>
+            </a>
           </li>
         </ul>
       </section>
     </main>
 
-    <aside class="right-gutter">
-      <h2 class="section-label">Elsewhere</h2>
-      <ul class="links-list">
-        <li><a href="https://x.com/flowstated">X (Twitter)</a></li>
-        <li><a href="https://github.com/eriknson">GitHub</a></li>
-        <li><a href="https://linkedin.com/in/eriknson">LinkedIn</a></li>
-        <li><a href="mailto:contact@eriks.design">Email</a></li>
-      </ul>
-      
-      <div class="handwritten note-2">
-        macos slipping off the official unix family tree without ceremony
+    <!-- RIGHT COLUMN -->
+    <aside class="col-right">
+      <div class="meta-block links">
+        <h4>Elsewhere</h4>
+        <ul>
+          <li><a href="https://x.com/flowstated">X (Twitter)</a></li>
+          <li class="has-note">
+            <a href="https://github.com/eriknson">GitHub</a>
+            <div class="handwritten-note">
+              <svg viewBox="0 0 40 40" fill="none" stroke="var(--p3-blue)" stroke-width="1.5" class="arrow" stroke-linecap="round" stroke-linejoin="round">
+                <path d="M25 30 C 10 30, 5 20, 10 5 M 2 10 L 10 5 L 18 10" />
+              </svg>
+              Mostly side projects & experiments.
+            </div>
+          </li>
+          <li><a href="https://linkedin.com/in/eriknson">LinkedIn</a></li>
+          <li><a href="mailto:contact@eriks.design">Email</a></li>
+        </ul>
       </div>
     </aside>
+
   </div>
+
 </body>
 </html>
