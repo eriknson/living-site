@@ -1,587 +1,622 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
-<title>Inference Tree</title>
-<style>
-  :root {
-    --bg: #f4f4f6;
-    --text: #1a1a1c;
-    --accent: #0066cc;
-    --accentDim: rgba(0, 102, 204, 0.2);
-    --danger: #dd1144;
-    --node: #cccccc;
-    --hitZone: rgba(0, 0, 0, 0.03);
-  }
-  @media (prefers-color-scheme: dark) {
-    :root {
-      --bg: #0a0a0c;
-      --text: #e0e0e0;
-      --accent: #00ffcc;
-      --accentDim: rgba(0, 255, 204, 0.2);
-      --danger: #ff3366;
-      --node: #444444;
-      --hitZone: rgba(255, 255, 255, 0.03);
-    }
-  }
-
-  body, html {
-    margin: 0; padding: 0; width: 100%; height: 100%;
-    overflow: hidden; background: var(--bg); color: var(--text);
-    font-family: ui-monospace, 'SFMono-Regular', Menlo, monospace;
-    touch-action: none; user-select: none;
-    -webkit-user-select: none;
-  }
-  #gameCanvas {
-    display: block; width: 100vw; height: 100vh;
-  }
-  #ui {
-    position: absolute; top: 0; left: 0; width: 100%; height: 100%;
-    pointer-events: none; display: flex; flex-direction: column;
-  }
-  #hud {
-    padding: 20px; display: flex; flex-direction: column; gap: 10px;
-    padding-top: max(20px, env(safe-area-inset-top));
-  }
-  #sentence {
-    font-size: 18px; min-height: 24px; color: var(--accent);
-    word-wrap: break-word; text-shadow: 0 0 8px var(--accentDim);
-    font-weight: bold;
-  }
-  #stats {
-    font-size: 14px; opacity: 0.8; letter-spacing: 1px;
-  }
-  .screen {
-    position: absolute; top: 0; left: 0; width: 100%; height: 100%;
-    display: flex; flex-direction: column; justify-content: center; align-items: center;
-    background: var(--bg); pointer-events: none; text-align: center; padding: 20px;
-    box-sizing: border-box; z-index: 10;
-  }
-  h1 { margin: 0 0 10px 0; font-size: 32px; letter-spacing: 4px; color: var(--accent); }
-  p { margin: 0 0 30px 0; font-size: 14px; opacity: 0.7; max-width: 300px; line-height: 1.5; }
-  #finalSentence { margin-bottom: 30px; font-size: 16px; line-height: 1.4; word-wrap: break-word; color: var(--accent); font-style: italic; max-width: 80%; }
-  
-  button {
-    background: var(--accent); color: var(--bg); border: none;
-    padding: 15px 40px; font-size: 18px; font-family: inherit; font-weight: bold;
-    border-radius: 30px; cursor: pointer; text-transform: uppercase;
-    box-shadow: 0 0 15px var(--accentDim); pointer-events: auto;
-    transition: transform 0.1s;
-  }
-  button:active { transform: scale(0.95); }
-</style>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover">
+    <title>Monsoon Pass</title>
+    <style>
+        :root {
+            --bg: #0f172a;
+            --fg: #f8fafc;
+            --accent: #facc15;
+            --hud: rgba(248, 250, 252, 0.8);
+            --btn-bg: #f8fafc;
+            --btn-fg: #0f172a;
+            --overlay: rgba(15, 23, 42, 0.6);
+        }
+        @media (prefers-color-scheme: light) {
+            :root {
+                --bg: #e0f2fe;
+                --fg: #0f172a;
+                --accent: #d97706;
+                --hud: rgba(15, 23, 42, 0.8);
+                --btn-bg: #0f172a;
+                --btn-fg: #f8fafc;
+                --overlay: rgba(224, 242, 254, 0.6);
+            }
+        }
+        body, html {
+            margin: 0; padding: 0; width: 100%; height: 100dvh;
+            overflow: hidden; background-color: var(--bg); color: var(--fg);
+            font-family: ui-monospace, 'SFMono-Regular', Menlo, Consolas, monospace;
+            touch-action: none;
+            -webkit-user-select: none; user-select: none;
+        }
+        canvas {
+            display: block; position: absolute; top: 0; left: 0;
+            width: 100vw; height: 100dvh; z-index: 1;
+        }
+        .screen {
+            position: absolute; inset: 0;
+            display: flex; flex-direction: column; justify-content: center; align-items: center;
+            opacity: 0; pointer-events: none; transition: opacity 0.4s ease;
+            background: var(--overlay); z-index: 20; backdrop-filter: blur(2px);
+            -webkit-backdrop-filter: blur(2px);
+        }
+        .screen.active {
+            opacity: 1;
+        }
+        .screen.active button {
+            pointer-events: auto;
+        }
+        button {
+            appearance: none; border: none; background: var(--btn-bg); color: var(--btn-fg);
+            padding: 18px 36px; font-size: 1.25rem; font-family: inherit;
+            border-radius: 8px; font-weight: bold; cursor: pointer; text-transform: uppercase;
+            letter-spacing: 1px; box-shadow: 0 4px 15px rgba(0,0,0,0.2);
+            transition: transform 0.1s;
+        }
+        button:active {
+            transform: scale(0.95);
+        }
+        .title { 
+            font-size: 2.5rem; margin-bottom: 12px; text-transform: uppercase; 
+            letter-spacing: 3px; font-weight: 800; text-align: center;
+            text-shadow: 0 2px 4px rgba(0,0,0,0.2);
+        }
+        .subtitle { 
+            font-size: 1rem; margin-bottom: 40px; opacity: 0.9; text-align: center; 
+            max-width: 85%; line-height: 1.6;
+        }
+        
+        #hud {
+            position: absolute; top: 0; left: 0; width: 100%; padding: env(safe-area-inset-top, 20px) 20px 0;
+            box-sizing: border-box; display: flex; justify-content: space-between;
+            pointer-events: none; opacity: 0; transition: opacity 0.3s;
+            z-index: 10; font-weight: bold; color: var(--hud);
+        }
+        #hud.active { opacity: 1; }
+        .score-box { display: flex; flex-direction: column; }
+        .combo-box { display: flex; flex-direction: column; align-items: flex-end; color: var(--accent); }
+        .label { font-size: 0.75rem; letter-spacing: 1px; margin-bottom: 2px; }
+        .val { font-size: 1.5rem; transition: transform 0.1s ease-out; display: inline-block; }
+        .val.pop { transform: scale(1.4); color: var(--accent); }
+        .highlight { color: var(--accent); font-weight: bold; }
+    </style>
 </head>
 <body>
-  <canvas id="gameCanvas"></canvas>
-  <div id="ui">
+    <canvas id="game"></canvas>
+    
     <div id="hud">
-      <div id="sentence"></div>
-      <div id="stats">SCORE: <span id="scoreVal">0</span> &nbsp;&nbsp; INTEGRITY: <span id="healthVal">♥♥♥</span></div>
+        <div class="score-box">
+            <span class="label">RESCUED</span>
+            <span id="score-val" class="val">0</span>
+        </div>
+        <div class="combo-box">
+            <span class="label">COMBO</span>
+            <span id="combo-val" class="val">0</span>
+        </div>
     </div>
-    <div id="startScreen" class="screen">
-      <h1>INFERENCE</h1>
-      <p>Tap when the wave aligns with a node in the hit zone.</p>
-      <button data-smoke="start" id="startBtn">INITIALIZE</button>
+
+    <div id="ui-start" class="screen active">
+        <div class="title">Monsoon Pass</div>
+        <div class="subtitle">Swipe left/right to navigate the flooded pass.<br><br>Collect glowing <span class="highlight">travelers</span>.<br>Avoid jagged <span style="font-weight:bold;opacity:0.7">debris</span>.</div>
+        <button data-smoke="start">Begin Descent</button>
     </div>
-    <div id="gameOverScreen" class="screen" style="display: none;">
-      <h1>SYSTEM HALTED</h1>
-      <p>Tokens generated: <span id="finalScore">0</span></p>
-      <p id="finalSentence"></p>
-      <button data-smoke="restart" id="restartBtn">REBOOT</button>
+
+    <div id="ui-gameover" class="screen">
+        <div class="title">Washed Away</div>
+        <div class="subtitle">
+            Travelers Rescued: <span id="final-score" class="highlight" style="font-size:1.2rem;">0</span><br>
+            Highest Combo: <span id="final-combo" class="highlight" style="font-size:1.2rem;">0</span>
+        </div>
+        <button data-smoke="restart">Ride Again</button>
     </div>
-  </div>
 
-  <script>
-    const canvas = document.getElementById('gameCanvas');
-    const ctx = canvas.getContext('2d');
-    let W, H;
-    
-    function resize() {
-      W = canvas.width = window.innerWidth;
-      H = canvas.height = window.innerHeight;
-    }
-    window.addEventListener('resize', resize);
-    resize();
-
-    let colors = {};
-    function updateColors() {
-      const style = getComputedStyle(document.documentElement);
-      colors = {
-        bg: style.getPropertyValue('--bg').trim(),
-        text: style.getPropertyValue('--text').trim(),
-        accent: style.getPropertyValue('--accent').trim(),
-        accentDim: style.getPropertyValue('--accentDim').trim(),
-        danger: style.getPropertyValue('--danger').trim(),
-        node: style.getPropertyValue('--node').trim(),
-        hitZone: style.getPropertyValue('--hitZone').trim()
-      };
-    }
-    updateColors();
-    const mql = window.matchMedia ? window.matchMedia('(prefers-color-scheme: dark)') : null;
-    if (mql) mql.addEventListener('change', updateColors);
-
-    const AudioContext = window.AudioContext || window.webkitAudioContext;
-    const audioCtx = AudioContext ? new AudioContext() : null;
-    
-    function playSound(type) {
-      if (!audioCtx || audioCtx.state === 'suspended') return;
-      try {
-        const osc = audioCtx.createOscillator();
-        const gain = audioCtx.createGain();
-        osc.connect(gain);
-        gain.connect(audioCtx.destination);
+    <script>
+        const canvas = document.getElementById('game');
+        const ctx = canvas?.getContext('2d');
         
-        let now = audioCtx.currentTime;
-        if (type === 'hit') {
-          const scale = [261.63, 293.66, 329.63, 392.00, 440.00, 523.25];
-          osc.type = 'sine';
-          osc.frequency.setValueAtTime(scale[score % scale.length], now);
-          gain.gain.setValueAtTime(0.3, now);
-          gain.gain.exponentialRampToValueAtTime(0.01, now + 0.3);
-          osc.start(now);
-          osc.stop(now + 0.3);
-        } else if (type === 'miss') {
-          osc.type = 'sawtooth';
-          osc.frequency.setValueAtTime(100, now);
-          osc.frequency.exponentialRampToValueAtTime(50, now + 0.2);
-          gain.gain.setValueAtTime(0.3, now);
-          gain.gain.linearRampToValueAtTime(0.01, now + 0.2);
-          osc.start(now);
-          osc.stop(now + 0.2);
+        // Defensive check for tests / extreme envs
+        if (!ctx) {
+            console.warn("Canvas 2D not supported.");
         }
-      } catch (e) {}
-    }
 
-    const words = [
-      "the", "a", "is", "of", "and", "in", "to", "it", "that", "for", "on", "with", "as", "by", "at",
-      "data", "node", "tree", "branch", "path", "loop", "sync", "wave", "pulse", "core", "void", "null",
-      "token", "state", "flow", "stream", "logic", "shift", "phase", "cycle", "link", "root", "leaf",
-      "generate", "predict", "infer", "compute", "resolve", "collapse", "expand", "align", "steer",
-      "neon", "cyber", "quantum", "neural", "latent", "hidden", "deep", "dark", "light", "fast", "slow"
-    ];
-
-    let state = 'start';
-    let stateTime = 0;
-    let score = 0;
-    let health = 3;
-    let cameraY = 0;
-    let cameraX = 0;
-    let targetCameraX = 0;
-    let scrollSpeed = 150;
-    let sweepSpeed = 6;
-    let branchCount = 2;
-    let activeNodes = [];
-    let currentNode = null;
-    let sentence = [];
-    let fullSentence = [];
-    let particles = [];
-    let hitPause = 0;
-    let shake = 0;
-    let time = 0;
-    let nodeIdCounter = 0;
-
-    function createNode(x, y, parent) {
-      return {
-        id: nodeIdCounter++,
-        x: x,
-        y: y,
-        parent: parent,
-        word: words[Math.floor(Math.random() * words.length)]
-      };
-    }
-
-    function generateChildren(parents, count) {
-      let children = [];
-      const spacingX = 120;
-      const rowSpacingY = 180;
-      
-      parents.forEach(p => {
-        let startX = p.x - (spacingX * (count - 1)) / 2;
-        for (let i = 0; i < count; i++) {
-          children.push(createNode(startX + i * spacingX, p.y + rowSpacingY, p));
-        }
-      });
-      return children;
-    }
-
-    function initTree() {
-      nodeIdCounter = 0;
-      currentNode = createNode(0, 0, null);
-      activeNodes = [];
-      activeNodes[0] = generateChildren([currentNode], branchCount);
-      activeNodes[1] = generateChildren(activeNodes[0], branchCount);
-      activeNodes[2] = generateChildren(activeNodes[1], branchCount);
-    }
-
-    function updateHUD() {
-      document.getElementById('sentence').innerText = sentence.join(' ') + (state === 'playing' ? '_' : '');
-      document.getElementById('scoreVal').innerText = score;
-      document.getElementById('healthVal').innerText = '♥'.repeat(Math.max(0, health));
-    }
-
-    function createParticles(x, y, color) {
-      for (let i = 0; i < 15; i++) {
-        particles.push({
-          x: x,
-          y: y,
-          vx: (Math.random() - 0.5) * 200,
-          vy: (Math.random() - 0.5) * 200,
-          life: 0.5 + Math.random() * 0.5,
-          color: color
-        });
-      }
-    }
-
-    function advanceTree(selectedNode) {
-      currentNode = selectedNode;
-      targetCameraX = selectedNode.x;
-      
-      activeNodes[0] = activeNodes[1].filter(n => n.parent === selectedNode);
-      activeNodes[1] = activeNodes[2].filter(n => activeNodes[0].includes(n.parent));
-      activeNodes[2] = generateChildren(activeNodes[1], branchCount);
-      
-      score++;
-      sentence.push(selectedNode.word);
-      fullSentence.push(selectedNode.word);
-      if (sentence.length > 6) sentence.shift();
-      
-      scrollSpeed += 2;
-      sweepSpeed += 0.1;
-      
-      if (score === 15) branchCount = 3;
-      if (score === 40) branchCount = 4;
-      
-      updateHUD();
-    }
-
-    function getSweeperX() {
-      if (!activeNodes[0] || activeNodes[0].length === 0) return W/2;
-      let minX = W/2 + (activeNodes[0][0].x - cameraX);
-      let maxX = W/2 + (activeNodes[0][activeNodes[0].length - 1].x - cameraX);
-      let phase = (Math.sin(time * sweepSpeed) + 1) / 2;
-      return minX + (maxX - minX) * phase;
-    }
-
-    function takeDamage() {
-      health--;
-      shake = 20;
-      playSound('miss');
-      updateHUD();
-      
-      try {
-        if (navigator.vibrate) navigator.vibrate([50, 50, 50]);
-      } catch(e) {}
-      
-      let flash = document.createElement('div');
-      flash.style.position = 'absolute';
-      flash.style.top = '0'; flash.style.left = '0';
-      flash.style.width = '100%'; flash.style.height = '100%';
-      flash.style.background = colors.danger;
-      flash.style.opacity = '0.4';
-      flash.style.pointerEvents = 'none';
-      flash.style.transition = 'opacity 0.2s';
-      flash.style.zIndex = '5';
-      document.body.appendChild(flash);
-      
-      flash.getBoundingClientRect();
-      flash.style.opacity = '0';
-      setTimeout(() => flash.remove(), 200);
-      
-      if (health <= 0) {
-        state = 'gameover';
-        document.getElementById('finalScore').innerText = score;
-        document.getElementById('finalSentence').innerText = fullSentence.join(' ') + '.';
-        document.getElementById('gameOverScreen').style.display = 'flex';
-      }
-    }
-
-    function autoAdvance() {
-      if (!activeNodes[0] || activeNodes[0].length === 0) return;
-      let sweeperX = getSweeperX();
-      let closestNode = activeNodes[0][0];
-      let minDist = Infinity;
-      activeNodes[0].forEach(n => {
-        let nScreenX = W/2 + (n.x - cameraX);
-        let dist = Math.abs(nScreenX - sweeperX);
-        if (dist < minDist) {
-          minDist = dist;
-          closestNode = n;
-        }
-      });
-      advanceTree(closestNode);
-    }
-
-    function startGame() {
-      document.getElementById('startScreen').style.display = 'none';
-      document.getElementById('gameOverScreen').style.display = 'none';
-      
-      score = 0;
-      health = 3;
-      scrollSpeed = 150;
-      sweepSpeed = 6;
-      branchCount = 2;
-      sentence = [];
-      fullSentence = [];
-      particles = [];
-      cameraY = 0;
-      cameraX = 0;
-      targetCameraX = 0;
-      time = 0;
-      stateTime = 0;
-      
-      initTree();
-      updateHUD();
-      
-      state = 'playing';
-      
-      if (audioCtx && audioCtx.state === 'suspended') {
-        audioCtx.resume().catch(() => {});
-      }
-    }
-
-    document.getElementById('startBtn').addEventListener('click', startGame);
-    document.getElementById('restartBtn').addEventListener('click', startGame);
-
-    function handleTap() {
-      if (state !== 'playing' || stateTime < 0.2) return;
-      if (!activeNodes[0] || activeNodes[0].length === 0) return;
-
-      let hitLineY = H * 0.75;
-      let rowY = activeNodes[0][0].y;
-      let screenY = hitLineY - (rowY - cameraY);
-
-      if (Math.abs(screenY - hitLineY) <= 60) {
-        let sweeperX = getSweeperX();
-        let closestNode = null;
-        let minDist = Infinity;
-
-        activeNodes[0].forEach(n => {
-          let nScreenX = W/2 + (n.x - cameraX);
-          let dist = Math.abs(nScreenX - sweeperX);
-          if (dist < minDist) {
-            minDist = dist;
-            closestNode = n;
-          }
-        });
-
-        if (minDist <= 50) {
-          playSound('hit');
-          createParticles(sweeperX, screenY, colors.accent);
-          hitPause = 0.05;
-          advanceTree(closestNode);
-          try { if (navigator.vibrate) navigator.vibrate(15); } catch(e) {}
-        } else {
-          takeDamage();
-          if (health > 0) autoAdvance();
-        }
-      } else {
-        takeDamage();
-      }
-    }
-
-    window.addEventListener('pointerdown', (e) => {
-      if (e.target.tagName === 'BUTTON') return;
-      if (e.cancelable) e.preventDefault();
-      handleTap();
-    }, { passive: false });
-
-    document.addEventListener('keydown', (e) => {
-      if (e.target.tagName === 'BUTTON') return;
-      if (e.key === ' ' || e.key === 'Enter') {
-        e.preventDefault();
-        handleTap();
-      }
-    });
-
-    function drawGrid() {
-      ctx.strokeStyle = colors.hitZone;
-      ctx.lineWidth = 1;
-      let gridSize = 40;
-      let offsetX = cameraX % gridSize;
-      let offsetY = cameraY % gridSize;
-      
-      ctx.beginPath();
-      for (let x = -offsetX; x < W; x += gridSize) {
-        ctx.moveTo(x, 0); ctx.lineTo(x, H);
-      }
-      for (let y = offsetY; y < H; y += gridSize) {
-        ctx.moveTo(0, y); ctx.lineTo(W, y);
-      }
-      ctx.stroke();
-    }
-
-    function draw() {
-      ctx.fillStyle = colors.bg;
-      ctx.fillRect(0, 0, W, H);
-      
-      if (state !== 'playing' && state !== 'gameover') return;
-      
-      ctx.save();
-      if (shake > 0) {
-        ctx.translate((Math.random()-0.5)*shake, (Math.random()-0.5)*shake);
-        shake *= 0.9;
-        if (shake < 0.5) shake = 0;
-      }
-      
-      drawGrid();
-      
-      let hitLineY = H * 0.75;
-      
-      // Hit Zone
-      ctx.fillStyle = colors.hitZone;
-      ctx.fillRect(0, hitLineY - 60, W, 120);
-      ctx.strokeStyle = colors.accentDim;
-      ctx.lineWidth = 1;
-      ctx.beginPath();
-      ctx.moveTo(0, hitLineY - 60); ctx.lineTo(W, hitLineY - 60);
-      ctx.moveTo(0, hitLineY + 60); ctx.lineTo(W, hitLineY + 60);
-      ctx.stroke();
-      
-      ctx.lineWidth = 2;
-      ctx.strokeStyle = colors.node;
-      
-      function drawLines(parents, children, alpha) {
-        ctx.globalAlpha = alpha;
-        children.forEach(c => {
-          let p = c.parent;
-          if (p) {
-            let px = W/2 + (p.x - cameraX);
-            let py = hitLineY - (p.y - cameraY);
-            let cx = W/2 + (c.x - cameraX);
-            let cy = hitLineY - (c.y - cameraY);
-            ctx.beginPath();
-            ctx.moveTo(px, py);
-            ctx.lineTo(cx, cy);
-            ctx.stroke();
-          }
-        });
-      }
-      
-      drawLines([currentNode], activeNodes[0], 1.0);
-      drawLines(activeNodes[0], activeNodes[1], 0.5);
-      drawLines(activeNodes[1], activeNodes[2], 0.15);
-      
-      ctx.globalAlpha = 1.0;
-      
-      let sweeperX = getSweeperX();
-      
-      function drawNodeArray(nodes, alpha, isTargetRow) {
-        ctx.globalAlpha = alpha;
-        nodes.forEach(n => {
-          let nx = W/2 + (n.x - cameraX);
-          let ny = hitLineY - (n.y - cameraY);
-          
-          let inZone = isTargetRow && Math.abs(ny - hitLineY) <= 60;
-          let distToSweeper = Math.abs(nx - sweeperX);
-          let isHovered = inZone && distToSweeper <= 50;
-          
-          if (isHovered) {
-            ctx.shadowBlur = 15;
-            ctx.shadowColor = colors.accent;
-            ctx.fillStyle = colors.accent;
-          } else {
-            ctx.shadowBlur = 0;
-            ctx.fillStyle = colors.bg;
-          }
-          
-          ctx.beginPath();
-          ctx.arc(nx, ny, 15, 0, Math.PI * 2);
-          ctx.fill();
-          ctx.strokeStyle = isTargetRow ? colors.accent : colors.node;
-          ctx.lineWidth = isTargetRow ? 3 : 2;
-          ctx.stroke();
-          ctx.shadowBlur = 0;
-          
-          ctx.fillStyle = isHovered ? colors.bg : colors.text;
-          ctx.font = "12px ui-monospace, 'SFMono-Regular', Menlo, monospace";
-          ctx.textAlign = "center";
-          ctx.textBaseline = "middle";
-          ctx.fillText(n.word, nx, ny - 28);
-        });
-      }
-      
-      drawNodeArray(activeNodes[2], 0.15, false);
-      drawNodeArray(activeNodes[1], 0.5, false);
-      drawNodeArray(activeNodes[0], 1.0, true);
-      
-      // Current Node
-      let cx = W/2 + (currentNode.x - cameraX);
-      let cy = hitLineY - (currentNode.y - cameraY);
-      let pulse = 1 + 0.15 * Math.sin(time * 8);
-      ctx.beginPath();
-      ctx.arc(cx, cy, 20 * pulse, 0, Math.PI * 2);
-      ctx.fillStyle = colors.accentDim;
-      ctx.fill();
-      ctx.strokeStyle = colors.accent;
-      ctx.lineWidth = 2;
-      ctx.stroke();
-      
-      // Sweeper
-      ctx.shadowBlur = 15;
-      ctx.shadowColor = colors.accent;
-      ctx.strokeStyle = colors.accent;
-      ctx.lineWidth = 2;
-      ctx.beginPath();
-      ctx.moveTo(sweeperX, hitLineY - 70);
-      ctx.lineTo(sweeperX, hitLineY + 70);
-      ctx.stroke();
-      
-      ctx.beginPath();
-      ctx.arc(sweeperX, hitLineY, 8, 0, Math.PI * 2);
-      ctx.fillStyle = colors.accent;
-      ctx.fill();
-      ctx.shadowBlur = 0;
-      
-      // Particles
-      particles.forEach(p => {
-        ctx.globalAlpha = p.life;
-        ctx.fillStyle = p.color;
-        ctx.fillRect(p.x - 2, p.y - 2, 4, 4);
-      });
-      ctx.globalAlpha = 1.0;
-      
-      ctx.restore();
-    }
-
-    let lastTime = performance.now();
-    function loop(now) {
-      requestAnimationFrame(loop);
-      let dt = (now - lastTime) / 1000;
-      lastTime = now;
-      if (dt > 0.1) dt = 0.1;
-      
-      if (state === 'playing') {
-        if (hitPause > 0) {
-          hitPause -= dt;
-        } else {
-          time += dt;
-          stateTime += dt;
-          cameraY += scrollSpeed * dt;
-          cameraX += (targetCameraX - cameraX) * 10 * dt;
-          
-          if (activeNodes[0] && activeNodes[0].length > 0) {
-            let rowY = activeNodes[0][0].y;
-            let screenY = H * 0.75 - (rowY - cameraY);
-            
-            if (screenY > H * 0.75 + 60) {
-              takeDamage();
-              if (health > 0) autoAdvance();
+        const palettes = {
+            dark: { 
+                bg: '#0f172a',
+                fg: '#f8fafc',
+                water: 'rgba(56, 189, 248, 0.15)',
+                bank: '#020617',
+                debris: '#1e293b',
+                light: '250, 204, 21' 
+            },
+            light: { 
+                bg: '#e0f2fe',
+                fg: '#0f172a',
+                water: 'rgba(2, 132, 199, 0.25)',
+                bank: '#bae6fd',
+                debris: '#334155',
+                light: '217, 119, 6' 
             }
-          }
-          
-          particles.forEach(p => {
-            p.x += p.vx * dt;
-            p.y += p.vy * dt;
-            p.life -= dt;
-          });
-          particles = particles.filter(p => p.life > 0);
+        };
+
+        let isDark = false;
+        if (typeof window !== 'undefined' && window.matchMedia) {
+            isDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
+            window.matchMedia('(prefers-color-scheme: dark)').addEventListener('change', e => {
+                isDark = e.matches;
+                currentPalette = isDark ? palettes.dark : palettes.light;
+            });
         }
-      }
-      
-      draw();
-    }
-    requestAnimationFrame(loop);
-  </script>
+        let currentPalette = isDark ? palettes.dark : palettes.light;
+
+        let width = 0;
+        let height = 0;
+        function resize() {
+            width = window.innerWidth;
+            height = window.innerHeight;
+            let dpr = window.devicePixelRatio || 1;
+            canvas.width = width * dpr;
+            canvas.height = height * dpr;
+            ctx?.scale(dpr, dpr);
+            if (player) player.y = height * 0.75;
+        }
+        window.addEventListener('resize', resize);
+
+        let audioCtx = null;
+        function initAudio() {
+            if (audioCtx) return;
+            try {
+                const AudioContextClass = window.AudioContext || window.webkitAudioContext;
+                if (AudioContextClass) {
+                    audioCtx = new AudioContextClass();
+                }
+            } catch(e) {}
+        }
+
+        function playTone(freq, type, duration, vol=0.1) {
+            if (!audioCtx || audioCtx.state !== 'running') return;
+            try {
+                let osc = audioCtx.createOscillator();
+                let gain = audioCtx.createGain();
+                osc.type = type;
+                osc.frequency.setValueAtTime(freq, audioCtx.currentTime);
+                gain.gain.setValueAtTime(0, audioCtx.currentTime);
+                gain.gain.linearRampToValueAtTime(vol, audioCtx.currentTime + 0.05);
+                gain.gain.exponentialRampToValueAtTime(0.001, audioCtx.currentTime + duration);
+                
+                osc.connect(gain);
+                gain.connect(audioCtx.destination);
+                osc.start();
+                osc.stop(audioCtx.currentTime + duration);
+            } catch(e) {}
+        }
+
+        function playPickup() {
+            let base = 440 + (Math.min(combo, 12) * 35);
+            playTone(base, 'sine', 0.3, 0.1);
+            playTone(base * 1.5, 'triangle', 0.2, 0.05);
+        }
+
+        function playHit() {
+            playTone(150, 'sawtooth', 0.4, 0.2);
+            playTone(100, 'square', 0.5, 0.2);
+        }
+
+        const GameState = { MENU: 0, PLAYING: 1, GAMEOVER: 2 };
+        let state = GameState.MENU;
+        
+        let score = 0;
+        let combo = 0;
+        let maxCombo = 0;
+        let gameTime = 0;
+        let distanceTravelled = 0;
+        let nextSpawnTime = 0;
+        let entities = [];
+        let particles = [];
+        let shakeAmount = 0;
+
+        const player = {
+            lane: 1, 
+            x: 0,
+            y: 0,
+            radius: 12,
+            update(dt, spread) {
+                let center = width / 2;
+                let offsets = [-spread, 0, spread];
+                let targetX = center + offsets[this.lane];
+                this.x += (targetX - this.x) * (1 - Math.exp(-dt * 0.015));
+            }
+        };
+
+        class Entity {
+            constructor(laneIndex, type, yOffset = 0) {
+                this.laneIndex = laneIndex;
+                this.y = -50 + yOffset;
+                this.type = type;
+                this.radius = type === 'debris' ? 16 : 14;
+                this.seed = Math.random() * 1000;
+                this.rot = Math.random() * Math.PI * 2;
+                this.x = width / 2; 
+            }
+            update(dt, speed, spread) {
+                this.y += speed * (dt / 1000);
+                let center = width / 2;
+                let offsets = [-spread, 0, spread];
+                this.x = center + offsets[this.laneIndex];
+            }
+        }
+
+        function spawnWave(spread) {
+            let type = Math.random();
+            let lanes = [0, 1, 2].sort(() => Math.random() - 0.5);
+            
+            if (type < 0.3) {
+                entities.push(new Entity(lanes[0], 'debris', 0));
+                entities.push(new Entity(lanes[1], 'traveler', -30));
+            } else if (type < 0.55) {
+                entities.push(new Entity(lanes[0], 'debris', 0));
+                entities.push(new Entity(lanes[1], 'debris', 0));
+                entities.push(new Entity(lanes[2], 'traveler', -40));
+            } else if (type < 0.75) {
+                entities.push(new Entity(lanes[0], 'traveler', 0));
+            } else {
+                entities.push(new Entity(lanes[0], 'traveler', 0));
+                entities.push(new Entity(lanes[1], 'traveler', -20));
+                entities.push(new Entity(lanes[2], 'debris', -10));
+            }
+        }
+
+        function spawnParticles(x, y, color, count) {
+            for(let i=0; i<count; i++) {
+                particles.push({
+                    x, y, 
+                    vx: (Math.random()-0.5)*12, 
+                    vy: (Math.random()-0.5)*12,
+                    life: 1, color
+                });
+            }
+        }
+
+        function updateHUD() {
+            const scoreEl = document.getElementById('score-val');
+            scoreEl.innerText = score;
+            document.getElementById('combo-val').innerText = combo;
+            
+            scoreEl.classList.remove('pop');
+            void scoreEl.offsetWidth; // trigger reflow
+            scoreEl.classList.add('pop');
+        }
+
+        function startGame() {
+            initAudio();
+            if (audioCtx && audioCtx.state === 'suspended') {
+                audioCtx.resume();
+            }
+            
+            state = GameState.PLAYING;
+            document.getElementById('ui-start').classList.remove('active');
+            document.getElementById('ui-gameover').classList.remove('active');
+            document.getElementById('hud').classList.add('active');
+            
+            score = 0;
+            combo = 0;
+            maxCombo = 0;
+            gameTime = 0;
+            distanceTravelled = 0;
+            entities = [];
+            particles = [];
+            shakeAmount = 0;
+            
+            player.lane = 1;
+            player.x = width / 2;
+            player.y = height * 0.75;
+            
+            nextSpawnTime = 1000;
+            updateHUD();
+        }
+
+        function triggerGameOver() {
+            state = GameState.GAMEOVER;
+            document.getElementById('hud').classList.remove('active');
+            document.getElementById('ui-gameover').classList.add('active');
+            document.getElementById('final-score').innerText = score;
+            document.getElementById('final-combo').innerText = maxCombo;
+            shakeAmount = 25;
+            playHit();
+            if (typeof navigator !== 'undefined' && navigator.vibrate) {
+                try { navigator.vibrate([100, 50, 100]); } catch(e) {}
+            }
+        }
+
+        document.querySelector('[data-smoke="start"]').addEventListener('click', startGame);
+        document.querySelector('[data-smoke="restart"]').addEventListener('click', startGame);
+
+        let touchStartX = null;
+        window.addEventListener('touchstart', (e) => {
+            if (e.target.tagName !== 'BUTTON') {
+                e.preventDefault();
+            }
+            if (e.touches.length > 0) {
+                touchStartX = e.touches[0].clientX;
+            }
+        }, { passive: false });
+
+        window.addEventListener('touchmove', (e) => {
+            if (e.target.tagName !== 'BUTTON') {
+                e.preventDefault();
+            }
+            if (touchStartX === null || state !== GameState.PLAYING) return;
+            
+            let currentX = e.touches[0].clientX;
+            let diffX = touchStartX - currentX;
+            
+            if (Math.abs(diffX) > 40) {
+                if (diffX > 0 && player.lane > 0) {
+                    player.lane--;
+                    touchStartX = currentX; 
+                } else if (diffX < 0 && player.lane < 2) {
+                    player.lane++;
+                    touchStartX = currentX; 
+                }
+            }
+        }, { passive: false });
+
+        window.addEventListener('touchend', () => {
+            touchStartX = null;
+        });
+
+        window.addEventListener('keydown', (e) => {
+            if (state !== GameState.PLAYING) return;
+            if (e.key === 'ArrowLeft' && player.lane > 0) player.lane--;
+            if (e.key === 'ArrowRight' && player.lane < 2) player.lane++;
+        });
+
+        function updateGame(dt) {
+            gameTime += dt;
+            
+            let speed = 280 + (gameTime / 1000) * 8; 
+            let baseSpread = Math.min(width * 0.25, 110);
+            let currentSpread = Math.max(50, baseSpread - (gameTime / 1000) * 0.8);
+            
+            distanceTravelled += speed * (dt / 1000);
+            player.update(dt, currentSpread);
+            
+            if (gameTime > nextSpawnTime) {
+                spawnWave(currentSpread);
+                let interval = Math.max(350, 1100 - (gameTime / 1000) * 12);
+                nextSpawnTime = gameTime + interval;
+            }
+            
+            for (let i = entities.length - 1; i >= 0; i--) {
+                let e = entities[i];
+                e.update(dt, speed, currentSpread);
+                
+                let dx = e.x - player.x;
+                let dy = e.y - player.y;
+                let dist = Math.sqrt(dx*dx + dy*dy);
+                
+                if (dist < e.radius + player.radius - 2) {
+                    if (e.type === 'debris') {
+                        triggerGameOver();
+                        return;
+                    } else if (e.type === 'traveler') {
+                        score++;
+                        combo++;
+                        maxCombo = Math.max(maxCombo, combo);
+                        updateHUD();
+                        playPickup();
+                        if (typeof navigator !== 'undefined' && navigator.vibrate) {
+                            try { navigator.vibrate(20); } catch(err) {}
+                        }
+                        spawnParticles(e.x, e.y, `rgba(${currentPalette.light}, 1)`, 15);
+                        entities.splice(i, 1);
+                        continue;
+                    }
+                }
+                
+                if (e.y > height + e.radius) {
+                    if (e.type === 'traveler') {
+                        combo = 0; 
+                        updateHUD();
+                    }
+                    entities.splice(i, 1);
+                }
+            }
+            
+            particles.forEach(p => {
+                p.x += p.vx * (dt/16);
+                p.y += p.vy * (dt/16);
+                p.life -= 0.04 * (dt/16);
+            });
+            particles = particles.filter(p => p.life > 0);
+        }
+
+        function drawBanks(ctx, time, spread) {
+            ctx.fillStyle = currentPalette.bank;
+            let riverLeft = width/2 - spread - 35;
+            let riverRight = width/2 + spread + 35;
+
+            for (let layer = 0; layer < 2; layer++) {
+                ctx.globalAlpha = layer === 0 ? 0.6 : 1.0;
+                let offsetShift = layer * 15;
+                
+                ctx.beginPath();
+                ctx.moveTo(0, 0);
+                for(let y=0; y<=height + 50; y+=50) {
+                    let x = riverLeft + offsetShift + Math.sin((y - distanceTravelled) * 0.01 + layer) * 15;
+                    ctx.lineTo(x, y);
+                }
+                ctx.lineTo(0, height);
+                ctx.fill();
+                
+                ctx.beginPath();
+                ctx.moveTo(width, 0);
+                for(let y=0; y<=height + 50; y+=50) {
+                    let x = riverRight - offsetShift - Math.sin((y - distanceTravelled * 0.9) * 0.01 + layer + 2) * 15;
+                    ctx.lineTo(x, y);
+                }
+                ctx.lineTo(width, height);
+                ctx.fill();
+            }
+            ctx.globalAlpha = 1.0;
+        }
+
+        function drawPlayer(ctx, x, y) {
+            ctx.save();
+            ctx.translate(x, y);
+            ctx.rotate(Math.sin(gameTime * 0.005) * 0.08);
+            
+            ctx.fillStyle = 'rgba(0,0,0,0.3)';
+            ctx.beginPath();
+            ctx.moveTo(0, -12); ctx.lineTo(12, 12); ctx.lineTo(0, 8); ctx.lineTo(-12, 12);
+            ctx.fill();
+
+            ctx.fillStyle = currentPalette.fg;
+            ctx.beginPath();
+            ctx.moveTo(0, -15);
+            ctx.lineTo(10, 10);
+            ctx.lineTo(0, 5);
+            ctx.lineTo(-10, 10);
+            ctx.closePath();
+            ctx.fill();
+            
+            ctx.fillStyle = currentPalette.bank;
+            ctx.globalAlpha = 0.4;
+            ctx.beginPath();
+            ctx.moveTo(0, -15);
+            ctx.lineTo(10, 10);
+            ctx.lineTo(0, 5);
+            ctx.closePath();
+            ctx.fill();
+            
+            ctx.restore();
+        }
+
+        function drawDebris(ctx, ent, time) {
+            ctx.fillStyle = currentPalette.debris;
+            ctx.save();
+            ctx.translate(ent.x, ent.y);
+            ctx.rotate(ent.rot + (state === GameState.PLAYING ? gameTime * 0.002 : time * 0.001));
+            
+            ctx.beginPath();
+            for (let i = 0; i < 7; i++) {
+                let angle = (i / 7) * Math.PI * 2;
+                let r = ent.radius + Math.sin(ent.seed + i * 3) * 6;
+                let px = Math.cos(angle) * r;
+                let py = Math.sin(angle) * r;
+                if (i === 0) ctx.moveTo(px, py);
+                else ctx.lineTo(px, py);
+            }
+            ctx.closePath();
+            ctx.fill();
+            ctx.restore();
+        }
+
+        function drawTraveler(ctx, ent, time) {
+            let localTime = state === GameState.PLAYING ? gameTime : time;
+            let pulse = 1 + Math.sin(localTime * 0.008 + ent.seed) * 0.2;
+            
+            ctx.fillStyle = `rgba(${currentPalette.light}, ${0.7 * pulse})`;
+            ctx.beginPath();
+            ctx.arc(ent.x, ent.y, ent.radius * pulse, 0, Math.PI * 2);
+            ctx.fill();
+            
+            ctx.fillStyle = '#fff';
+            ctx.beginPath();
+            ctx.arc(ent.x, ent.y, ent.radius * 0.35, 0, Math.PI * 2);
+            ctx.fill();
+        }
+
+        function drawGame(timestamp) {
+            if (!ctx) return;
+            
+            ctx.clearRect(0, 0, width, height);
+            ctx.fillStyle = currentPalette.bg;
+            ctx.fillRect(0, 0, width, height);
+            
+            ctx.save();
+            
+            if (shakeAmount > 0.1) {
+                ctx.translate((Math.random()-0.5)*shakeAmount, (Math.random()-0.5)*shakeAmount);
+                shakeAmount *= 0.85;
+            }
+
+            let baseSpread = Math.min(width * 0.25, 110);
+            let currentSpread = state === GameState.PLAYING 
+                ? Math.max(50, baseSpread - (gameTime / 1000) * 0.8)
+                : baseSpread;
+
+            if (combo > 0) {
+                let auraSize = 120 + (combo * 25);
+                let grad = ctx.createRadialGradient(player.x, player.y, 0, player.x, player.y, auraSize);
+                grad.addColorStop(0, `rgba(${currentPalette.light}, ${Math.min(0.5, 0.05 + combo*0.025)})`);
+                grad.addColorStop(1, 'rgba(0,0,0,0)');
+                ctx.fillStyle = grad;
+                ctx.fillRect(0, 0, width, height);
+            }
+
+            let riverLeft = width/2 - currentSpread - 30;
+            let riverRight = width/2 + currentSpread + 30;
+            let riverWidth = Math.max(10, riverRight - riverLeft);
+            
+            ctx.strokeStyle = currentPalette.water;
+            ctx.lineWidth = 2;
+            let lineCount = 4;
+            for(let i=1; i<=lineCount; i++) {
+                ctx.beginPath();
+                let xBase = riverLeft + (riverWidth / (lineCount+1)) * i;
+                for(let y=0; y<=height + 50; y+=50) {
+                    let offset = Math.sin((y - distanceTravelled) * 0.01 + i) * 15;
+                    if (y===0) ctx.moveTo(xBase + offset, y);
+                    else ctx.lineTo(xBase + offset, y);
+                }
+                ctx.stroke();
+            }
+
+            drawBanks(ctx, timestamp, currentSpread);
+
+            entities.forEach(e => {
+                if (e.type === 'debris') drawDebris(ctx, e, timestamp);
+                else drawTraveler(ctx, e, timestamp);
+            });
+
+            particles.forEach(p => {
+                ctx.fillStyle = p.color;
+                ctx.globalAlpha = Math.max(0, p.life);
+                ctx.beginPath();
+                ctx.arc(p.x, p.y, 2.5, 0, Math.PI*2);
+                ctx.fill();
+            });
+            ctx.globalAlpha = 1;
+
+            if (state !== GameState.MENU) {
+                drawPlayer(ctx, player.x, player.y);
+            }
+            
+            ctx.restore();
+        }
+
+        let lastTime = 0;
+        function loop(timestamp) {
+            if (!lastTime) lastTime = timestamp;
+            let dt = timestamp - lastTime;
+            lastTime = timestamp;
+            if (dt > 100) dt = 16; 
+            
+            if (state === GameState.PLAYING) {
+                updateGame(dt);
+            } else {
+                distanceTravelled += 40 * (dt / 1000);
+            }
+            
+            drawGame(timestamp);
+            requestAnimationFrame(loop);
+        }
+
+        resize();
+        requestAnimationFrame(loop);
+    </script>
 </body>
 </html>

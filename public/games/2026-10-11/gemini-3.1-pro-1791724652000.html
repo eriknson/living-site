@@ -1,0 +1,622 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover">
+    <title>Monsoon Pass</title>
+    <style>
+        :root {
+            --bg: #0f172a;
+            --fg: #f8fafc;
+            --accent: #facc15;
+            --hud: rgba(248, 250, 252, 0.8);
+            --btn-bg: #f8fafc;
+            --btn-fg: #0f172a;
+            --overlay: rgba(15, 23, 42, 0.6);
+        }
+        @media (prefers-color-scheme: light) {
+            :root {
+                --bg: #e0f2fe;
+                --fg: #0f172a;
+                --accent: #d97706;
+                --hud: rgba(15, 23, 42, 0.8);
+                --btn-bg: #0f172a;
+                --btn-fg: #f8fafc;
+                --overlay: rgba(224, 242, 254, 0.6);
+            }
+        }
+        body, html {
+            margin: 0; padding: 0; width: 100%; height: 100dvh;
+            overflow: hidden; background-color: var(--bg); color: var(--fg);
+            font-family: ui-monospace, 'SFMono-Regular', Menlo, Consolas, monospace;
+            touch-action: none;
+            -webkit-user-select: none; user-select: none;
+        }
+        canvas {
+            display: block; position: absolute; top: 0; left: 0;
+            width: 100vw; height: 100dvh; z-index: 1;
+        }
+        .screen {
+            position: absolute; inset: 0;
+            display: flex; flex-direction: column; justify-content: center; align-items: center;
+            opacity: 0; pointer-events: none; transition: opacity 0.4s ease;
+            background: var(--overlay); z-index: 20; backdrop-filter: blur(2px);
+            -webkit-backdrop-filter: blur(2px);
+        }
+        .screen.active {
+            opacity: 1;
+        }
+        .screen.active button {
+            pointer-events: auto;
+        }
+        button {
+            appearance: none; border: none; background: var(--btn-bg); color: var(--btn-fg);
+            padding: 18px 36px; font-size: 1.25rem; font-family: inherit;
+            border-radius: 8px; font-weight: bold; cursor: pointer; text-transform: uppercase;
+            letter-spacing: 1px; box-shadow: 0 4px 15px rgba(0,0,0,0.2);
+            transition: transform 0.1s;
+        }
+        button:active {
+            transform: scale(0.95);
+        }
+        .title { 
+            font-size: 2.5rem; margin-bottom: 12px; text-transform: uppercase; 
+            letter-spacing: 3px; font-weight: 800; text-align: center;
+            text-shadow: 0 2px 4px rgba(0,0,0,0.2);
+        }
+        .subtitle { 
+            font-size: 1rem; margin-bottom: 40px; opacity: 0.9; text-align: center; 
+            max-width: 85%; line-height: 1.6;
+        }
+        
+        #hud {
+            position: absolute; top: 0; left: 0; width: 100%; padding: env(safe-area-inset-top, 20px) 20px 0;
+            box-sizing: border-box; display: flex; justify-content: space-between;
+            pointer-events: none; opacity: 0; transition: opacity 0.3s;
+            z-index: 10; font-weight: bold; color: var(--hud);
+        }
+        #hud.active { opacity: 1; }
+        .score-box { display: flex; flex-direction: column; }
+        .combo-box { display: flex; flex-direction: column; align-items: flex-end; color: var(--accent); }
+        .label { font-size: 0.75rem; letter-spacing: 1px; margin-bottom: 2px; }
+        .val { font-size: 1.5rem; transition: transform 0.1s ease-out; display: inline-block; }
+        .val.pop { transform: scale(1.4); color: var(--accent); }
+        .highlight { color: var(--accent); font-weight: bold; }
+    </style>
+</head>
+<body>
+    <canvas id="game"></canvas>
+    
+    <div id="hud">
+        <div class="score-box">
+            <span class="label">RESCUED</span>
+            <span id="score-val" class="val">0</span>
+        </div>
+        <div class="combo-box">
+            <span class="label">COMBO</span>
+            <span id="combo-val" class="val">0</span>
+        </div>
+    </div>
+
+    <div id="ui-start" class="screen active">
+        <div class="title">Monsoon Pass</div>
+        <div class="subtitle">Swipe left/right to navigate the flooded pass.<br><br>Collect glowing <span class="highlight">travelers</span>.<br>Avoid jagged <span style="font-weight:bold;opacity:0.7">debris</span>.</div>
+        <button data-smoke="start">Begin Descent</button>
+    </div>
+
+    <div id="ui-gameover" class="screen">
+        <div class="title">Washed Away</div>
+        <div class="subtitle">
+            Travelers Rescued: <span id="final-score" class="highlight" style="font-size:1.2rem;">0</span><br>
+            Highest Combo: <span id="final-combo" class="highlight" style="font-size:1.2rem;">0</span>
+        </div>
+        <button data-smoke="restart">Ride Again</button>
+    </div>
+
+    <script>
+        const canvas = document.getElementById('game');
+        const ctx = canvas?.getContext('2d');
+        
+        // Defensive check for tests / extreme envs
+        if (!ctx) {
+            console.warn("Canvas 2D not supported.");
+        }
+
+        const palettes = {
+            dark: { 
+                bg: '#0f172a',
+                fg: '#f8fafc',
+                water: 'rgba(56, 189, 248, 0.15)',
+                bank: '#020617',
+                debris: '#1e293b',
+                light: '250, 204, 21' 
+            },
+            light: { 
+                bg: '#e0f2fe',
+                fg: '#0f172a',
+                water: 'rgba(2, 132, 199, 0.25)',
+                bank: '#bae6fd',
+                debris: '#334155',
+                light: '217, 119, 6' 
+            }
+        };
+
+        let isDark = false;
+        if (typeof window !== 'undefined' && window.matchMedia) {
+            isDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
+            window.matchMedia('(prefers-color-scheme: dark)').addEventListener('change', e => {
+                isDark = e.matches;
+                currentPalette = isDark ? palettes.dark : palettes.light;
+            });
+        }
+        let currentPalette = isDark ? palettes.dark : palettes.light;
+
+        let width = 0;
+        let height = 0;
+        function resize() {
+            width = window.innerWidth;
+            height = window.innerHeight;
+            let dpr = window.devicePixelRatio || 1;
+            canvas.width = width * dpr;
+            canvas.height = height * dpr;
+            ctx?.scale(dpr, dpr);
+            if (player) player.y = height * 0.75;
+        }
+        window.addEventListener('resize', resize);
+
+        let audioCtx = null;
+        function initAudio() {
+            if (audioCtx) return;
+            try {
+                const AudioContextClass = window.AudioContext || window.webkitAudioContext;
+                if (AudioContextClass) {
+                    audioCtx = new AudioContextClass();
+                }
+            } catch(e) {}
+        }
+
+        function playTone(freq, type, duration, vol=0.1) {
+            if (!audioCtx || audioCtx.state !== 'running') return;
+            try {
+                let osc = audioCtx.createOscillator();
+                let gain = audioCtx.createGain();
+                osc.type = type;
+                osc.frequency.setValueAtTime(freq, audioCtx.currentTime);
+                gain.gain.setValueAtTime(0, audioCtx.currentTime);
+                gain.gain.linearRampToValueAtTime(vol, audioCtx.currentTime + 0.05);
+                gain.gain.exponentialRampToValueAtTime(0.001, audioCtx.currentTime + duration);
+                
+                osc.connect(gain);
+                gain.connect(audioCtx.destination);
+                osc.start();
+                osc.stop(audioCtx.currentTime + duration);
+            } catch(e) {}
+        }
+
+        function playPickup() {
+            let base = 440 + (Math.min(combo, 12) * 35);
+            playTone(base, 'sine', 0.3, 0.1);
+            playTone(base * 1.5, 'triangle', 0.2, 0.05);
+        }
+
+        function playHit() {
+            playTone(150, 'sawtooth', 0.4, 0.2);
+            playTone(100, 'square', 0.5, 0.2);
+        }
+
+        const GameState = { MENU: 0, PLAYING: 1, GAMEOVER: 2 };
+        let state = GameState.MENU;
+        
+        let score = 0;
+        let combo = 0;
+        let maxCombo = 0;
+        let gameTime = 0;
+        let distanceTravelled = 0;
+        let nextSpawnTime = 0;
+        let entities = [];
+        let particles = [];
+        let shakeAmount = 0;
+
+        const player = {
+            lane: 1, 
+            x: 0,
+            y: 0,
+            radius: 12,
+            update(dt, spread) {
+                let center = width / 2;
+                let offsets = [-spread, 0, spread];
+                let targetX = center + offsets[this.lane];
+                this.x += (targetX - this.x) * (1 - Math.exp(-dt * 0.015));
+            }
+        };
+
+        class Entity {
+            constructor(laneIndex, type, yOffset = 0) {
+                this.laneIndex = laneIndex;
+                this.y = -50 + yOffset;
+                this.type = type;
+                this.radius = type === 'debris' ? 16 : 14;
+                this.seed = Math.random() * 1000;
+                this.rot = Math.random() * Math.PI * 2;
+                this.x = width / 2; 
+            }
+            update(dt, speed, spread) {
+                this.y += speed * (dt / 1000);
+                let center = width / 2;
+                let offsets = [-spread, 0, spread];
+                this.x = center + offsets[this.laneIndex];
+            }
+        }
+
+        function spawnWave(spread) {
+            let type = Math.random();
+            let lanes = [0, 1, 2].sort(() => Math.random() - 0.5);
+            
+            if (type < 0.3) {
+                entities.push(new Entity(lanes[0], 'debris', 0));
+                entities.push(new Entity(lanes[1], 'traveler', -30));
+            } else if (type < 0.55) {
+                entities.push(new Entity(lanes[0], 'debris', 0));
+                entities.push(new Entity(lanes[1], 'debris', 0));
+                entities.push(new Entity(lanes[2], 'traveler', -40));
+            } else if (type < 0.75) {
+                entities.push(new Entity(lanes[0], 'traveler', 0));
+            } else {
+                entities.push(new Entity(lanes[0], 'traveler', 0));
+                entities.push(new Entity(lanes[1], 'traveler', -20));
+                entities.push(new Entity(lanes[2], 'debris', -10));
+            }
+        }
+
+        function spawnParticles(x, y, color, count) {
+            for(let i=0; i<count; i++) {
+                particles.push({
+                    x, y, 
+                    vx: (Math.random()-0.5)*12, 
+                    vy: (Math.random()-0.5)*12,
+                    life: 1, color
+                });
+            }
+        }
+
+        function updateHUD() {
+            const scoreEl = document.getElementById('score-val');
+            scoreEl.innerText = score;
+            document.getElementById('combo-val').innerText = combo;
+            
+            scoreEl.classList.remove('pop');
+            void scoreEl.offsetWidth; // trigger reflow
+            scoreEl.classList.add('pop');
+        }
+
+        function startGame() {
+            initAudio();
+            if (audioCtx && audioCtx.state === 'suspended') {
+                audioCtx.resume();
+            }
+            
+            state = GameState.PLAYING;
+            document.getElementById('ui-start').classList.remove('active');
+            document.getElementById('ui-gameover').classList.remove('active');
+            document.getElementById('hud').classList.add('active');
+            
+            score = 0;
+            combo = 0;
+            maxCombo = 0;
+            gameTime = 0;
+            distanceTravelled = 0;
+            entities = [];
+            particles = [];
+            shakeAmount = 0;
+            
+            player.lane = 1;
+            player.x = width / 2;
+            player.y = height * 0.75;
+            
+            nextSpawnTime = 1000;
+            updateHUD();
+        }
+
+        function triggerGameOver() {
+            state = GameState.GAMEOVER;
+            document.getElementById('hud').classList.remove('active');
+            document.getElementById('ui-gameover').classList.add('active');
+            document.getElementById('final-score').innerText = score;
+            document.getElementById('final-combo').innerText = maxCombo;
+            shakeAmount = 25;
+            playHit();
+            if (typeof navigator !== 'undefined' && navigator.vibrate) {
+                try { navigator.vibrate([100, 50, 100]); } catch(e) {}
+            }
+        }
+
+        document.querySelector('[data-smoke="start"]').addEventListener('click', startGame);
+        document.querySelector('[data-smoke="restart"]').addEventListener('click', startGame);
+
+        let touchStartX = null;
+        window.addEventListener('touchstart', (e) => {
+            if (e.target.tagName !== 'BUTTON') {
+                e.preventDefault();
+            }
+            if (e.touches.length > 0) {
+                touchStartX = e.touches[0].clientX;
+            }
+        }, { passive: false });
+
+        window.addEventListener('touchmove', (e) => {
+            if (e.target.tagName !== 'BUTTON') {
+                e.preventDefault();
+            }
+            if (touchStartX === null || state !== GameState.PLAYING) return;
+            
+            let currentX = e.touches[0].clientX;
+            let diffX = touchStartX - currentX;
+            
+            if (Math.abs(diffX) > 40) {
+                if (diffX > 0 && player.lane > 0) {
+                    player.lane--;
+                    touchStartX = currentX; 
+                } else if (diffX < 0 && player.lane < 2) {
+                    player.lane++;
+                    touchStartX = currentX; 
+                }
+            }
+        }, { passive: false });
+
+        window.addEventListener('touchend', () => {
+            touchStartX = null;
+        });
+
+        window.addEventListener('keydown', (e) => {
+            if (state !== GameState.PLAYING) return;
+            if (e.key === 'ArrowLeft' && player.lane > 0) player.lane--;
+            if (e.key === 'ArrowRight' && player.lane < 2) player.lane++;
+        });
+
+        function updateGame(dt) {
+            gameTime += dt;
+            
+            let speed = 280 + (gameTime / 1000) * 8; 
+            let baseSpread = Math.min(width * 0.25, 110);
+            let currentSpread = Math.max(50, baseSpread - (gameTime / 1000) * 0.8);
+            
+            distanceTravelled += speed * (dt / 1000);
+            player.update(dt, currentSpread);
+            
+            if (gameTime > nextSpawnTime) {
+                spawnWave(currentSpread);
+                let interval = Math.max(350, 1100 - (gameTime / 1000) * 12);
+                nextSpawnTime = gameTime + interval;
+            }
+            
+            for (let i = entities.length - 1; i >= 0; i--) {
+                let e = entities[i];
+                e.update(dt, speed, currentSpread);
+                
+                let dx = e.x - player.x;
+                let dy = e.y - player.y;
+                let dist = Math.sqrt(dx*dx + dy*dy);
+                
+                if (dist < e.radius + player.radius - 2) {
+                    if (e.type === 'debris') {
+                        triggerGameOver();
+                        return;
+                    } else if (e.type === 'traveler') {
+                        score++;
+                        combo++;
+                        maxCombo = Math.max(maxCombo, combo);
+                        updateHUD();
+                        playPickup();
+                        if (typeof navigator !== 'undefined' && navigator.vibrate) {
+                            try { navigator.vibrate(20); } catch(err) {}
+                        }
+                        spawnParticles(e.x, e.y, `rgba(${currentPalette.light}, 1)`, 15);
+                        entities.splice(i, 1);
+                        continue;
+                    }
+                }
+                
+                if (e.y > height + e.radius) {
+                    if (e.type === 'traveler') {
+                        combo = 0; 
+                        updateHUD();
+                    }
+                    entities.splice(i, 1);
+                }
+            }
+            
+            particles.forEach(p => {
+                p.x += p.vx * (dt/16);
+                p.y += p.vy * (dt/16);
+                p.life -= 0.04 * (dt/16);
+            });
+            particles = particles.filter(p => p.life > 0);
+        }
+
+        function drawBanks(ctx, time, spread) {
+            ctx.fillStyle = currentPalette.bank;
+            let riverLeft = width/2 - spread - 35;
+            let riverRight = width/2 + spread + 35;
+
+            for (let layer = 0; layer < 2; layer++) {
+                ctx.globalAlpha = layer === 0 ? 0.6 : 1.0;
+                let offsetShift = layer * 15;
+                
+                ctx.beginPath();
+                ctx.moveTo(0, 0);
+                for(let y=0; y<=height + 50; y+=50) {
+                    let x = riverLeft + offsetShift + Math.sin((y - distanceTravelled) * 0.01 + layer) * 15;
+                    ctx.lineTo(x, y);
+                }
+                ctx.lineTo(0, height);
+                ctx.fill();
+                
+                ctx.beginPath();
+                ctx.moveTo(width, 0);
+                for(let y=0; y<=height + 50; y+=50) {
+                    let x = riverRight - offsetShift - Math.sin((y - distanceTravelled * 0.9) * 0.01 + layer + 2) * 15;
+                    ctx.lineTo(x, y);
+                }
+                ctx.lineTo(width, height);
+                ctx.fill();
+            }
+            ctx.globalAlpha = 1.0;
+        }
+
+        function drawPlayer(ctx, x, y) {
+            ctx.save();
+            ctx.translate(x, y);
+            ctx.rotate(Math.sin(gameTime * 0.005) * 0.08);
+            
+            ctx.fillStyle = 'rgba(0,0,0,0.3)';
+            ctx.beginPath();
+            ctx.moveTo(0, -12); ctx.lineTo(12, 12); ctx.lineTo(0, 8); ctx.lineTo(-12, 12);
+            ctx.fill();
+
+            ctx.fillStyle = currentPalette.fg;
+            ctx.beginPath();
+            ctx.moveTo(0, -15);
+            ctx.lineTo(10, 10);
+            ctx.lineTo(0, 5);
+            ctx.lineTo(-10, 10);
+            ctx.closePath();
+            ctx.fill();
+            
+            ctx.fillStyle = currentPalette.bank;
+            ctx.globalAlpha = 0.4;
+            ctx.beginPath();
+            ctx.moveTo(0, -15);
+            ctx.lineTo(10, 10);
+            ctx.lineTo(0, 5);
+            ctx.closePath();
+            ctx.fill();
+            
+            ctx.restore();
+        }
+
+        function drawDebris(ctx, ent, time) {
+            ctx.fillStyle = currentPalette.debris;
+            ctx.save();
+            ctx.translate(ent.x, ent.y);
+            ctx.rotate(ent.rot + (state === GameState.PLAYING ? gameTime * 0.002 : time * 0.001));
+            
+            ctx.beginPath();
+            for (let i = 0; i < 7; i++) {
+                let angle = (i / 7) * Math.PI * 2;
+                let r = ent.radius + Math.sin(ent.seed + i * 3) * 6;
+                let px = Math.cos(angle) * r;
+                let py = Math.sin(angle) * r;
+                if (i === 0) ctx.moveTo(px, py);
+                else ctx.lineTo(px, py);
+            }
+            ctx.closePath();
+            ctx.fill();
+            ctx.restore();
+        }
+
+        function drawTraveler(ctx, ent, time) {
+            let localTime = state === GameState.PLAYING ? gameTime : time;
+            let pulse = 1 + Math.sin(localTime * 0.008 + ent.seed) * 0.2;
+            
+            ctx.fillStyle = `rgba(${currentPalette.light}, ${0.7 * pulse})`;
+            ctx.beginPath();
+            ctx.arc(ent.x, ent.y, ent.radius * pulse, 0, Math.PI * 2);
+            ctx.fill();
+            
+            ctx.fillStyle = '#fff';
+            ctx.beginPath();
+            ctx.arc(ent.x, ent.y, ent.radius * 0.35, 0, Math.PI * 2);
+            ctx.fill();
+        }
+
+        function drawGame(timestamp) {
+            if (!ctx) return;
+            
+            ctx.clearRect(0, 0, width, height);
+            ctx.fillStyle = currentPalette.bg;
+            ctx.fillRect(0, 0, width, height);
+            
+            ctx.save();
+            
+            if (shakeAmount > 0.1) {
+                ctx.translate((Math.random()-0.5)*shakeAmount, (Math.random()-0.5)*shakeAmount);
+                shakeAmount *= 0.85;
+            }
+
+            let baseSpread = Math.min(width * 0.25, 110);
+            let currentSpread = state === GameState.PLAYING 
+                ? Math.max(50, baseSpread - (gameTime / 1000) * 0.8)
+                : baseSpread;
+
+            if (combo > 0) {
+                let auraSize = 120 + (combo * 25);
+                let grad = ctx.createRadialGradient(player.x, player.y, 0, player.x, player.y, auraSize);
+                grad.addColorStop(0, `rgba(${currentPalette.light}, ${Math.min(0.5, 0.05 + combo*0.025)})`);
+                grad.addColorStop(1, 'rgba(0,0,0,0)');
+                ctx.fillStyle = grad;
+                ctx.fillRect(0, 0, width, height);
+            }
+
+            let riverLeft = width/2 - currentSpread - 30;
+            let riverRight = width/2 + currentSpread + 30;
+            let riverWidth = Math.max(10, riverRight - riverLeft);
+            
+            ctx.strokeStyle = currentPalette.water;
+            ctx.lineWidth = 2;
+            let lineCount = 4;
+            for(let i=1; i<=lineCount; i++) {
+                ctx.beginPath();
+                let xBase = riverLeft + (riverWidth / (lineCount+1)) * i;
+                for(let y=0; y<=height + 50; y+=50) {
+                    let offset = Math.sin((y - distanceTravelled) * 0.01 + i) * 15;
+                    if (y===0) ctx.moveTo(xBase + offset, y);
+                    else ctx.lineTo(xBase + offset, y);
+                }
+                ctx.stroke();
+            }
+
+            drawBanks(ctx, timestamp, currentSpread);
+
+            entities.forEach(e => {
+                if (e.type === 'debris') drawDebris(ctx, e, timestamp);
+                else drawTraveler(ctx, e, timestamp);
+            });
+
+            particles.forEach(p => {
+                ctx.fillStyle = p.color;
+                ctx.globalAlpha = Math.max(0, p.life);
+                ctx.beginPath();
+                ctx.arc(p.x, p.y, 2.5, 0, Math.PI*2);
+                ctx.fill();
+            });
+            ctx.globalAlpha = 1;
+
+            if (state !== GameState.MENU) {
+                drawPlayer(ctx, player.x, player.y);
+            }
+            
+            ctx.restore();
+        }
+
+        let lastTime = 0;
+        function loop(timestamp) {
+            if (!lastTime) lastTime = timestamp;
+            let dt = timestamp - lastTime;
+            lastTime = timestamp;
+            if (dt > 100) dt = 16; 
+            
+            if (state === GameState.PLAYING) {
+                updateGame(dt);
+            } else {
+                distanceTravelled += 40 * (dt / 1000);
+            }
+            
+            drawGame(timestamp);
+            requestAnimationFrame(loop);
+        }
+
+        resize();
+        requestAnimationFrame(loop);
+    </script>
+</body>
+</html>
