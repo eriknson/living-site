@@ -3,488 +3,485 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Erik Nilsson — Product Designer</title>
+  <title>Erik Nilsson — Designer</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Caveat:wght@500&family=Instrument+Serif:ital@0;1&family=Inter:wght@400;500&family=JetBrains+Mono:wght@400&display=swap" rel="stylesheet">
   <style>
-    @import url('https://fonts.googleapis.com/css2?family=Newsreader:ital,opsz,wght@0,6..72,300..600;1,6..72,300..600&family=Inter:wght@400;500;600&family=Caveat:wght@500&display=swap');
-
     :root {
-      --bg: #F4F3F0;
-      --text: #191816;
-      --text-muted: #82807A;
-      --rule: #E6E4DD;
-      --p3-red: #FF3333;
-      --p3-blue: #0044FF;
+      --bg: #F4F2EB;
+      --text: #1A1918;
+      --border: #D6D2C9;
+      --meta: #7A766F;
+      --accent-red: #E63946;
+      --accent-blue: #1D3557;
+      --accent-green: #2A9D8F;
     }
 
     @supports (color: color(display-p3 1 1 1)) {
       :root {
-        --p3-red: color(display-p3 0.95 0.1 0.1);
-        --p3-blue: color(display-p3 0.1 0.3 0.95);
+        --accent-red: color(display-p3 0.95 0.15 0.1);
+        --accent-blue: color(display-p3 0.05 0.25 0.95);
+        --accent-green: color(display-p3 0.1 0.65 0.25);
       }
     }
 
     @media (prefers-color-scheme: dark) {
       :root {
-        --bg: #1a1a18;
-        --text: #e8e6e1;
-        --text-muted: #9a9893;
-        --rule: #33322e;
-      }
-
-      body {
-        background-image: url("data:image/svg+xml,%3Csvg width='24' height='24' viewBox='0 0 24 24' xmlns='http://www.w3.org/2000/svg'%3E%3Ccircle cx='2' cy='2' r='1' fill='%234A4A46'/%3E%3C/svg%3E");
+        --bg: #1a1a1a;
+        --text: #e0e0e0;
+        --border: #333330;
+        --meta: #9a9690;
       }
     }
 
+    * {
+      box-sizing: border-box;
+    }
+
     body {
+      border-top: 8px solid var(--text);
+      margin: 0;
+      padding: 0;
       background-color: var(--bg);
       color: var(--text);
       font-family: 'Inter', sans-serif;
-      margin: 0;
-      padding: 0;
-      min-height: 100vh;
-      display: flex;
-      justify-content: center;
-      background-image: url("data:image/svg+xml,%3Csvg width='24' height='24' viewBox='0 0 24 24' xmlns='http://www.w3.org/2000/svg'%3E%3Ccircle cx='2' cy='2' r='1' fill='%23DCDAD2'/%3E%3C/svg%3E");
-      background-position: center top;
       -webkit-font-smoothing: antialiased;
       -moz-osx-font-smoothing: grayscale;
     }
 
-    .layout {
+    .relative {
+      position: relative;
+    }
+
+    .notebook {
       max-width: 640px;
       margin: 0 auto;
-      padding: 12vh 4vw;
-      display: grid;
-      grid-template-columns: 200px 1fr 200px;
-      gap: 5vw;
-      align-items: start;
+      padding: 3rem 2rem 6rem 2rem;
     }
 
-    /* TYPOGRAPHY & BLOCKS */
-    h4 {
-      font-family: 'Inter', sans-serif;
-      font-size: 0.65rem;
-      text-transform: uppercase;
-      letter-spacing: 0.1em;
-      color: var(--text-muted);
-      margin-top: 0;
-      margin-bottom: 0.75rem;
-      font-weight: 600;
-    }
-    
-    .meta-block {
-      margin-bottom: 3.5rem;
-      font-size: 0.85rem;
-      line-height: 1.6;
+    .masthead {
+      margin-bottom: 5rem;
     }
 
-    .meta-block p {
-      margin: 0;
-    }
-    
-    .meta-block ul {
-      list-style: none;
-      padding: 0;
-      margin: 0;
-    }
-    
-    .meta-block a {
-      color: var(--text);
-      text-decoration: none;
-      position: relative;
-    }
-
-    .meta-block a::after {
-      content: "";
-      position: absolute;
-      bottom: -2px;
-      left: 0;
-      width: 100%;
-      height: 1px;
-      background-color: var(--text-muted);
-      opacity: 0.3;
-      transition: opacity 0.2s ease;
-    }
-
-    .meta-block a:hover::after {
-      opacity: 1;
-    }
-
-    /* LEFT COLUMN: SIGNALS */
-    .col-left {
-      margin-top: 2vh;
-    }
-
-    .signal-list {
-      list-style: none;
-      padding: 0;
-      margin: 0;
-      counter-reset: signal;
-    }
-    
-    .signal-list li {
-      margin-bottom: 1.25rem;
-      color: var(--text-muted);
-      font-family: 'Newsreader', serif;
-      font-size: 1.05rem;
-      font-style: italic;
-      line-height: 1.35;
-      position: relative;
-      padding-left: 1.5rem;
-      counter-increment: signal;
-    }
-    
-    .signal-list li::before {
-      content: "0" counter(signal);
-      position: absolute;
-      left: 0;
-      top: 0.15rem;
-      font-size: 0.6rem;
-      color: var(--text-muted);
-      font-family: 'Inter', sans-serif;
-      font-style: normal;
-      font-weight: 500;
-      opacity: 0.5;
-    }
-
-    /* MIDDLE COLUMN: MAIN BIO */
-    .col-main {
-      margin-top: 6vh;
-    }
-
-    .bio-text {
-      font-family: 'Newsreader', serif;
-      font-size: clamp(2rem, 3.5vw, 3.4rem);
-      line-height: 1.15;
-      font-weight: 300;
-      letter-spacing: -0.02em;
-      margin: 0;
-      color: var(--text);
-    }
-
-    .bio-text.secondary {
-      font-size: clamp(1.4rem, 2.2vw, 2.1rem);
-      color: var(--text-muted);
-      margin-top: 2rem;
-      max-width: 95%;
-    }
-
-    .cursor-link {
-      color: inherit;
-      text-decoration: none;
-      position: relative;
-      display: inline-block;
-    }
-    
-    .cursor-link::after {
-      content: "";
-      position: absolute;
-      bottom: 0.1em;
-      left: 0;
-      width: 100%;
-      height: 1px;
-      background-color: var(--text);
-      transform-origin: right;
-      transform: scaleX(1);
-      transition: transform 0.3s cubic-bezier(0.65, 0, 0.35, 1);
-    }
-    
-    .cursor-link:hover::after {
-      transform-origin: left;
-      transform: scaleX(0);
-    }
-
-    .highlight {
-      position: relative;
-      display: inline-block;
-      white-space: nowrap;
-      color: var(--text);
-    }
-
-    .annotation-text {
-      position: absolute;
-      top: -1.4rem;
-      right: -1rem;
-      font-family: 'Caveat', cursive;
-      font-size: 1.1rem;
-      color: var(--p3-red);
-      transform: rotate(4deg);
-      pointer-events: none;
-    }
-
-    .scribble {
-      position: absolute;
-      bottom: -6px;
-      left: -5%;
-      width: 110%;
-      height: 24px;
-      pointer-events: none;
-      overflow: visible;
-    }
-
-    /* WRITING INDEX */
-    .writing-index {
-      margin-top: 6rem;
-    }
-    
-    .section-header {
+    .meta-top {
       display: flex;
-      align-items: center;
-      margin-bottom: 2rem;
-    }
-    
-    .section-header h2 {
-      font-family: 'Inter', sans-serif;
-      font-size: 0.65rem;
+      justify-content: space-between;
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 0.75rem;
       text-transform: uppercase;
-      letter-spacing: 0.1em;
-      color: var(--text-muted);
+      letter-spacing: 0.05em;
+      color: var(--text);
+      margin-bottom: 5rem;
+      border-bottom: 1px solid var(--text);
+      padding-bottom: 0.75rem;
+    }
+
+    .title-row {
+      display: flex;
+      align-items: baseline;
+      justify-content: space-between;
+      flex-wrap: wrap;
+      gap: 2rem;
+    }
+
+    .title {
+      font-family: 'Instrument Serif', serif;
+      font-size: clamp(4.5rem, 12vw, 10rem);
+      font-weight: 400;
+      line-height: 0.85;
+      letter-spacing: -0.04em;
       margin: 0;
-      white-space: nowrap;
-      margin-right: 1rem;
     }
-    
-    .section-header .line {
-      height: 1px;
-      flex-grow: 1;
-      background-color: var(--rule);
+
+    .title em {
+      font-style: italic;
+      color: var(--accent-blue);
+      padding-right: 0.05em;
     }
-    
-    .index-list {
-      list-style: none;
-      padding: 0;
-      margin: 0;
+
+    .subtitle {
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 0.9rem;
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+      color: var(--text);
+      max-width: 220px;
+      line-height: 1.5;
     }
-    
-    .index-list li {
-      border-bottom: 1px solid var(--rule);
+
+    .content-grid {
+      display: grid;
+      grid-template-columns: repeat(12, 1fr);
+      gap: 5rem 2rem;
     }
-    
-    .index-list li:first-child {
-      border-top: 1px solid var(--rule);
+
+    .bio {
+      font-family: 'Instrument Serif', serif;
+      font-size: clamp(2rem, 4vw, 3rem);
+      line-height: 1.15;
+      grid-column: 1 / 10;
+      color: var(--text);
+      letter-spacing: -0.01em;
     }
-    
-    .index-item {
+
+    .bio p {
+      margin: 0 0 1.25rem 0;
+    }
+    .bio p:last-child {
+      margin-bottom: 0;
+    }
+
+    .bio em {
+      font-style: italic;
+      color: var(--accent-blue);
+      padding-right: 0.1em;
+    }
+
+    .hover-link {
+      color: var(--text);
+      text-decoration: none;
+      border-bottom: 2px solid var(--accent-blue);
+      transition: all 0.2s ease;
+    }
+
+    .hover-link:hover {
+      background-color: var(--accent-blue);
+      color: #fff;
+    }
+
+    .writing {
+      grid-column: 10 / 13;
+    }
+
+    .signals {
+      grid-column: 1 / 6;
+    }
+
+    .concept {
+      grid-column: 7 / 13;
+      padding: 2.5rem;
+      border: 1px solid var(--accent-blue);
+      background: var(--bg);
+      position: relative;
+      transition: transform 0.3s cubic-bezier(0.2, 0.8, 0.2, 1);
+    }
+
+    .concept::before {
+      content: "";
+      position: absolute;
+      top: 0; left: 0; right: 0; bottom: 0;
+      background: var(--accent-blue);
+      z-index: -1;
+      transform: translate(6px, 6px);
+      transition: transform 0.3s cubic-bezier(0.2, 0.8, 0.2, 1);
+    }
+
+    .concept:hover {
+      transform: translate(-2px, -2px);
+    }
+
+    .concept:hover::before {
+      transform: translate(10px, 10px);
+    }
+
+    .section-title {
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 0.85rem;
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+      color: var(--meta);
+      margin: 0 0 1.5rem 0;
+      border-bottom: 1px solid var(--border);
+      padding-bottom: 0.75rem;
       display: flex;
       justify-content: space-between;
       align-items: center;
-      padding: 1.25rem 0;
+      position: relative;
+    }
+
+    .index-list, .signal-list {
+      list-style: none;
+      padding: 0;
+      margin: 0;
+      font-size: 0.95rem;
+    }
+
+    .index-list li {
+      display: flex;
+      justify-content: space-between;
+      align-items: baseline;
+      padding: 1rem 0;
+      border-bottom: 1px solid var(--border);
+    }
+
+    .index-list li:last-child {
+      border-bottom: none;
+    }
+
+    .index-list a {
       text-decoration: none;
       color: var(--text);
-    }
-    
-    .index-title {
-      font-family: 'Newsreader', serif;
-      font-size: 1.35rem;
-      font-weight: 300;
-      transition: transform 0.3s ease, color 0.3s ease;
-      position: relative;
+      font-weight: 500;
+      transition: color 0.2s ease;
     }
 
-    .index-title::before {
-      content: "→";
-      position: absolute;
-      left: -24px;
-      opacity: 0;
-      transition: opacity 0.3s ease;
-      font-family: 'Inter', sans-serif;
-      font-size: 1.1rem;
-      color: var(--p3-red);
-      top: 50%;
-      transform: translateY(-50%);
+    .index-list a:hover {
+      color: var(--accent-red);
     }
-    
-    .index-meta {
-      font-family: 'Inter', sans-serif;
+
+    .index-list .meta {
+      color: var(--meta);
+      font-family: 'JetBrains Mono', monospace;
       font-size: 0.75rem;
-      color: var(--text-muted);
+      text-transform: uppercase;
       letter-spacing: 0.05em;
-      transition: opacity 0.3s ease;
     }
 
-    .index-item:hover .index-title {
-      transform: translateX(24px);
-      color: var(--p3-red);
+    .signal-list li {
+      padding: 1rem 0;
+      border-bottom: 1px solid var(--border);
+      color: var(--text);
+      line-height: 1.5;
+      display: grid;
+      grid-template-columns: 1.5rem 1fr;
+      gap: 0.5rem;
+      transition: transform 0.2s ease, color 0.2s ease;
     }
 
-    .index-item:hover .index-title::before {
-      opacity: 1;
+    .signal-list li:last-child {
+      border-bottom: none;
     }
 
-    .index-item:hover .index-meta {
-      opacity: 0.5;
+    .signal-list li::before {
+      content: "→";
+      color: var(--accent-red);
+      font-family: 'JetBrains Mono', monospace;
+      display: inline-block;
+      transition: transform 0.2s ease;
     }
 
-    /* RIGHT COLUMN: LINKS & NOTES */
-    .col-right {
-      margin-top: 4vh;
+    .signal-list li:hover {
+      transform: translateX(4px);
+      color: var(--accent-red);
     }
 
-    .links li {
+    .signal-list li:hover::before {
+      transform: scale(1.2);
+    }
+
+    .concept-header {
+      display: flex;
+      justify-content: space-between;
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 0.75rem;
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+      margin-bottom: 2rem;
+      border-bottom: 1px solid var(--text);
+      padding-bottom: 0.75rem;
+      color: var(--text);
+    }
+
+    .concept-title {
+      font-family: 'Instrument Serif', serif;
+      font-size: 2.5rem;
+      margin: 0 0 1rem 0;
+      font-style: italic;
+      font-weight: 400;
+    }
+
+    .concept-desc {
+      font-size: 1rem;
+      line-height: 1.6;
+      margin-bottom: 2rem;
+    }
+
+    .concept-details {
+      list-style: none;
+      padding: 0;
+      margin: 0;
+      font-size: 0.9rem;
+      color: var(--text);
+    }
+
+    .concept-details li {
       margin-bottom: 0.75rem;
-    }
-
-    .has-note {
+      padding-left: 1.25rem;
       position: relative;
+      line-height: 1.5;
     }
 
-    .handwritten-note {
+    .concept-details li::before {
+      content: "•";
       position: absolute;
       left: 0;
-      top: 100%;
-      width: 180px;
-      margin-top: 25px;
-      margin-left: 20px;
+      color: var(--accent-red);
+      font-weight: bold;
+    }
+
+    .annotation {
       font-family: 'Caveat', cursive;
-      font-size: 1.15rem;
-      line-height: 1.2;
-      color: var(--p3-blue);
-      transform: rotate(-3deg);
-      pointer-events: none;
-    }
-
-    .handwritten-note .arrow {
+      font-size: 1.75rem;
+      line-height: 1;
       position: absolute;
-      left: -20px;
-      top: -30px;
-      width: 35px;
-      height: 35px;
-      overflow: visible;
+      z-index: 10;
+      pointer-events: none;
+      white-space: nowrap;
     }
 
-    /* RESPONSIVE */
-    @media (max-width: 900px) {
-      .layout {
-        grid-template-columns: 1fr;
-        gap: 4rem;
-        padding: 8vw 6vw;
-      }
-      .col-main {
-        margin-top: 0;
-        grid-row: 1;
-      }
-      .col-left {
-        grid-row: 2;
-        margin-top: 0;
-        display: grid;
-        grid-template-columns: 1fr 1fr;
-        gap: 2rem;
-      }
-      .signals {
-        grid-column: 1 / -1;
-      }
-      .col-right {
-        grid-row: 3;
-        margin-top: 0;
-      }
-      .handwritten-note {
-        position: relative;
-        left: 0;
-        margin-top: 15px;
-        margin-left: 10px;
-        width: 80%;
-      }
-      .handwritten-note .arrow {
-        display: none;
-      }
+    .annotation.red { color: var(--accent-red); }
+    .annotation.blue { color: var(--accent-blue); }
+    .annotation.green { color: var(--accent-green); }
+
+    .footer {
+      margin-top: 8rem;
+      padding-top: 2rem;
+      border-top: 1px solid var(--border);
+      display: grid;
+      grid-template-columns: repeat(12, 1fr);
+      gap: 2rem;
+      font-size: 0.85rem;
+      color: var(--meta);
     }
 
-    @media (max-width: 500px) {
-      .col-left {
-        grid-template-columns: 1fr;
-      }
-      .bio-text.secondary {
-        max-width: 100%;
-      }
+    .footer-note {
+      grid-column: 1 / 7;
+      line-height: 1.5;
+    }
+
+    .footer-note p {
+      margin: 0;
+    }
+
+    .footer-links {
+      grid-column: 9 / 13;
+      display: flex;
+      gap: 1.5rem;
+      justify-content: flex-end;
+    }
+
+    .footer-links a {
+      color: var(--text);
+      text-decoration: none;
+      font-weight: 500;
+      transition: color 0.2s ease;
+    }
+
+    .footer-links a:hover {
+      color: var(--accent-red);
+    }
+
+    @media (max-width: 1024px) {
+      .bio { grid-column: 1 / -1; }
+      .writing { grid-column: 8 / 13; }
+      .signals { grid-column: 1 / 7; }
+      .concept { grid-column: 1 / -1; }
+    }
+
+    @media (max-width: 768px) {
+      .content-grid { gap: 4rem 1rem; }
+      .writing, .signals { grid-column: 1 / -1; }
+      .title-row { flex-direction: column; align-items: flex-start; gap: 1rem; }
+      .subtitle { max-width: 100%; }
+      .footer { grid-template-columns: 1fr; gap: 1.5rem; }
+      .footer-note { grid-column: 1 / -1; }
+      .footer-links { grid-column: 1 / -1; justify-content: flex-start; flex-wrap: wrap; }
+      .meta-top { margin-bottom: 3rem; }
+      .masthead { margin-bottom: 3rem; }
+    }
+
+    @media (max-width: 640px) {
+      .notebook { padding: 2rem 1.25rem 4rem 1.25rem; }
     }
   </style>
 </head>
 <body>
+  <main class="notebook">
+    <header class="masthead">
+      <div class="meta-top">
+        <span>San Francisco, CA</span>
+        <span>10°C, Clear</span>
+        <span>12 Oct 2026</span>
+      </div>
+      <div class="title-row relative">
+        <h1 class="title">Erik <em>Nilsson</em></h1>
+        <div class="subtitle">Product Designer<br>at Cursor</div>
+        <div class="annotation blue" style="top: -10px; right: 15%; transform: rotate(4deg);">v3.1</div>
+      </div>
+    </header>
 
-  <div class="layout">
-    
-    <!-- LEFT COLUMN -->
-    <aside class="col-left">
-      <div class="meta-block">
-        <h4>Erik Nilsson</h4>
-        <p>San Francisco, CA<br>Product Designer</p>
-      </div>
-      
-      <div class="meta-block">
-        <h4>Today</h4>
-        <p>2026.10.11<br>Clear autumn night<br>10°C and still.</p>
-      </div>
-      
-      <div class="meta-block signals">
-        <h4>Observed</h4>
-        <ol class="signal-list">
-          <li>Tilde characters hiding in forgotten file paths</li>
-          <li>Ancient dna rewriting scandinavia's first harvest</li>
-          <li>Monsoon waters claiming bridges in the himalayas</li>
-        </ol>
-      </div>
-    </aside>
+    <article class="content-grid">
+      <section class="bio">
+        <p>I'm a product designer at <a href="https://cursor.com" class="hover-link">Cursor</a>, working on how people build software with AI.</p>
+        <p>Off-hours, I'm tinkering with <span class="relative"><em>living-site</em><span class="annotation red" style="top: -12px; left: 100%; transform: rotate(-4deg); margin-left: 0.5rem;">*rebuilt daily</span></span> — agents rebuild this corner of the web from fresh activity data each day.</p>
+      </section>
 
-    <!-- MIDDLE COLUMN -->
-    <main class="col-main">
-      <div class="bio-text">
-        I'm a product designer at <a href="https://cursor.com" class="cursor-link">Cursor</a>, working on how people build software with AI.
-      </div>
-      <div class="bio-text secondary">
-        Off-hours, I'm tinkering with <span class="highlight">living-site<span class="annotation-text">rebuilt daily</span><svg class="scribble" viewBox="0 0 120 40" preserveAspectRatio="none"><path d="M5,25 C30,35 90,35 115,20 C100,28 40,32 10,22" fill="none" stroke="var(--p3-red)" stroke-width="2.5" stroke-linecap="round" vector-effect="non-scaling-stroke"/></svg></span> — agents rebuild this corner of the web from fresh activity data.
-      </div>
-      
-      <section class="writing-index">
-        <div class="section-header">
-          <h2>Index</h2>
-          <div class="line"></div>
-        </div>
+      <section class="writing">
+        <h2 class="section-title">
+          <span>Index</span>
+          <span class="annotation blue" style="text-transform: none; letter-spacing: normal; font-size: 1.4rem; transform: rotate(2deg); right: 0; top: -15px;">notes</span>
+        </h2>
         <ul class="index-list">
           <li>
-            <a href="https://x.com/flowstated/status/2002167999353241901" class="index-item">
-              <span class="index-title">imagine 2026</span>
-              <span class="index-meta">2025.12.20</span>
-            </a>
+            <a href="https://x.com/flowstated/status/2002167999353241901">Imagine 2026</a>
+            <span class="meta">Dec 20</span>
           </li>
           <li>
-            <a href="https://x.com/flowstated/status/2000889983562080578" class="index-item">
-              <span class="index-title">shipping by sunrise</span>
-              <span class="index-meta">2025.12.16</span>
-            </a>
+            <a href="https://x.com/flowstated/status/2000889983562080578">Shipping by Sunrise</a>
+            <span class="meta">Dec 16</span>
           </li>
           <li>
-            <a href="https://x.com/flowstated/status/2000691637190861180" class="index-item">
-              <span class="index-title">spinning up agents from my phone</span>
-              <span class="index-meta">2025.12.15</span>
-            </a>
+            <a href="https://x.com/flowstated/status/2000691637190861180">Agents from my Phone</a>
+            <span class="meta">Dec 15</span>
           </li>
         </ul>
       </section>
-    </main>
 
-    <!-- RIGHT COLUMN -->
-    <aside class="col-right">
-      <div class="meta-block links">
-        <h4>Elsewhere</h4>
-        <ul>
-          <li><a href="https://x.com/flowstated">X (Twitter)</a></li>
-          <li class="has-note">
-            <a href="https://github.com/eriknson">GitHub</a>
-            <div class="handwritten-note">
-              <svg viewBox="0 0 40 40" fill="none" stroke="var(--p3-blue)" stroke-width="1.5" class="arrow" stroke-linecap="round" stroke-linejoin="round">
-                <path d="M25 30 C 10 30, 5 20, 10 5 M 2 10 L 10 5 L 18 10" />
-              </svg>
-              Mostly side projects & experiments.
-            </div>
-          </li>
-          <li><a href="https://linkedin.com/in/eriknson">LinkedIn</a></li>
-          <li><a href="mailto:contact@eriks.design">Email</a></li>
+      <section class="signals">
+        <h2 class="section-title">
+          <span>World Signals</span>
+          <span class="annotation green" style="text-transform: none; letter-spacing: normal; font-size: 1.4rem; transform: rotate(-3deg); right: 20px; top: -10px;">collecting...</span>
+        </h2>
+        <ul class="signal-list">
+          <li>Supermarket fridges defrosting themselves across Europe</li>
+          <li>Citroen breathing electric life into the old 2CV silhouette</li>
+          <li>Open-source mapmakers drawing a hard line on AI patches</li>
+          <li>Clear October night over San Francisco, ten degrees and still</li>
+          <li>Autumn sunset lingering past six-thirty on the Pacific coast</li>
         </ul>
+      </section>
+
+      <section class="concept">
+        <div class="concept-header">
+          <span class="tag">Notebook / Idea 01</span>
+          <span class="id">gemini-3.1-pro</span>
+        </div>
+        <h3 class="concept-title">Drifting Map Tile</h3>
+        <p class="concept-desc">Trace boundaries on a drifting map tile — separate hand-drawn contour lines from AI-generated noise before the layers merge into mush.</p>
+        <ul class="concept-details">
+          <li><strong>Mechanic:</strong> Path drawing and sort</li>
+          <li><strong>Control:</strong> Drag to trace boundaries</li>
+          <li><strong>Escalation:</strong> AI noise fragments multiply, rotate, and bleed into legitimate paths.</li>
+          <li><strong>Aesthetic:</strong> Topographic watercolor with ink-bleed edges</li>
+        </ul>
+        <div class="annotation red" style="bottom: 15px; right: -15px; transform: rotate(-6deg);">
+          Purify one tile per round!
+        </div>
+      </section>
+    </article>
+
+    <footer class="footer">
+      <div class="footer-note">
+        <p>GitHub repos are side projects and experiments — small personal things I tinker with outside of work, not my main job.</p>
       </div>
-    </aside>
-
-  </div>
-
+      <div class="footer-links">
+        <a href="https://x.com/flowstated">X</a>
+        <a href="https://github.com/eriknson">GitHub</a>
+        <a href="https://linkedin.com/in/eriknson">LinkedIn</a>
+        <a href="mailto:contact@eriks.design">Email</a>
+      </div>
+    </footer>
+  </main>
 </body>
 </html>
