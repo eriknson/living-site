@@ -68,7 +68,7 @@ ${referenceHtml}
 ${direction}
 
 ## Output Requirements
-1. Use the Write tool to create a SINGLE HTML file at \`generated/live.html\` in one shot — do NOT use edit_file or patch the file incrementally.
+1. Use the Write tool to create a SINGLE HTML file at \`artifacts/live.html\` in one shot — do NOT use edit_file or patch the file incrementally. The path MUST be under \`artifacts/\` so the file is downloadable as an artifact.
 2. Include ALL CSS inline within a <style> tag (no external stylesheets)
 3. Include any JS inline within a <script> tag if needed
 4. The site must be fully responsive and look great on mobile
@@ -90,7 +90,8 @@ ${direction}
 ## IMPORTANT
 - Create something original and distinctive
 - The output must be a valid, standalone HTML file
-- Write the entire file content in a single Write tool call`;
+- Write the entire file content in a single Write tool call
+- The file path MUST be \`artifacts/live.html\` (not \`generated/\`, not the repo root)`;
 }
 
 /**
@@ -104,8 +105,10 @@ function extractWrittenHtml(toolCall: { name?: string; args?: unknown }): string
   const args = toolCall.args as Record<string, unknown> | undefined;
   if (!args || typeof args !== "object") return null;
 
+  // Accept any .html write — the agent may pick any path under artifacts/ or
+  // even outside it. We trust the model is producing the page we asked for.
   const pathField = (args.file_path || args.path || args.target_file || "") as string;
-  if (pathField && !pathField.includes("live.html")) return null;
+  if (pathField && !pathField.toLowerCase().endsWith(".html")) return null;
 
   for (const key of ["contents", "content", "text", "file_content", "new_string"]) {
     const val = args[key];
@@ -116,6 +119,127 @@ function extractWrittenHtml(toolCall: { name?: string; args?: unknown }): string
 
 function sseMessage(data: object): string {
   return `data: ${JSON.stringify(data)}\n\n`;
+}
+
+type ActivityKind = "status" | "thinking" | "assistant" | "tool" | "task";
+type ActivityStatus = "running" | "completed" | "error";
+
+interface ActivityEvent {
+  type: "activity";
+  id: string;
+  kind: ActivityKind;
+  status: ActivityStatus;
+  action: string;
+  details?: string;
+  toolName?: string;
+  timestamp: number;
+}
+
+function activity(input: Omit<ActivityEvent, "type" | "timestamp">): ActivityEvent {
+  return { type: "activity", timestamp: Date.now(), ...input };
+}
+
+/**
+ * Map a tool-call name + args to a humanized action verb and detail string.
+ * SDK tool arg shapes are not stable, so this is intentionally permissive.
+ */
+function formatToolAction(
+  toolName: string | undefined,
+  args: unknown
+): { action: string; details?: string } {
+  const lowered = (toolName || "").toLowerCase();
+  const a =
+    args && typeof args === "object" ? (args as Record<string, unknown>) : {};
+
+  const getStr = (key: string): string | undefined => {
+    const v = a[key];
+    return typeof v === "string" ? v : undefined;
+  };
+
+  const getPath = (): string | undefined => {
+    const path =
+      getStr("file_path") ||
+      getStr("path") ||
+      getStr("target_file") ||
+      getStr("relativeWorkspacePath") ||
+      getStr("filename");
+    if (!path) return undefined;
+    const segments = path.split("/").filter(Boolean);
+    return segments.length > 0 ? segments[segments.length - 1] : path;
+  };
+
+  if (
+    lowered.includes("write") ||
+    lowered === "create_file" ||
+    lowered === "edit_file" ||
+    lowered === "search_replace" ||
+    lowered === "multiedit"
+  ) {
+    return { action: "Writing", details: getPath() };
+  }
+  if (lowered.includes("read") || lowered === "open_file") {
+    return { action: "Reading", details: getPath() };
+  }
+  if (
+    lowered.includes("grep") ||
+    lowered.includes("codebase_search") ||
+    lowered.includes("semsearch") ||
+    lowered.includes("search")
+  ) {
+    const q = getStr("query") || getStr("pattern");
+    return { action: "Searching", details: q ? q.slice(0, 60) : "codebase" };
+  }
+  if (
+    lowered.includes("shell") ||
+    lowered.includes("run_terminal") ||
+    lowered === "bash"
+  ) {
+    const cmd = getStr("command") || getStr("cmd");
+    return { action: "Running", details: cmd ? cmd.slice(0, 80) : undefined };
+  }
+  if (lowered === "ls" || lowered.includes("list_dir")) {
+    return { action: "Listing", details: getPath() };
+  }
+  if (lowered === "glob" || lowered.includes("find")) {
+    return { action: "Finding", details: getStr("pattern") };
+  }
+  if (lowered === "task" || lowered.includes("subagent")) {
+    return {
+      action: "Running task",
+      details: getStr("subagent_type") || getStr("description"),
+    };
+  }
+  if (lowered.includes("fetch") || lowered.includes("http")) {
+    return { action: "Fetching", details: getStr("url") };
+  }
+
+  const humanized = (toolName || "Tool")
+    .replace(/_/g, " ")
+    .replace(/\b./, c => c.toUpperCase());
+  return { action: humanized };
+}
+
+function describeStatus(raw: string | undefined): {
+  action: string;
+  status: ActivityStatus;
+} {
+  const s = (raw || "").toUpperCase();
+  switch (s) {
+    case "CREATING":
+      return { action: "Creating cloud workspace", status: "running" };
+    case "RUNNING":
+      return { action: "Running agent", status: "running" };
+    case "FINISHED":
+      return { action: "Run finished", status: "completed" };
+    case "ERROR":
+      return { action: "Run failed", status: "error" };
+    case "CANCELLED":
+      return { action: "Run cancelled", status: "error" };
+    case "EXPIRED":
+      return { action: "Run expired", status: "error" };
+    default:
+      return { action: raw || "Working", status: "running" };
+  }
 }
 
 export async function POST(request: NextRequest) {
@@ -172,7 +296,12 @@ export async function POST(request: NextRequest) {
 
         const prompt = await buildRemixPrompt(userDirection);
 
-        send({ type: "status", status: "launching", message: "Launching cloud agent..." });
+        send(activity({
+          id: "boot",
+          kind: "status",
+          status: "running",
+          action: "Launching cloud agent",
+        }));
 
         const { Agent } = await import("@cursor/sdk");
 
@@ -184,14 +313,13 @@ export async function POST(request: NextRequest) {
         });
         console.log("[/api/generate] Agent created:", agent.agentId);
 
-        send({
-          type: "status",
-          status: "running",
-          message: "Agent is starting...",
-          agentId: agent.agentId,
-        });
+        send(activity({
+          id: "boot",
+          kind: "status",
+          status: "completed",
+          action: "Cloud agent ready",
+        }));
 
-        let stepIdx = 0;
         // Track the most recent HTML extracted from the agent's tool calls.
         // Used as a fallback if downloadArtifact fails after the run completes.
         let lastStreamedHtml: string | null = null;
@@ -208,9 +336,6 @@ export async function POST(request: NextRequest) {
                 }
               }
             }
-            if (update.type === "text-delta" && update.text) {
-              send({ type: "text_delta", text: update.text });
-            }
           },
         });
 
@@ -218,50 +343,70 @@ export async function POST(request: NextRequest) {
         console.log("[/api/generate] Run started:", run.id);
 
         for await (const event of run.stream()) {
-          if (event.type === "assistant") {
-            for (const block of event.message.content) {
-              if (block.type === "text" && block.text.trim().length > 10) {
-                const firstLine = block.text.split("\n")[0].trim();
-                const summary = firstLine.length > 60 ? firstLine.slice(0, 57) + "..." : firstLine;
-                send({
-                  type: "step",
-                  id: `${event.run_id}-${stepIdx++}`,
-                  text: block.text,
-                  summary,
-                });
-              }
-            }
-          }
+          // Note: assistant/thinking events are intentionally not surfaced —
+          // the SDK streams them in many small fragments which produces a
+          // noisy wall of partial sentences. Tool calls and status events
+          // are the high-signal items.
           if (event.type === "tool_call") {
-            const toolName = event.name || "tool";
-            send({
-              type: "step",
+            const { action, details } = formatToolAction(event.name, event.args);
+            send(activity({
               id: `${event.run_id}-tool-${event.call_id}`,
-              text: `Using ${toolName}`,
-              summary: toolName,
-            });
+              kind: "tool",
+              status:
+                event.status === "running"
+                  ? "running"
+                  : event.status === "error"
+                    ? "error"
+                    : "completed",
+              action,
+              details,
+              toolName: event.name,
+            }));
           }
           if (event.type === "status") {
-            send({
-              type: "status",
-              status: (event.status || "running").toLowerCase(),
-              message: event.message || "Working...",
-            });
+            const { action, status } = describeStatus(event.status);
+            send(activity({
+              id: "agent-status",
+              kind: "status",
+              status,
+              action: event.message || action,
+            }));
           }
         }
 
-        // Fetch final canonical HTML from artifact
+        // Mark the persistent status row as completed once the stream ends so
+        // the client can stop showing it as the active row.
+        send(activity({
+          id: "agent-status",
+          kind: "status",
+          status: "completed",
+          action: "Run finished",
+        }));
+
+        // Fetch final canonical HTML from artifact. Try the well-known path
+        // first, then fall back to scanning all artifacts for the largest HTML.
         let finalHtml: string | undefined;
         let downloadError: string | undefined;
-        try {
-          const buf = await agent.downloadArtifact("generated/live.html");
-          finalHtml = buf.toString("utf8");
-        } catch (e) {
-          const err = e as Error;
-          downloadError = err.message || String(err);
-          console.warn("[/api/generate] downloadArtifact('generated/live.html') failed:", downloadError);
+        const candidatePaths = ["artifacts/live.html", "live.html", "generated/live.html"];
 
-          // Try to discover what the agent actually wrote and grab the largest HTML-ish artifact.
+        for (const path of candidatePaths) {
+          try {
+            const buf = await agent.downloadArtifact(path);
+            finalHtml = buf.toString("utf8");
+            console.log("[/api/generate] Downloaded artifact:", path);
+            break;
+          } catch (e) {
+            const err = e as Error;
+            downloadError = err.message || String(err);
+            console.warn(
+              `[/api/generate] downloadArtifact('${path}') failed:`,
+              downloadError
+            );
+          }
+        }
+
+        if (!finalHtml) {
+          // Discover whatever the agent actually wrote and pick the largest HTML.
           try {
             const artifacts = await agent.listArtifacts();
             console.log(
