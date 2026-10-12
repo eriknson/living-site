@@ -77,7 +77,7 @@ function LinkTooltipProvider({ children }: { children: React.ReactNode }) {
   );
 }
 
-// Subtle link component - same color as text with underline
+// Inline link — matches post list: same color as text, no underline, hover pill
 function Link({
   href,
   children,
@@ -90,7 +90,7 @@ function Link({
   return (
     <a
       href={href}
-      className={`font-medium text-primary underline decoration-underline decoration-[1.5px] underline-offset-2 hover:decoration-tertiary transition-colors ${external ? "cursor-ne-resize" : ""}`}
+      className={`rounded-md px-1 -mx-1 no-underline hover:bg-hover transition-colors ${external ? "cursor-ne-resize" : ""}`}
       {...(external && { target: "_blank", rel: "noopener noreferrer" })}
     >
       {children}
@@ -116,7 +116,7 @@ export function HomePageClient({ posts }: { posts: PostMeta[] }) {
         >
           {/* Main Content */}
           <main className="max-w-[640px] mx-auto px-6 pt-16 w-full">
-            <article className="text-secondary leading-[1.65] space-y-4">
+            <article className="text-primary leading-[1.65] space-y-4">
               <p>Hej, I'm Erik.</p>
 
               <p>
