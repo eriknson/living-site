@@ -1,0 +1,626 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Topographic</title>
+<style>
+  :root {
+    --bg: #F5F2EB;
+    --text: #2C3E50;
+    --contour: #8C6B4A;
+    --noise: #D93D5B;
+    --ui-bg: rgba(245, 242, 235, 0.9);
+  }
+  @media (prefers-color-scheme: dark) {
+    :root {
+      --bg: #1A1C1E;
+      --text: #E0E0E0;
+      --contour: #D4B895;
+      --noise: #FF5E7E;
+      --ui-bg: rgba(26, 28, 30, 0.9);
+    }
+  }
+  body {
+    margin: 0; padding: 0;
+    width: 100dvw; height: 100dvh;
+    background: var(--bg);
+    color: var(--text);
+    font-family: ui-monospace, 'SFMono-Regular', Menlo, monospace;
+    overflow: hidden;
+    touch-action: none;
+    user-select: none;
+    -webkit-user-select: none;
+  }
+  canvas {
+    display: block;
+    position: absolute;
+    top: 0; left: 0;
+    width: 100dvw; height: 100dvh;
+  }
+  #ui-layer {
+    position: absolute;
+    top: 0; left: 0; width: 100%; height: 100%;
+    pointer-events: none;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+    z-index: 10;
+  }
+  .screen {
+    background: var(--ui-bg);
+    padding: 2rem;
+    border: 2px solid var(--text);
+    border-radius: 8px;
+    text-align: center;
+    backdrop-filter: blur(4px);
+    box-shadow: 0 10px 30px rgba(0,0,0,0.1);
+    pointer-events: none;
+  }
+  .screen * {
+    pointer-events: none;
+  }
+  h1 { margin: 0 0 1rem 0; font-size: 1.5rem; text-transform: uppercase; letter-spacing: 2px; }
+  p { margin: 0 0 1.5rem 0; font-size: 0.9rem; line-height: 1.4; max-width: 300px; }
+  button {
+    background: var(--text);
+    color: var(--bg);
+    border: none;
+    padding: 1rem 2rem;
+    font-size: 1.1rem;
+    font-family: inherit;
+    font-weight: bold;
+    border-radius: 4px;
+    cursor: pointer;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+    transition: transform 0.1s;
+    pointer-events: auto !important;
+  }
+  button:active { transform: scale(0.95); }
+  #hud {
+    position: absolute;
+    top: 0; left: 0; width: 100%;
+    padding: 1rem;
+    box-sizing: border-box;
+    display: flex;
+    justify-content: space-between;
+    pointer-events: none;
+    z-index: 5;
+    font-weight: bold;
+    font-size: 1.2rem;
+  }
+  .hidden { display: none !important; }
+  #clarity-bar-container {
+    position: absolute;
+    top: 0; left: 0; width: 100%; height: 6px;
+    background: rgba(0,0,0,0.1);
+    z-index: 6;
+  }
+  #clarity-bar {
+    height: 100%;
+    width: 50%;
+    background: var(--text);
+    transition: width 0.3s ease-out, background-color 0.3s;
+  }
+  #transition-screen {
+    background: transparent;
+    border: none;
+    box-shadow: none;
+    backdrop-filter: none;
+    animation: popIn 0.5s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+  }
+  #transition-screen h1 {
+    font-size: 3rem;
+    color: var(--text);
+    text-shadow: 0 0 20px var(--bg);
+  }
+  @keyframes popIn {
+    0% { transform: scale(0.5); opacity: 0; }
+    100% { transform: scale(1); opacity: 1; }
+  }
+</style>
+</head>
+<body>
+  <canvas id="bg-canvas"></canvas>
+  <canvas id="game-canvas"></canvas>
+  <div id="clarity-bar-container" class="hidden"><div id="clarity-bar"></div></div>
+  <div id="hud" class="hidden">
+    <div id="score-display">CLARITY: 50%</div>
+    <div id="round-display">ROUND 1</div>
+  </div>
+  
+  <div id="ui-layer">
+    <div id="start-screen" class="screen">
+      <h1>Topographic</h1>
+      <p>Trace closed loops around the smooth contour lines to purify them.</p>
+      <p>Do not trap the jagged AI noise, or your loop will shatter.</p>
+      <button data-smoke="start" id="btn-start">Start Purifying</button>
+    </div>
+    
+    <div id="transition-screen" class="screen hidden">
+      <h1 id="transition-text">PURIFIED</h1>
+    </div>
+    
+    <div id="game-over-screen" class="screen hidden">
+      <h1 id="end-title">Overwhelmed</h1>
+      <p id="end-desc">The noise consumed the map.</p>
+      <p>Rounds survived: <span id="end-rounds">0</span></p>
+      <button data-smoke="restart" id="btn-restart">Try Again</button>
+    </div>
+  </div>
+
+<script>
+const config = {
+  colors: {
+    light: {
+      bg: '#F5F2EB', text: '#2C3E50', contour: '#8C6B4A', noise: '#D93D5B',
+      fill: ['rgba(140, 180, 160, 0.3)', 'rgba(100, 150, 200, 0.3)', 'rgba(200, 150, 100, 0.3)']
+    },
+    dark: {
+      bg: '#1A1C1E', text: '#E0E0E0', contour: '#D4B895', noise: '#FF5E7E',
+      fill: ['rgba(80, 120, 100, 0.3)', 'rgba(60, 100, 140, 0.3)', 'rgba(140, 100, 60, 0.3)']
+    }
+  }
+};
+
+let theme = window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light';
+window.matchMedia('(prefers-color-scheme: dark)').addEventListener('change', e => {
+  theme = e.matches ? 'dark' : 'light';
+});
+
+function getColors() { return config.colors[theme]; }
+
+let width, height;
+let bgCanvas, bgCtx, gameCanvas, gameCtx;
+let contours = [], noises = [], particles = [], currentPath = [];
+let isDrawing = false, clarity = 50, round = 1;
+let state = 'start'; // start, playing, transition, gameover
+let lastTime = 0, spawnTimer = 0, animationId;
+
+class Contour {
+  constructor(x, y) {
+    this.x = x; this.y = y;
+    this.vx = (Math.random() - 0.5) * 1;
+    this.vy = (Math.random() - 0.5) * 1;
+    this.angle = Math.random() * Math.PI * 2;
+    this.length = 80 + Math.random() * 40;
+    this.phase = Math.random() * Math.PI * 2;
+    this.phaseSpeed = 1 + Math.random() * 2;
+    this.corruption = 0;
+    this.corruptedBy = null;
+  }
+  update(dt) {
+    if (this.corruptedBy) {
+      this.corruption += dt * 0.3;
+      this.vx = 0; this.vy = 0;
+    } else {
+      this.x += this.vx; this.y += this.vy;
+      this.angle += 0.002;
+      this.phase += this.phaseSpeed * dt;
+    }
+    if (this.x < -100) this.x = width + 100;
+    if (this.x > width + 100) this.x = -100;
+    if (this.y < -100) this.y = height + 100;
+    if (this.y > height + 100) this.y = -100;
+  }
+  draw(ctx, colors) {
+    ctx.save();
+    ctx.translate(this.x, this.y);
+    ctx.rotate(this.angle);
+    if (this.corruption > 0) {
+      ctx.translate((Math.random()-0.5)*4, (Math.random()-0.5)*4);
+      ctx.strokeStyle = Math.random() < this.corruption ? colors.noise : colors.contour;
+      ctx.lineWidth = 3 + this.corruption * 3;
+    } else {
+      ctx.strokeStyle = colors.contour;
+      ctx.lineWidth = 3;
+    }
+    ctx.beginPath();
+    let segments = 20;
+    for (let i = 0; i <= segments; i++) {
+      let t = i / segments;
+      let px = (t - 0.5) * this.length;
+      let py = Math.sin(t * Math.PI * 2 + this.phase) * 15;
+      if (i === 0) ctx.moveTo(px, py);
+      else ctx.lineTo(px, py);
+    }
+    ctx.lineCap = 'round'; ctx.lineJoin = 'round';
+    ctx.stroke();
+    ctx.restore();
+  }
+  getPoints() {
+    let pts = [];
+    let segments = 20;
+    for (let i = 0; i <= segments; i++) {
+      let t = i / segments;
+      let px = (t - 0.5) * this.length;
+      let py = Math.sin(t * Math.PI * 2 + this.phase) * 15;
+      let gx = this.x + px * Math.cos(this.angle) - py * Math.sin(this.angle);
+      let gy = this.y + px * Math.sin(this.angle) + py * Math.cos(this.angle);
+      pts.push({x: gx, y: gy});
+    }
+    return pts;
+  }
+}
+
+class Noise {
+  constructor(x, y, speedMult) {
+    this.x = x; this.y = y;
+    let angle = Math.random() * Math.PI * 2;
+    let speed = (1.5 + Math.random()) * speedMult;
+    this.vx = Math.cos(angle) * speed;
+    this.vy = Math.sin(angle) * speed;
+    this.radius = 15;
+    this.points = [];
+    this.numPoints = 7;
+    for (let i = 0; i < this.numPoints; i++) this.points.push(Math.random() * this.radius);
+    this.target = null;
+    this.attached = false;
+  }
+  update(dt, contours) {
+    if (this.attached) {
+      if (this.target && this.target.corruption < 1) {
+        this.x = this.target.x; this.y = this.target.y;
+      } else {
+        this.attached = false; this.target = null;
+      }
+      return;
+    }
+    let minDist = 200;
+    this.target = null;
+    for (let c of contours) {
+      if (c.corruption > 0) continue;
+      let d = Math.hypot(c.x - this.x, c.y - this.y);
+      if (d < minDist) { minDist = d; this.target = c; }
+    }
+    if (this.target) {
+      let dx = this.target.x - this.x;
+      let dy = this.target.y - this.y;
+      let dist = Math.hypot(dx, dy);
+      this.vx += (dx / dist) * 0.1;
+      this.vy += (dy / dist) * 0.1;
+      let speed = Math.hypot(this.vx, this.vy);
+      if (speed > 4) { this.vx = (this.vx / speed) * 4; this.vy = (this.vy / speed) * 4; }
+      if (dist < 20) { this.attached = true; this.target.corruptedBy = this; }
+    }
+    this.x += this.vx; this.y += this.vy;
+    if (this.x < 10 || this.x > width - 10) this.vx *= -1;
+    if (this.y < 10 || this.y > height - 10) this.vy *= -1;
+    for (let i = 0; i < this.numPoints; i++) {
+      this.points[i] += (Math.random() - 0.5) * 4;
+      if (this.points[i] < 5) this.points[i] = 5;
+      if (this.points[i] > this.radius * 1.5) this.points[i] = this.radius * 1.5;
+    }
+  }
+  draw(ctx, colors) {
+    ctx.save();
+    ctx.translate(this.x, this.y);
+    ctx.beginPath();
+    for (let i = 0; i < this.numPoints; i++) {
+      let angle = (i / this.numPoints) * Math.PI * 2;
+      let r = this.points[i];
+      let px = Math.cos(angle) * r;
+      let py = Math.sin(angle) * r;
+      if (i === 0) ctx.moveTo(px, py);
+      else ctx.lineTo(px, py);
+    }
+    ctx.closePath();
+    let pulse = 2 + Math.sin(Date.now() / 100) * 1;
+    ctx.strokeStyle = colors.noise;
+    ctx.lineWidth = pulse;
+    ctx.stroke();
+    ctx.fillStyle = colors.noise;
+    ctx.globalAlpha = 0.2;
+    ctx.fill();
+    ctx.restore();
+  }
+  getPoints() {
+    let pts = [];
+    for (let i = 0; i < this.numPoints; i++) {
+      let angle = (i / this.numPoints) * Math.PI * 2;
+      let r = this.points[i];
+      let gx = this.x + Math.cos(angle) * r;
+      let gy = this.y + Math.sin(angle) * r;
+      pts.push({x: gx, y: gy});
+    }
+    return pts;
+  }
+}
+
+function init() {
+  bgCanvas = document.getElementById('bg-canvas');
+  bgCtx = bgCanvas.getContext('2d', { alpha: false });
+  gameCanvas = document.getElementById('game-canvas');
+  gameCtx = gameCanvas.getContext('2d');
+  
+  resize();
+  window.addEventListener('resize', resize);
+  
+  gameCanvas.addEventListener('pointerdown', e => { e.preventDefault(); onPointerDown(e); });
+  window.addEventListener('pointermove', e => { if (isDrawing) e.preventDefault(); onPointerMove(e); }, { passive: false });
+  window.addEventListener('pointerup', onPointerUp);
+  
+  document.getElementById('btn-start').addEventListener('click', startGame);
+  document.getElementById('btn-restart').addEventListener('click', startGame);
+  
+  if (!animationId) animationId = requestAnimationFrame(loop);
+}
+
+function resize() {
+  width = window.innerWidth;
+  height = window.innerHeight;
+  let dpr = window.devicePixelRatio || 1;
+  bgCanvas.width = width * dpr; bgCanvas.height = height * dpr; bgCtx.scale(dpr, dpr);
+  gameCanvas.width = width * dpr; gameCanvas.height = height * dpr; gameCtx.scale(dpr, dpr);
+  if (state !== 'playing' && state !== 'transition') drawBackground(bgCtx);
+}
+
+function drawBackground(ctx) {
+  let colors = getColors();
+  ctx.fillStyle = colors.bg;
+  ctx.fillRect(0, 0, width, height);
+  ctx.fillStyle = colors.text;
+  ctx.globalAlpha = 0.03;
+  let dots = (width * height) / 2000;
+  for (let i = 0; i < dots; i++) {
+    ctx.beginPath();
+    ctx.arc(Math.random() * width, Math.random() * height, Math.random() * 1.5, 0, Math.PI*2);
+    ctx.fill();
+  }
+  ctx.globalAlpha = 1.0;
+}
+
+function pointInPolygon(point, vs) {
+  let x = point.x, y = point.y, inside = false;
+  for (let i = 0, j = vs.length - 1; i < vs.length; j = i++) {
+    let xi = vs[i].x, yi = vs[i].y;
+    let xj = vs[j].x, yj = vs[j].y;
+    let intersect = ((yi > y) != (yj > y)) && (x < (xj - xi) * (y - yi) / (yj - yi) + xi);
+    if (intersect) inside = !inside;
+  }
+  return inside;
+}
+
+function isContourInside(contour, polygon) {
+  if (pointInPolygon(contour, polygon)) return true;
+  for (let pt of contour.getPoints()) if (pointInPolygon(pt, polygon)) return true;
+  return false;
+}
+
+function isNoiseInside(noise, polygon) {
+  if (pointInPolygon(noise, polygon)) return true;
+  for (let pt of noise.getPoints()) if (pointInPolygon(pt, polygon)) return true;
+  return false;
+}
+
+function onPointerDown(e) {
+  if (state !== 'playing') return;
+  isDrawing = true;
+  currentPath = [{x: e.clientX, y: e.clientY}];
+  if (navigator.vibrate) navigator.vibrate(10);
+}
+
+function onPointerMove(e) {
+  if (!isDrawing || state !== 'playing') return;
+  let last = currentPath[currentPath.length - 1];
+  let dx = e.clientX - last.x, dy = e.clientY - last.y;
+  if (dx*dx + dy*dy > 64) currentPath.push({x: e.clientX, y: e.clientY});
+}
+
+function onPointerUp(e) {
+  if (!isDrawing || state !== 'playing') return;
+  isDrawing = false;
+  if (currentPath.length > 10) evaluatePath();
+  currentPath = [];
+}
+
+function evaluatePath() {
+  let insideContours = [], insideNoises = [];
+  for (let c of contours) if (isContourInside(c, currentPath)) insideContours.push(c);
+  for (let n of noises) if (isNoiseInside(n, currentPath)) insideNoises.push(n);
+  
+  if (insideNoises.length > 0) {
+    if (navigator.vibrate) navigator.vibrate([30, 50, 30]);
+    addClarity(-5);
+    for (let i = 0; i < currentPath.length; i += 3) spawnParticles(currentPath[i], getColors().noise, 2);
+  } else if (insideContours.length > 0) {
+    if (navigator.vibrate) navigator.vibrate([15, 30, 15]);
+    drawWatercolorFill(currentPath);
+    particles.push({ type: 'flash', life: 0.3, maxLife: 0.3, path: [...currentPath] });
+    for (let c of insideContours) {
+      c.draw(bgCtx, getColors());
+      contours.splice(contours.indexOf(c), 1);
+      spawnParticles(c, getColors().contour, 10);
+    }
+    addClarity(insideContours.length * 15);
+  }
+}
+
+function drawWatercolorFill(path) {
+  let colors = getColors();
+  bgCtx.save();
+  bgCtx.fillStyle = colors.fill[Math.floor(Math.random() * colors.fill.length)];
+  bgCtx.beginPath();
+  bgCtx.moveTo(path[0].x, path[0].y);
+  for (let i = 1; i < path.length; i++) bgCtx.lineTo(path[i].x, path[i].y);
+  bgCtx.closePath();
+  bgCtx.fill();
+  bgCtx.strokeStyle = colors.text;
+  bgCtx.globalAlpha = 0.15;
+  bgCtx.lineWidth = 3;
+  bgCtx.lineCap = 'round'; bgCtx.lineJoin = 'round';
+  bgCtx.stroke();
+  bgCtx.restore();
+}
+
+function addClarity(amount) {
+  if (state !== 'playing') return;
+  clarity += amount;
+  if (clarity >= 100) {
+    clarity = 100; state = 'transition';
+    document.getElementById('transition-text').innerText = 'PURIFIED';
+    document.getElementById('transition-screen').classList.remove('hidden');
+    updateHUD();
+    setTimeout(() => { document.getElementById('transition-screen').classList.add('hidden'); winRound(); }, 1500);
+  } else if (clarity <= 0) {
+    clarity = 0; state = 'transition';
+    updateHUD();
+    setTimeout(gameOver, 1000);
+  } else {
+    updateHUD();
+  }
+}
+
+function updateHUD() {
+  let bar = document.getElementById('clarity-bar');
+  bar.style.width = clarity + '%';
+  document.getElementById('score-display').innerText = `CLARITY: ${Math.floor(clarity)}%`;
+  bar.style.backgroundColor = clarity < 30 ? getColors().noise : getColors().text;
+}
+
+function startGame() {
+  state = 'playing';
+  document.getElementById('ui-layer').classList.add('hidden');
+  document.getElementById('start-screen').classList.add('hidden');
+  document.getElementById('game-over-screen').classList.add('hidden');
+  document.getElementById('hud').classList.remove('hidden');
+  document.getElementById('clarity-bar-container').classList.remove('hidden');
+  round = 1;
+  startRound();
+}
+
+function startRound() {
+  clarity = 50; contours = []; noises = []; particles = []; currentPath = []; isDrawing = false; state = 'playing';
+  drawBackground(bgCtx); updateHUD();
+  document.getElementById('round-display').innerText = `ROUND ${round}`;
+  for (let i = 0; i < 5 + round; i++) spawnContour();
+  for (let i = 0; i < 2 + round; i++) spawnNoise();
+}
+
+function winRound() { round++; startRound(); }
+
+function gameOver() {
+  state = 'gameover';
+  document.getElementById('ui-layer').classList.remove('hidden');
+  document.getElementById('game-over-screen').classList.remove('hidden');
+  document.getElementById('hud').classList.add('hidden');
+  document.getElementById('clarity-bar-container').classList.add('hidden');
+  document.getElementById('end-rounds').innerText = round - 1;
+}
+
+function spawnContour() { contours.push(new Contour(Math.random() * width, Math.random() * height)); }
+
+function spawnNoise() {
+  let x, y;
+  if (Math.random() < 0.5) { x = Math.random() < 0.5 ? -20 : width + 20; y = Math.random() * height; }
+  else { x = Math.random() * width; y = Math.random() < 0.5 ? -20 : height + 20; }
+  noises.push(new Noise(x, y, 1 + round * 0.15));
+}
+
+function spawnParticles(pos, color, count) {
+  for (let i = 0; i < count; i++) {
+    let angle = Math.random() * Math.PI * 2;
+    let speed = Math.random() * 150 + 50;
+    particles.push({
+      type: 'dot', x: pos.x, y: pos.y, vx: Math.cos(angle) * speed, vy: Math.sin(angle) * speed,
+      life: 0.5 + Math.random() * 0.5, maxLife: 1.0, color: color, size: Math.random() * 3 + 1
+    });
+  }
+}
+
+function loop(time) {
+  animationId = requestAnimationFrame(loop);
+  if (!lastTime) lastTime = time;
+  let dt = (time - lastTime) / 1000;
+  if (dt > 0.1) dt = 0.1;
+  lastTime = time;
+  
+  if (state !== 'playing' && state !== 'transition') return;
+  
+  let colors = getColors();
+  gameCtx.clearRect(0, 0, width, height);
+  
+  if (state === 'playing') {
+    spawnTimer += dt;
+    let spawnInterval = Math.max(1.0, 3.0 - round * 0.2);
+    if (spawnTimer > spawnInterval) {
+      spawnTimer = 0;
+      if (contours.length < 5 + round * 2) spawnContour();
+      if (noises.length < 3 + round * 2) spawnNoise();
+    }
+  }
+  
+  for (let i = contours.length - 1; i >= 0; i--) {
+    let c = contours[i];
+    c.update(dt); c.draw(gameCtx, colors);
+    if (c.corruption >= 1) {
+      contours.splice(i, 1);
+      addClarity(-10);
+      spawnParticles(c, colors.noise, 15);
+      noises.push(new Noise(c.x, c.y, 1 + round * 0.15));
+      noises.push(new Noise(c.x, c.y, 1 + round * 0.15));
+      if (navigator.vibrate) navigator.vibrate(50);
+    }
+  }
+  
+  for (let i = noises.length - 1; i >= 0; i--) {
+    let n = noises[i];
+    n.update(dt, contours); n.draw(gameCtx, colors);
+  }
+  
+  for (let i = particles.length - 1; i >= 0; i--) {
+    let p = particles[i];
+    p.life -= dt;
+    if (p.life <= 0) particles.splice(i, 1);
+    else {
+      if (p.type === 'flash') {
+        gameCtx.save();
+        gameCtx.globalAlpha = (p.life / p.maxLife) * 0.8;
+        gameCtx.fillStyle = '#FFFFFF';
+        gameCtx.beginPath();
+        gameCtx.moveTo(p.path[0].x, p.path[0].y);
+        for (let j = 1; j < p.path.length; j++) gameCtx.lineTo(p.path[j].x, p.path[j].y);
+        gameCtx.closePath(); gameCtx.fill();
+        gameCtx.restore();
+      } else {
+        p.x += p.vx * dt; p.y += p.vy * dt;
+        gameCtx.globalAlpha = p.life / p.maxLife;
+        gameCtx.fillStyle = p.color;
+        gameCtx.beginPath();
+        gameCtx.arc(p.x, p.y, p.size, 0, Math.PI*2);
+        gameCtx.fill();
+        gameCtx.globalAlpha = 1.0;
+      }
+    }
+  }
+  
+  if (isDrawing && currentPath.length > 0) {
+    gameCtx.save();
+    gameCtx.beginPath();
+    gameCtx.moveTo(currentPath[0].x, currentPath[0].y);
+    for (let i = 1; i < currentPath.length; i++) gameCtx.lineTo(currentPath[i].x, currentPath[i].y);
+    gameCtx.strokeStyle = colors.text;
+    gameCtx.lineWidth = 4;
+    gameCtx.lineCap = 'round'; gameCtx.lineJoin = 'round';
+    gameCtx.shadowColor = colors.text;
+    gameCtx.shadowBlur = 6;
+    gameCtx.stroke();
+    
+    if (currentPath.length > 10) {
+      gameCtx.globalAlpha = 0.3;
+      gameCtx.setLineDash([5, 10]);
+      gameCtx.beginPath();
+      gameCtx.moveTo(currentPath[currentPath.length-1].x, currentPath[currentPath.length-1].y);
+      gameCtx.lineTo(currentPath[0].x, currentPath[0].y);
+      gameCtx.stroke();
+    }
+    gameCtx.restore();
+  }
+}
+
+init();
+</script>
+</body>
+</html>

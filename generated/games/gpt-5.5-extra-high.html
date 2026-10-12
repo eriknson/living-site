@@ -3,987 +3,750 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
-  <title>Borrow Beat</title>
+  <meta name="color-scheme" content="light dark">
+  <title>Frostline Aisle</title>
   <style>
     :root {
-      color-scheme: light;
-      --bg0: #f7efe0;
-      --bg1: #dfeee7;
-      --ink: #18201d;
-      --muted: #65736d;
-      --panel: rgba(255, 250, 239, .82);
-      --line: rgba(52, 73, 66, .22);
-      --rust: #e95722;
-      --cyan: #009d9a;
-      --amber: #d79614;
-      --good: #18864b;
-      --bad: #c73d2c;
-      --shadow: rgba(27, 33, 30, .18);
-      --grid: rgba(29, 48, 43, .09);
+      color-scheme: light dark;
+      --bg: #eef8f5;
+      --ink: #102126;
+      --muted: #517178;
+      --panel: rgba(244, 252, 250, .78);
+      --panel-line: rgba(36, 91, 99, .2);
+      --accent: #d97818;
+      --cold: #1596aa;
+      --shadow: rgba(20, 56, 62, .18);
     }
     @media (prefers-color-scheme: dark) {
       :root {
-        color-scheme: dark;
-        --bg0: #07110f;
-        --bg1: #09212a;
-        --ink: #edf7f0;
-        --muted: #9bb0a9;
-        --panel: rgba(8, 18, 17, .72);
-        --line: rgba(197, 225, 214, .18);
-        --rust: #ff6b2b;
-        --cyan: #20d0c2;
-        --amber: #ffd166;
-        --good: #5ee092;
-        --bad: #ff5848;
-        --shadow: rgba(0, 0, 0, .45);
-        --grid: rgba(176, 225, 210, .075);
+        --bg: #071012;
+        --ink: #e8fbf7;
+        --muted: #8fb4ba;
+        --panel: rgba(7, 18, 21, .72);
+        --panel-line: rgba(160, 238, 247, .2);
+        --accent: #ffb84a;
+        --cold: #83e7f7;
+        --shadow: rgba(0, 0, 0, .36);
       }
     }
     * { box-sizing: border-box; }
     html, body {
       margin: 0;
-      min-width: 100dvw;
+      width: 100%;
       min-height: 100dvh;
       overflow: hidden;
-      background:
-        radial-gradient(circle at 50% 22%, color-mix(in srgb, var(--cyan) 16%, transparent), transparent 34%),
-        linear-gradient(155deg, var(--bg0), var(--bg1));
+      background: var(--bg);
       color: var(--ink);
-      font-family: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+      font-family: ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+      -webkit-text-size-adjust: 100%;
     }
-    body {
+    body, #game {
       width: 100dvw;
       height: 100dvh;
       user-select: none;
       -webkit-user-select: none;
       overscroll-behavior: none;
     }
-    #app {
+    #game {
       position: fixed;
       inset: 0;
-      width: 100dvw;
-      height: 100dvh;
-      overflow: hidden;
       isolation: isolate;
+      background: var(--bg);
     }
     canvas {
-      position: absolute;
-      inset: 0;
+      display: block;
       width: 100dvw;
       height: 100dvh;
-      display: block;
       touch-action: none;
     }
+    .hud, .screen, .controls {
+      position: fixed;
+      z-index: 5;
+      pointer-events: none;
+    }
     .hud {
-      position: absolute;
-      inset: env(safe-area-inset-top) 0 auto 0;
-      z-index: 4;
-      display: grid;
-      grid-template-columns: 1fr auto 1fr;
-      gap: 10px;
-      align-items: start;
-      padding: 14px clamp(14px, 4vw, 28px) 0;
-      pointer-events: none;
-      font-family: ui-monospace, "SFMono-Regular", Menlo, Consolas, monospace;
-    }
-    .chip, .mini {
-      border: 1px solid var(--line);
-      background: var(--panel);
-      box-shadow: 0 12px 34px var(--shadow);
-      backdrop-filter: blur(14px);
-      -webkit-backdrop-filter: blur(14px);
-      border-radius: 999px;
-      color: var(--ink);
-    }
-    .chip {
-      justify-self: start;
-      min-width: 92px;
-      padding: 10px 13px;
-      line-height: 1;
-    }
-    .chip strong {
-      display: block;
-      font-size: 24px;
-      letter-spacing: -.04em;
-    }
-    .chip span, .mini span {
-      display: block;
-      margin-top: 4px;
-      color: var(--muted);
-      font-size: 10px;
-      letter-spacing: .12em;
-      text-transform: uppercase;
-    }
-    .status {
-      justify-self: center;
-      display: flex;
-      gap: 7px;
-      padding: 9px;
-      border-radius: 999px;
-      border: 1px solid var(--line);
-      background: var(--panel);
-      box-shadow: 0 12px 34px var(--shadow);
-      backdrop-filter: blur(14px);
-      -webkit-backdrop-filter: blur(14px);
-    }
-    .leak {
-      width: 13px;
-      height: 13px;
-      border-radius: 50%;
-      border: 1px solid color-mix(in srgb, var(--bad) 45%, transparent);
-      background: transparent;
-    }
-    .leak.on {
-      background: var(--bad);
-      box-shadow: 0 0 16px color-mix(in srgb, var(--bad) 65%, transparent);
-    }
-    .mini {
-      justify-self: end;
-      min-width: 82px;
-      padding: 9px 12px;
-      text-align: right;
-      line-height: 1;
-    }
-    .mini strong {
-      font-size: 18px;
-      letter-spacing: -.04em;
-    }
-    button {
-      appearance: none;
-      border: 0;
-      min-height: 48px;
-      padding: 0 18px;
-      border-radius: 999px;
-      background: var(--ink);
-      color: var(--bg0);
-      font: 700 13px/1 ui-monospace, "SFMono-Regular", Menlo, Consolas, monospace;
-      letter-spacing: .08em;
-      text-transform: uppercase;
-      box-shadow: 0 14px 34px var(--shadow);
-      cursor: pointer;
-      touch-action: manipulation;
-    }
-    button:focus-visible {
-      outline: 3px solid var(--amber);
-      outline-offset: 3px;
-    }
-    button:active { transform: translateY(1px) scale(.99); }
-    #restartBtn {
-      position: absolute;
+      left: max(14px, env(safe-area-inset-left));
       right: max(14px, env(safe-area-inset-right));
-      bottom: max(14px, env(safe-area-inset-bottom));
-      z-index: 8;
-      opacity: 0;
-      transform: translateY(8px);
-      pointer-events: none;
-      transition: opacity .25s ease, transform .25s ease;
-      background: color-mix(in srgb, var(--rust) 82%, var(--ink));
-      color: #fffaf0;
+      top: max(12px, env(safe-area-inset-top));
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
+      gap: 8px;
     }
-    body.running #restartBtn,
-    body.over #restartBtn {
-      opacity: 1;
-      transform: translateY(0);
-      pointer-events: auto;
+    .tile, .panel {
+      border: 1px solid var(--panel-line);
+      background: var(--panel);
+      box-shadow: 0 14px 36px var(--shadow);
+      backdrop-filter: blur(14px);
+      -webkit-backdrop-filter: blur(14px);
     }
-    .overlay {
-      position: absolute;
+    .tile {
+      min-width: 0;
+      border-radius: 16px;
+      padding: 9px 10px;
+    }
+    .label {
+      display: block;
+      color: var(--muted);
+      font: 700 10px/1 ui-monospace, "SFMono-Regular", Menlo, monospace;
+      letter-spacing: .14em;
+      text-transform: uppercase;
+      white-space: nowrap;
+    }
+    .value {
+      display: block;
+      margin-top: 3px;
+      font: 800 clamp(15px, 4vw, 22px)/1 ui-monospace, "SFMono-Regular", Menlo, monospace;
+      white-space: nowrap;
+    }
+    .screen {
       inset: 0;
-      z-index: 6;
       display: grid;
       place-items: center;
-      padding: max(20px, env(safe-area-inset-top)) 20px max(24px, env(safe-area-inset-bottom));
-      pointer-events: none;
-      transition: opacity .32s ease, transform .32s ease;
-    }
-    .overlay.hidden {
+      padding: 24px;
       opacity: 0;
-      transform: translateY(10px) scale(.985);
+      transform: translateY(10px);
+      transition: opacity 240ms ease, transform 240ms ease;
     }
-    .card {
-      width: min(520px, calc(100dvw - 32px));
-      border: 1px solid var(--line);
+    .screen.show {
+      opacity: 1;
+      transform: translateY(0);
+    }
+    .panel {
+      width: min(92dvw, 430px);
       border-radius: 30px;
-      padding: clamp(22px, 6vw, 36px);
-      background: var(--panel);
-      box-shadow: 0 30px 80px var(--shadow);
-      backdrop-filter: blur(18px);
-      -webkit-backdrop-filter: blur(18px);
-      pointer-events: none;
+      padding: 26px;
+      text-align: left;
     }
     .eyebrow {
-      margin: 0 0 12px;
-      color: var(--rust);
-      font: 700 12px/1 ui-monospace, "SFMono-Regular", Menlo, Consolas, monospace;
-      letter-spacing: .16em;
+      margin: 0 0 14px;
+      color: var(--cold);
+      font: 800 11px/1.2 ui-monospace, "SFMono-Regular", Menlo, monospace;
+      letter-spacing: .18em;
       text-transform: uppercase;
     }
     h1 {
       margin: 0;
-      font-size: clamp(46px, 14vw, 82px);
-      line-height: .86;
+      font-size: clamp(38px, 11vw, 62px);
+      line-height: .9;
       letter-spacing: -.08em;
     }
     p {
-      margin: 18px 0 0;
+      margin: 16px 0 0;
       color: var(--muted);
-      font-size: clamp(15px, 4vw, 18px);
-      line-height: 1.45;
-    }
-    .rules {
-      display: grid;
-      gap: 10px;
-      margin-top: 22px;
-      font-family: ui-monospace, "SFMono-Regular", Menlo, Consolas, monospace;
-      font-size: 12px;
-      color: var(--ink);
-    }
-    .rules div {
-      display: flex;
-      gap: 10px;
-      align-items: center;
-    }
-    .dot {
-      width: 10px;
-      height: 10px;
-      border-radius: 50%;
-      flex: 0 0 auto;
-    }
-    .actions {
-      display: flex;
-      align-items: center;
-      gap: 12px;
-      margin-top: 26px;
-    }
-    .actions button {
-      pointer-events: auto;
-      background: linear-gradient(135deg, var(--rust), #f7a925);
-      color: #1b120b;
+      font-size: 15px;
+      line-height: 1.5;
     }
     .hint {
-      font-family: ui-monospace, "SFMono-Regular", Menlo, Consolas, monospace;
-      font-size: 11px;
-      color: var(--muted);
-      letter-spacing: .08em;
-      text-transform: uppercase;
-    }
-    #gameOver .card {
-      text-align: center;
-    }
-    #gameOver .stats {
       display: grid;
-      grid-template-columns: repeat(3, 1fr);
-      gap: 10px;
-      margin-top: 22px;
-      font-family: ui-monospace, "SFMono-Regular", Menlo, Consolas, monospace;
+      grid-template-columns: 44px 1fr;
+      gap: 12px;
+      align-items: center;
+      margin-top: 18px;
+      color: var(--ink);
+      font: 700 13px/1.35 ui-monospace, "SFMono-Regular", Menlo, monospace;
     }
-    #gameOver .stats b {
-      display: block;
-      font-size: 22px;
+    .beatIcon {
+      width: 44px;
+      height: 44px;
+      border-radius: 14px;
+      border: 1px solid var(--panel-line);
+      display: grid;
+      place-items: center;
+      color: var(--accent);
+      background: rgba(255,255,255,.08);
     }
-    #gameOver .stats span {
-      display: block;
-      margin-top: 4px;
-      color: var(--muted);
-      font-size: 10px;
+    button {
+      min-height: 50px;
+      border: 0;
+      border-radius: 999px;
+      padding: 0 20px;
+      color: #071012;
+      background: var(--accent);
+      font: 900 13px/1 ui-monospace, "SFMono-Regular", Menlo, monospace;
       letter-spacing: .12em;
       text-transform: uppercase;
+      box-shadow: 0 12px 28px rgba(217, 120, 24, .28);
+      cursor: pointer;
+      pointer-events: auto;
+      touch-action: manipulation;
     }
-    #gameOver .hint {
-      margin-top: 18px;
+    button:active { transform: translateY(1px) scale(.99); }
+    #startBtn {
+      width: 100%;
+      margin-top: 22px;
     }
-    @media (max-width: 430px) {
-      .hud {
-        grid-template-columns: 1fr auto;
-        grid-template-areas: "score leaks" "combo combo";
-      }
-      #scoreBox { grid-area: score; }
-      .status { grid-area: leaks; justify-self: end; }
-      #comboBox { grid-area: combo; justify-self: start; text-align: left; }
-      h1 { max-width: 8ch; }
-      .actions { align-items: flex-start; flex-direction: column; }
-      .hint { line-height: 1.4; }
+    .controls {
+      left: 0;
+      right: 0;
+      bottom: max(14px, env(safe-area-inset-bottom));
+      display: flex;
+      justify-content: center;
+      padding: 0 18px;
+    }
+    #restartBtn {
+      display: none;
+      background: var(--ink);
+      color: var(--bg);
+      box-shadow: 0 12px 28px var(--shadow);
+    }
+    #restartBtn.show { display: inline-flex; align-items: center; }
+    .sr {
+      position: absolute;
+      width: 1px;
+      height: 1px;
+      overflow: hidden;
+      clip: rect(0,0,0,0);
     }
   </style>
 </head>
 <body>
-  <div id="app" aria-label="Borrow Beat game area">
-    <canvas id="game" aria-hidden="true"></canvas>
-    <div class="hud" aria-live="polite">
-      <div class="chip" id="scoreBox"><strong id="score">0</strong><span>clean refs</span></div>
-      <div class="status" id="leaks" aria-label="leaks"></div>
-      <div class="mini" id="comboBox"><strong id="combo">x1</strong><span>streak</span></div>
+  <main id="game" aria-label="Frostline Aisle browser game">
+    <canvas id="stage" aria-hidden="true"></canvas>
+    <section class="hud" aria-live="polite">
+      <div class="tile"><span class="label">Timer</span><span class="value" id="time">45.0</span></div>
+      <div class="tile"><span class="label">Thaw</span><span class="value" id="clear">0%</span></div>
+      <div class="tile"><span class="label">Chain</span><span class="value" id="combo">x0</span></div>
+      <div class="tile"><span class="label">Score</span><span class="value" id="score">0</span></div>
+    </section>
+    <section class="screen show" id="titleScreen">
+      <div class="panel">
+        <p class="eyebrow">Clear October freezer hack</p>
+        <h1>Frostline<br>Aisle</h1>
+        <p>A supermarket freezer is waking up wrong. Tap glowing frost squares on the beat to send warm defrost pulses through the shelf before the grid locks.</p>
+        <div class="hint"><span class="beatIcon">▣</span><span>Tap the bright cells as the amber beat ring snaps shut. Chains thaw whole rows.</span></div>
+        <button id="startBtn" data-smoke="start" type="button">Start thaw</button>
+      </div>
+    </section>
+    <section class="screen" id="overScreen">
+      <div class="panel">
+        <p class="eyebrow" id="overKicker">Shift report</p>
+        <h1 id="overTitle">Aisle clear</h1>
+        <p id="overCopy">Condensation rolls down the doors. The old freezer hums like it remembers summer.</p>
+      </div>
+    </section>
+    <div class="controls">
+      <button id="restartBtn" data-smoke="restart" type="button">Restart aisle</button>
     </div>
-
-    <section class="overlay" id="titleScreen">
-      <div class="card">
-        <p class="eyebrow">clear autumn compiler</p>
-        <h1>Borrow Beat</h1>
-        <p>Tap the bright borrow and return pulses as they touch the compiler core. Let red ghost references pass, or leaks will bloom through the graph.</p>
-        <div class="rules">
-          <div><i class="dot" style="background:var(--cyan)"></i><span>cyan borrow pulse: tap on the core</span></div>
-          <div><i class="dot" style="background:var(--rust)"></i><span>rust return pulse: tap on the core</span></div>
-          <div><i class="dot" style="background:var(--bad)"></i><span>red ghost reference: do not tap</span></div>
-        </div>
-        <div class="actions">
-          <button data-smoke="start" id="startBtn" type="button">Begin Borrow Run</button>
-          <span class="hint">Space / Enter also taps</span>
-        </div>
-      </div>
-    </section>
-
-    <section class="overlay hidden" id="gameOver" aria-hidden="true">
-      <div class="card">
-        <p class="eyebrow" id="overKicker">graph settled</p>
-        <h1 id="overTitle">Clean Block</h1>
-        <p id="overCopy">The graph collapsed into one tidy ownership block.</p>
-        <div class="stats">
-          <div><b id="finalScore">0</b><span>refs</span></div>
-          <div><b id="finalStreak">0</b><span>best run</span></div>
-          <div><b id="finalAccuracy">0%</b><span>accuracy</span></div>
-        </div>
-        <p class="hint">Use the restart control to compile another graph.</p>
-      </div>
-    </section>
-
-    <button data-smoke="restart" id="restartBtn" type="button">Restart Run</button>
-  </div>
-
+    <span class="sr" id="status">Ready</span>
+  </main>
   <script>
   (() => {
-    'use strict';
-
-    const canvas = document.getElementById('game');
-    const ctx = canvas && canvas.getContext ? canvas.getContext('2d', { alpha: true }) : null;
-    const startBtn = document.getElementById('startBtn');
-    const restartBtn = document.getElementById('restartBtn');
-    const titleScreen = document.getElementById('titleScreen');
-    const gameOver = document.getElementById('gameOver');
-    const scoreEl = document.getElementById('score');
-    const comboEl = document.getElementById('combo');
-    const leaksEl = document.getElementById('leaks');
-    const finalScoreEl = document.getElementById('finalScore');
-    const finalStreakEl = document.getElementById('finalStreak');
-    const finalAccuracyEl = document.getElementById('finalAccuracy');
-    const overTitle = document.getElementById('overTitle');
-    const overCopy = document.getElementById('overCopy');
-    const overKicker = document.getElementById('overKicker');
-
-    if (!canvas || !ctx || !startBtn || !restartBtn) return;
-
-    const TAU = Math.PI * 2;
-    const HIT_WINDOW = 0.16;
-    const MAX_LEAKS = 6;
-    const ROUND_TIME = 48;
-    const css = {};
-    let w = 1, h = 1, dpr = 1, cx = 1, cy = 1, radius = 120;
-    let mode = 'title';
-    let lastFrame = performance.now();
-    let audio = null;
-    let raf = 0;
-    let flash = 0;
-    let shake = 0;
-    let message = 'tap the core on beat';
-
-    const game = {
-      t: 0,
-      nextHit: 1.5,
-      score: 0,
-      streak: 0,
-      best: 0,
-      leaks: 0,
-      hits: 0,
-      misses: 0,
-      taps: 0,
-      pulses: [],
-      particles: [],
-      ripples: [],
-      lanes: 2,
-      laneCursor: 0,
-      seed: 3
+    "use strict";
+    const doc = document;
+    const canvas = doc.getElementById("stage");
+    const ctx = canvas && canvas.getContext ? canvas.getContext("2d", { alpha: false }) : null;
+    const startBtn = doc.getElementById("startBtn");
+    const restartBtn = doc.getElementById("restartBtn");
+    const titleScreen = doc.getElementById("titleScreen");
+    const overScreen = doc.getElementById("overScreen");
+    const timeEl = doc.getElementById("time");
+    const clearEl = doc.getElementById("clear");
+    const comboEl = doc.getElementById("combo");
+    const scoreEl = doc.getElementById("score");
+    const statusEl = doc.getElementById("status");
+    const overKicker = doc.getElementById("overKicker");
+    const overTitle = doc.getElementById("overTitle");
+    const overCopy = doc.getElementById("overCopy");
+    const COLS = 6, ROWS = 7, COUNT = COLS * ROWS, ROUND = 45;
+    const clamp = (n, a, b) => Math.max(a, Math.min(b, n));
+    const rand = (a, b) => a + Math.random() * (b - a);
+    let W = 1, H = 1, dpr = 1, grid = {x:0,y:0,w:1,h:1,cell:1,gap:5};
+    let last = 0, raf = 0, audio = null, focus = 20, dark = false;
+    const state = {
+      mode: "title", cells: [], particles: [], ripples: [], floaters: [],
+      target: new Set(), time: ROUND, elapsed: 0, beat: .78, beatClock: .1,
+      spreadClock: 0, score: 0, combo: 0, cleared: 0, shake: 0, reason: ""
     };
-
-    function readTheme() {
-      const s = getComputedStyle(document.documentElement);
-      ['bg0', 'bg1', 'ink', 'muted', 'panel', 'line', 'rust', 'cyan', 'amber', 'good', 'bad', 'grid'].forEach((k) => {
-        css[k] = s.getPropertyValue('--' + k).trim() || '#fff';
-      });
+    const palettes = {
+      dark: {bg:"#071012", back:"#0b171a", shelf:"#10272d", line:"#2f5e67", text:"#e8fbf7", muted:"#8fb4ba", frost:"#a9f0fb", ice:"#dffcff", warm:"#ffb84a", bad:"#ff6f4d", clear:"#16443d"},
+      light: {bg:"#eef8f5", back:"#dcefeb", shelf:"#cde5e3", line:"#6fa5a8", text:"#102126", muted:"#517178", frost:"#eefeff", ice:"#62c9dd", warm:"#d97818", bad:"#d84b2a", clear:"#bfe3d8"}
+    };
+    function setDark() {
+      try { dark = !!(window.matchMedia && window.matchMedia("(prefers-color-scheme: dark)").matches); }
+      catch (_) { dark = false; }
     }
-
+    setDark();
+    try {
+      const mq = window.matchMedia && window.matchMedia("(prefers-color-scheme: dark)");
+      if (mq && mq.addEventListener) mq.addEventListener("change", setDark);
+    } catch (_) {}
     function resize() {
-      dpr = Math.min(2, Math.max(1, window.devicePixelRatio || 1));
-      w = Math.max(1, Math.floor(window.innerWidth || document.documentElement.clientWidth || 390));
-      h = Math.max(1, Math.floor(window.innerHeight || document.documentElement.clientHeight || 720));
-      canvas.width = Math.floor(w * dpr);
-      canvas.height = Math.floor(h * dpr);
-      canvas.style.width = '100dvw';
-      canvas.style.height = '100dvh';
+      W = Math.max(1, window.innerWidth || doc.documentElement.clientWidth || 1);
+      H = Math.max(1, window.innerHeight || doc.documentElement.clientHeight || 1);
+      dpr = clamp(window.devicePixelRatio || 1, 1, 2);
+      if (!canvas || !ctx) return;
+      canvas.width = Math.max(1, Math.floor(W * dpr));
+      canvas.height = Math.max(1, Math.floor(H * dpr));
+      canvas.style.width = W + "px";
+      canvas.style.height = H + "px";
       ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
-      cx = w * 0.5;
-      cy = h * (w < 500 ? 0.51 : 0.52);
-      radius = Math.min(w, h) * (w < 500 ? 0.31 : 0.27);
-      readTheme();
+      const gap = clamp(Math.floor(W / 90), 4, 7);
+      const top = clamp(H * .2, 118, 188);
+      const bottomSpace = 116;
+      const cell = Math.floor(Math.min((W - 30 - gap * (COLS - 1)) / COLS, (H - top - bottomSpace - gap * (ROWS - 1)) / ROWS, 62));
+      const safeCell = Math.max(34, cell);
+      grid = {cell: safeCell, gap, w: safeCell * COLS + gap * (COLS - 1), h: safeCell * ROWS + gap * (ROWS - 1), x: (W - (safeCell * COLS + gap * (COLS - 1))) / 2, y: top};
+      if (grid.y + grid.h > H - 92) grid.y = Math.max(96, H - 92 - grid.h);
     }
-
-    function clamp(n, a, b) { return Math.max(a, Math.min(b, n)); }
-    function smooth(n) { return n * n * (3 - 2 * n); }
-    function rand() {
-      game.seed = (game.seed * 1664525 + 1013904223) >>> 0;
-      return game.seed / 4294967296;
+    function cellCenter(i) {
+      const c = i % COLS, r = Math.floor(i / COLS);
+      return {x: grid.x + c * (grid.cell + grid.gap) + grid.cell / 2, y: grid.y + r * (grid.cell + grid.gap) + grid.cell / 2};
     }
-    function laneAngle(i, count) {
-      const span = Math.min(Math.PI * 1.35, Math.PI * 0.72 + count * 0.28);
-      return -Math.PI / 2 - span / 2 + (span * (i + .5)) / count;
+    function cellAt(x, y) {
+      const c = Math.floor((x - grid.x) / (grid.cell + grid.gap));
+      const r = Math.floor((y - grid.y) / (grid.cell + grid.gap));
+      if (c < 0 || c >= COLS || r < 0 || r >= ROWS) return -1;
+      const lx = x - (grid.x + c * (grid.cell + grid.gap));
+      const ly = y - (grid.y + r * (grid.cell + grid.gap));
+      return lx >= 0 && ly >= 0 && lx <= grid.cell && ly <= grid.cell ? r * COLS + c : -1;
     }
-    function lanePoint(i, count, r = radius) {
-      const a = laneAngle(i, count);
-      return { x: cx + Math.cos(a) * r, y: cy + Math.sin(a) * r };
+    function makeCells() {
+      const cells = [];
+      for (let i = 0; i < COUNT; i++) {
+        const edge = (i % COLS === 0 || i % COLS === COLS - 1 || i < COLS || i >= COUNT - COLS) ? .12 : 0;
+        cells.push({f: rand(.12, .34) + edge, heat: 0, spark: 0, split: 0, pulse: 0});
+      }
+      for (let n = 0; n < 9; n++) cells[Math.floor(rand(0, COUNT))].f = rand(.56, .86);
+      return cells;
     }
-    function intervalAt(t) {
-      return clamp(0.9 - t * 0.009, 0.48, 0.9);
-    }
-    function travelAt(t) {
-      return clamp(1.55 - t * 0.006, 1.08, 1.55);
-    }
-    function vibrate(ms) {
-      try { if (navigator.vibrate) navigator.vibrate(ms); } catch (_) {}
-    }
-    function initAudio() {
+    function tryAudio() {
       if (audio) return;
       try {
         const AC = window.AudioContext || window.webkitAudioContext;
         if (!AC) return;
         audio = new AC();
-      } catch (_) {
-        audio = null;
-      }
+      } catch (_) { audio = null; }
     }
-    function tone(freq, dur, type, gain, delay = 0) {
-      if (!audio) return;
+    function tone(freq, dur, type, gain) {
       try {
-        const when = audio.currentTime + delay;
+        if (!audio) return;
+        if (audio.state === "suspended" && audio.resume) audio.resume();
         const osc = audio.createOscillator();
         const g = audio.createGain();
-        osc.type = type || 'sine';
-        osc.frequency.setValueAtTime(freq, when);
-        g.gain.setValueAtTime(0.0001, when);
-        g.gain.exponentialRampToValueAtTime(gain || 0.045, when + 0.012);
-        g.gain.exponentialRampToValueAtTime(0.0001, when + dur);
+        osc.type = type || "sine";
+        osc.frequency.value = freq;
+        g.gain.setValueAtTime(0.0001, audio.currentTime);
+        g.gain.exponentialRampToValueAtTime(gain || .045, audio.currentTime + .012);
+        g.gain.exponentialRampToValueAtTime(0.0001, audio.currentTime + dur);
         osc.connect(g);
         g.connect(audio.destination);
-        osc.start(when);
-        osc.stop(when + dur + 0.03);
+        osc.start();
+        osc.stop(audio.currentTime + dur + .02);
       } catch (_) {}
     }
-    function hitSound(kind) {
-      tone(kind === 'return' ? 392 : 523, .08, 'triangle', .04);
-      tone(kind === 'return' ? 784 : 1046, .12, 'sine', .024, .035);
+    function buzz(ms) {
+      try { if (navigator.vibrate) navigator.vibrate(ms); } catch (_) {}
     }
-    function badSound() {
-      tone(88, .16, 'sawtooth', .035);
-      tone(61, .2, 'square', .018, .025);
-    }
-
-    function updateHud() {
-      scoreEl.textContent = String(game.score);
-      comboEl.textContent = 'x' + Math.max(1, Math.min(9, 1 + Math.floor(game.streak / 8)));
-      leaksEl.innerHTML = '';
-      for (let i = 0; i < MAX_LEAKS; i++) {
-        const b = document.createElement('i');
-        b.className = 'leak' + (i < game.leaks ? ' on' : '');
-        leaksEl.appendChild(b);
-      }
-    }
-
-    function resetGame() {
-      game.t = 0;
-      game.nextHit = 1.35;
-      game.score = 0;
-      game.streak = 0;
-      game.best = 0;
-      game.leaks = 0;
-      game.hits = 0;
-      game.misses = 0;
-      game.taps = 0;
-      game.pulses = [];
-      game.particles = [];
-      game.ripples = [];
-      game.lanes = 2;
-      game.laneCursor = 0;
-      game.seed = 7 + Math.floor((performance.now() % 1000) * 9);
-      flash = 0;
-      shake = 0;
-      message = 'tap the core on beat';
-      updateHud();
-    }
-
     function startGame() {
-      initAudio();
-      if (audio && audio.state === 'suspended') audio.resume().catch(() => {});
-      resetGame();
-      mode = 'running';
-      document.body.classList.remove('over');
-      document.body.classList.add('running');
-      titleScreen.classList.add('hidden');
-      gameOver.classList.add('hidden');
-      gameOver.setAttribute('aria-hidden', 'true');
-      updateHud();
-      tone(294, .08, 'triangle', .032);
-      tone(440, .1, 'triangle', .028, .055);
-      tone(660, .14, 'triangle', .024, .11);
+      tryAudio();
+      state.mode = "playing";
+      state.cells = makeCells();
+      state.particles = [];
+      state.ripples = [];
+      state.floaters = [];
+      state.target = new Set();
+      state.time = ROUND;
+      state.elapsed = 0;
+      state.beat = .78;
+      state.beatClock = .12;
+      state.spreadClock = 0;
+      state.score = 0;
+      state.combo = 0;
+      state.cleared = 0;
+      state.shake = 0;
+      state.reason = "";
+      focus = 20;
+      titleScreen.classList.remove("show");
+      overScreen.classList.remove("show");
+      restartBtn.classList.add("show");
+      statusEl.textContent = "Defrosting";
+      chooseTargets(3);
+      tone(440, .09, "triangle", .05);
     }
-
-    function endGame(clean) {
-      if (mode !== 'running') return;
-      mode = 'over';
-      document.body.classList.remove('running');
-      document.body.classList.add('over');
-      gameOver.classList.remove('hidden');
-      gameOver.setAttribute('aria-hidden', 'false');
-      const total = Math.max(1, game.hits + game.misses);
-      const acc = Math.round((game.hits / total) * 100);
-      finalScoreEl.textContent = String(game.score);
-      finalStreakEl.textContent = String(game.best);
-      finalAccuracyEl.textContent = acc + '%';
-      overKicker.textContent = clean ? 'graph settled' : 'borrow checker halted';
-      overTitle.textContent = clean ? 'Clean Block' : 'Leak Bloom';
-      overCopy.textContent = clean
-        ? 'The graph collapsed into one tidy ownership block before sunrise.'
-        : 'Ghost references rooted in the graph. Tune the rhythm and try again.';
-      vibrate(clean ? 30 : 80);
-      if (clean) {
-        tone(523, .13, 'triangle', .035);
-        tone(659, .13, 'triangle', .03, .08);
-        tone(880, .18, 'sine', .026, .16);
-      } else {
-        badSound();
+    function endGame(won, reason) {
+      state.mode = "over";
+      state.reason = reason;
+      restartBtn.classList.add("show");
+      overScreen.classList.add("show");
+      overKicker.textContent = won ? "Aisle restored" : "Grid locked";
+      overTitle.textContent = won ? "Aisle clear" : "Frost lock";
+      overCopy.textContent = won
+        ? "Every shelf exhales at once. Score " + Math.floor(state.score) + " with a longest chain of x" + state.combo + "."
+        : reason + " Score " + Math.floor(state.score) + ". Tap restart for another night shift.";
+      statusEl.textContent = won ? "Won" : "Game over";
+      tone(won ? 720 : 160, .24, won ? "triangle" : "sawtooth", .04);
+      buzz(won ? 30 : [20, 30, 20]);
+    }
+    function chooseTargets(n) {
+      state.target.clear();
+      const ranked = state.cells.map((c, i) => ({i, v: c.f + Math.random() * .22})).filter(o => o.v > .1).sort((a,b) => b.v - a.v);
+      for (let k = 0; k < Math.min(n, ranked.length); k++) {
+        const cell = state.cells[ranked[k].i];
+        cell.spark = 1.15;
+        state.target.add(ranked[k].i);
       }
     }
-
-    function spawnPulse(kind, lane, hit, dual) {
-      const travel = travelAt(game.t);
-      game.pulses.push({
-        kind,
-        lane,
-        lanes: game.lanes,
-        hit,
-        spawn: hit - travel,
-        travel,
-        handled: false,
-        dual: !!dual,
-        id: Math.floor(rand() * 1e9)
+    function neighbors(i) {
+      const c = i % COLS, r = Math.floor(i / COLS), out = [];
+      if (c > 0) out.push(i - 1);
+      if (c < COLS - 1) out.push(i + 1);
+      if (r > 0) out.push(i - COLS);
+      if (r < ROWS - 1) out.push(i + COLS);
+      return out;
+    }
+    function thaw(i, amount, splash) {
+      const cell = state.cells[i];
+      if (!cell) return;
+      const splitTax = cell.split > .5 && amount < .55 ? .66 : 1;
+      cell.f = clamp(cell.f - amount * splitTax, 0, 1.18);
+      cell.heat = 1;
+      cell.pulse = 1;
+      if (splash) neighbors(i).forEach(j => {
+        state.cells[j].f = clamp(state.cells[j].f - amount * .22, 0, 1.18);
+        state.cells[j].heat = Math.max(state.cells[j].heat, .55);
       });
     }
-
-    function schedule() {
-      const lookAhead = travelAt(game.t) + 0.32;
-      while (game.nextHit < game.t + lookAhead) {
-        game.lanes = game.t > 30 ? 4 : game.t > 13 ? 3 : 2;
-        const lane = game.laneCursor % game.lanes;
-        const kind = (game.laneCursor % 2) ? 'return' : 'borrow';
-        const dual = game.t > 22 && rand() < 0.24;
-        spawnPulse(kind, lane, game.nextHit, dual);
-        if (dual) {
-          const other = (lane + 1 + Math.floor(rand() * (game.lanes - 1))) % game.lanes;
-          spawnPulse(kind === 'borrow' ? 'return' : 'borrow', other, game.nextHit, true);
-        }
-        if (game.t > 10 && rand() < Math.min(.48, .16 + game.t * .008)) {
-          const ghostLane = Math.floor(rand() * game.lanes);
-          const offset = intervalAt(game.t) * (rand() < .5 ? .45 : -.42);
-          spawnPulse('ghost', ghostLane, game.nextHit + offset, false);
-        }
-        game.laneCursor++;
-        game.nextHit += intervalAt(game.t);
+    function rowPulse(row, amount) {
+      for (let c = 0; c < COLS; c++) thaw(row * COLS + c, amount, false);
+      state.ripples.push({row, life:.45, max:.45});
+      tone(520 + row * 22, .08, "triangle", .04);
+    }
+    function colPulse(col, amount) {
+      for (let r = 0; r < ROWS; r++) thaw(r * COLS + col, amount, false);
+      state.ripples.push({col, life:.45, max:.45});
+    }
+    function addParticles(i, warm, count) {
+      const p = cellCenter(i);
+      for (let n = 0; n < count; n++) {
+        state.particles.push({x:p.x + rand(-10,10), y:p.y + rand(-10,10), vx:rand(-44,44), vy:rand(-68,32), life:rand(.32,.7), max:.7, warm});
       }
     }
-
-    function bloom(x, y, color, amount, force) {
-      for (let i = 0; i < amount; i++) {
-        const a = rand() * TAU;
-        const s = (force || 1) * (70 + rand() * 170);
-        game.particles.push({
-          x, y,
-          vx: Math.cos(a) * s,
-          vy: Math.sin(a) * s,
-          life: .35 + rand() * .35,
-          max: .35 + rand() * .35,
-          size: 2 + rand() * 4,
-          color
-        });
+    function floatText(i, text, good) {
+      const p = cellCenter(i);
+      state.floaters.push({x:p.x, y:p.y - 8, vy:-30, life:.75, max:.75, text, good});
+    }
+    function timingPower() {
+      const edge = Math.min(state.beatClock, Math.abs(state.beat - state.beatClock));
+      return clamp(1 - edge / (state.beat * .32), 0, 1);
+    }
+    function tapCell(i) {
+      if (state.mode !== "playing" || i < 0 || !state.cells[i]) return;
+      focus = i;
+      const c = state.cells[i];
+      const timing = timingPower();
+      const lit = state.target.has(i) && c.spark > .18;
+      const good = timing > .42 || lit;
+      if (good) {
+        const perfect = timing > .72 && lit;
+        state.combo += perfect ? 2 : 1;
+        const amount = (lit ? .34 : .18) + timing * .36 + Math.min(state.combo, 18) * .012;
+        thaw(i, amount, true);
+        addParticles(i, true, perfect ? 18 : 10);
+        state.score += Math.floor((perfect ? 120 : 62) * (1 + Math.min(state.combo, 24) * .08));
+        floatText(i, perfect ? "SYNC" : "THAW", true);
+        if (perfect) tone(660 + Math.min(state.combo, 12) * 24, .055, "triangle", .035);
+        else tone(430, .045, "sine", .025);
+        if (state.combo % 5 === 0) rowPulse(Math.floor(i / COLS), .26 + Math.min(state.combo, 20) * .008);
+        if (state.combo % 9 === 0) colPulse(i % COLS, .22);
+        state.target.delete(i);
+        c.spark = 0;
+        buzz(perfect ? 18 : 8);
+      } else {
+        state.combo = Math.max(0, state.combo - 2);
+        c.f = clamp(c.f + .1, 0, 1.18);
+        state.shake = .16;
+        addParticles(i, false, 8);
+        floatText(i, "OFF", false);
+        tone(130, .08, "square", .018);
       }
-    }
-
-    function addRipple(color, strength) {
-      game.ripples.push({ x: cx, y: cy, r: 34, life: .42, max: .42, color, strength });
-    }
-
-    function leak(reason) {
-      game.leaks = Math.min(MAX_LEAKS, game.leaks + 1);
-      game.streak = 0;
-      game.misses++;
-      shake = Math.max(shake, 12);
-      flash = Math.max(flash, .45);
-      message = reason || 'leak bloomed';
       updateHud();
-      bloom(cx, cy, css.bad, 26, 1.25);
-      addRipple(css.bad, 1.4);
-      vibrate(55);
-      badSound();
-      if (game.leaks >= MAX_LEAKS) endGame(false);
     }
-
-    function tap() {
-      if (mode !== 'running') return;
-      game.taps++;
-      let ghost = null;
-      const hits = [];
-      for (const p of game.pulses) {
-        if (p.handled) continue;
-        const dt = Math.abs(game.t - p.hit);
-        if (dt <= HIT_WINDOW) {
-          if (p.kind === 'ghost') ghost = p;
-          else hits.push(p);
+    function onBeat() {
+      const targetCount = state.elapsed > 29 ? 5 : state.elapsed > 16 ? 4 : 3;
+      state.cells.forEach((c, i) => {
+        if (state.target.has(i) && c.spark > .2) c.f = clamp(c.f + .045, 0, 1.18);
+        c.spark *= .25;
+      });
+      chooseTargets(targetCount);
+      if (state.combo > 0) state.score += Math.min(12, state.combo);
+    }
+    function spreadFrost() {
+      const icy = state.cells.map((c, i) => ({i, f:c.f})).filter(o => o.f > .28).sort((a,b) => b.f - a.f);
+      if (!icy.length) return;
+      const source = icy[Math.floor(rand(0, Math.min(icy.length, 10)))].i;
+      const ns = neighbors(source);
+      if (!ns.length) return;
+      const dest = ns[Math.floor(rand(0, ns.length))];
+      const add = state.elapsed > 30 ? .17 : state.elapsed > 18 ? .135 : .105;
+      state.cells[dest].f = clamp(state.cells[dest].f + add, 0, 1.18);
+      state.cells[dest].pulse = Math.max(state.cells[dest].pulse, .45);
+      if (state.elapsed > 23 && state.cells[dest].f > .82) state.cells[dest].split = 1;
+    }
+    function update(dt) {
+      if (state.mode === "playing") {
+        state.elapsed += dt;
+        state.time = Math.max(0, ROUND - state.elapsed);
+        state.beat = clamp(.78 - state.elapsed * .007, .46, .78);
+        state.beatClock += dt;
+        while (state.beatClock >= state.beat) {
+          state.beatClock -= state.beat;
+          onBeat();
         }
-      }
-      if (hits.length) {
-        const mult = 1 + Math.floor(game.streak / 8);
-        hits.forEach((p) => {
-          p.handled = true;
-          game.hits++;
-          game.streak++;
-          game.best = Math.max(game.best, game.streak);
-          game.score += (p.dual ? 18 : 10) * mult;
-          const color = p.kind === 'borrow' ? css.cyan : css.rust;
-          bloom(cx, cy, color, p.dual ? 28 : 18, p.dual ? 1.2 : 1);
-          addRipple(color, p.dual ? 1.3 : 1);
-          hitSound(p.kind);
+        state.spreadClock += dt;
+        const spreadRate = clamp(1.1 - state.elapsed * .014, .42, 1.1);
+        while (state.spreadClock >= spreadRate) {
+          state.spreadClock -= spreadRate;
+          spreadFrost();
+        }
+        let total = 0, locked = 0;
+        state.cells.forEach(c => {
+          c.f = clamp(c.f + dt * (.006 + state.elapsed * .00045), 0, 1.18);
+          c.heat = Math.max(0, c.heat - dt * 2.8);
+          c.spark = Math.max(0, c.spark - dt * 1.6);
+          c.pulse = Math.max(0, c.pulse - dt * 2.4);
+          if (state.elapsed > 24 && c.f > .88) c.split = Math.min(1, c.split + dt * .5);
+          total += c.f;
+          if (c.f > 1.05) locked++;
         });
-        message = hits.length > 1 ? 'dual ownership collapsed' : (hits[0].kind === 'borrow' ? 'borrow checked' : 'return checked');
-        shake = Math.max(shake, hits.length > 1 ? 4 : 2);
+        state.cleared = clamp(1 - total / (COUNT * 1.05), 0, 1);
+        if (state.cleared > .965) endGame(true, "Clear");
+        else if (state.time <= 0) endGame(false, "The timer hit zero while frost was still spreading.");
+        else if (locked >= 13) endGame(false, "Too many shelves froze solid at once.");
+        state.shake = Math.max(0, state.shake - dt);
         updateHud();
-        vibrate(hits.length > 1 ? 22 : 10);
+      }
+      state.particles = state.particles.filter(p => {
+        p.life -= dt; p.x += p.vx * dt; p.y += p.vy * dt; p.vy += 120 * dt;
+        return p.life > 0;
+      });
+      state.ripples = state.ripples.filter(r => (r.life -= dt) > 0);
+      state.floaters = state.floaters.filter(f => {
+        f.life -= dt; f.y += f.vy * dt;
+        return f.life > 0;
+      });
+    }
+    function updateHud() {
+      timeEl.textContent = state.time.toFixed(1);
+      clearEl.textContent = Math.round(state.cleared * 100) + "%";
+      comboEl.textContent = "x" + state.combo;
+      scoreEl.textContent = String(Math.floor(state.score));
+    }
+    function roundRect(x, y, w, h, r) {
+      const rr = Math.min(r, w / 2, h / 2);
+      ctx.beginPath();
+      ctx.moveTo(x + rr, y);
+      ctx.arcTo(x + w, y, x + w, y + h, rr);
+      ctx.arcTo(x + w, y + h, x, y + h, rr);
+      ctx.arcTo(x, y + h, x, y, rr);
+      ctx.arcTo(x, y, x + w, y, rr);
+      ctx.closePath();
+    }
+    function mix(a, b, t) {
+      const pa = [1,3,5].map(i => parseInt(a.slice(i, i+2), 16));
+      const pb = [1,3,5].map(i => parseInt(b.slice(i, i+2), 16));
+      return "rgb(" + pa.map((v, i) => Math.round(v + (pb[i] - v) * t)).join(",") + ")";
+    }
+    function drawBackground(p) {
+      ctx.fillStyle = p.bg;
+      ctx.fillRect(0, 0, W, H);
+      ctx.fillStyle = dark ? "rgba(131,231,247,.045)" : "rgba(21,150,170,.065)";
+      for (let x = -20; x < W + 80; x += 74) ctx.fillRect(x + (state.elapsed * 7 % 74), 0, 2, H);
+      ctx.fillStyle = dark ? "rgba(255,255,255,.035)" : "rgba(255,255,255,.38)";
+      for (let i = 0; i < 18; i++) {
+        const x = (i * 47 + (state.elapsed * 11)) % (W + 40) - 20;
+        const y = (i * 83 + 30) % H;
+        ctx.fillRect(x, y, 1, 38 + (i % 5) * 16);
+      }
+      ctx.fillStyle = dark ? "rgba(255,184,74,.1)" : "rgba(217,120,24,.08)";
+      ctx.fillRect(0, Math.max(0, grid.y - 34), W, 1);
+      ctx.fillRect(0, grid.y + grid.h + 28, W, 1);
+    }
+    function drawBeat(p) {
+      const phase = state.mode === "playing" ? state.beatClock / state.beat : .18;
+      const y = grid.y + grid.h + 42;
+      const x = W / 2;
+      const width = Math.min(W - 48, 380);
+      ctx.globalAlpha = .9;
+      roundRect(x - width / 2, y, width, 9, 5);
+      ctx.fillStyle = dark ? "rgba(143,180,186,.18)" : "rgba(81,113,120,.18)";
+      ctx.fill();
+      roundRect(x - width / 2, y, width * (1 - phase), 9, 5);
+      ctx.fillStyle = p.warm;
+      ctx.fill();
+      const ring = 20 + (1 - timingPower()) * 24;
+      ctx.strokeStyle = p.warm;
+      ctx.lineWidth = 2;
+      ctx.globalAlpha = .22 + timingPower() * .55;
+      ctx.beginPath();
+      ctx.arc(x, y + 34, ring, 0, Math.PI * 2);
+      ctx.stroke();
+      ctx.globalAlpha = 1;
+      ctx.fillStyle = p.muted;
+      ctx.font = "700 10px ui-monospace, SFMono-Regular, Menlo, monospace";
+      ctx.textAlign = "center";
+      ctx.fillText(state.mode === "playing" ? "TAP ON THE AMBER SNAP" : "ONE-THUMB RHYTHM DEFROST", x, y + 66);
+    }
+    function drawGrid(p) {
+      const sx = state.shake ? rand(-5, 5) * state.shake * 8 : 0;
+      const sy = state.shake ? rand(-4, 4) * state.shake * 8 : 0;
+      ctx.save();
+      ctx.translate(sx, sy);
+      roundRect(grid.x - 10, grid.y - 10, grid.w + 20, grid.h + 20, 24);
+      ctx.fillStyle = p.back;
+      ctx.fill();
+      ctx.strokeStyle = dark ? "rgba(169,240,251,.16)" : "rgba(16,33,38,.12)";
+      ctx.stroke();
+      for (let i = 0; i < COUNT; i++) {
+        const c = i % COLS, r = Math.floor(i / COLS);
+        const x = grid.x + c * (grid.cell + grid.gap);
+        const y = grid.y + r * (grid.cell + grid.gap);
+        const cell = state.cells[i] || {f:0, heat:0, spark:0, split:0, pulse:0};
+        const frost = clamp(cell.f, 0, 1);
+        roundRect(x, y, grid.cell, grid.cell, 13);
+        ctx.fillStyle = mix(p.clear, p.ice, frost);
+        ctx.fill();
+        if (frost > .04) {
+          ctx.globalAlpha = .18 + frost * .38;
+          ctx.fillStyle = p.frost;
+          const pix = Math.max(3, Math.floor(grid.cell / 9));
+          for (let py = y + 5; py < y + grid.cell - 5; py += pix * 2) {
+            for (let px = x + 5; px < x + grid.cell - 5; px += pix * 2) {
+              if (((px + py + i * 13) % 17) / 17 < frost) ctx.fillRect(px, py, pix, pix);
+            }
+          }
+          ctx.globalAlpha = 1;
+        }
+        if (cell.heat > 0) {
+          ctx.globalAlpha = cell.heat * .55;
+          roundRect(x + 3, y + 3, grid.cell - 6, grid.cell - 6, 10);
+          ctx.fillStyle = p.warm;
+          ctx.fill();
+          ctx.globalAlpha = 1;
+        }
+        if (cell.spark > 0) {
+          const a = clamp(cell.spark, 0, 1);
+          ctx.strokeStyle = p.warm;
+          ctx.lineWidth = 2 + timingPower() * 3;
+          ctx.globalAlpha = .35 + a * .55;
+          roundRect(x + 4, y + 4, grid.cell - 8, grid.cell - 8, 10);
+          ctx.stroke();
+          ctx.globalAlpha = .16 + a * .18;
+          ctx.fillStyle = p.warm;
+          ctx.fillRect(x + grid.cell * .42, y + 5, grid.cell * .16, grid.cell - 10);
+          ctx.globalAlpha = 1;
+        }
+        if (cell.split > .05) {
+          ctx.globalAlpha = clamp(cell.split, 0, 1) * .7;
+          ctx.strokeStyle = dark ? "rgba(7,16,18,.85)" : "rgba(16,33,38,.35)";
+          ctx.lineWidth = 1.5;
+          ctx.beginPath();
+          ctx.moveTo(x + grid.cell * .22, y + 7);
+          ctx.lineTo(x + grid.cell * .52, y + grid.cell * .48);
+          ctx.lineTo(x + grid.cell * .37, y + grid.cell - 7);
+          ctx.moveTo(x + grid.cell * .63, y + 9);
+          ctx.lineTo(x + grid.cell * .48, y + grid.cell * .53);
+          ctx.lineTo(x + grid.cell - 8, y + grid.cell * .78);
+          ctx.stroke();
+          ctx.globalAlpha = 1;
+        }
+        ctx.strokeStyle = i === focus && state.mode === "playing" ? p.warm : p.line;
+        ctx.lineWidth = i === focus ? 2 : 1;
+        roundRect(x + .5, y + .5, grid.cell - 1, grid.cell - 1, 13);
+        ctx.stroke();
+      }
+      state.ripples.forEach(rp => {
+        const a = clamp(rp.life / rp.max, 0, 1);
+        ctx.globalAlpha = a * .55;
+        ctx.strokeStyle = p.warm;
+        ctx.lineWidth = 4;
+        if (rp.row !== undefined) {
+          const y = grid.y + rp.row * (grid.cell + grid.gap) + grid.cell / 2;
+          ctx.beginPath(); ctx.moveTo(grid.x, y); ctx.lineTo(grid.x + grid.w, y); ctx.stroke();
+        } else {
+          const x = grid.x + rp.col * (grid.cell + grid.gap) + grid.cell / 2;
+          ctx.beginPath(); ctx.moveTo(x, grid.y); ctx.lineTo(x, grid.y + grid.h); ctx.stroke();
+        }
+        ctx.globalAlpha = 1;
+      });
+      ctx.restore();
+    }
+    function drawParticles(p) {
+      state.particles.forEach(pt => {
+        const a = clamp(pt.life / pt.max, 0, 1);
+        ctx.globalAlpha = a;
+        ctx.fillStyle = pt.warm ? p.warm : p.frost;
+        ctx.fillRect(pt.x, pt.y, pt.warm ? 4 : 3, pt.warm ? 4 : 8);
+      });
+      ctx.globalAlpha = 1;
+      ctx.textAlign = "center";
+      ctx.font = "900 12px ui-monospace, SFMono-Regular, Menlo, monospace";
+      state.floaters.forEach(f => {
+        ctx.globalAlpha = clamp(f.life / f.max, 0, 1);
+        ctx.fillStyle = f.good ? p.warm : p.bad;
+        ctx.fillText(f.text, f.x, f.y);
+      });
+      ctx.globalAlpha = 1;
+    }
+    function render() {
+      if (!ctx) return;
+      const p = dark ? palettes.dark : palettes.light;
+      drawBackground(p);
+      drawGrid(p);
+      drawBeat(p);
+      drawParticles(p);
+    }
+    function loop(ts) {
+      const t = ts / 1000;
+      const dt = clamp(t - (last || t), 0, .05);
+      last = t;
+      update(dt);
+      render();
+      raf = window.requestAnimationFrame(loop);
+    }
+    function pointerPos(e) {
+      const rect = canvas.getBoundingClientRect();
+      return {x: e.clientX - rect.left, y: e.clientY - rect.top};
+    }
+    function onPointer(e) {
+      if (e && e.preventDefault) e.preventDefault();
+      if (state.mode !== "playing") return;
+      const p = pointerPos(e);
+      tapCell(cellAt(p.x, p.y));
+    }
+    function onKey(e) {
+      const key = e.key;
+      if (key === "Enter" && state.mode === "title") { e.preventDefault(); startGame(); return; }
+      if (key === "Enter" && state.mode === "over") { e.preventDefault(); startGame(); return; }
+      if (state.mode !== "playing") return;
+      const c = focus % COLS, r = Math.floor(focus / COLS);
+      if (key === "ArrowLeft" || key === "a" || key === "A") focus = r * COLS + Math.max(0, c - 1);
+      else if (key === "ArrowRight" || key === "d" || key === "D") focus = r * COLS + Math.min(COLS - 1, c + 1);
+      else if (key === "ArrowUp" || key === "w" || key === "W") focus = Math.max(0, r - 1) * COLS + c;
+      else if (key === "ArrowDown" || key === "s" || key === "S") focus = Math.min(ROWS - 1, r + 1) * COLS + c;
+      else if (key === " " || key === "Enter") tapCell(focus);
+      else return;
+      e.preventDefault();
+    }
+    function init() {
+      if (!ctx) {
+        if (statusEl) statusEl.textContent = "Canvas unavailable";
         return;
       }
-      if (ghost) {
-        ghost.handled = true;
-        leak('ghost reference tapped');
-      } else {
-        leak('off-beat tap');
-      }
-    }
-
-    function update(dt) {
-      if (mode === 'running') {
-        game.t += dt;
-        schedule();
-        for (const p of game.pulses) {
-          if (!p.handled && p.kind !== 'ghost' && game.t > p.hit + HIT_WINDOW) {
-            p.handled = true;
-            leak('handoff missed');
-          }
-          if (!p.handled && p.kind === 'ghost' && game.t > p.hit + HIT_WINDOW * 1.8) {
-            p.handled = true;
-          }
-        }
-        game.pulses = game.pulses.filter((p) => game.t < p.hit + 0.65);
-        if (game.t >= ROUND_TIME) endGame(true);
-      }
-      const fade = Math.pow(.001, dt);
-      shake *= fade;
-      flash = Math.max(0, flash - dt * 1.8);
-      for (const p of game.particles) {
-        p.life -= dt;
-        p.x += p.vx * dt;
-        p.y += p.vy * dt;
-        p.vx *= Math.pow(.06, dt);
-        p.vy *= Math.pow(.06, dt);
-      }
-      game.particles = game.particles.filter((p) => p.life > 0);
-      for (const r of game.ripples) {
-        r.life -= dt;
-        r.r += 230 * dt * r.strength;
-      }
-      game.ripples = game.ripples.filter((r) => r.life > 0);
-    }
-
-    function drawBackground() {
-      ctx.clearRect(0, 0, w, h);
-      const g = ctx.createLinearGradient(0, 0, w, h);
-      g.addColorStop(0, css.bg0);
-      g.addColorStop(1, css.bg1);
-      ctx.fillStyle = g;
-      ctx.fillRect(0, 0, w, h);
-
-      ctx.save();
-      ctx.globalAlpha = .9;
-      ctx.strokeStyle = css.grid;
-      ctx.lineWidth = 1;
-      const step = Math.max(28, Math.min(44, w / 10));
-      const drift = (mode === 'running' ? game.t * 9 : performance.now() * .002) % step;
-      for (let x = -step + drift; x < w + step; x += step) {
-        ctx.beginPath();
-        ctx.moveTo(x, 0);
-        ctx.lineTo(x + h * .22, h);
-        ctx.stroke();
-      }
-      for (let y = -step; y < h + step; y += step) {
-        ctx.beginPath();
-        ctx.moveTo(0, y + drift * .35);
-        ctx.lineTo(w, y + drift * .35 - w * .22);
-        ctx.stroke();
-      }
-      ctx.restore();
-    }
-
-    function drawArc(from, color, alpha, width) {
-      ctx.save();
-      ctx.strokeStyle = color;
-      ctx.globalAlpha = alpha;
-      ctx.lineWidth = width;
-      ctx.lineCap = 'round';
-      ctx.beginPath();
-      const c1x = from.x * .72 + cx * .28;
-      const c1y = from.y * .88 + cy * .12 - radius * .18;
-      const c2x = from.x * .22 + cx * .78;
-      const c2y = from.y * .42 + cy * .58 + radius * .2;
-      ctx.moveTo(from.x, from.y);
-      ctx.bezierCurveTo(c1x, c1y, c2x, c2y, cx, cy);
-      ctx.stroke();
-      ctx.restore();
-    }
-
-    function pulsePosition(p) {
-      const from = lanePoint(p.lane, p.lanes);
-      const n = clamp((game.t - p.spawn) / Math.max(.1, p.travel), 0, 1);
-      const u = smooth(n);
-      const c1 = { x: from.x * .72 + cx * .28, y: from.y * .88 + cy * .12 - radius * .18 };
-      const c2 = { x: from.x * .22 + cx * .78, y: from.y * .42 + cy * .58 + radius * .2 };
-      const a = (1 - u) * (1 - u) * (1 - u);
-      const b = 3 * (1 - u) * (1 - u) * u;
-      const c = 3 * (1 - u) * u * u;
-      const d = u * u * u;
-      return {
-        x: a * from.x + b * c1.x + c * c2.x + d * cx,
-        y: a * from.y + b * c1.y + c * c2.y + d * cy,
-        n
-      };
-    }
-
-    function drawGraph() {
-      const count = mode === 'running' ? game.lanes : 3;
-      for (let i = 0; i < count; i++) {
-        const p = lanePoint(i, count);
-        drawArc(p, i % 2 ? css.rust : css.cyan, .22, 2);
-        ctx.save();
-        ctx.translate(p.x, p.y);
-        ctx.fillStyle = css.panel;
-        ctx.strokeStyle = i % 2 ? css.rust : css.cyan;
-        ctx.lineWidth = 1.5;
-        ctx.beginPath();
-        ctx.arc(0, 0, 14, 0, TAU);
-        ctx.fill();
-        ctx.stroke();
-        ctx.fillStyle = i % 2 ? css.rust : css.cyan;
-        ctx.globalAlpha = .75;
-        ctx.fillRect(-5, -5, 10, 10);
-        ctx.restore();
-      }
-
-      for (const r of game.ripples) {
-        const a = Math.max(0, r.life / r.max);
-        ctx.save();
-        ctx.strokeStyle = r.color;
-        ctx.globalAlpha = a * .65;
-        ctx.lineWidth = 2 + r.strength;
-        ctx.beginPath();
-        ctx.arc(r.x, r.y, r.r, 0, TAU);
-        ctx.stroke();
-        ctx.restore();
-      }
-
-      const pulse = mode === 'running' ? Math.sin(game.t * 7) * 3 : Math.sin(performance.now() * .004) * 3;
-      ctx.save();
-      ctx.translate(cx, cy);
-      ctx.shadowColor = css.cyan;
-      ctx.shadowBlur = 24;
-      ctx.fillStyle = css.panel;
-      ctx.strokeStyle = css.ink;
-      ctx.lineWidth = 2;
-      ctx.beginPath();
-      ctx.arc(0, 0, 38 + pulse, 0, TAU);
-      ctx.fill();
-      ctx.stroke();
-      ctx.shadowBlur = 0;
-      ctx.strokeStyle = css.amber;
-      ctx.globalAlpha = .88;
-      ctx.lineWidth = 3;
-      ctx.beginPath();
-      ctx.arc(0, 0, 51 + pulse, -Math.PI * .18, Math.PI * 1.18);
-      ctx.stroke();
-      ctx.fillStyle = css.ink;
-      ctx.font = '700 11px ui-monospace, Menlo, monospace';
-      ctx.textAlign = 'center';
-      ctx.textBaseline = 'middle';
-      ctx.fillText('CORE', 0, 1);
-      ctx.restore();
-    }
-
-    function drawPulses() {
-      const sorted = game.pulses.slice().sort((a, b) => a.spawn - b.spawn);
-      for (const p of sorted) {
-        if (p.handled) continue;
-        const pos = pulsePosition(p);
-        const color = p.kind === 'borrow' ? css.cyan : p.kind === 'return' ? css.rust : css.bad;
-        const near = 1 - clamp(Math.abs(game.t - p.hit) / .55, 0, 1);
-        ctx.save();
-        ctx.translate(pos.x, pos.y);
-        ctx.globalAlpha = p.kind === 'ghost' ? .72 : .95;
-        ctx.shadowColor = color;
-        ctx.shadowBlur = p.kind === 'ghost' ? 10 : 18 + near * 22;
-        ctx.strokeStyle = color;
-        ctx.fillStyle = color;
-        ctx.lineWidth = 2;
-        if (p.kind === 'ghost') {
-          ctx.rotate(game.t * 4 + p.id);
-          ctx.beginPath();
-          ctx.moveTo(-12, -12);
-          ctx.lineTo(12, 12);
-          ctx.moveTo(12, -12);
-          ctx.lineTo(-12, 12);
-          ctx.stroke();
-          ctx.globalAlpha = .22;
-          ctx.beginPath();
-          ctx.arc(0, 0, 19 + near * 8, 0, TAU);
-          ctx.stroke();
-        } else {
-          ctx.beginPath();
-          ctx.arc(0, 0, 11 + near * 7, 0, TAU);
-          ctx.fill();
-          ctx.globalAlpha = .3 + near * .35;
-          ctx.beginPath();
-          ctx.arc(0, 0, 23 + near * 16, 0, TAU);
-          ctx.stroke();
-          if (p.dual) {
-            ctx.globalAlpha = .9;
-            ctx.lineWidth = 2;
-            ctx.beginPath();
-            ctx.arc(0, 0, 31 + Math.sin(game.t * 14) * 3, 0, TAU);
-            ctx.stroke();
-          }
-        }
-        ctx.restore();
-      }
-    }
-
-    function drawParticles(dt) {
-      for (const p of game.particles) {
-        const a = clamp(p.life / p.max, 0, 1);
-        ctx.save();
-        ctx.globalAlpha = a;
-        ctx.fillStyle = p.color;
-        ctx.shadowColor = p.color;
-        ctx.shadowBlur = 12 * a;
-        ctx.beginPath();
-        ctx.arc(p.x, p.y, p.size * (0.5 + a), 0, TAU);
-        ctx.fill();
-        ctx.restore();
-      }
-    }
-
-    function drawLabels() {
-      ctx.save();
-      ctx.font = '700 11px ui-monospace, Menlo, monospace';
-      ctx.textAlign = 'center';
-      ctx.textBaseline = 'middle';
-      ctx.fillStyle = css.muted;
-      ctx.globalAlpha = .9;
-      const text = mode === 'running'
-        ? message
-        : mode === 'title'
-          ? 'borrow / return / ignore ghosts'
-          : 'ownership graph archived';
-      ctx.fillText(text.toUpperCase(), cx, Math.min(h - 88, cy + radius + 78));
-
-      if (mode === 'running') {
-        const left = Math.max(0, ROUND_TIME - game.t);
-        ctx.globalAlpha = .72;
-        ctx.fillText(Math.ceil(left) + 'S UNTIL CLEAN BLOCK', cx, Math.max(118, cy - radius - 62));
-      }
-      ctx.restore();
-    }
-
-    function drawFlash() {
-      if (flash <= 0) return;
-      ctx.save();
-      ctx.globalAlpha = flash * .16;
-      ctx.fillStyle = css.bad;
-      ctx.fillRect(0, 0, w, h);
-      ctx.restore();
-    }
-
-    function draw(now) {
-      const dt = Math.min(.04, Math.max(.001, (now - lastFrame) / 1000 || .016));
-      lastFrame = now;
-      update(dt);
-
-      ctx.save();
-      const sx = shake ? (rand() - .5) * shake : 0;
-      const sy = shake ? (rand() - .5) * shake : 0;
-      ctx.translate(sx, sy);
-      drawBackground();
-      drawGraph();
-      drawPulses();
-      drawParticles(dt);
-      drawLabels();
-      ctx.restore();
-      drawFlash();
-
-      raf = requestAnimationFrame(draw);
-    }
-
-    function onPrimaryInput(e) {
-      if (e && e.cancelable) e.preventDefault();
-      tap();
-    }
-
-    function bind() {
-      startBtn.addEventListener('click', (e) => {
-        e.preventDefault();
-        startGame();
-      });
-      restartBtn.addEventListener('click', (e) => {
-        e.preventDefault();
-        startGame();
-      });
-      canvas.addEventListener('pointerdown', onPrimaryInput, { passive: false });
-      canvas.addEventListener('touchstart', (e) => {
-        if (e.cancelable) e.preventDefault();
-      }, { passive: false });
-      window.addEventListener('keydown', (e) => {
-        if (e.key === ' ' || e.key === 'Enter') {
-          e.preventDefault();
-          if (mode === 'title') startGame();
-          else tap();
-        }
-      });
-      window.addEventListener('resize', resize);
-      try {
-        const mq = window.matchMedia('(prefers-color-scheme: dark)');
-        if (mq && mq.addEventListener) mq.addEventListener('change', readTheme);
-      } catch (_) {}
-    }
-
-    function boot() {
-      readTheme();
       resize();
+      state.cells = makeCells();
       updateHud();
-      bind();
-      lastFrame = performance.now();
-      if (raf) cancelAnimationFrame(raf);
-      raf = requestAnimationFrame(draw);
+      render();
+      startBtn.addEventListener("click", startGame);
+      restartBtn.addEventListener("click", startGame);
+      canvas.addEventListener("pointerdown", onPointer, {passive:false});
+      window.addEventListener("keydown", onKey);
+      window.addEventListener("resize", resize);
+      raf = window.requestAnimationFrame(loop);
     }
-
-    boot();
+    try { init(); } catch (_) {
+      if (raf) window.cancelAnimationFrame(raf);
+      if (statusEl) statusEl.textContent = "The freezer display failed safely.";
+    }
   })();
   </script>
 </body>
