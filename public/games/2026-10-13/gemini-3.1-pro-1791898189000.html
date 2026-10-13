@@ -1,0 +1,560 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover, user-scalable=no">
+<title>Neural Link 2026</title>
+<style>
+  :root {
+    --bg: #05070a;
+    --text: #e0f0ff;
+    --cyan: #00ffff;
+    --lime: #aaff00;
+    --yellow: #ffcc00;
+    --silver: #cccccc;
+    --grid: rgba(255, 255, 255, 0.05);
+  }
+  @media (prefers-color-scheme: dark) {
+    :root {
+      --bg: #05070a;
+      --text: #e0f0ff;
+      --cyan: #00ffff;
+      --lime: #aaff00;
+      --yellow: #ffcc00;
+      --silver: #cccccc;
+      --grid: rgba(255, 255, 255, 0.05);
+    }
+    .screen { background: rgba(5, 7, 10, 0.85); }
+  }
+  @media (prefers-color-scheme: light) {
+    :root {
+      --bg: #f0f4f8;
+      --text: #05070a;
+      --cyan: #0077dd;
+      --lime: #33aa00;
+      --yellow: #dd9900;
+      --silver: #888888;
+      --grid: rgba(0, 0, 0, 0.05);
+    }
+  }
+  body, html {
+    margin: 0; padding: 0; width: 100dvw; height: 100dvh;
+    background: var(--bg); color: var(--text);
+    font-family: ui-monospace, 'SFMono-Regular', Menlo, monospace;
+    overflow: hidden; touch-action: none; user-select: none;
+    -webkit-user-select: none;
+  }
+  #game-canvas {
+    display: block; width: 100dvw; height: 100dvh;
+  }
+  #ui-layer {
+    position: absolute; top: 0; left: 0; width: 100dvw; height: 100dvh;
+    pointer-events: none; display: flex; flex-direction: column;
+    justify-content: center; align-items: center; text-align: center;
+  }
+  .screen {
+    position: absolute; top: 0; left: 0; width: 100dvw; height: 100dvh;
+    display: flex; flex-direction: column; justify-content: center; align-items: center;
+    background: rgba(5, 7, 10, 0.85); backdrop-filter: blur(4px);
+    -webkit-backdrop-filter: blur(4px);
+    transition: opacity 0.3s; opacity: 0; pointer-events: none;
+  }
+  @media (prefers-color-scheme: light) {
+    .screen { background: rgba(240, 244, 248, 0.85); }
+  }
+  .screen.active {
+    opacity: 1; z-index: 10; pointer-events: auto;
+  }
+  h1 { font-weight: normal; letter-spacing: 4px; margin-bottom: 10px; color: var(--cyan); text-transform: uppercase; font-size: 24px; }
+  p { margin-bottom: 30px; opacity: 0.8; max-width: 80%; line-height: 1.5; font-size: 14px; }
+  button {
+    pointer-events: auto;
+    background: transparent; color: var(--cyan);
+    border: 1px solid var(--cyan); padding: 15px 40px;
+    font-family: inherit; font-size: 16px; letter-spacing: 2px;
+    cursor: pointer; text-transform: uppercase;
+    transition: all 0.2s; outline: none;
+  }
+  button:active { background: var(--cyan); color: var(--bg); }
+  #hud {
+    position: absolute; top: 20px; left: 20px; right: 20px;
+    display: flex; justify-content: space-between;
+    font-size: 14px; opacity: 0; transition: opacity 0.3s;
+    font-weight: bold; letter-spacing: 1px;
+  }
+  #hud.active { opacity: 1; }
+  .hud-val { color: var(--cyan); }
+</style>
+</head>
+<body>
+  <canvas id="game-canvas"></canvas>
+  <div id="ui-layer">
+    <div id="hud">
+      <span>LEVEL <span id="score-display" class="hud-val">1</span></span>
+      <span id="status-display">LINK NODES</span>
+    </div>
+    <div id="screen-start" class="screen active">
+      <h1>Neural Link</h1>
+      <p>Draw one unbroken path.<br>Every fork must echo.<br>Do not cross the streams.</p>
+      <button data-smoke="start" id="btn-start">Initiate</button>
+    </div>
+    <div id="screen-gameover" class="screen">
+      <h1>Link Severed</h1>
+      <p id="death-reason">Collision detected.</p>
+      <p>Level Reached: <span id="final-score" class="hud-val">1</span></p>
+      <button data-smoke="restart" id="btn-restart">Reboot</button>
+    </div>
+  </div>
+<script>
+(function() {
+    const canvas = document.getElementById('game-canvas');
+    if (!canvas || !canvas.getContext) return;
+    const ctx = canvas.getContext('2d', { alpha: false });
+    if (!ctx) return;
+
+    const uiStart = document.getElementById('screen-start');
+    const uiGameover = document.getElementById('screen-gameover');
+    const uiHud = document.getElementById('hud');
+    const btnStart = document.getElementById('btn-start');
+    const btnRestart = document.getElementById('btn-restart');
+    const scoreDisplay = document.getElementById('score-display');
+    const finalScoreDisplay = document.getElementById('final-score');
+    const deathReasonDisplay = document.getElementById('death-reason');
+
+    let W, H, dpr;
+    let isLight = false;
+    let colors = {};
+
+    function updateColors() {
+        isLight = !(window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches);
+        colors = {
+            bg: isLight ? '#f0f4f8' : '#05070a',
+            cyan: isLight ? '#0077dd' : '#00ffff',
+            lime: isLight ? '#33aa00' : '#aaff00',
+            yellow: isLight ? '#dd9900' : '#ffcc00',
+            silver: isLight ? '#888888' : '#cccccc',
+            grid: isLight ? 'rgba(0, 0, 0, 0.05)' : 'rgba(255, 255, 255, 0.05)'
+        };
+    }
+    updateColors();
+    if (window.matchMedia) {
+        window.matchMedia('(prefers-color-scheme: dark)').addEventListener('change', updateColors);
+    }
+
+    function resize() {
+        W = window.innerWidth;
+        H = window.innerHeight;
+        dpr = window.devicePixelRatio || 1;
+        canvas.width = W * dpr;
+        canvas.height = H * dpr;
+        ctx.scale(dpr, dpr);
+    }
+    window.addEventListener('resize', resize);
+    resize();
+
+    // Game State
+    let state = 'MENU'; // MENU, PLAYING, TRANSITION, GAMEOVER
+    let level = 1;
+    let time = 0;
+    
+    // Entities
+    let pathLeft = [];
+    let pathRight = [];
+    let startNodeLeft, startNodeRight;
+    let endNodeLeft, endNodeRight;
+    let targets = [];
+    let obstacles = [];
+    let particles = [];
+    let transitionTimer = 0;
+
+    // Input
+    let isDragging = false;
+    let dragStart = {x: 0, y: 0};
+    let pathActive = false;
+
+    function generateLevel(lvl) {
+        pathLeft = [];
+        pathRight = [];
+        targets = [];
+        obstacles = [];
+        pathActive = false;
+        isDragging = false;
+        particles = [];
+
+        const startY = H * 0.85;
+        const endY = H * 0.15;
+        const midX = W / 4;
+
+        startNodeLeft = { x: midX, y: startY, r: 20 };
+        startNodeRight = { x: W - midX, y: startY, r: 20 };
+        endNodeLeft = { x: midX, y: endY, r: 25 };
+        endNodeRight = { x: W - midX, y: endY, r: 25 };
+
+        // Ideal path
+        const cp1 = { x: midX + (Math.random() - 0.5) * (W/3), y: H * 0.65 };
+        const cp2 = { x: midX + (Math.random() - 0.5) * (W/3), y: H * 0.35 };
+
+        const getBezierPoint = (t) => {
+            const u = 1 - t;
+            const x = u*u*u*startNodeLeft.x + 3*u*u*t*cp1.x + 3*u*t*t*cp2.x + t*t*t*endNodeLeft.x;
+            const y = u*u*u*startNodeLeft.y + 3*u*u*t*cp1.y + 3*u*t*t*cp2.y + t*t*t*endNodeLeft.y;
+            return {x, y};
+        };
+
+        const idealPath = [];
+        for(let i=0; i<=20; i++) idealPath.push(getBezierPoint(i/20));
+
+        // Targets
+        const numTargets = Math.min(1 + Math.floor(lvl / 2), 4);
+        for(let i=1; i<=numTargets; i++) {
+            const t = i / (numTargets + 1);
+            const pt = getBezierPoint(t);
+            targets.push({ x: pt.x, y: pt.y, side: 'left', collected: false, r: 12 });
+            targets.push({ x: W - pt.x, y: pt.y, side: 'right', collected: false, r: 12 });
+        }
+
+        // Obstacles
+        const numObstacles = 2 + lvl * 2;
+        let attempts = 0;
+        while(obstacles.length < numObstacles && attempts < 200) {
+            attempts++;
+            const side = Math.random() < 0.5 ? 'left' : 'right';
+            const x = side === 'left' ? Math.random() * (W/2 - 40) + 20 : W/2 + Math.random() * (W/2 - 40) + 20;
+            const y = Math.random() * (H * 0.6) + H * 0.2;
+            const baseR = 15 + Math.random() * 15;
+            const amp = 5 + Math.random() * 15;
+            const maxR = baseR + amp;
+
+            let safe = true;
+            const pathToCheck = side === 'left' ? idealPath : idealPath.map(p => ({x: W - p.x, y: p.y}));
+            for(const pt of pathToCheck) {
+                if(Math.hypot(pt.x - x, pt.y - y) < maxR + 30) { safe = false; break; }
+            }
+            const nodes = [startNodeLeft, startNodeRight, endNodeLeft, endNodeRight, ...targets];
+            for(const n of nodes) {
+                if(Math.hypot(n.x - x, n.y - y) < maxR + n.r + 15) safe = false;
+            }
+
+            if(safe) {
+                obstacles.push({
+                    x, y, side, baseR, amp,
+                    freq: 0.002 + Math.random() * 0.003,
+                    phase: Math.random() * Math.PI * 2
+                });
+            }
+        }
+    }
+
+    function getObsRadius(obs) {
+        return Math.max(1, obs.baseR + Math.sin(time * obs.freq + obs.phase) * obs.amp);
+    }
+
+    function createParticles(x, y, color, count=15) {
+        for(let i=0; i<count; i++) {
+            particles.push({
+                x, y,
+                vx: (Math.random() - 0.5) * 8,
+                vy: (Math.random() - 0.5) * 8,
+                life: 1,
+                color
+            });
+        }
+    }
+
+    function startGame() {
+        level = 1;
+        scoreDisplay.innerText = level;
+        generateLevel(level);
+        state = 'PLAYING';
+        uiStart.classList.remove('active');
+        uiGameover.classList.remove('active');
+        uiHud.classList.add('active');
+    }
+
+    function levelComplete() {
+        state = 'TRANSITION';
+        pathActive = false;
+        isDragging = false;
+        createParticles(endNodeLeft.x, endNodeLeft.y, colors.cyan, 30);
+        createParticles(endNodeRight.x, endNodeRight.y, colors.cyan, 30);
+        transitionTimer = 60; // frames
+        try { navigator.vibrate?.(50); } catch(e) {}
+    }
+
+    function gameOver(reason) {
+        state = 'GAMEOVER';
+        pathActive = false;
+        isDragging = false;
+        deathReasonDisplay.innerText = reason;
+        finalScoreDisplay.innerText = level;
+        uiHud.classList.remove('active');
+        uiGameover.classList.add('active');
+        try { navigator.vibrate?.([50, 50, 50]); } catch(e) {}
+    }
+
+    btnStart.addEventListener('click', startGame);
+    btnRestart.addEventListener('click', startGame);
+
+    // Input Handling
+    function getPointerPos(e) { return { x: e.clientX, y: e.clientY }; }
+
+    function handleDown(e) {
+        if (state !== 'PLAYING' || pathActive) return;
+        const pos = getPointerPos(e);
+        dragStart = { x: pos.x, y: pos.y };
+        pathLeft = [{ x: startNodeLeft.x, y: startNodeLeft.y }];
+        pathRight = [{ x: startNodeRight.x, y: startNodeRight.y }];
+        pathActive = true;
+        isDragging = true;
+        createParticles(startNodeLeft.x, startNodeLeft.y, colors.cyan, 5);
+        createParticles(startNodeRight.x, startNodeRight.y, colors.cyan, 5);
+    }
+
+    function handleMove(e) {
+        if (!isDragging || state !== 'PLAYING') return;
+        e.preventDefault(); // prevent scroll
+        const pos = getPointerPos(e);
+        const dx = pos.x - dragStart.x;
+        const dy = pos.y - dragStart.y;
+
+        const newLeft = { x: startNodeLeft.x + dx, y: startNodeLeft.y + dy };
+        const newRight = { x: startNodeRight.x - dx, y: startNodeRight.y + dy };
+
+        // Bounds check
+        if (newLeft.x < 0 || newLeft.x > W/2 || newLeft.y < 0 || newLeft.y > H ||
+            newRight.x < W/2 || newRight.x > W) {
+            createParticles(newLeft.x, newLeft.y, colors.yellow);
+            gameOver("Link hit the firewall.");
+            return;
+        }
+
+        const lastLeft = pathLeft[pathLeft.length - 1];
+        if (Math.hypot(newLeft.x - lastLeft.x, newLeft.y - lastLeft.y) > 3) {
+            
+            // Self intersection
+            const minGap = 15;
+            for(let i=0; i < pathLeft.length - minGap; i++) {
+                if (Math.hypot(newLeft.x - pathLeft[i].x, newLeft.y - pathLeft[i].y) < 5 ||
+                    Math.hypot(newRight.x - pathRight[i].x, newRight.y - pathRight[i].y) < 5) {
+                    createParticles(newLeft.x, newLeft.y, colors.yellow);
+                    gameOver("Paths crossed.");
+                    return;
+                }
+            }
+
+            pathLeft.push(newLeft);
+            pathRight.push(newRight);
+
+            // Obstacle collision
+            for (const obs of obstacles) {
+                const r = getObsRadius(obs);
+                const cursor = obs.side === 'left' ? newLeft : newRight;
+                if (Math.hypot(cursor.x - obs.x, cursor.y - obs.y) < r + 3) {
+                    createParticles(cursor.x, cursor.y, colors.yellow, 20);
+                    gameOver("Neural collision.");
+                    return;
+                }
+            }
+
+            // Target collection
+            for (const t of targets) {
+                if (!t.collected) {
+                    const cursor = t.side === 'left' ? newLeft : newRight;
+                    if (Math.hypot(cursor.x - t.x, cursor.y - t.y) < t.r + 8) {
+                        t.collected = true;
+                        createParticles(t.x, t.y, colors.lime);
+                        try { navigator.vibrate?.(20); } catch(e) {}
+                    }
+                }
+            }
+
+            // End Node check
+            const allTargetsCollected = targets.every(t => t.collected);
+            if (allTargetsCollected) {
+                if (Math.hypot(newLeft.x - endNodeLeft.x, newLeft.y - endNodeLeft.y) < endNodeLeft.r &&
+                    Math.hypot(newRight.x - endNodeRight.x, newRight.y - endNodeRight.y) < endNodeRight.r) {
+                    levelComplete();
+                }
+            }
+        }
+    }
+
+    function handleUp(e) {
+        if (!isDragging) return;
+        isDragging = false;
+        if (state === 'PLAYING') {
+            gameOver("Link severed prematurely.");
+        }
+    }
+
+    canvas.addEventListener('pointerdown', handleDown);
+    window.addEventListener('pointermove', handleMove, {passive: false});
+    window.addEventListener('pointerup', handleUp);
+    window.addEventListener('pointercancel', handleUp);
+
+    let keyCursor = { x: 0, y: 0 };
+    function handleKeyDown(e) {
+        if (e.target.tagName === 'BUTTON') return;
+        if ((e.key === 'Enter' || e.key === ' ') && uiStart.classList.contains('active')) {
+            e.preventDefault();
+            startGame();
+            return;
+        }
+        if ((e.key === 'Enter' || e.key === ' ') && state === 'GAMEOVER') {
+            e.preventDefault();
+            startGame();
+            return;
+        }
+        if (state !== 'PLAYING') return;
+        const step = 8;
+        if (e.key === 'ArrowLeft' || e.key === 'ArrowRight' || e.key === 'ArrowUp' || e.key === 'ArrowDown') {
+            e.preventDefault();
+            if (!pathActive) {
+                keyCursor = { x: startNodeLeft.x, y: startNodeLeft.y };
+                handleDown({ clientX: keyCursor.x, clientY: keyCursor.y });
+            }
+            if (e.key === 'ArrowLeft') keyCursor.x -= step;
+            if (e.key === 'ArrowRight') keyCursor.x += step;
+            if (e.key === 'ArrowUp') keyCursor.y -= step;
+            if (e.key === 'ArrowDown') keyCursor.y += step;
+            handleMove({ clientX: keyCursor.x, clientY: keyCursor.y, preventDefault: function() {} });
+        }
+    }
+    function handleKeyUp(e) {
+        if ((e.key === ' ' || e.key === 'Enter') && state === 'PLAYING' && pathActive) {
+            handleUp(e);
+        }
+    }
+    document.addEventListener('keydown', handleKeyDown);
+    document.addEventListener('keyup', handleKeyUp);
+
+    // Main Loop
+    let lastTime = performance.now();
+    function loop(now) {
+        requestAnimationFrame(loop);
+        const dt = now - lastTime;
+        lastTime = now;
+        time += dt;
+
+        if (state === 'TRANSITION') {
+            transitionTimer--;
+            if (transitionTimer <= 0) {
+                level++;
+                scoreDisplay.innerText = level;
+                generateLevel(level);
+                state = 'PLAYING';
+            }
+        }
+
+        // Render
+        ctx.fillStyle = colors.bg;
+        ctx.fillRect(0, 0, W, H);
+
+        // Grid
+        ctx.strokeStyle = colors.grid;
+        ctx.lineWidth = 1;
+        ctx.beginPath();
+        for(let x=0; x<W; x+=40) { ctx.moveTo(x,0); ctx.lineTo(x,H); }
+        for(let y=0; y<H; y+=40) { ctx.moveTo(0,y); ctx.lineTo(W,y); }
+        ctx.stroke();
+
+        // Divider
+        ctx.strokeStyle = colors.cyan;
+        ctx.lineWidth = 1;
+        ctx.setLineDash([5, 10]);
+        ctx.globalAlpha = 0.3;
+        ctx.beginPath(); ctx.moveTo(W/2, 0); ctx.lineTo(W/2, H); ctx.stroke();
+        ctx.setLineDash([]);
+        ctx.globalAlpha = 1.0;
+
+        if (state === 'MENU') return;
+
+        // Draw Nodes
+        const drawNode = (n, color, isEnd) => {
+            ctx.strokeStyle = color;
+            ctx.lineWidth = 2;
+            ctx.beginPath(); ctx.arc(n.x, n.y, n.r, 0, Math.PI*2); ctx.stroke();
+            if (isEnd) {
+                ctx.beginPath(); ctx.arc(n.x, n.y, n.r - 6, 0, Math.PI*2); ctx.stroke();
+            } else {
+                ctx.fillStyle = color;
+                ctx.beginPath(); ctx.arc(n.x, n.y, 4, 0, Math.PI*2); ctx.fill();
+            }
+        };
+
+        drawNode(startNodeLeft, colors.cyan, false);
+        drawNode(startNodeRight, colors.cyan, false);
+        
+        const allTargetsCollected = targets.every(t => t.collected);
+        const endColor = allTargetsCollected ? colors.lime : colors.cyan;
+        drawNode(endNodeLeft, endColor, true);
+        drawNode(endNodeRight, endColor, true);
+
+        // Draw Targets
+        targets.forEach(t => {
+            if (t.collected) return;
+            ctx.strokeStyle = colors.lime;
+            ctx.lineWidth = 1.5;
+            ctx.beginPath();
+            ctx.moveTo(t.x - t.r, t.y); ctx.lineTo(t.x + t.r, t.y);
+            ctx.moveTo(t.x, t.y - t.r); ctx.lineTo(t.x, t.y + t.r);
+            ctx.stroke();
+            ctx.beginPath(); ctx.arc(t.x, t.y, t.r * 0.6, 0, Math.PI*2); ctx.stroke();
+        });
+
+        // Draw Obstacles
+        obstacles.forEach(obs => {
+            const r = getObsRadius(obs);
+            ctx.strokeStyle = colors.yellow;
+            ctx.lineWidth = 1.5;
+            ctx.globalAlpha = 0.8;
+            ctx.beginPath(); ctx.arc(obs.x, obs.y, r, 0, Math.PI*2); ctx.stroke();
+            ctx.beginPath(); ctx.arc(obs.x, obs.y, r * 0.4, 0, Math.PI*2); ctx.stroke();
+            ctx.globalAlpha = 1.0;
+        });
+
+        // Draw Path
+        if (pathActive && pathLeft.length > 0) {
+            ctx.strokeStyle = colors.cyan;
+            ctx.lineWidth = 3;
+            ctx.lineCap = 'round';
+            ctx.lineJoin = 'round';
+            
+            ctx.beginPath();
+            pathLeft.forEach((p, i) => i===0 ? ctx.moveTo(p.x, p.y) : ctx.lineTo(p.x, p.y));
+            ctx.stroke();
+            
+            ctx.beginPath();
+            pathRight.forEach((p, i) => i===0 ? ctx.moveTo(p.x, p.y) : ctx.lineTo(p.x, p.y));
+            ctx.stroke();
+
+            // Draw Cursors
+            const headL = pathLeft[pathLeft.length-1];
+            const headR = pathRight[pathRight.length-1];
+            ctx.fillStyle = colors.cyan;
+            ctx.beginPath(); ctx.arc(headL.x, headL.y, 4, 0, Math.PI*2); ctx.fill();
+            ctx.beginPath(); ctx.arc(headR.x, headR.y, 4, 0, Math.PI*2); ctx.fill();
+        }
+
+        // Draw Particles
+        for(let i=particles.length-1; i>=0; i--) {
+            let p = particles[i];
+            p.x += p.vx; p.y += p.vy;
+            p.life -= 0.03;
+            if(p.life <= 0) {
+                particles.splice(i, 1);
+            } else {
+                ctx.fillStyle = p.color;
+                ctx.globalAlpha = p.life;
+                ctx.beginPath(); ctx.arc(p.x, p.y, 2, 0, Math.PI*2); ctx.fill();
+            }
+        }
+        ctx.globalAlpha = 1.0;
+    }
+
+    requestAnimationFrame(loop);
+
+})();
+</script>
+</body>
+</html>

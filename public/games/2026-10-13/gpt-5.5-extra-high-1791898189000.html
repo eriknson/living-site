@@ -1,0 +1,629 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <meta name="color-scheme" content="light dark">
+  <title>Shortcut Sunrise</title>
+  <style>
+    :root{
+      color-scheme:light dark;
+      --bg:#f6efe2;
+      --panel:#fff8ea;
+      --ink:#161915;
+      --muted:#64706a;
+      --line:rgba(22,25,21,.18);
+      --gold:#d98224;
+      --gold-2:#f4b64e;
+      --bad:#bd5536;
+      --good:#167b58;
+      --shadow:rgba(66,45,19,.18);
+    }
+    @media (prefers-color-scheme:dark){
+      :root{
+        --bg:#071016;
+        --panel:#101b20;
+        --ink:#f6efdf;
+        --muted:#a8b0aa;
+        --line:rgba(246,239,223,.18);
+        --gold:#f0a949;
+        --gold-2:#ffd27a;
+        --bad:#ff7957;
+        --good:#5ad097;
+        --shadow:rgba(0,0,0,.42);
+      }
+    }
+    *{box-sizing:border-box}
+    html,body{margin:0;width:100%;height:100%;overflow:hidden;background:var(--bg);color:var(--ink)}
+    body{
+      min-height:100dvh;
+      font-family:ui-sans-serif,system-ui,-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;
+      user-select:none;
+      -webkit-user-select:none;
+    }
+    #app{position:fixed;inset:0;width:100dvw;height:100dvh;overflow:hidden;background:var(--bg)}
+    canvas{display:block;width:100dvw;height:100dvh;touch-action:none}
+    .hud{
+      position:fixed;left:0;right:0;top:0;z-index:3;
+      display:flex;align-items:flex-start;justify-content:space-between;
+      padding:calc(14px + env(safe-area-inset-top)) 16px 0;
+      pointer-events:none;
+      font-family:ui-monospace,"SFMono-Regular",Menlo,monospace;
+      letter-spacing:.08em;text-transform:uppercase;font-size:11px;
+    }
+    .stack{display:grid;gap:7px}
+    .pill{
+      min-width:76px;padding:8px 10px;border:1px solid var(--line);
+      border-radius:999px;background:color-mix(in srgb,var(--panel) 78%,transparent);
+      box-shadow:0 8px 24px var(--shadow);backdrop-filter:blur(10px);
+    }
+    .pill b{font-size:15px;letter-spacing:.02em}
+    .help{
+      max-width:min(58dvw,380px);padding:9px 11px;border:1px solid var(--line);
+      border-radius:16px;background:color-mix(in srgb,var(--panel) 70%,transparent);
+      box-shadow:0 8px 24px var(--shadow);text-align:right;line-height:1.35;
+    }
+    .overlay{
+      position:fixed;inset:0;z-index:5;display:grid;place-items:center;
+      padding:24px;pointer-events:none;
+    }
+    .overlay.hidden{display:none}
+    .card{
+      width:min(430px,calc(100dvw - 38px));padding:26px 24px 24px;
+      border:1px solid var(--line);border-radius:30px;background:color-mix(in srgb,var(--panel) 86%,transparent);
+      box-shadow:0 24px 80px var(--shadow);backdrop-filter:blur(18px);
+      text-align:left;transform:translateY(0);transition:transform .35s ease,opacity .35s ease;
+      pointer-events:none;
+    }
+    .kicker{
+      margin:0 0 12px;font-family:ui-monospace,"SFMono-Regular",Menlo,monospace;
+      font-size:11px;letter-spacing:.14em;text-transform:uppercase;color:var(--muted)
+    }
+    h1{margin:0;font-size:clamp(40px,12vw,70px);line-height:.9;letter-spacing:-.07em}
+    h2{margin:0;font-size:clamp(34px,10vw,56px);line-height:.94;letter-spacing:-.06em}
+    p{margin:16px 0 0;color:var(--muted);font-size:16px;line-height:1.45}
+    .rules{display:grid;gap:8px;margin:18px 0;color:var(--ink);font-size:14px}
+    .rules span{display:flex;gap:10px;align-items:center}
+    .dot{width:8px;height:8px;border-radius:99px;background:var(--gold);box-shadow:0 0 18px var(--gold-2);flex:none}
+    button{
+      appearance:none;border:0;border-radius:999px;min-height:52px;padding:0 22px;
+      font:700 13px/1 ui-monospace,"SFMono-Regular",Menlo,monospace;
+      letter-spacing:.12em;text-transform:uppercase;background:var(--ink);color:var(--panel);
+      box-shadow:0 14px 36px var(--shadow);cursor:pointer;pointer-events:auto;
+    }
+    button:active{transform:translateY(1px) scale(.99)}
+    .row{display:flex;align-items:center;justify-content:space-between;gap:12px;margin-top:20px}
+    .fine{font-family:ui-monospace,"SFMono-Regular",Menlo,monospace;font-size:11px;color:var(--muted);letter-spacing:.08em;text-transform:uppercase}
+    #restartBtn{display:none}
+    #restartBtn.ready{display:inline-flex;align-items:center}
+    @media (max-width:520px){
+      .hud{padding-left:12px;padding-right:12px}
+      .help{max-width:52dvw;font-size:10px;padding:8px}
+      .pill{padding:7px 9px}
+    }
+  </style>
+</head>
+<body>
+  <div id="app" aria-label="Shortcut Sunrise game">
+    <canvas id="game" aria-label="Hold and release timing game"></canvas>
+    <div class="hud" aria-hidden="true">
+      <div class="stack">
+        <div class="pill">Score<br><b id="scoreText">0000</b></div>
+        <div class="pill">Streak<br><b id="streakText">0/3</b></div>
+      </div>
+      <div class="help" id="hintText">Hold anywhere. Release when the horizon flashes gold.</div>
+    </div>
+    <div class="overlay" id="titleOverlay">
+      <section class="card">
+        <p class="kicker">clear autumn, 11 degrees, before dawn</p>
+        <h1>Shortcut<br>Sunrise</h1>
+        <p>Launch tiny agent pods from your phone at the exact golden window. The clouds close in after every attempt.</p>
+        <div class="rules">
+          <span><i class="dot"></i>Hold to wake a shortcut pod.</span>
+          <span><i class="dot"></i>Release as the sky turns gold.</span>
+          <span><i class="dot"></i>Chain three perfect dawn launches.</span>
+        </div>
+        <div class="row">
+          <span class="fine">Touch, mouse, or Space</span>
+          <button data-smoke="start" id="startBtn" type="button">Start Dawn Run</button>
+        </div>
+      </section>
+    </div>
+    <div class="overlay hidden" id="overOverlay">
+      <section class="card">
+        <p class="kicker" id="overKicker">morning report</p>
+        <h2 id="overTitle">Dawn shipped</h2>
+        <p id="overCopy">The agents made the sunrise window.</p>
+        <div class="row">
+          <span class="fine" id="overStats">Score 0000</span>
+          <button data-smoke="restart" id="restartBtn" type="button">Restart</button>
+        </div>
+      </section>
+    </div>
+  </div>
+  <script>
+  (() => {
+    "use strict";
+    const doc = document;
+    const canvas = doc.getElementById("game");
+    if (!canvas || !canvas.getContext) return;
+    const ctx = canvas.getContext("2d", { alpha:false });
+    if (!ctx) return;
+
+    const titleOverlay = doc.getElementById("titleOverlay");
+    const overOverlay = doc.getElementById("overOverlay");
+    const startBtn = doc.getElementById("startBtn");
+    const restartBtn = doc.getElementById("restartBtn");
+    const scoreText = doc.getElementById("scoreText");
+    const streakText = doc.getElementById("streakText");
+    const hintText = doc.getElementById("hintText");
+    const overTitle = doc.getElementById("overTitle");
+    const overCopy = doc.getElementById("overCopy");
+    const overStats = doc.getElementById("overStats");
+    const overKicker = doc.getElementById("overKicker");
+    const mq = typeof matchMedia === "function" ? matchMedia("(prefers-color-scheme: dark)") : null;
+
+    let W = 1, H = 1, DPR = 1, last = 0, dark = mq ? mq.matches : false;
+    let audioCtx = null;
+    const pods = [], particles = [], clouds = [], motes = [];
+    const MAX_PARTICLES = 170;
+    let seed = 8;
+    const rand = () => {
+      seed = (seed * 1664525 + 1013904223) >>> 0;
+      return seed / 4294967296;
+    };
+    for (let i = 0; i < 18; i++) clouds.push({x:rand(), y:.17 + rand()*.38, r:.04 + rand()*.09, s:.4 + rand()*.9, a:.16 + rand()*.22});
+    for (let i = 0; i < 80; i++) motes.push({x:rand(), y:rand(), r:.4 + rand()*1.8, a:.08 + rand()*.24});
+
+    const game = {
+      mode:"title", score:0, streak:0, best:0, misses:0, attempts:0, goal:12,
+      cycleStart:0, cycleLen:3200, window:.22, center:.64, holding:false, holdStart:0,
+      awaiting:false, nextAt:0, ending:false, message:"", messageUntil:0, shake:0,
+      chainLit:false, pressId:null, startedAt:0, doneReason:""
+    };
+
+    const clamp = (v,a,b) => Math.max(a, Math.min(b, v));
+    const smooth = (a,b,v) => {
+      const t = clamp((v-a)/(b-a),0,1);
+      return t*t*(3-2*t);
+    };
+    const fmt = n => String(Math.max(0, Math.floor(n))).padStart(4,"0");
+    const phaseNow = t => clamp((t - game.cycleStart) / game.cycleLen, 0, 1.25);
+
+    function hexToRgb(hex){
+      const n = parseInt(hex.slice(1),16);
+      return [n>>16 & 255, n>>8 & 255, n & 255];
+    }
+    function mix(a,b,t){
+      const A = hexToRgb(a), B = hexToRgb(b), u = clamp(t,0,1);
+      return "rgb(" + Math.round(A[0]+(B[0]-A[0])*u) + "," + Math.round(A[1]+(B[1]-A[1])*u) + "," + Math.round(A[2]+(B[2]-A[2])*u) + ")";
+    }
+
+    function resize(){
+      const r = canvas.getBoundingClientRect();
+      W = Math.max(1, Math.floor(r.width || innerWidth || 1));
+      H = Math.max(1, Math.floor(r.height || innerHeight || 1));
+      DPR = Math.max(1, Math.min(2, window.devicePixelRatio || 1));
+      canvas.width = Math.floor(W * DPR);
+      canvas.height = Math.floor(H * DPR);
+      ctx.setTransform(DPR,0,0,DPR,0,0);
+    }
+
+    function setHud(){
+      if (scoreText) scoreText.textContent = fmt(game.score);
+      if (streakText) streakText.textContent = Math.min(3, game.streak) + "/3";
+      if (!hintText) return;
+      if (game.mode !== "playing") {
+        hintText.textContent = "Hold anywhere. Release when the horizon flashes gold.";
+      } else if (game.holding) {
+        hintText.textContent = "Release on gold. Too early is cold, too late is cloud.";
+      } else if (game.awaiting) {
+        hintText.textContent = game.message || "Shortcut away.";
+      } else {
+        hintText.textContent = "Hold now. Watch the sky, not a clock.";
+      }
+    }
+
+    function buzz(ms){
+      try { if (navigator && navigator.vibrate) navigator.vibrate(ms); } catch(e) {}
+    }
+
+    function sound(kind){
+      try {
+        const AC = window.AudioContext || window.webkitAudioContext;
+        if (!AC) return;
+        if (!audioCtx) audioCtx = new AC();
+        if (audioCtx.state === "suspended") audioCtx.resume();
+        const now = audioCtx.currentTime;
+        const osc = audioCtx.createOscillator();
+        const gain = audioCtx.createGain();
+        osc.type = kind === "bad" ? "triangle" : "sine";
+        const f = kind === "perfect" ? 720 : kind === "bad" ? 140 : 460;
+        osc.frequency.setValueAtTime(f, now);
+        osc.frequency.exponentialRampToValueAtTime(kind === "bad" ? 80 : f * 1.7, now + .18);
+        gain.gain.setValueAtTime(.0001, now);
+        gain.gain.exponentialRampToValueAtTime(kind === "bad" ? .08 : .12, now + .02);
+        gain.gain.exponentialRampToValueAtTime(.0001, now + .24);
+        osc.connect(gain).connect(audioCtx.destination);
+        osc.start(now);
+        osc.stop(now + .28);
+      } catch(e) {}
+    }
+
+    function beginCycle(t){
+      game.cycleStart = t;
+      game.cycleLen = Math.max(2100, 3250 - game.attempts * 90);
+      game.window = Math.max(.074, .225 - game.attempts * .012);
+      game.center = .61 + Math.sin((game.attempts + 1) * 1.7) * .045;
+      game.holding = false;
+      game.awaiting = false;
+      game.ending = false;
+      game.pressId = null;
+      setHud();
+    }
+
+    function resetGame(){
+      game.mode = "playing";
+      game.score = 0; game.streak = 0; game.best = 0; game.misses = 0; game.attempts = 0;
+      game.window = .22; game.holding = false; game.awaiting = false; game.ending = false;
+      game.chainLit = false; game.message = ""; game.messageUntil = 0; game.shake = 0;
+      pods.length = 0; particles.length = 0;
+      const t = performance.now();
+      game.startedAt = t;
+      beginCycle(t + 260);
+      if (titleOverlay) titleOverlay.classList.add("hidden");
+      if (overOverlay) overOverlay.classList.add("hidden");
+      if (restartBtn) restartBtn.classList.remove("ready");
+      sound("ok");
+      setHud();
+    }
+
+    function finishGame(){
+      game.mode = "over";
+      game.holding = false;
+      const shipped = game.misses < 4 && game.score >= 720;
+      const chain = game.best >= 3;
+      if (overKicker) overKicker.textContent = chain ? "three-window chain achieved" : "morning report";
+      if (overTitle) overTitle.textContent = shipped ? "Dawn shipped" : "Clouds won";
+      if (overCopy) {
+        overCopy.textContent = chain
+          ? "Three launches slipped through the same sunrise seam. The phone agents are already airborne."
+          : shipped
+            ? "Enough pods found the golden band before the city woke."
+            : "The window narrowed, the shortcuts waited, and the cold ledger closed.";
+      }
+      if (overStats) overStats.textContent = "Score " + fmt(game.score) + " · Best streak " + game.best + " · Misses " + game.misses;
+      if (restartBtn) restartBtn.classList.add("ready");
+      if (overOverlay) overOverlay.classList.remove("hidden");
+      setHud();
+    }
+
+    function spark(x,y,color,count,force){
+      for (let i = 0; i < count && particles.length < MAX_PARTICLES; i++) {
+        const a = rand() * Math.PI * 2, sp = (1 + rand() * force);
+        particles.push({x,y,vx:Math.cos(a)*sp,vy:Math.sin(a)*sp-rand()*1.4,life:.45+rand()*.55,age:0,r:1.5+rand()*3.5,c:color});
+      }
+    }
+
+    function launchResult(t, ok, perfect, charge, phase){
+      const x = W * (.5 + (rand()-.5)*.1);
+      const y = H * .78;
+      const targetY = H * (.37 + (rand()-.5)*.08);
+      const targetX = W * (.5 + (phase - game.center) * 1.25);
+      pods.push({x,y,sx:x,sy:y,tx:targetX,ty:targetY,age:0,life:ok ? .9 : .72,ok,perfect,charge,spin:rand()*6.28});
+      game.attempts++;
+      if (ok) {
+        game.streak++;
+        game.best = Math.max(game.best, game.streak);
+        game.chainLit = game.best >= 3;
+        game.score += 90 + game.streak * 38 + Math.round(charge * 44) + (perfect ? 80 : 0);
+        game.message = perfect ? "Perfect sunrise window." : "Pod caught the gold.";
+        game.shake = perfect ? 5 : 2;
+        sound(perfect ? "perfect" : "ok");
+        buzz(perfect ? 35 : 18);
+        spark(targetX,targetY,perfect ? "#ffd27a" : "#f0a949", perfect ? 36 : 22, perfect ? 5.4 : 3.8);
+      } else {
+        game.misses++;
+        game.streak = 0;
+        game.message = charge < .16 ? "Shortcut undercharged." : phase < game.center ? "Released in the blue." : "Clouds closed it.";
+        game.shake = 8;
+        sound("bad");
+        buzz(60);
+        spark(x,y,"#bd5536",18,3.2);
+      }
+      game.messageUntil = t + 850;
+      game.awaiting = true;
+      game.nextAt = t + 760;
+      game.ending = game.misses >= 4 || game.attempts >= game.goal;
+      setHud();
+    }
+
+    function press(t, id){
+      if (game.mode !== "playing" || game.awaiting || game.holding) return;
+      game.holding = true;
+      game.holdStart = t;
+      game.pressId = id == null ? "key" : id;
+      sound("tap");
+      setHud();
+    }
+
+    function release(t, id){
+      if (game.mode !== "playing" || !game.holding) return;
+      if (id != null && game.pressId != null && id !== game.pressId) return;
+      const phase = phaseNow(t);
+      const held = t - game.holdStart;
+      const charge = clamp(held / 1250, 0, 1);
+      const dist = Math.abs(phase - game.center);
+      const ok = dist <= game.window * .5 && charge >= .16;
+      const perfect = ok && dist <= game.window * .18 && charge >= .38;
+      game.holding = false;
+      launchResult(t, ok, perfect, charge, phase);
+    }
+
+    function missTimeout(t){
+      if (game.mode !== "playing" || game.awaiting) return;
+      game.holding = false;
+      launchResult(t, false, false, 1, 1.15);
+    }
+
+    function update(dt,t){
+      const seconds = Math.min(.05, dt / 1000);
+      if (game.shake > 0) game.shake = Math.max(0, game.shake - dt * .025);
+      for (let i = pods.length - 1; i >= 0; i--) {
+        const p = pods[i];
+        p.age += seconds;
+        if (p.age >= p.life) pods.splice(i,1);
+      }
+      for (let i = particles.length - 1; i >= 0; i--) {
+        const p = particles[i];
+        p.age += seconds; p.x += p.vx * dt * .06; p.y += p.vy * dt * .06; p.vy += dt * .003;
+        if (p.age >= p.life) particles.splice(i,1);
+      }
+      if (game.mode === "playing") {
+        if (game.awaiting && t >= game.nextAt) {
+          if (game.ending) finishGame();
+          else beginCycle(t);
+        } else if (!game.awaiting && t > game.cycleStart && phaseNow(t) >= 1.02) {
+          missTimeout(t);
+        }
+      }
+    }
+
+    function roundRect(x,y,w,h,r){
+      const rr = Math.min(r, w/2, h/2);
+      ctx.beginPath();
+      ctx.moveTo(x+rr,y); ctx.arcTo(x+w,y,x+w,y+h,rr); ctx.arcTo(x+w,y+h,x,y+h,rr);
+      ctx.arcTo(x,y+h,x,y,rr); ctx.arcTo(x,y,x+w,y,rr); ctx.closePath();
+    }
+
+    function drawCloud(cx,cy,scale,alpha,tone){
+      ctx.save();
+      ctx.globalAlpha = alpha;
+      ctx.fillStyle = tone;
+      ctx.beginPath();
+      ctx.ellipse(cx, cy, 54*scale, 21*scale, 0, 0, Math.PI*2);
+      ctx.ellipse(cx-38*scale, cy+2*scale, 28*scale, 18*scale, -.2, 0, Math.PI*2);
+      ctx.ellipse(cx+34*scale, cy-4*scale, 34*scale, 22*scale, .18, 0, Math.PI*2);
+      ctx.ellipse(cx+4*scale, cy-14*scale, 32*scale, 24*scale, .05, 0, Math.PI*2);
+      ctx.fill();
+      ctx.restore();
+    }
+
+    function drawSky(t,phase){
+      const closeness = 1 - clamp(Math.abs(phase - game.center) / (game.window * 1.8), 0, 1);
+      const dawn = smooth(.05,.95,phase);
+      const warm = clamp(closeness * .95 + dawn * .22, 0, 1);
+      const top = dark ? mix("#07121a","#23455a",warm*.55) : mix("#bcdde7","#f3cc87",warm*.48);
+      const mid = dark ? mix("#122431","#c06f2e",warm) : mix("#eaf1e9","#f0a64a",warm);
+      const low = dark ? mix("#1f3a45","#ffd27a",warm) : mix("#fff2cd","#ffe29a",warm);
+      const g = ctx.createLinearGradient(0,0,0,H);
+      g.addColorStop(0,top); g.addColorStop(.54,mid); g.addColorStop(1,low);
+      ctx.fillStyle = g;
+      ctx.fillRect(0,0,W,H);
+
+      ctx.globalAlpha = dark ? .75 : .35;
+      ctx.fillStyle = dark ? "#f6efdf" : "#7c8f8a";
+      for (const m of motes) {
+        ctx.beginPath();
+        ctx.arc(m.x*W, (m.y*.72)*H, m.r, 0, Math.PI*2);
+        ctx.globalAlpha = m.a * (dark ? 1 - warm*.55 : .45);
+        ctx.fill();
+      }
+      ctx.globalAlpha = 1;
+
+      const bandY = H * (.49 - closeness * .025);
+      const bandH = H * (.016 + game.window * .12);
+      ctx.save();
+      ctx.globalAlpha = .16 + closeness * .7;
+      ctx.fillStyle = "#ffd27a";
+      roundRect(W*.08, bandY-bandH/2, W*.84, bandH, bandH);
+      ctx.fill();
+      ctx.globalAlpha = closeness * .22;
+      ctx.fillRect(0, bandY - bandH*3.2, W, bandH*6.4);
+      ctx.restore();
+
+      const gap = W * (.18 + game.window * 1.9);
+      const cTone = dark ? "#0f1e26" : "#fff8ea";
+      drawCloud(W*.5 - gap - W*.1, bandY + H*.005, 1.35, .52, cTone);
+      drawCloud(W*.5 + gap + W*.1, bandY - H*.004, 1.48, .54, cTone);
+      for (const c of clouds) {
+        const drift = ((t*.000025*c.s + c.x) % 1.25) - .12;
+        drawCloud(drift*W, c.y*H, c.r*6.2, c.a, cTone);
+      }
+    }
+
+    function drawGround(phase){
+      const y = H * .73;
+      ctx.save();
+      ctx.fillStyle = dark ? "rgba(5,13,14,.74)" : "rgba(85,101,78,.26)";
+      ctx.beginPath();
+      ctx.moveTo(0,H);
+      ctx.lineTo(0,y + Math.sin(phase*5)*8);
+      for (let x = 0; x <= W; x += W/7) ctx.lineTo(x, y + Math.sin(x*.018 + phase*4)*18);
+      ctx.lineTo(W,H); ctx.closePath(); ctx.fill();
+      ctx.fillStyle = dark ? "rgba(7,20,20,.86)" : "rgba(239,218,176,.66)";
+      ctx.beginPath(); ctx.moveTo(0,H);
+      ctx.lineTo(0,y+55);
+      for (let x = 0; x <= W; x += W/8) ctx.lineTo(x, y+55 + Math.cos(x*.02 + 2)*13);
+      ctx.lineTo(W,H); ctx.closePath(); ctx.fill();
+      ctx.restore();
+    }
+
+    function drawPhone(t,phase){
+      const held = game.holding ? clamp((t - game.holdStart)/1250,0,1) : 0;
+      const px = W*.5, py = H*.83, pw = Math.min(W*.42, 178), ph = Math.min(H*.22, 170);
+      ctx.save();
+      ctx.translate(px,py);
+      ctx.rotate((game.shake ? Math.sin(t*.09)*game.shake*.002 : 0));
+      ctx.fillStyle = dark ? "#0b1114" : "#f9efe0";
+      ctx.strokeStyle = dark ? "rgba(246,239,223,.22)" : "rgba(22,25,21,.2)";
+      ctx.lineWidth = 2;
+      roundRect(-pw/2,-ph/2,pw,ph,28); ctx.fill(); ctx.stroke();
+      ctx.fillStyle = dark ? "#18252b" : "#fff8ea";
+      roundRect(-pw/2+13,-ph/2+18,pw-26,ph-34,20); ctx.fill();
+      const cols = ["#f0a949","#e4673d","#277c69","#d9b35c"];
+      for (let i=0;i<4;i++){
+        const ix = (i%2-.5)*48, iy = (Math.floor(i/2)-.5)*48 + 2;
+        const pulse = i===game.attempts%4 ? held*8 + Math.sin(t*.012)*2 : 0;
+        ctx.fillStyle = cols[i];
+        roundRect(ix-16-pulse*.15,iy-16-pulse*.15,32+pulse*.3,32+pulse*.3,9);
+        ctx.fill();
+        ctx.fillStyle = "rgba(255,248,234,.82)";
+        ctx.fillRect(ix-5,iy-7,10,14);
+        ctx.fillRect(ix-9,iy-2,18,4);
+      }
+      if (held > 0) {
+        ctx.globalAlpha = .24 + held*.34;
+        ctx.strokeStyle = "#ffd27a";
+        ctx.lineWidth = 2 + held*4;
+        ctx.beginPath();
+        ctx.arc(0,-ph*.18, 30 + held*46 + Math.sin(t*.018)*4, 0, Math.PI*2);
+        ctx.stroke();
+      }
+      ctx.restore();
+    }
+
+    function drawPods(){
+      for (const p of pods) {
+        const q = clamp(p.age / p.life, 0, 1);
+        const arc = Math.sin(q*Math.PI) * (p.ok ? H*.2 : H*.08);
+        const x = p.sx + (p.tx-p.sx)*q;
+        const y = p.sy + (p.ty-p.sy)*q - arc;
+        ctx.save();
+        ctx.translate(x,y);
+        ctx.rotate(p.spin + q*5);
+        ctx.globalAlpha = 1 - smooth(.82,1,q);
+        ctx.fillStyle = p.ok ? (p.perfect ? "#ffd27a" : "#f0a949") : "#bd5536";
+        roundRect(-13,-13,26,26,7);
+        ctx.fill();
+        ctx.fillStyle = "rgba(255,248,234,.82)";
+        ctx.fillRect(-4,-8,8,16);
+        ctx.fillRect(-8,-2,16,4);
+        ctx.restore();
+      }
+    }
+
+    function drawParticles(){
+      for (const p of particles) {
+        const q = p.age / p.life;
+        ctx.globalAlpha = Math.max(0, 1-q);
+        ctx.fillStyle = p.c;
+        ctx.beginPath();
+        ctx.arc(p.x,p.y,p.r*(1-q*.45),0,Math.PI*2);
+        ctx.fill();
+      }
+      ctx.globalAlpha = 1;
+    }
+
+    function drawMessage(t){
+      if (!game.message || t > game.messageUntil) return;
+      const a = smooth(game.messageUntil, game.messageUntil-260, t);
+      ctx.save();
+      ctx.globalAlpha = clamp(a,0,1);
+      ctx.font = "700 12px ui-monospace, SFMono-Regular, Menlo, monospace";
+      ctx.textAlign = "center";
+      ctx.letterSpacing = "1px";
+      const text = game.message.toUpperCase();
+      const y = H*.61;
+      const m = ctx.measureText(text).width + 30;
+      ctx.fillStyle = dark ? "rgba(16,27,32,.68)" : "rgba(255,248,234,.72)";
+      roundRect(W*.5-m/2,y-18,m,36,18); ctx.fill();
+      ctx.fillStyle = dark ? "#f6efdf" : "#161915";
+      ctx.fillText(text,W*.5,y+4);
+      ctx.restore();
+    }
+
+    function draw(){
+      const t = performance.now();
+      const phase = game.mode === "playing" ? phaseNow(t) : .34 + Math.sin(t*.00025)*.08;
+      ctx.save();
+      if (game.shake) ctx.translate((rand()-.5)*game.shake, (rand()-.5)*game.shake);
+      drawSky(t,phase);
+      drawGround(phase);
+      drawPods();
+      drawParticles();
+      drawPhone(t,phase);
+      drawMessage(t);
+      if (game.chainLit && game.mode === "playing") {
+        ctx.save();
+        ctx.globalAlpha = .13 + Math.sin(t*.006)*.05;
+        ctx.strokeStyle = "#ffd27a";
+        ctx.lineWidth = 2;
+        ctx.beginPath();
+        ctx.arc(W*.5,H*.49,Math.min(W,H)*.29,0,Math.PI*2);
+        ctx.stroke();
+        ctx.restore();
+      }
+      ctx.restore();
+    }
+
+    function frame(t){
+      try {
+        const dt = last ? t - last : 16;
+        last = t;
+        update(dt,t);
+        draw();
+        requestAnimationFrame(frame);
+      } catch(e) {
+        requestAnimationFrame(frame);
+      }
+    }
+
+    function pointerDown(e){
+      if (e && e.cancelable) e.preventDefault();
+      press(performance.now(), e ? e.pointerId : null);
+      try { if (canvas.setPointerCapture && e && e.pointerId != null) canvas.setPointerCapture(e.pointerId); } catch(err) {}
+    }
+    function pointerUp(e){
+      if (e && e.cancelable) e.preventDefault();
+      release(performance.now(), e ? e.pointerId : null);
+      try { if (canvas.releasePointerCapture && e && e.pointerId != null) canvas.releasePointerCapture(e.pointerId); } catch(err) {}
+    }
+    canvas.addEventListener("pointerdown", pointerDown, {passive:false});
+    canvas.addEventListener("pointerup", pointerUp, {passive:false});
+    canvas.addEventListener("pointercancel", pointerUp, {passive:false});
+    window.addEventListener("keydown", e => {
+      if ((e.code === "Space" || e.key === " ") && !e.repeat) {
+        e.preventDefault();
+        press(performance.now(), "key");
+      }
+    });
+    window.addEventListener("keyup", e => {
+      if (e.code === "Space" || e.key === " ") {
+        e.preventDefault();
+        release(performance.now(), "key");
+      }
+    });
+    window.addEventListener("resize", resize);
+    if (mq && mq.addEventListener) mq.addEventListener("change", e => { dark = !!e.matches; });
+    else if (mq && mq.addListener) mq.addListener(e => { dark = !!e.matches; });
+    if (startBtn) startBtn.addEventListener("click", resetGame);
+    if (restartBtn) restartBtn.addEventListener("click", resetGame);
+
+    resize();
+    setHud();
+    requestAnimationFrame(frame);
+  })();
+  </script>
+</body>
+</html>

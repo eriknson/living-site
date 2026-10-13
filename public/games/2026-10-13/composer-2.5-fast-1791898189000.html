@@ -1,0 +1,709 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Autumn Echo</title>
+<style>
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+:root{
+  --bg:#1a1f24;--bg2:#242b32;--fg:#e8ecf0;--muted:#8a9aaa;
+  --accent:#00e5c7;--accent2:#ff9f43;--danger:#ff5c5c;
+  --glass:rgba(255,255,255,.06);--border:rgba(255,255,255,.1);
+  --overlay:rgba(10,14,18,.82);
+}
+@media(prefers-color-scheme:light){
+  :root{
+    --bg:#e8ecef;--bg2:#d4dbe2;--fg:#1a2228;--muted:#5a6a78;
+    --accent:#009688;--accent2:#e67e22;--danger:#d63031;
+    --glass:rgba(0,0,0,.04);--border:rgba(0,0,0,.1);
+    --overlay:rgba(232,236,239,.88);
+  }
+}
+html,body{width:100%;height:100%;overflow:hidden;background:var(--bg);color:var(--fg);
+  font-family:system-ui,-apple-system,sans-serif;touch-action:none;user-select:none;-webkit-user-select:none}
+#app{position:fixed;inset:0;width:100dvw;height:100dvh;display:flex;flex-direction:column}
+#canvas{flex:1;width:100%;height:100%;display:block;touch-action:none}
+#hud{position:absolute;top:0;left:0;right:0;padding:max(12px,env(safe-area-inset-top)) 16px 8px;
+  pointer-events:none;z-index:2}
+#haiku{font:600 13px/1.5 ui-monospace,'SFMono-Regular',Menlo,monospace;
+  text-align:center;min-height:3.2em;color:var(--fg);letter-spacing:.02em}
+#haiku .syllable{color:var(--accent);text-shadow:0 0 12px color-mix(in srgb,var(--accent) 60%,transparent)}
+#haiku .pending{color:var(--muted);opacity:.45}
+#stats{display:flex;justify-content:space-between;align-items:center;margin-top:6px;
+  font:500 11px ui-monospace,'SFMono-Regular',Menlo,monospace;color:var(--muted)}
+#integrity-wrap{flex:1;margin:0 12px;height:4px;background:var(--glass);border-radius:2px;overflow:hidden}
+#integrity{height:100%;width:100%;background:var(--accent);border-radius:2px;transition:width .3s,background .3s}
+#integrity.low{background:var(--danger)}
+.overlay{position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;
+  justify-content:center;background:var(--overlay);z-index:10;pointer-events:none;
+  opacity:0;visibility:hidden;transition:opacity .35s,visibility .35s}
+.overlay.visible{opacity:1;visibility:visible}
+.overlay-content{text-align:center;padding:24px;max-width:340px;pointer-events:none}
+.overlay h1{font:700 clamp(28px,7vw,42px)/1.1 system-ui,sans-serif;letter-spacing:-.02em;margin-bottom:8px}
+.overlay .tagline{font:400 14px/1.5 system-ui;color:var(--muted);margin-bottom:6px}
+.overlay .hint{font:400 12px ui-monospace,Menlo,monospace;color:var(--muted);margin-bottom:28px;line-height:1.6}
+.overlay .hint kbd{display:inline-block;padding:2px 6px;background:var(--glass);border:1px solid var(--border);
+  border-radius:4px;font-size:11px}
+.btn{display:inline-flex;align-items:center;justify-content:center;min-width:180px;min-height:48px;
+  padding:12px 32px;font:600 15px system-ui,sans-serif;color:var(--bg);background:var(--accent);
+  border:none;border-radius:12px;cursor:pointer;pointer-events:auto;
+  box-shadow:0 4px 24px color-mix(in srgb,var(--accent) 35%,transparent);transition:transform .15s,box-shadow .15s}
+.btn:active{transform:scale(.96)}
+.btn-restart{background:var(--accent2);box-shadow:0 4px 24px color-mix(in srgb,var(--accent2) 35%,transparent)}
+#gameover-score{font:600 24px ui-monospace,Menlo,monospace;color:var(--accent);margin:12px 0 4px}
+#gameover-msg{font:400 13px system-ui;color:var(--muted);margin-bottom:24px;line-height:1.5}
+.gust-banner{position:absolute;top:50%;left:50%;transform:translate(-50%,-50%) scale(.8);
+  font:700 18px ui-monospace,Menlo,monospace;color:var(--accent2);opacity:0;pointer-events:none;
+  z-index:5;text-shadow:0 0 20px color-mix(in srgb,var(--accent2) 50%,transparent);transition:opacity .2s,transform .2s}
+.gust-banner.show{opacity:1;transform:translate(-50%,-50%) scale(1)}
+</style>
+</head>
+<body>
+<div id="app">
+  <canvas id="canvas"></canvas>
+  <div id="hud">
+    <div id="haiku"></div>
+    <div id="stats">
+      <span id="timer">60</span>
+      <div id="integrity-wrap"><div id="integrity"></div></div>
+      <span id="score-label">0/17</span>
+    </div>
+  </div>
+  <div class="gust-banner" id="gust-banner">GUST</div>
+  <div class="overlay visible" id="title-screen">
+    <div class="overlay-content">
+      <h1>Autumn Echo</h1>
+      <p class="tagline">Catch the leaves. Save the transcript.</p>
+      <p class="hint">Tap falling leaves before they smear the waveform.<br>Assemble a perfect haiku — 17 syllables.<br><kbd>Space</kbd> catches nearest leaf on desktop.</p>
+      <button class="btn" data-smoke="start" id="btn-start">Begin</button>
+    </div>
+  </div>
+  <div class="overlay" id="gameover-screen">
+    <div class="overlay-content">
+      <h1 id="go-title">Transcript Lost</h1>
+      <div id="gameover-score">0 syllables</div>
+      <p id="gameover-msg">The waveform was smeared.</p>
+      <button class="btn btn-restart" data-smoke="restart" id="btn-restart">Try Again</button>
+    </div>
+  </div>
+</div>
+<script>
+(function(){
+'use strict';
+
+const HAIKU = [
+  ['Qui','et','night','holds','still'],
+  ['A','gents','spin','be','fore','dawn','breaks'],
+  ['Au','tumn','leaves','drift','down']
+];
+const TOTAL_SYLLABLES = 17;
+const ROUND_TIME = 60;
+const MAX_INTEGRITY = 100;
+const SMear_DAMAGE = 22;
+
+const canvas = document.getElementById('canvas');
+const ctx = canvas.getContext('2d');
+const haikuEl = document.getElementById('haiku');
+const timerEl = document.getElementById('timer');
+const scoreLabel = document.getElementById('score-label');
+const integrityEl = document.getElementById('integrity');
+const titleScreen = document.getElementById('title-screen');
+const gameoverScreen = document.getElementById('gameover-screen');
+const goTitle = document.getElementById('go-title');
+const goScore = document.getElementById('gameover-score');
+const goMsg = document.getElementById('gameover-msg');
+const gustBanner = document.getElementById('gust-banner');
+const btnStart = document.getElementById('btn-start');
+const btnRestart = document.getElementById('btn-restart');
+
+let W = 0, H = 0, waveformY = 0;
+let state = 'title';
+let leaves = [];
+let particles = [];
+let smears = [];
+let windStreaks = [];
+let timeLeft = ROUND_TIME;
+let syllablesCaught = 0;
+let integrity = MAX_INTEGRITY;
+let lastTime = 0;
+let spawnTimer = 0;
+let spawnInterval = 1.8;
+let gustActive = false;
+let gustTimer = 0;
+let gustCooldown = 8;
+let difficulty = 0;
+let shake = 0;
+let waveformPhase = 0;
+let wavePoints = [];
+let audioCtx = null;
+let animId = null;
+
+function isDark(){
+  return window.matchMedia('(prefers-color-scheme: dark)').matches;
+}
+
+function colors(){
+  const dark = isDark();
+  return {
+    bg: dark ? '#1a1f24' : '#e8ecef',
+    bg2: dark ? '#242b32' : '#d4dbe2',
+    fog: dark ? 'rgba(180,190,200,0.04)' : 'rgba(100,110,120,0.06)',
+    leaf1: dark ? '#c45c26' : '#b85c1a',
+    leaf2: dark ? '#d4782a' : '#c47020',
+    leafGlow: dark ? '#ffb347' : '#e8943a',
+    waveform: dark ? '#00e5c7' : '#009688',
+    waveformGlow: dark ? 'rgba(0,229,199,0.35)' : 'rgba(0,150,136,0.3)',
+    smear: dark ? '#ff5c5c' : '#d63031',
+    particle: dark ? '#00e5c7' : '#009688',
+    muted: dark ? '#8a9aaa' : '#5a6a78'
+  };
+}
+
+function initAudio(){
+  try{
+    if(typeof AudioContext !== 'undefined' || typeof webkitAudioContext !== 'undefined'){
+      const AC = AudioContext || webkitAudioContext;
+      audioCtx = new AC();
+    }
+  }catch(e){}
+}
+
+function playTone(freq, dur, type, vol){
+  if(!audioCtx) return;
+  try{
+    if(audioCtx.state === 'suspended') audioCtx.resume();
+    const osc = audioCtx.createOscillator();
+    const gain = audioCtx.createGain();
+    osc.type = type || 'sine';
+    osc.frequency.value = freq;
+    gain.gain.setValueAtTime(vol || 0.08, audioCtx.currentTime);
+    gain.gain.exponentialRampToValueAtTime(0.001, audioCtx.currentTime + dur);
+    osc.connect(gain);
+    gain.connect(audioCtx.destination);
+    osc.start();
+    osc.stop(audioCtx.currentTime + dur);
+  }catch(e){}
+}
+
+function vibrate(ms){
+  try{ navigator.vibrate?.(ms); }catch(e){}
+}
+
+function resize(){
+  W = canvas.width = window.innerWidth;
+  H = canvas.height = window.innerHeight;
+  waveformY = H * 0.82;
+  wavePoints = [];
+  for(let i = 0; i <= 80; i++) wavePoints.push(0);
+}
+
+function buildHaikuDisplay(){
+  let html = '';
+  let idx = 0;
+  for(let li = 0; li < HAIKU.length; li++){
+    if(li > 0) html += '<br>';
+    for(let si = 0; si < HAIKU[li].length; si++){
+      const syl = HAIKU[li][si];
+      if(idx < syllablesCaught){
+        html += '<span class="syllable">' + syl + '</span> ';
+      } else {
+        html += '<span class="pending">' + syl + '</span> ';
+      }
+      idx++;
+    }
+  }
+  haikuEl.innerHTML = html;
+}
+
+function getNextSyllableText(){
+  let idx = 0;
+  for(let li = 0; li < HAIKU.length; li++){
+    for(let si = 0; si < HAIKU[li].length; si++){
+      if(idx === syllablesCaught) return HAIKU[li][si];
+      idx++;
+    }
+  }
+  return '';
+}
+
+function spawnLeaf(forceGust){
+  if(state !== 'playing' || syllablesCaught >= TOTAL_SYLLABLES) return;
+  const c = colors();
+  const isGust = forceGust || gustActive;
+  const x = Math.random() * W;
+  const size = 18 + Math.random() * 14;
+  const spiral = isGust;
+  leaves.push({
+    x, y: -30,
+    vx: (Math.random() - 0.5) * (isGust ? 80 : 30),
+    vy: 60 + difficulty * 12 + Math.random() * 40 + (isGust ? 50 : 0),
+    rot: Math.random() * Math.PI * 2,
+    rotSpeed: (Math.random() - 0.5) * 4,
+    size,
+    spiral,
+    spiralPhase: Math.random() * Math.PI * 2,
+    spiralRadius: 20 + Math.random() * 30,
+    spiralSpeed: 2 + Math.random() * 2,
+    color: Math.random() > 0.5 ? c.leaf1 : c.leaf2,
+    glow: c.leafGlow,
+    caught: false,
+    catchAnim: 0,
+    syllable: getNextSyllableText()
+  });
+}
+
+function spawnParticles(x, y, col, n){
+  for(let i = 0; i < n; i++){
+    const a = Math.random() * Math.PI * 2;
+    const sp = 40 + Math.random() * 120;
+    particles.push({
+      x, y, vx: Math.cos(a)*sp, vy: Math.sin(a)*sp - 40,
+      life: 0.4 + Math.random() * 0.4, maxLife: 0.8,
+      size: 2 + Math.random() * 4, color: col
+    });
+  }
+}
+
+function addSmear(x){
+  smears.push({ x, width: 30 + Math.random() * 40, life: 3, maxLife: 3, intensity: 0.7 + Math.random() * 0.3 });
+}
+
+function catchLeaf(leaf, idx){
+  if(leaf.caught) return;
+  leaf.caught = true;
+  leaf.catchAnim = 0;
+  syllablesCaught++;
+  buildHaikuDisplay();
+  scoreLabel.textContent = syllablesCaught + '/' + TOTAL_SYLLABLES;
+  spawnParticles(leaf.x, leaf.y, colors().particle, 12);
+  playTone(440 + syllablesCaught * 30, 0.15, 'sine', 0.06);
+  vibrate(15);
+
+  if(syllablesCaught >= TOTAL_SYLLABLES){
+    endGame(true);
+  }
+}
+
+function smearWaveform(leaf){
+  integrity = Math.max(0, integrity - SMear_DAMAGE);
+  integrityEl.style.width = integrity + '%';
+  integrityEl.classList.toggle('low', integrity < 40);
+  shake = 8;
+  addSmear(leaf.x);
+  spawnParticles(leaf.x, waveformY, colors().smear, 8);
+  playTone(120, 0.3, 'sawtooth', 0.05);
+  vibrate(40);
+  if(integrity <= 0) endGame(false);
+}
+
+function startGust(){
+  gustActive = true;
+  gustTimer = 3 + difficulty * 0.3;
+  gustBanner.classList.add('show');
+  playTone(200, 0.2, 'triangle', 0.04);
+  setTimeout(function(){ gustBanner.classList.remove('show'); }, 1500);
+  for(let i = 0; i < 8; i++){
+    windStreaks.push({
+      y: Math.random() * H * 0.7,
+      x: -60 - Math.random() * 100,
+      speed: 200 + Math.random() * 300,
+      len: 40 + Math.random() * 80,
+      life: 2 + Math.random()
+    });
+  }
+  for(let i = 0; i < 3 + difficulty; i++){
+    setTimeout(function(){ if(state==='playing') spawnLeaf(true); }, i * 200);
+  }
+}
+
+function updateHUD(){
+  timerEl.textContent = Math.ceil(timeLeft);
+  scoreLabel.textContent = syllablesCaught + '/' + TOTAL_SYLLABLES;
+  integrityEl.style.width = integrity + '%';
+  integrityEl.classList.toggle('low', integrity < 40);
+}
+
+function resetGame(){
+  leaves = [];
+  particles = [];
+  smears = [];
+  windStreaks = [];
+  timeLeft = ROUND_TIME;
+  syllablesCaught = 0;
+  integrity = MAX_INTEGRITY;
+  spawnTimer = 0;
+  spawnInterval = 1.8;
+  gustActive = false;
+  gustTimer = 0;
+  gustCooldown = 6;
+  difficulty = 0;
+  shake = 0;
+  waveformPhase = 0;
+  buildHaikuDisplay();
+  updateHUD();
+}
+
+function startGame(){
+  resetGame();
+  state = 'playing';
+  titleScreen.classList.remove('visible');
+  gameoverScreen.classList.remove('visible');
+  initAudio();
+  lastTime = performance.now();
+}
+
+function endGame(won){
+  state = 'gameover';
+  gameoverScreen.classList.add('visible');
+  if(won){
+    goTitle.textContent = 'Haiku Complete';
+    goScore.textContent = syllablesCaught + ' syllables';
+    goMsg.textContent = 'The transcript lives on. Perfect autumn echo.';
+    playTone(523, 0.2, 'sine', 0.07);
+    setTimeout(function(){ playTone(659, 0.2, 'sine', 0.07); }, 150);
+    setTimeout(function(){ playTone(784, 0.4, 'sine', 0.07); }, 300);
+    vibrate([30, 50, 30]);
+  } else if(syllablesCaught >= TOTAL_SYLLABLES){
+    goTitle.textContent = 'Haiku Complete';
+    goScore.textContent = syllablesCaught + ' syllables';
+    goMsg.textContent = 'The transcript lives on.';
+  } else if(integrity <= 0){
+    goTitle.textContent = 'Transcript Lost';
+    goScore.textContent = syllablesCaught + '/' + TOTAL_SYLLABLES + ' syllables';
+    goMsg.textContent = 'The waveform was smeared beyond recovery.';
+  } else {
+    goTitle.textContent = 'Time\'s Up';
+    goScore.textContent = syllablesCaught + '/' + TOTAL_SYLLABLES + ' syllables';
+    goMsg.textContent = 'Dawn broke before the haiku was finished.';
+  }
+}
+
+function update(dt){
+  if(state !== 'playing') return;
+
+  timeLeft -= dt;
+  if(timeLeft <= 0){ timeLeft = 0; endGame(syllablesCaught >= TOTAL_SYLLABLES); return; }
+
+  difficulty = Math.min(5, (ROUND_TIME - timeLeft) / 12);
+  spawnInterval = Math.max(0.6, 1.8 - difficulty * 0.2);
+
+  spawnTimer += dt;
+  if(spawnTimer >= spawnInterval){
+    spawnTimer = 0;
+    spawnLeaf(false);
+    if(Math.random() < 0.15 + difficulty * 0.05) spawnLeaf(false);
+  }
+
+  gustCooldown -= dt;
+  if(gustCooldown <= 0 && !gustActive){
+    startGust();
+    gustCooldown = 7 - difficulty * 0.5;
+  }
+
+  if(gustActive){
+    gustTimer -= dt;
+    if(gustTimer <= 0) gustActive = false;
+  }
+
+  waveformPhase += dt * (3 + difficulty * 0.5);
+
+  for(let i = leaves.length - 1; i >= 0; i--){
+    const l = leaves[i];
+    if(l.caught){
+      l.catchAnim += dt * 4;
+      l.y -= 80 * dt;
+      l.x += Math.sin(l.catchAnim * 8) * 20 * dt;
+      if(l.catchAnim > 1) leaves.splice(i, 1);
+      continue;
+    }
+    if(l.spiral){
+      l.spiralPhase += dt * l.spiralSpeed;
+      l.x += Math.sin(l.spiralPhase) * l.spiralRadius * dt * 0.8;
+    }
+    l.x += l.vx * dt;
+    l.y += l.vy * dt;
+    l.rot += l.rotSpeed * dt;
+    l.vy += 15 * dt;
+
+    if(l.y > waveformY - 10){
+      smearWaveform(l);
+      leaves.splice(i, 1);
+    }
+    if(l.x < -50 || l.x > W + 50) l.vx *= -0.5;
+  }
+
+  for(let i = particles.length - 1; i >= 0; i--){
+    const p = particles[i];
+    p.life -= dt;
+    p.x += p.vx * dt;
+    p.y += p.vy * dt;
+    p.vy += 120 * dt;
+    if(p.life <= 0) particles.splice(i, 1);
+  }
+
+  for(let i = smears.length - 1; i >= 0; i--){
+    smears[i].life -= dt;
+    if(smears[i].life <= 0) smears.splice(i, 1);
+  }
+
+  for(let i = windStreaks.length - 1; i >= 0; i--){
+    const w = windStreaks[i];
+    w.x += w.speed * dt;
+    w.life -= dt;
+    if(w.life <= 0 || w.x > W + 100) windStreaks.splice(i, 1);
+  }
+
+  if(shake > 0) shake = Math.max(0, shake - dt * 20);
+  updateHUD();
+}
+
+function drawLeaf(l){
+  ctx.save();
+  ctx.translate(l.x, l.y);
+  ctx.rotate(l.rot);
+  const s = l.size;
+  if(l.caught){
+    ctx.globalAlpha = 1 - l.catchAnim;
+    ctx.shadowColor = colors().particle;
+    ctx.shadowBlur = 20;
+  }
+  ctx.beginPath();
+  ctx.moveTo(0, -s);
+  ctx.bezierCurveTo(s*0.8, -s*0.5, s*0.9, s*0.3, 0, s);
+  ctx.bezierCurveTo(-s*0.9, s*0.3, -s*0.8, -s*0.5, 0, -s);
+  const grd = ctx.createLinearGradient(-s, -s, s, s);
+  grd.addColorStop(0, l.glow);
+  grd.addColorStop(1, l.color);
+  ctx.fillStyle = grd;
+  ctx.fill();
+  ctx.strokeStyle = l.color;
+  ctx.lineWidth = 1;
+  ctx.stroke();
+  ctx.beginPath();
+  ctx.moveTo(0, -s*0.7);
+  ctx.lineTo(0, s*0.7);
+  ctx.strokeStyle = 'rgba(0,0,0,0.2)';
+  ctx.lineWidth = 1;
+  ctx.stroke();
+  if(l.syllable && !l.caught){
+    ctx.rotate(-l.rot);
+    ctx.fillStyle = isDark() ? '#fff' : '#1a2228';
+    ctx.font = '600 10px ui-monospace,Menlo,monospace';
+    ctx.textAlign = 'center';
+    ctx.fillText(l.syllable, 0, 3);
+  }
+  ctx.restore();
+}
+
+function drawBackground(c){
+  const grd = ctx.createLinearGradient(0, 0, 0, H);
+  grd.addColorStop(0, c.bg);
+  grd.addColorStop(0.6, c.bg2);
+  grd.addColorStop(1, isDark() ? '#151a1e' : '#c8d0d8');
+  ctx.fillStyle = grd;
+  ctx.fillRect(0, 0, W, H);
+
+  for(let i = 0; i < 6; i++){
+    const fy = H * (0.15 + i * 0.12);
+    const fog = ctx.createRadialGradient(W*0.5, fy, 0, W*0.5, fy, W*0.6);
+    fog.addColorStop(0, c.fog);
+    fog.addColorStop(1, 'transparent');
+    ctx.fillStyle = fog;
+    ctx.fillRect(0, fy - H*0.15, W, H*0.3);
+  }
+}
+
+function drawWaveform(c){
+  const baseY = waveformY;
+  const h = 30;
+
+  ctx.fillStyle = isDark() ? 'rgba(0,0,0,0.3)' : 'rgba(0,0,0,0.06)';
+  ctx.fillRect(0, baseY - 5, W, H - baseY + 5);
+
+  ctx.save();
+  ctx.shadowColor = c.waveformGlow;
+  ctx.shadowBlur = 12;
+  ctx.beginPath();
+  for(let i = 0; i <= 80; i++){
+    const x = (i / 80) * W;
+    const t = waveformPhase + i * 0.15;
+    let smearOff = 0;
+    for(let j = 0; j < smears.length; j++){
+      const s = smears[j];
+      const dx = Math.abs(x - s.x);
+      if(dx < s.width){
+        smearOff += Math.sin(dx * 0.1) * 20 * s.intensity * (s.life / s.maxLife);
+      }
+    }
+    const corruption = (1 - integrity / MAX_INTEGRITY) * 25;
+    const y = baseY + Math.sin(t) * (8 + corruption) + Math.sin(t * 2.3) * 4 + smearOff + Math.sin(t * 0.5 + i) * 2;
+    if(i === 0) ctx.moveTo(x, y);
+    else ctx.lineTo(x, y);
+  }
+  ctx.strokeStyle = c.waveform;
+  ctx.lineWidth = 2.5;
+  ctx.stroke();
+
+  ctx.globalAlpha = 0.3;
+  ctx.lineWidth = 6;
+  ctx.stroke();
+  ctx.globalAlpha = 1;
+  ctx.restore();
+
+  for(let j = 0; j < smears.length; j++){
+    const s = smears[j];
+    const alpha = (s.life / s.maxLife) * 0.6;
+    ctx.fillStyle = isDark() ? 'rgba(255,92,92,' + alpha + ')' : 'rgba(214,48,49,' + alpha + ')';
+    ctx.fillRect(s.x - s.width, baseY - h, s.width * 2, h * 2);
+  }
+
+  ctx.fillStyle = c.muted || (isDark() ? '#8a9aaa' : '#5a6a78');
+  ctx.font = '500 10px ui-monospace,Menlo,monospace';
+  ctx.textAlign = 'left';
+  ctx.fillText('LIVE TRANSCRIPT', 16, baseY + 28);
+}
+
+function draw(){
+  const c = colors();
+  ctx.save();
+  if(shake > 0){
+    ctx.translate((Math.random()-0.5)*shake, (Math.random()-0.5)*shake);
+  }
+
+  drawBackground(c);
+
+  if(windStreaks.length){
+    ctx.strokeStyle = isDark() ? 'rgba(255,180,100,0.12)' : 'rgba(200,120,60,0.15)';
+    ctx.lineWidth = 1;
+    for(let i = 0; i < windStreaks.length; i++){
+      const w = windStreaks[i];
+      ctx.globalAlpha = Math.min(1, w.life);
+      ctx.beginPath();
+      ctx.moveTo(w.x, w.y);
+      ctx.lineTo(w.x + w.len, w.y + w.len * 0.15);
+      ctx.stroke();
+    }
+    ctx.globalAlpha = 1;
+  }
+
+  for(let i = 0; i < particles.length; i++){
+    const p = particles[i];
+    ctx.globalAlpha = p.life / p.maxLife;
+    ctx.fillStyle = p.color;
+    ctx.beginPath();
+    ctx.arc(p.x, p.y, p.size, 0, Math.PI * 2);
+    ctx.fill();
+  }
+  ctx.globalAlpha = 1;
+
+  for(let i = 0; i < leaves.length; i++) drawLeaf(leaves[i]);
+
+  drawWaveform(c);
+  ctx.restore();
+}
+
+function gameLoop(now){
+  const dt = Math.min(0.05, (now - lastTime) / 1000);
+  lastTime = now;
+  update(dt);
+  draw();
+  animId = requestAnimationFrame(gameLoop);
+}
+
+function getPointerPos(e){
+  const rect = canvas.getBoundingClientRect();
+  let cx, cy;
+  if(e.touches && e.touches.length){
+    cx = e.touches[0].clientX;
+    cy = e.touches[0].clientY;
+  } else {
+    cx = e.clientX;
+    cy = e.clientY;
+  }
+  return { x: cx - rect.left, y: cy - rect.top };
+}
+
+function handleTap(e){
+  if(state !== 'playing') return;
+  e.preventDefault();
+  const pos = getPointerPos(e);
+  let hit = false;
+  for(let i = leaves.length - 1; i >= 0; i--){
+    const l = leaves[i];
+    if(l.caught) continue;
+    const dx = pos.x - l.x;
+    const dy = pos.y - l.y;
+    const dist = Math.sqrt(dx*dx + dy*dy);
+    const hitRadius = Math.max(44, l.size * 1.8);
+    if(dist < hitRadius){
+      catchLeaf(l, i);
+      hit = true;
+      break;
+    }
+  }
+  if(!hit){
+    spawnParticles(pos.x, pos.y, colors().fog, 3);
+  }
+}
+
+function onTouchStart(e){
+  e.preventDefault();
+  handleTap(e);
+}
+
+function onMouseDown(e){
+  if(e.button !== 0) return;
+  handleTap(e);
+}
+
+btnStart.addEventListener('click', function(e){
+  e.stopPropagation();
+  startGame();
+});
+
+btnRestart.addEventListener('click', function(e){
+  e.stopPropagation();
+  startGame();
+});
+
+canvas.addEventListener('touchstart', onTouchStart, { passive: false });
+canvas.addEventListener('mousedown', onMouseDown);
+
+window.addEventListener('keydown', function(e){
+  if(e.code === 'Space' || e.code === 'Enter'){
+    e.preventDefault();
+    if(state === 'title'){
+      startGame();
+    } else if(state === 'gameover'){
+      startGame();
+    } else if(state === 'playing'){
+      var cx = W * 0.5, cy = H * 0.45;
+      var best = -1, bestD = Infinity;
+      for(var i = 0; i < leaves.length; i++){
+        var l = leaves[i];
+        if(l.caught) continue;
+        var dx = cx - l.x, dy = cy - l.y;
+        var d = dx*dx + dy*dy;
+        if(d < bestD){ bestD = d; best = i; }
+      }
+      if(best >= 0) catchLeaf(leaves[best], best);
+    }
+  }
+});
+
+window.addEventListener('resize', resize);
+window.matchMedia('(prefers-color-scheme: dark)').addEventListener('change', function(){
+  buildHaikuDisplay();
+});
+
+resize();
+buildHaikuDisplay();
+updateHUD();
+lastTime = performance.now();
+animId = requestAnimationFrame(gameLoop);
+
+})();
+</script>
+</body>
+</html>
