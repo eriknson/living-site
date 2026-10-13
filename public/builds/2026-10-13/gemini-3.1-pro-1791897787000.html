@@ -1,0 +1,473 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Erik Nilsson — Product Designer</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Caveat:wght@500&family=Inter:wght@400;500&family=Newsreader:ital,opsz,wght@0,6..72,300;0,6..72,400;1,6..72,300;1,6..72,400&display=swap" rel="stylesheet">
+  <style>
+    :root {
+      --bg: #F4F2ED;
+      --text: #1A1A19;
+      --text-light: #73736D;
+      
+      /* Base colors */
+      --p3-orange: #FF4500;
+      --p3-blue: #0037FF;
+      --p3-green: #D4FF00;
+      
+      /* Display-P3 enhancement */
+      @supports (color: color(display-p3 1 1 1)) {
+        --p3-orange: color(display-p3 1 0.25 0);
+        --p3-blue: color(display-p3 0 0.2 1);
+        --p3-green: color(display-p3 0.8 1 0);
+      }
+    }
+
+    @media (prefers-color-scheme: dark) {
+      :root {
+        --bg: #1a1a1a;
+        --text: #e0e0e0;
+        --text-light: #a0a0a0;
+      }
+    }
+
+    body {
+      margin: 0;
+      padding: 3vw 5vw;
+      background-color: var(--bg);
+      color: var(--text);
+      font-family: 'Newsreader', serif;
+      min-height: 100vh;
+      box-sizing: border-box;
+      overflow-x: hidden;
+      -webkit-font-smoothing: antialiased;
+      -moz-osx-font-smoothing: grayscale;
+    }
+
+    /* Subtle paper texture */
+    body::before {
+      content: '';
+      position: fixed;
+      top: 0; left: 0; width: 100vw; height: 100vh;
+      background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noiseFilter'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.8' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noiseFilter)'/%3E%3C/svg%3E");
+      opacity: 0.03;
+      pointer-events: none;
+      z-index: 9999;
+    }
+
+    .notebook-container {
+      max-width: 640px;
+      margin: 0 auto;
+      position: relative;
+    }
+
+    /* Top Bar */
+    .top-bar {
+      display: flex;
+      justify-content: space-between;
+      font-family: 'Inter', sans-serif;
+      font-size: 0.75rem;
+      text-transform: uppercase;
+      letter-spacing: 0.06em;
+      border-bottom: 1px solid rgba(0,0,0,0.08);
+      padding-bottom: 1.5rem;
+      margin-bottom: 5rem;
+      color: var(--text-light);
+    }
+
+    .separator {
+      margin: 0 0.5rem;
+      opacity: 0.5;
+    }
+
+    /* Title Area */
+    .title-area {
+      margin-bottom: 6rem;
+      position: relative;
+    }
+
+    .name-wrapper {
+      position: relative;
+      display: inline-block;
+    }
+
+    .name {
+      font-family: 'Newsreader', serif;
+      font-size: clamp(4rem, 13vw, 11rem);
+      font-weight: 300;
+      line-height: 0.85;
+      letter-spacing: -0.04em;
+      margin: 0;
+      margin-left: -0.04em;
+    }
+
+    .name i {
+      font-style: italic;
+      font-weight: 300;
+      padding-right: 0.05em;
+    }
+
+    .role {
+      font-family: 'Inter', sans-serif;
+      font-size: 1rem;
+      font-weight: 400;
+      margin-top: 2rem;
+      margin-left: 0.25rem;
+      color: var(--text-light);
+    }
+
+    .role a {
+      color: var(--text);
+      text-decoration: none;
+      border-bottom: 1px solid rgba(0,0,0,0.2);
+      padding-bottom: 2px;
+      transition: all 0.2s ease;
+    }
+
+    .role a:hover {
+      color: var(--p3-orange);
+      border-color: var(--p3-orange);
+    }
+
+    /* Main Grid */
+    .main-grid {
+      display: grid;
+      grid-template-columns: repeat(12, 1fr);
+      gap: 2rem;
+      margin-bottom: 8rem;
+    }
+
+    .bio-section {
+      grid-column: 1 / 9;
+      font-size: clamp(1.75rem, 3.5vw, 3.25rem);
+      line-height: 1.15;
+      font-weight: 300;
+      letter-spacing: -0.02em;
+    }
+
+    .bio-section p {
+      margin: 0 0 1.5rem 0;
+    }
+
+    /* Annotations & Highlights */
+    .highlight {
+      position: relative;
+      display: inline-block;
+      white-space: nowrap;
+      color: var(--text);
+      z-index: 1;
+    }
+
+    .highlight::before {
+      content: '';
+      position: absolute;
+      bottom: 0.05em;
+      left: -0.1em;
+      right: -0.1em;
+      height: 0.5em;
+      background-color: var(--p3-green);
+      z-index: -1;
+      transform: rotate(-1deg);
+      opacity: 0.8;
+      mix-blend-mode: multiply;
+    }
+
+    .circled-text {
+      position: relative;
+      display: inline-block;
+    }
+
+    .circled-text::after {
+      content: '';
+      position: absolute;
+      top: -0.1em;
+      left: -0.2em;
+      right: -0.2em;
+      bottom: -0.1em;
+      border: 1.5px solid var(--p3-orange);
+      border-radius: 255px 15px 225px 15px/15px 225px 15px 255px;
+      pointer-events: none;
+      transform: rotate(-1deg);
+    }
+
+    .bio-annotation {
+      grid-column: 10 / 13;
+      padding-top: 1rem;
+    }
+
+    .annotation {
+      font-family: 'Caveat', cursive;
+      font-size: 1.5rem;
+      color: var(--p3-blue);
+      line-height: 1.2;
+      transform: rotate(-2deg);
+    }
+
+    /* Lower Grid */
+    .lower-grid {
+      display: grid;
+      grid-template-columns: repeat(12, 1fr);
+      gap: 2rem;
+      border-top: 1px solid rgba(0,0,0,0.08);
+      padding-top: 3rem;
+    }
+
+    .section-title {
+      font-family: 'Inter', sans-serif;
+      font-size: 0.75rem;
+      text-transform: uppercase;
+      letter-spacing: 0.06em;
+      color: var(--text-light);
+      margin: 0 0 2rem 0;
+    }
+
+    /* Signals */
+    .signals-section {
+      grid-column: 1 / 6;
+    }
+
+    .signals-list {
+      list-style: none;
+      padding: 0;
+      margin: 0;
+    }
+
+    .signals-list li {
+      font-family: 'Newsreader', serif;
+      font-style: italic;
+      font-size: 1.25rem;
+      line-height: 1.4;
+      margin-bottom: 1.25rem;
+      padding-left: 1.5rem;
+      position: relative;
+      color: var(--text);
+    }
+
+    .signals-list li::before {
+      content: '*';
+      position: absolute;
+      left: 0;
+      top: 0.1em;
+      color: var(--p3-orange);
+      font-style: normal;
+      font-family: 'Inter', sans-serif;
+      font-size: 1rem;
+    }
+
+    /* Index */
+    .index-section {
+      grid-column: 7 / 10;
+    }
+
+    .index-list {
+      list-style: none;
+      padding: 0;
+      margin: 0;
+    }
+
+    .index-list li {
+      margin-bottom: 1.5rem;
+      display: flex;
+      flex-direction: column;
+    }
+
+    .index-list a {
+      font-size: 1.25rem;
+      color: var(--text);
+      text-decoration: none;
+      line-height: 1.3;
+      position: relative;
+      display: inline-block;
+      align-self: flex-start;
+    }
+
+    .index-list a::after {
+      content: '';
+      position: absolute;
+      bottom: 0;
+      left: 0;
+      width: 100%;
+      height: 1px;
+      background: currentColor;
+      transform: scaleX(0);
+      transform-origin: right;
+      transition: transform 0.4s cubic-bezier(0.16, 1, 0.3, 1);
+    }
+
+    .index-list a:hover::after {
+      transform: scaleX(1);
+      transform-origin: left;
+    }
+
+    .index-list a:hover {
+      color: var(--p3-blue);
+    }
+
+    .index-meta {
+      font-family: 'Inter', sans-serif;
+      font-size: 0.75rem;
+      color: var(--text-light);
+      margin-top: 0.4rem;
+    }
+
+    /* Links */
+    .links-section {
+      grid-column: 11 / 13;
+    }
+
+    .links-list {
+      list-style: none;
+      padding: 0;
+      margin: 0;
+      font-family: 'Inter', sans-serif;
+      font-size: 0.875rem;
+    }
+
+    .links-list li {
+      margin-bottom: 0.75rem;
+    }
+
+    .links-list a {
+      color: var(--text);
+      text-decoration: none;
+      transition: color 0.2s;
+    }
+
+    .links-list a:hover {
+      color: var(--p3-orange);
+    }
+
+    /* Footer Note */
+    .footer-note {
+      margin-top: 8rem;
+      padding-top: 2rem;
+      border-top: 1px solid rgba(0,0,0,0.08);
+      font-family: 'Inter', sans-serif;
+      font-size: 0.75rem;
+      color: var(--text-light);
+      line-height: 1.6;
+      max-width: 800px;
+    }
+
+    /* Responsive */
+    @media (max-width: 1024px) {
+      .bio-section { grid-column: 1 / 9; }
+      .bio-annotation { grid-column: 9 / 13; }
+      .signals-section { grid-column: 1 / 7; }
+      .index-section { grid-column: 8 / 13; }
+      .links-section { grid-column: 1 / 13; margin-top: 2rem; display: flex; gap: 2rem; }
+    }
+
+    @media (max-width: 640px) {
+      .top-bar { flex-direction: column; gap: 0.5rem; }
+      .main-grid, .lower-grid { display: block; }
+      .bio-annotation { margin-top: 3rem; }
+      .signals-section, .index-section, .links-section { margin-top: 4rem; }
+      .name { font-size: 4.5rem; }
+      .footer-note { margin-top: 4rem; }
+    }
+  </style>
+
+<style id="__living_site_scroll_guard">
+  /* Scroll guard injected at build time to ensure generated pages remain scrollable in iframes. */
+  html, body {
+    height: auto !important;
+    min-height: 100% !important;
+    max-height: none !important;
+    overflow-y: auto !important;
+    overflow-x: hidden !important;
+    position: static !important;
+    -webkit-overflow-scrolling: touch !important;
+    touch-action: pan-y !important;
+    overscroll-behavior-y: contain !important;
+  }
+  /* Avoid accidental fixed full-screen traps that break scrolling on mobile. */
+  body {
+    inset: auto !important;
+  }
+</style>
+</head>
+<body>
+  <div class="notebook-container">
+    <header class="top-bar">
+      <div class="top-left">
+        <span>San Francisco, CA</span>
+        <span class="separator">/</span>
+        <span>11°C, Clear</span>
+      </div>
+      <div class="top-right">
+        <span>Oct 13, 2026</span>
+      </div>
+    </header>
+
+    <div class="title-area">
+      <div class="name-wrapper">
+        <h1 class="name">Erik <i>Nilsson</i></h1>
+      </div>
+      <div class="role">Product Designer at <a href="https://cursor.com">Cursor</a></div>
+    </div>
+
+    <main class="main-grid">
+      <div class="bio-section">
+        <p>I'm a product designer at <span class="circled-text">Cursor</span>, working on how people build software with AI.</p>
+        <p>Off-hours, I'm tinkering with <span class="highlight">living-site</span> — agents rebuild this corner of the web from fresh activity data each day.</p>
+      </div>
+      
+      <div class="bio-annotation">
+        <div class="annotation" style="max-width: 260px;">
+          * GitHub repos are side projects and experiments — small personal things I tinker with outside of work.
+        </div>
+      </div>
+    </main>
+
+    <div class="lower-grid">
+      <section class="signals-section">
+        <h2 class="section-title">World Signals</h2>
+        <ul class="signals-list">
+          <li>an hour of speech distilled to thirteen seconds on a quiet laptop</li>
+          <li>enterprise browsers carving new territory for the workplace web</li>
+          <li>virtual companion platforms meeting the cold ledger</li>
+          <li>clear autumn night over san francisco, eleven degrees before dawn</li>
+          <li>agents spun up from a phone while the city still sleeps</li>
+        </ul>
+      </section>
+
+      <section class="index-section">
+        <h2 class="section-title">Index</h2>
+        <ul class="index-list">
+          <li>
+            <a href="https://x.com/flowstated/status/2002167999353241901">imagine 2026</a>
+            <span class="index-meta">Dec 20, 2025</span>
+          </li>
+          <li>
+            <a href="https://x.com/flowstated/status/2000889983562080578">shipping by sunrise</a>
+            <span class="index-meta">Dec 16, 2025</span>
+          </li>
+          <li>
+            <a href="https://x.com/flowstated/status/2000691637190861180">exploring ways to spin up agents from my phone</a>
+            <span class="index-meta">Dec 15, 2025</span>
+          </li>
+        </ul>
+      </section>
+      
+      <section class="links-section">
+        <h2 class="section-title">Elsewhere</h2>
+        <ul class="links-list">
+          <li><a href="https://eriks.design">Site</a></li>
+          <li><a href="https://x.com/flowstated">X (Twitter)</a></li>
+          <li><a href="https://github.com/eriknson">GitHub</a></li>
+          <li><a href="https://linkedin.com/in/eriknson">LinkedIn</a></li>
+          <li><a href="mailto:contact@eriks.design">Email</a></li>
+        </ul>
+      </section>
+    </div>
+
+    <footer class="footer-note">
+      Active concepts: Catch falling autumn leaves before they smear a live transcription waveform. Hold and release to launch agent pods from phone shortcuts at the exact sunrise window. Swipe enterprise tabs and personal tabs into separate lanes. Draw one unbroken path through a maze of parallel agent brains.
+    </footer>
+  </div>
+</body>
+</html>
