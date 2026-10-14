@@ -1,0 +1,639 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Ship It</title>
+<style>
+  :root {
+    --bg-light: #FAF8F5;
+    --bg-dark: #1C1917;
+    --text-light: #292524;
+    --text-dark: #FAF8F5;
+    --btn-bg: #E55934;
+    --btn-text: #FFFFFF;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root {
+      --bg: var(--bg-dark);
+      --text: var(--text-dark);
+    }
+  }
+  @media (prefers-color-scheme: light) {
+    :root {
+      --bg: var(--bg-light);
+      --text: var(--text-light);
+    }
+  }
+  body, html {
+    margin: 0;
+    padding: 0;
+    width: 100vw;
+    height: 100dvh;
+    background-color: var(--bg);
+    color: var(--text);
+    font-family: ui-monospace, 'SFMono-Regular', Menlo, monospace;
+    overflow: hidden;
+    touch-action: none;
+    user-select: none;
+    -webkit-user-select: none;
+  }
+  canvas {
+    display: block;
+    width: 100%;
+    height: 100%;
+    position: absolute;
+    top: 0;
+    left: 0;
+    z-index: 1;
+  }
+  #ui-layer {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    z-index: 2;
+    pointer-events: none;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+  }
+  .screen {
+    display: none;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    text-align: center;
+    padding: 32px;
+    border-radius: 24px;
+    background: rgba(250, 248, 245, 0.6);
+    box-shadow: 0 8px 32px rgba(0,0,0,0.1);
+    backdrop-filter: blur(12px);
+    -webkit-backdrop-filter: blur(12px);
+    border: 1px solid rgba(0, 0, 0, 0.05);
+    max-width: 80%;
+  }
+  @media (prefers-color-scheme: dark) {
+    .screen {
+      background: rgba(28, 25, 23, 0.6);
+      box-shadow: 0 8px 32px rgba(0,0,0,0.4);
+      border: 1px solid rgba(255, 255, 255, 0.05);
+    }
+  }
+  .screen.active {
+    display: flex;
+  }
+  button {
+    pointer-events: auto;
+    background: var(--btn-bg);
+    color: var(--btn-text);
+    border: none;
+    padding: 16px 32px;
+    font-size: 20px;
+    font-family: inherit;
+    font-weight: bold;
+    border-radius: 30px;
+    cursor: pointer;
+    margin-top: 32px;
+    box-shadow: 0 4px 12px rgba(229, 89, 52, 0.3);
+    transition: transform 0.1s, box-shadow 0.1s;
+    min-width: 180px;
+    min-height: 56px;
+  }
+  button:active {
+    transform: scale(0.96);
+    box-shadow: 0 2px 6px rgba(229, 89, 52, 0.4);
+  }
+  h1 { margin: 0 0 12px 0; font-size: 36px; letter-spacing: -1px; }
+  p { margin: 0; opacity: 0.8; font-size: 16px; line-height: 1.5; max-width: 280px; }
+  .score-display { font-size: 64px; font-weight: bold; margin: 16px 0; letter-spacing: -2px; }
+  
+  #hud {
+    position: absolute;
+    top: 24px;
+    left: 24px;
+    z-index: 2;
+    pointer-events: none;
+    display: none;
+    font-size: 32px;
+    font-weight: 700;
+    letter-spacing: -1px;
+    color: var(--text);
+  }
+</style>
+</head>
+<body>
+  <canvas id="gameCanvas"></canvas>
+  <div id="hud">0</div>
+  <div id="ui-layer">
+    <div id="start-screen" class="screen active">
+      <h1>Ship It</h1>
+      <p>Flick agent capsules into matching lanes before sunrise.<br><br>Swipe anywhere to throw.</p>
+      <button data-smoke="start" id="start-btn">Start</button>
+    </div>
+    <div id="game-over-screen" class="screen">
+      <h1>Sunrise</h1>
+      <p>Agents shipped</p>
+      <div class="score-display" id="final-score">0</div>
+      <button data-smoke="restart" id="restart-btn">Play Again</button>
+    </div>
+  </div>
+  <script>
+    const canvas = document.getElementById('gameCanvas');
+    const ctx = canvas.getContext('2d', { alpha: false });
+    
+    // Audio Context (Guarded)
+    const AudioContext = window.AudioContext || window.webkitAudioContext;
+    const audioCtx = AudioContext ? new AudioContext() : null;
+
+    // Game variables
+    let W, H;
+    let slotH;
+    let gameState = 'MENU';
+    let score = 0;
+    let sunriseProgress = 1.0;
+    let drainRate = 0.0015;
+    let currentLanes = 3;
+    let lanes = [];
+    let particles = [];
+    let hitPause = 0;
+    let dragStart = null;
+    let pastPointers = [];
+    
+    let capsule = { x: 0, y: 0, vx: 0, vy: 0, r: 25, color: '#E55934', scale: 0, isDragging: false, isDecoy: false };
+    
+    const PALETTE = ['#E55934', '#FDB833', '#3A86FF', '#38B000', '#00B4D8'];
+
+    function getColors() {
+        let dark = window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches;
+        return {
+            bg: dark ? '#1C1917' : '#FAF8F5',
+            text: dark ? '#FAF8F5' : '#292524',
+            isDark: dark
+        };
+    }
+    let colors = getColors();
+    if (window.matchMedia) {
+        window.matchMedia('(prefers-color-scheme: dark)').addEventListener('change', () => {
+            colors = getColors();
+        });
+    }
+
+    function resize() {
+        W = window.innerWidth;
+        H = window.innerHeight;
+        canvas.width = W * window.devicePixelRatio;
+        canvas.height = H * window.devicePixelRatio;
+        ctx.setTransform(1, 0, 0, 1, 0, 0); // Reset
+        ctx.scale(window.devicePixelRatio, window.devicePixelRatio);
+        
+        slotH = Math.max(100, H * 0.16);
+        capsule.r = Math.max(22, Math.min(W, H) * 0.055);
+        
+        if (gameState !== 'GAME_OVER') {
+            rebuildLanes();
+        }
+    }
+
+    function rebuildLanes() {
+        lanes = [];
+        let gap = W * 0.05;
+        let totalLanesWidth = W - (gap * (currentLanes + 1));
+        let laneWidth = totalLanesWidth / currentLanes;
+        let x = gap;
+        for(let i = 0; i < currentLanes; i++) {
+            lanes.push({
+                x: x,
+                width: laneWidth,
+                color: PALETTE[i]
+            });
+            x += laneWidth + gap;
+        }
+    }
+
+    function spawnCapsule() {
+        capsule.x = W / 2;
+        capsule.y = H - Math.max(160, H * 0.2);
+        capsule.vx = 0;
+        capsule.vy = 0;
+        capsule.isDragging = false;
+        dragStart = null;
+        
+        if (score >= 15 && Math.random() < 0.2) {
+            capsule.isDecoy = true;
+            capsule.color = colors.isDark ? '#555555' : '#777777';
+        } else {
+            capsule.isDecoy = false;
+            let activeLane = lanes[Math.floor(Math.random() * lanes.length)];
+            capsule.color = activeLane.color;
+        }
+        capsule.scale = 0;
+    }
+
+    function spawnParticles(x, y, color, isSuccess) {
+        let count = isSuccess ? 24 : 12;
+        for(let i = 0; i < count; i++) {
+            let angle = Math.random() * Math.PI * 2;
+            let speed = Math.random() * 10 + 2;
+            particles.push({
+                x: x,
+                y: y,
+                vx: Math.cos(angle) * speed,
+                vy: Math.sin(angle) * speed,
+                life: 1.0,
+                decay: Math.random() * 0.02 + 0.015,
+                color: color,
+                size: Math.random() * 5 + 3
+            });
+        }
+    }
+
+    function playSound(type) {
+        if (!audioCtx) return;
+        if (audioCtx.state === 'suspended') audioCtx.resume();
+        try {
+            const osc = audioCtx.createOscillator();
+            const gain = audioCtx.createGain();
+            osc.connect(gain);
+            gain.connect(audioCtx.destination);
+            
+            let now = audioCtx.currentTime;
+            if (type === 'success') {
+                osc.type = 'sine';
+                osc.frequency.setValueAtTime(440, now);
+                osc.frequency.exponentialRampToValueAtTime(880, now + 0.1);
+                gain.gain.setValueAtTime(0.3, now);
+                gain.gain.exponentialRampToValueAtTime(0.01, now + 0.2);
+                osc.start(now);
+                osc.stop(now + 0.2);
+            } else if (type === 'fail') {
+                osc.type = 'sawtooth';
+                osc.frequency.setValueAtTime(200, now);
+                osc.frequency.exponentialRampToValueAtTime(100, now + 0.2);
+                gain.gain.setValueAtTime(0.3, now);
+                gain.gain.exponentialRampToValueAtTime(0.01, now + 0.2);
+                osc.start(now);
+                osc.stop(now + 0.2);
+            } else if (type === 'flick') {
+                osc.type = 'triangle';
+                osc.frequency.setValueAtTime(300, now);
+                osc.frequency.exponentialRampToValueAtTime(150, now + 0.1);
+                gain.gain.setValueAtTime(0.1, now);
+                gain.gain.linearRampToValueAtTime(0.01, now + 0.1);
+                osc.start(now);
+                osc.stop(now + 0.1);
+            }
+        } catch(e) {}
+    }
+
+    function checkLaneMatch(lane) {
+        if (lane.color === capsule.color) {
+            score++;
+            sunriseProgress = Math.min(1.0, sunriseProgress + 0.15);
+            spawnParticles(capsule.x, capsule.y, lane.color, true);
+            playSound('success');
+            if (navigator.vibrate) try { navigator.vibrate(20); } catch(e){}
+            
+            if (score === 10 && currentLanes === 3) {
+                currentLanes = 4;
+                rebuildLanes();
+            } else if (score === 25 && currentLanes === 4) {
+                currentLanes = 5;
+                rebuildLanes();
+            }
+            drainRate = 0.0015 + (score * 0.00005);
+            document.getElementById('hud').innerText = score;
+        } else {
+            sunriseProgress = Math.max(0, sunriseProgress - 0.2);
+            spawnParticles(capsule.x, capsule.y, capsule.color, false);
+            playSound('fail');
+            if (navigator.vibrate) try { navigator.vibrate([20, 50, 20]); } catch(e){}
+        }
+        
+        hitPause = 4;
+        spawnCapsule();
+    }
+
+    function updatePhysics() {
+        if (capsule.isDragging) return;
+        
+        let speed = Math.hypot(capsule.vx, capsule.vy);
+        let maxSpeed = capsule.r - 2;
+        if (speed > maxSpeed) {
+            capsule.vx = (capsule.vx / speed) * maxSpeed;
+            capsule.vy = (capsule.vy / speed) * maxSpeed;
+        }
+
+        capsule.x += capsule.vx;
+        capsule.y += capsule.vy;
+        capsule.vx *= 0.95;
+        capsule.vy *= 0.95;
+        
+        // Side bounds
+        if (capsule.x - capsule.r < 0) {
+            capsule.x = capsule.r;
+            capsule.vx *= -0.7;
+        }
+        if (capsule.x + capsule.r > W) {
+            capsule.x = W - capsule.r;
+            capsule.vx *= -0.7;
+        }
+        
+        // Bottom bounds
+        if (capsule.y > H + capsule.r) {
+            if (capsule.isDecoy) {
+                sunriseProgress = Math.min(1.0, sunriseProgress + 0.15);
+                spawnParticles(capsule.x, H, capsule.color, true);
+                playSound('success');
+            } else {
+                sunriseProgress -= 0.15;
+                playSound('fail');
+            }
+            spawnCapsule();
+            return;
+        }
+        
+        // Slot collisions
+        let paperEdgeY = slotH;
+        if (capsule.y - capsule.r < paperEdgeY) {
+            let alignedSlot = null;
+            for (let lane of lanes) {
+                if (capsule.x + capsule.r * 0.4 > lane.x && capsule.x - capsule.r * 0.4 < lane.x + lane.width) {
+                    alignedSlot = lane;
+                    break;
+                }
+            }
+            
+            if (alignedSlot) {
+                // Inner walls
+                if (capsule.x - capsule.r < alignedSlot.x) {
+                    capsule.x = alignedSlot.x + capsule.r;
+                    capsule.vx *= -0.5;
+                }
+                if (capsule.x + capsule.r > alignedSlot.x + alignedSlot.width) {
+                    capsule.x = alignedSlot.x + alignedSlot.width - capsule.r;
+                    capsule.vx *= -0.5;
+                }
+                
+                // Success top threshold
+                if (capsule.y < 30) {
+                    checkLaneMatch(alignedSlot);
+                }
+            } else {
+                // Bounce off front paper surface
+                capsule.y = paperEdgeY + capsule.r;
+                capsule.vy *= -0.6;
+            }
+        }
+    }
+
+    function update() {
+        if (gameState === 'PLAYING') {
+            if (hitPause > 0) {
+                hitPause--;
+            } else {
+                updatePhysics();
+                sunriseProgress -= drainRate;
+                if (sunriseProgress <= 0) {
+                    gameOver();
+                }
+            }
+            if (capsule.scale < 1) {
+                capsule.scale += (1 - capsule.scale) * 0.15;
+            }
+        }
+        
+        for(let i = particles.length - 1; i >= 0; i--) {
+            let p = particles[i];
+            p.x += p.vx;
+            p.y += p.vy;
+            p.vx *= 0.92;
+            p.vy *= 0.92;
+            p.life -= p.decay;
+            if (p.life <= 0) particles.splice(i, 1);
+        }
+    }
+
+    function draw() {
+        // Base back paper (seen through slots)
+        ctx.fillStyle = colors.bg;
+        ctx.fillRect(0, 0, W, H);
+        
+        // Slots background
+        lanes.forEach(lane => {
+            ctx.fillStyle = lane.color;
+            ctx.fillRect(lane.x, 0, lane.width, slotH + 20);
+            
+            // Inner shadow for depth
+            let grad = ctx.createLinearGradient(0, 0, 0, slotH);
+            grad.addColorStop(0, 'rgba(0,0,0,0.5)');
+            grad.addColorStop(1, 'rgba(0,0,0,0)');
+            ctx.fillStyle = grad;
+            ctx.fillRect(lane.x, 0, lane.width, slotH);
+        });
+
+        // Main front paper surface
+        ctx.save();
+        ctx.fillStyle = colors.bg;
+        ctx.shadowColor = colors.isDark ? 'rgba(0,0,0,0.9)' : 'rgba(0,0,0,0.2)';
+        ctx.shadowBlur = 24;
+        ctx.shadowOffsetY = 12;
+        
+        ctx.beginPath();
+        ctx.moveTo(0, H);
+        ctx.lineTo(W, H);
+        ctx.lineTo(W, 0);
+        
+        let r = 16; 
+        for(let i = lanes.length - 1; i >= 0; i--) {
+            let lx = lanes[i].x;
+            let lw = lanes[i].width;
+            let lh = slotH;
+            
+            ctx.lineTo(lx + lw, 0);
+            ctx.lineTo(lx + lw, lh - r);
+            ctx.arcTo(lx + lw, lh, lx + lw - r, lh, r);
+            ctx.lineTo(lx + r, lh);
+            ctx.arcTo(lx, lh, lx, lh - r, r);
+            ctx.lineTo(lx, 0);
+        }
+        
+        ctx.lineTo(0, 0);
+        ctx.closePath();
+        ctx.fill();
+        ctx.restore();
+        
+        // Particles
+        particles.forEach(p => {
+            ctx.globalAlpha = Math.max(0, p.life);
+            ctx.fillStyle = p.color;
+            ctx.beginPath();
+            ctx.arc(p.x, p.y, p.size, 0, Math.PI*2);
+            ctx.fill();
+        });
+        ctx.globalAlpha = 1.0;
+        
+        // Capsule
+        if (gameState === 'PLAYING') {
+            ctx.save();
+            ctx.fillStyle = capsule.color;
+            ctx.shadowColor = colors.isDark ? 'rgba(0,0,0,0.7)' : 'rgba(0,0,0,0.3)';
+            ctx.shadowBlur = 12;
+            ctx.shadowOffsetY = 8;
+            
+            ctx.beginPath();
+            let currentR = capsule.r * capsule.scale;
+            ctx.arc(capsule.x, capsule.y, currentR, 0, Math.PI*2);
+            ctx.fill();
+            
+            if (capsule.isDecoy) {
+                ctx.strokeStyle = colors.bg;
+                ctx.lineWidth = 4;
+                ctx.lineCap = 'round';
+                ctx.beginPath();
+                ctx.moveTo(capsule.x - currentR * 0.4, capsule.y - currentR * 0.4);
+                ctx.lineTo(capsule.x + currentR * 0.4, capsule.y + currentR * 0.4);
+                ctx.moveTo(capsule.x + currentR * 0.4, capsule.y - currentR * 0.4);
+                ctx.lineTo(capsule.x - currentR * 0.4, capsule.y + currentR * 0.4);
+                ctx.stroke();
+            } else {
+                ctx.fillStyle = 'rgba(255,255,255,0.25)';
+                ctx.beginPath();
+                ctx.arc(capsule.x - currentR * 0.25, capsule.y - currentR * 0.25, currentR * 0.35, 0, Math.PI*2);
+                ctx.fill();
+            }
+            ctx.restore();
+        }
+        
+        // Sunrise Progress Bar
+        if (gameState === 'PLAYING') {
+            let barH = 12;
+            let grad = ctx.createLinearGradient(0, 0, W, 0);
+            grad.addColorStop(0, '#E55934');
+            grad.addColorStop(0.5, '#FDB833');
+            grad.addColorStop(1, '#FFD54F');
+            
+            ctx.fillStyle = colors.isDark ? '#292524' : '#E7E5E4';
+            ctx.fillRect(0, H - barH, W, barH);
+            
+            ctx.fillStyle = grad;
+            ctx.fillRect(0, H - barH, W * sunriseProgress, barH);
+        }
+    }
+
+    function loop(timestamp) {
+        requestAnimationFrame(loop);
+        update();
+        draw();
+    }
+
+    function startGame() {
+        gameState = 'PLAYING';
+        document.getElementById('start-screen').classList.remove('active');
+        document.getElementById('game-over-screen').classList.remove('active');
+        document.getElementById('hud').style.display = 'block';
+        
+        score = 0;
+        currentLanes = 3;
+        rebuildLanes();
+        sunriseProgress = 1.0;
+        drainRate = 0.0015;
+        particles = [];
+        document.getElementById('hud').innerText = score;
+        spawnCapsule();
+    }
+
+    function gameOver() {
+        gameState = 'GAME_OVER';
+        document.getElementById('hud').style.display = 'none';
+        document.getElementById('game-over-screen').classList.add('active');
+        document.getElementById('final-score').innerText = score;
+        playSound('fail');
+        if (navigator.vibrate) try { navigator.vibrate([50, 100, 50]); } catch(e){}
+    }
+
+    // Input Handling
+    window.addEventListener('pointerdown', e => {
+        if (e.target.closest('button')) return;
+        if (gameState !== 'PLAYING') return;
+        
+        dragStart = { x: e.clientX, y: e.clientY, cx: capsule.x, cy: capsule.y, time: performance.now() };
+        pastPointers = [{ x: e.clientX, y: e.clientY, time: performance.now() }];
+        capsule.isDragging = true;
+        capsule.vx = 0;
+        capsule.vy = 0;
+    });
+
+    window.addEventListener('pointermove', e => {
+        if (!capsule.isDragging || !dragStart) return;
+        
+        let dx = e.clientX - dragStart.x;
+        let dy = e.clientY - dragStart.y;
+        
+        let newX = dragStart.cx + dx * 1.5;
+        let newY = dragStart.cy + dy * 1.5;
+        
+        // Prevent dragging straight into the holes to cheat
+        if (newY < slotH + capsule.r) {
+            newY = slotH + capsule.r;
+        }
+        
+        capsule.x = newX;
+        capsule.y = newY;
+        
+        pastPointers.push({ x: e.clientX, y: e.clientY, time: performance.now() });
+        if (pastPointers.length > 5) pastPointers.shift();
+    });
+
+    function endDrag() {
+        if (!capsule.isDragging) return;
+        capsule.isDragging = false;
+        
+        if (pastPointers.length >= 2) {
+            let first = pastPointers[0];
+            let last = pastPointers[pastPointers.length - 1];
+            let dt = last.time - first.time;
+            if (dt > 0) {
+                capsule.vx = ((last.x - first.x) / dt) * 28; 
+                capsule.vy = ((last.y - first.y) / dt) * 28;
+                if (Math.hypot(capsule.vx, capsule.vy) > 5) {
+                    playSound('flick');
+                }
+            }
+        }
+        dragStart = null;
+    }
+
+    window.addEventListener('pointerup', endDrag);
+    window.addEventListener('pointercancel', endDrag);
+
+    // Prevent default scroll actions on touch
+    window.addEventListener('touchstart', e => {
+        if (e.target === canvas) e.preventDefault();
+    }, { passive: false });
+    window.addEventListener('touchmove', e => {
+        if (e.target === canvas) e.preventDefault();
+    }, { passive: false });
+
+    // UI Buttons
+    document.getElementById('start-btn').addEventListener('click', () => {
+        if (audioCtx && audioCtx.state === 'suspended') audioCtx.resume();
+        startGame();
+    });
+    document.getElementById('restart-btn').addEventListener('click', () => {
+        if (audioCtx && audioCtx.state === 'suspended') audioCtx.resume();
+        startGame();
+    });
+
+    window.addEventListener('resize', resize);
+    
+    // Init
+    resize();
+    rebuildLanes();
+    spawnCapsule();
+    requestAnimationFrame(loop);
+  </script>
+</body>
+</html>

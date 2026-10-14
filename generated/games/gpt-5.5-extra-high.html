@@ -1,629 +1,784 @@
 <!doctype html>
 <html lang="en">
 <head>
-  <meta charset="utf-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
-  <meta name="color-scheme" content="light dark">
-  <title>Shortcut Sunrise</title>
-  <style>
-    :root{
-      color-scheme:light dark;
-      --bg:#f6efe2;
-      --panel:#fff8ea;
-      --ink:#161915;
-      --muted:#64706a;
-      --line:rgba(22,25,21,.18);
-      --gold:#d98224;
-      --gold-2:#f4b64e;
-      --bad:#bd5536;
-      --good:#167b58;
-      --shadow:rgba(66,45,19,.18);
-    }
-    @media (prefers-color-scheme:dark){
-      :root{
-        --bg:#071016;
-        --panel:#101b20;
-        --ink:#f6efdf;
-        --muted:#a8b0aa;
-        --line:rgba(246,239,223,.18);
-        --gold:#f0a949;
-        --gold-2:#ffd27a;
-        --bad:#ff7957;
-        --good:#5ad097;
-        --shadow:rgba(0,0,0,.42);
-      }
-    }
-    *{box-sizing:border-box}
-    html,body{margin:0;width:100%;height:100%;overflow:hidden;background:var(--bg);color:var(--ink)}
-    body{
-      min-height:100dvh;
-      font-family:ui-sans-serif,system-ui,-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;
-      user-select:none;
-      -webkit-user-select:none;
-    }
-    #app{position:fixed;inset:0;width:100dvw;height:100dvh;overflow:hidden;background:var(--bg)}
-    canvas{display:block;width:100dvw;height:100dvh;touch-action:none}
-    .hud{
-      position:fixed;left:0;right:0;top:0;z-index:3;
-      display:flex;align-items:flex-start;justify-content:space-between;
-      padding:calc(14px + env(safe-area-inset-top)) 16px 0;
-      pointer-events:none;
-      font-family:ui-monospace,"SFMono-Regular",Menlo,monospace;
-      letter-spacing:.08em;text-transform:uppercase;font-size:11px;
-    }
-    .stack{display:grid;gap:7px}
-    .pill{
-      min-width:76px;padding:8px 10px;border:1px solid var(--line);
-      border-radius:999px;background:color-mix(in srgb,var(--panel) 78%,transparent);
-      box-shadow:0 8px 24px var(--shadow);backdrop-filter:blur(10px);
-    }
-    .pill b{font-size:15px;letter-spacing:.02em}
-    .help{
-      max-width:min(58dvw,380px);padding:9px 11px;border:1px solid var(--line);
-      border-radius:16px;background:color-mix(in srgb,var(--panel) 70%,transparent);
-      box-shadow:0 8px 24px var(--shadow);text-align:right;line-height:1.35;
-    }
-    .overlay{
-      position:fixed;inset:0;z-index:5;display:grid;place-items:center;
-      padding:24px;pointer-events:none;
-    }
-    .overlay.hidden{display:none}
-    .card{
-      width:min(430px,calc(100dvw - 38px));padding:26px 24px 24px;
-      border:1px solid var(--line);border-radius:30px;background:color-mix(in srgb,var(--panel) 86%,transparent);
-      box-shadow:0 24px 80px var(--shadow);backdrop-filter:blur(18px);
-      text-align:left;transform:translateY(0);transition:transform .35s ease,opacity .35s ease;
-      pointer-events:none;
-    }
-    .kicker{
-      margin:0 0 12px;font-family:ui-monospace,"SFMono-Regular",Menlo,monospace;
-      font-size:11px;letter-spacing:.14em;text-transform:uppercase;color:var(--muted)
-    }
-    h1{margin:0;font-size:clamp(40px,12vw,70px);line-height:.9;letter-spacing:-.07em}
-    h2{margin:0;font-size:clamp(34px,10vw,56px);line-height:.94;letter-spacing:-.06em}
-    p{margin:16px 0 0;color:var(--muted);font-size:16px;line-height:1.45}
-    .rules{display:grid;gap:8px;margin:18px 0;color:var(--ink);font-size:14px}
-    .rules span{display:flex;gap:10px;align-items:center}
-    .dot{width:8px;height:8px;border-radius:99px;background:var(--gold);box-shadow:0 0 18px var(--gold-2);flex:none}
-    button{
-      appearance:none;border:0;border-radius:999px;min-height:52px;padding:0 22px;
-      font:700 13px/1 ui-monospace,"SFMono-Regular",Menlo,monospace;
-      letter-spacing:.12em;text-transform:uppercase;background:var(--ink);color:var(--panel);
-      box-shadow:0 14px 36px var(--shadow);cursor:pointer;pointer-events:auto;
-    }
-    button:active{transform:translateY(1px) scale(.99)}
-    .row{display:flex;align-items:center;justify-content:space-between;gap:12px;margin-top:20px}
-    .fine{font-family:ui-monospace,"SFMono-Regular",Menlo,monospace;font-size:11px;color:var(--muted);letter-spacing:.08em;text-transform:uppercase}
-    #restartBtn{display:none}
-    #restartBtn.ready{display:inline-flex;align-items:center}
-    @media (max-width:520px){
-      .hud{padding-left:12px;padding-right:12px}
-      .help{max-width:52dvw;font-size:10px;padding:8px}
-      .pill{padding:7px 9px}
-    }
-  </style>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Oracle Collapse</title>
+<style>
+:root{
+  --bg:#eef4ea;
+  --ink:#10211b;
+  --panel:rgba(247,252,243,.78);
+  --line:rgba(16,33,27,.16);
+  --hot:#d97706;
+  --phosphor:#32f58a;
+  --cyan:#55d6cf;
+  --danger:#e14f3f;
+  --shadow:rgba(10,26,20,.28);
+}
+@media (prefers-color-scheme: dark){
+  :root{
+    --bg:#030706;
+    --ink:#e8fff4;
+    --panel:rgba(4,12,10,.68);
+    --line:rgba(151,255,201,.18);
+    --shadow:rgba(0,0,0,.62);
+  }
+}
+*{box-sizing:border-box}
+html,body{
+  width:100dvw;
+  height:100dvh;
+  margin:0;
+  overflow:hidden;
+  background:var(--bg);
+  color:var(--ink);
+  font-family:Inter,system-ui,-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;
+}
+body{min-height:100dvh}
+#game{
+  position:fixed;
+  inset:0;
+  width:100dvw;
+  height:100dvh;
+  user-select:none;
+  -webkit-user-select:none;
+  overflow:hidden;
+  background:
+    radial-gradient(circle at 50% 18%, rgba(79,214,178,.16), transparent 38%),
+    linear-gradient(180deg, var(--bg), var(--bg));
+}
+canvas{
+  position:absolute;
+  inset:0;
+  width:100dvw;
+  height:100dvh;
+  touch-action:none;
+  display:block;
+}
+#hud{
+  position:absolute;
+  z-index:4;
+  top:max(12px, env(safe-area-inset-top));
+  left:max(12px, env(safe-area-inset-left));
+  right:max(12px, env(safe-area-inset-right));
+  display:grid;
+  grid-template-columns:repeat(4,1fr);
+  gap:8px;
+  pointer-events:none;
+}
+.meter{
+  min-height:48px;
+  padding:8px 10px;
+  border:1px solid var(--line);
+  border-radius:16px;
+  background:var(--panel);
+  box-shadow:0 12px 35px var(--shadow);
+  backdrop-filter:blur(14px);
+}
+.label{
+  display:block;
+  font:700 10px/1 ui-monospace,"SFMono-Regular",Menlo,monospace;
+  letter-spacing:.12em;
+  opacity:.62;
+}
+.value{
+  display:block;
+  margin-top:5px;
+  font:800 clamp(16px,4vw,24px)/1 ui-monospace,"SFMono-Regular",Menlo,monospace;
+  white-space:nowrap;
+}
+.overlay{
+  position:absolute;
+  z-index:12;
+  inset:0;
+  display:grid;
+  place-items:center;
+  padding:24px;
+  opacity:0;
+  visibility:hidden;
+  transition:opacity .36s ease, visibility .36s ease;
+  pointer-events:none;
+}
+.overlay.show{
+  opacity:1;
+  visibility:visible;
+}
+.card{
+  width:min(560px, calc(100dvw - 32px));
+  border:1px solid var(--line);
+  border-radius:30px;
+  padding:clamp(22px,5vw,38px);
+  background:var(--panel);
+  box-shadow:0 24px 70px var(--shadow);
+  backdrop-filter:blur(18px) saturate(1.2);
+  text-align:left;
+}
+.kicker{
+  margin:0 0 12px;
+  font:800 11px/1 ui-monospace,"SFMono-Regular",Menlo,monospace;
+  letter-spacing:.16em;
+  color:var(--hot);
+}
+h1{
+  margin:0;
+  font-size:clamp(38px,12vw,76px);
+  line-height:.88;
+  letter-spacing:-.07em;
+}
+p{
+  margin:18px 0 0;
+  color:color-mix(in srgb, var(--ink), transparent 20%);
+  font-size:clamp(15px,3.8vw,18px);
+  line-height:1.45;
+}
+.hint{
+  margin-top:18px;
+  padding:12px 14px;
+  border-radius:18px;
+  border:1px solid var(--line);
+  font:700 12px/1.35 ui-monospace,"SFMono-Regular",Menlo,monospace;
+  letter-spacing:.04em;
+}
+button{
+  appearance:none;
+  border:0;
+  min-height:52px;
+  min-width:148px;
+  margin-top:24px;
+  padding:0 22px;
+  border-radius:999px;
+  background:linear-gradient(135deg, #31e982, #20bfc2);
+  color:#04110d;
+  font:900 13px/1 ui-monospace,"SFMono-Regular",Menlo,monospace;
+  letter-spacing:.08em;
+  text-transform:uppercase;
+  box-shadow:0 14px 36px rgba(21,177,128,.38), inset 0 -2px 0 rgba(0,0,0,.18);
+  cursor:pointer;
+  pointer-events:auto;
+  position:relative;
+  z-index:20;
+}
+button:focus-visible{outline:3px solid var(--hot); outline-offset:4px}
+#toast{
+  position:absolute;
+  z-index:6;
+  left:50%;
+  bottom:max(26px, env(safe-area-inset-bottom));
+  transform:translateX(-50%);
+  padding:10px 14px;
+  border:1px solid var(--line);
+  border-radius:999px;
+  background:var(--panel);
+  box-shadow:0 14px 38px var(--shadow);
+  opacity:0;
+  transition:opacity .16s ease, transform .16s ease;
+  pointer-events:none;
+  font:800 12px/1 ui-monospace,"SFMono-Regular",Menlo,monospace;
+  letter-spacing:.09em;
+  white-space:nowrap;
+}
+#toast.show{opacity:1; transform:translate(-50%,-8px)}
+@media (max-width:430px){
+  #hud{grid-template-columns:repeat(2,1fr)}
+  .meter{min-height:43px;padding:7px 9px;border-radius:14px}
+  .value{font-size:17px}
+  .card{border-radius:25px}
+}
+</style>
 </head>
 <body>
-  <div id="app" aria-label="Shortcut Sunrise game">
-    <canvas id="game" aria-label="Hold and release timing game"></canvas>
-    <div class="hud" aria-hidden="true">
-      <div class="stack">
-        <div class="pill">Score<br><b id="scoreText">0000</b></div>
-        <div class="pill">Streak<br><b id="streakText">0/3</b></div>
-      </div>
-      <div class="help" id="hintText">Hold anywhere. Release when the horizon flashes gold.</div>
-    </div>
-    <div class="overlay" id="titleOverlay">
-      <section class="card">
-        <p class="kicker">clear autumn, 11 degrees, before dawn</p>
-        <h1>Shortcut<br>Sunrise</h1>
-        <p>Launch tiny agent pods from your phone at the exact golden window. The clouds close in after every attempt.</p>
-        <div class="rules">
-          <span><i class="dot"></i>Hold to wake a shortcut pod.</span>
-          <span><i class="dot"></i>Release as the sky turns gold.</span>
-          <span><i class="dot"></i>Chain three perfect dawn launches.</span>
-        </div>
-        <div class="row">
-          <span class="fine">Touch, mouse, or Space</span>
-          <button data-smoke="start" id="startBtn" type="button">Start Dawn Run</button>
-        </div>
-      </section>
-    </div>
-    <div class="overlay hidden" id="overOverlay">
-      <section class="card">
-        <p class="kicker" id="overKicker">morning report</p>
-        <h2 id="overTitle">Dawn shipped</h2>
-        <p id="overCopy">The agents made the sunrise window.</p>
-        <div class="row">
-          <span class="fine" id="overStats">Score 0000</span>
-          <button data-smoke="restart" id="restartBtn" type="button">Restart</button>
-        </div>
-      </section>
-    </div>
+<main id="game" aria-label="Oracle Collapse timing game">
+  <canvas id="screen" aria-hidden="true"></canvas>
+  <div id="hud" aria-live="polite">
+    <div class="meter"><span class="label">Score</span><span class="value" id="score">0000</span></div>
+    <div class="meter"><span class="label">Harmonic</span><span class="value" id="harmonic">I</span></div>
+    <div class="meter"><span class="label">Coherence</span><span class="value" id="coherence">100%</span></div>
+    <div class="meter"><span class="label">Dawn</span><span class="value" id="time">0:52</span></div>
   </div>
-  <script>
-  (() => {
-    "use strict";
-    const doc = document;
-    const canvas = doc.getElementById("game");
-    if (!canvas || !canvas.getContext) return;
-    const ctx = canvas.getContext("2d", { alpha:false });
-    if (!ctx) return;
+  <section class="overlay show" id="title">
+    <div class="card">
+      <p class="kicker">CLEAR AUTUMN ORACLE</p>
+      <h1>Collapse the waveform.</h1>
+      <p>The answer is the bright green crest. Tap exactly as it crosses the center gate. Amber ghosts are noise.</p>
+      <div class="hint">ONE THUMB: TAP &nbsp;·&nbsp; KEYBOARD: SPACE</div>
+      <button data-smoke="start" id="startBtn" type="button">Begin Collapse</button>
+    </div>
+  </section>
+  <section class="overlay" id="over">
+    <div class="card">
+      <p class="kicker" id="overKicker">ORACLE RESOLVED</p>
+      <h1 id="overTitle">Signal locked.</h1>
+      <p id="overStats">The hum found its answer.</p>
+      <div class="hint" id="overHint">Perfect collapses add the cleanest harmonics.</div>
+      <button data-smoke="restart" id="restartBtn" type="button">Run Again</button>
+    </div>
+  </section>
+  <div id="toast" role="status" aria-live="polite"></div>
+</main>
+<script>
+(() => {
+  'use strict';
+  const canvas = document.getElementById('screen');
+  const ctx = canvas && canvas.getContext ? canvas.getContext('2d', { alpha:false }) : null;
+  const $ = id => document.getElementById(id);
+  const ui = {
+    score:$('score'), harmonic:$('harmonic'), coherence:$('coherence'), time:$('time'),
+    title:$('title'), over:$('over'), overKicker:$('overKicker'), overTitle:$('overTitle'),
+    overStats:$('overStats'), overHint:$('overHint'), toast:$('toast'),
+    start:$('startBtn'), restart:$('restartBtn')
+  };
+  if (!canvas || !ctx) {
+    if (ui.title) ui.title.classList.add('show');
+    return;
+  }
 
-    const titleOverlay = doc.getElementById("titleOverlay");
-    const overOverlay = doc.getElementById("overOverlay");
-    const startBtn = doc.getElementById("startBtn");
-    const restartBtn = doc.getElementById("restartBtn");
-    const scoreText = doc.getElementById("scoreText");
-    const streakText = doc.getElementById("streakText");
-    const hintText = doc.getElementById("hintText");
-    const overTitle = doc.getElementById("overTitle");
-    const overCopy = doc.getElementById("overCopy");
-    const overStats = doc.getElementById("overStats");
-    const overKicker = doc.getElementById("overKicker");
-    const mq = typeof matchMedia === "function" ? matchMedia("(prefers-color-scheme: dark)") : null;
+  let W = 1, H = 1, DPR = 1, dark = false;
+  let state = 'title';
+  let last = performance.now();
+  let roundStart = 0, elapsed = 0, nextSpawn = 0, idSeq = 1;
+  const roundLength = 52;
+  let score = 0, streak = 0, bestStreak = 0, coherence = 100, harmonic = 0;
+  let pulses = [], particles = [], ripples = [], stars = [];
+  let shake = 0, flash = 0, toastTimer = 0, resultLine = '';
+  let audio = null;
 
-    let W = 1, H = 1, DPR = 1, last = 0, dark = mq ? mq.matches : false;
-    let audioCtx = null;
-    const pods = [], particles = [], clouds = [], motes = [];
-    const MAX_PARTICLES = 170;
-    let seed = 8;
-    const rand = () => {
-      seed = (seed * 1664525 + 1013904223) >>> 0;
-      return seed / 4294967296;
-    };
-    for (let i = 0; i < 18; i++) clouds.push({x:rand(), y:.17 + rand()*.38, r:.04 + rand()*.09, s:.4 + rand()*.9, a:.16 + rand()*.22});
-    for (let i = 0; i < 80; i++) motes.push({x:rand(), y:rand(), r:.4 + rand()*1.8, a:.08 + rand()*.24});
+  function readTheme(){
+    try { dark = !!(window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches); }
+    catch (_) { dark = true; }
+  }
+  readTheme();
+  try {
+    const mq = window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)');
+    if (mq && mq.addEventListener) mq.addEventListener('change', readTheme);
+  } catch (_) {}
 
-    const game = {
-      mode:"title", score:0, streak:0, best:0, misses:0, attempts:0, goal:12,
-      cycleStart:0, cycleLen:3200, window:.22, center:.64, holding:false, holdStart:0,
-      awaiting:false, nextAt:0, ending:false, message:"", messageUntil:0, shake:0,
-      chainLit:false, pressId:null, startedAt:0, doneReason:""
-    };
+  function resize(){
+    DPR = Math.min(2, Math.max(1, window.devicePixelRatio || 1));
+    W = Math.max(1, window.innerWidth || document.documentElement.clientWidth || 1);
+    H = Math.max(1, window.innerHeight || document.documentElement.clientHeight || 1);
+    canvas.width = Math.floor(W * DPR);
+    canvas.height = Math.floor(H * DPR);
+    canvas.style.width = W + 'px';
+    canvas.style.height = H + 'px';
+    ctx.setTransform(DPR,0,0,DPR,0,0);
+    buildStars();
+  }
+  window.addEventListener('resize', resize, { passive:true });
 
-    const clamp = (v,a,b) => Math.max(a, Math.min(b, v));
-    const smooth = (a,b,v) => {
-      const t = clamp((v-a)/(b-a),0,1);
-      return t*t*(3-2*t);
-    };
-    const fmt = n => String(Math.max(0, Math.floor(n))).padStart(4,"0");
-    const phaseNow = t => clamp((t - game.cycleStart) / game.cycleLen, 0, 1.25);
-
-    function hexToRgb(hex){
-      const n = parseInt(hex.slice(1),16);
-      return [n>>16 & 255, n>>8 & 255, n & 255];
+  function buildStars(){
+    stars = [];
+    const n = Math.floor(Math.min(120, Math.max(45, W * H / 10500)));
+    for (let i=0;i<n;i++) {
+      stars.push({
+        x:Math.random()*W,
+        y:Math.random()*H,
+        r:.4+Math.random()*1.4,
+        a:.08+Math.random()*.22,
+        p:Math.random()*6.28
+      });
     }
-    function mix(a,b,t){
-      const A = hexToRgb(a), B = hexToRgb(b), u = clamp(t,0,1);
-      return "rgb(" + Math.round(A[0]+(B[0]-A[0])*u) + "," + Math.round(A[1]+(B[1]-A[1])*u) + "," + Math.round(A[2]+(B[2]-A[2])*u) + ")";
-    }
+  }
 
-    function resize(){
-      const r = canvas.getBoundingClientRect();
-      W = Math.max(1, Math.floor(r.width || innerWidth || 1));
-      H = Math.max(1, Math.floor(r.height || innerHeight || 1));
-      DPR = Math.max(1, Math.min(2, window.devicePixelRatio || 1));
-      canvas.width = Math.floor(W * DPR);
-      canvas.height = Math.floor(H * DPR);
-      ctx.setTransform(DPR,0,0,DPR,0,0);
-    }
+  function fmt(n){ return String(Math.max(0, Math.floor(n))).padStart(4,'0'); }
+  function roman(n){
+    const names = ['0','I','II','III','IV','V','VI','VII','VIII'];
+    return names[Math.max(0, Math.min(names.length-1, n))];
+  }
+  function setText(node, text){ if (node) node.textContent = text; }
+  function setOverlay(node, on){ if (node) node.classList.toggle('show', !!on); }
+  function updateHud(){
+    setText(ui.score, fmt(score));
+    setText(ui.harmonic, roman(harmonic));
+    setText(ui.coherence, Math.max(0, Math.round(coherence)) + '%');
+    const remain = Math.max(0, roundLength - elapsed);
+    setText(ui.time, '0:' + String(Math.ceil(remain)).padStart(2,'0'));
+  }
 
-    function setHud(){
-      if (scoreText) scoreText.textContent = fmt(game.score);
-      if (streakText) streakText.textContent = Math.min(3, game.streak) + "/3";
-      if (!hintText) return;
-      if (game.mode !== "playing") {
-        hintText.textContent = "Hold anywhere. Release when the horizon flashes gold.";
-      } else if (game.holding) {
-        hintText.textContent = "Release on gold. Too early is cold, too late is cloud.";
-      } else if (game.awaiting) {
-        hintText.textContent = game.message || "Shortcut away.";
-      } else {
-        hintText.textContent = "Hold now. Watch the sky, not a clock.";
+  function showToast(text){
+    setText(ui.toast, text);
+    if (ui.toast) ui.toast.classList.add('show');
+    toastTimer = .8;
+  }
+
+  function startGame(){
+    ensureAudio();
+    const now = performance.now();
+    state = 'playing';
+    roundStart = now;
+    elapsed = 0;
+    nextSpawn = now + 360;
+    idSeq = 1;
+    score = 0;
+    streak = 0;
+    bestStreak = 0;
+    coherence = 100;
+    harmonic = 0;
+    pulses = [];
+    particles = [];
+    ripples = [];
+    resultLine = '';
+    shake = 0;
+    flash = 0;
+    setOverlay(ui.title, false);
+    setOverlay(ui.over, false);
+    updateHud();
+    tuneHum();
+    showToast('FIND THE GREEN CREST');
+  }
+
+  function finish(reason){
+    if (state !== 'playing') return;
+    state = 'over';
+    stopHum(false);
+    const resolved = reason === 'time';
+    const title = resolved ? 'Signal locked.' : 'Noise took the oracle.';
+    const kicker = resolved ? 'DAWN RESOLUTION' : 'SUPERPOSITION LOST';
+    const clean = bestStreak >= 10 ? 'A rare clean harmonic chain.' : 'The next run can tune a brighter answer.';
+    resultLine = 'Score ' + fmt(score) + ' · best chain ' + bestStreak + ' · harmonic ' + roman(harmonic);
+    setText(ui.overKicker, kicker);
+    setText(ui.overTitle, title);
+    setText(ui.overStats, resultLine);
+    setText(ui.overHint, clean);
+    setOverlay(ui.over, true);
+    vibrate(resolved ? 38 : [25,35,25]);
+  }
+
+  function difficulty(){
+    return Math.min(9, elapsed / 5.8 + score / 1200);
+  }
+  function hitWindow(){
+    return Math.max(78, 220 - difficulty()*16 - Math.min(60, streak*3));
+  }
+  function spawnDelay(){
+    return Math.max(520, 1080 - difficulty()*48);
+  }
+
+  function spawnPulse(now){
+    const d = difficulty();
+    const travel = Math.max(760, 1450 - d*48);
+    const gate = W * .5;
+    const yMin = Math.max(130, H * .28);
+    const yMax = Math.max(yMin + 20, H - Math.max(120, H*.2));
+    const baseY = yMin + Math.random() * (yMax - yMin);
+    pulses.push({
+      id:idSeq++, kind:'truth', spawn:now, due:now+travel, travel, y:baseY,
+      amp:22 + Math.random()*18, freq:1.5 + Math.random()*1.4, hit:false
+    });
+    const decoys = (d > 2 ? 1 : 0) + (d > 6 && Math.random() < .48 ? 1 : 0);
+    for (let i=0;i<decoys;i++) {
+      const off = (Math.random() < .5 ? -1 : 1) * (hitWindow()*(.75 + Math.random()*1.35));
+      pulses.push({
+        id:idSeq++, kind:'ghost', spawn:now + Math.random()*90, due:now+travel+off,
+        travel:travel*(.92 + Math.random()*.16), y:baseY + (Math.random()*92-46),
+        amp:16 + Math.random()*16, freq:1.8 + Math.random()*2.2, hit:false
+      });
+    }
+    if (d > 5 && Math.random() < .28) {
+      pulses.push({
+        id:idSeq++, kind:'echo', spawn:now + 100, due:now+travel+260+Math.random()*170,
+        travel:travel*.9, y:yMin + Math.random()*(yMax-yMin), amp:13+Math.random()*14,
+        freq:2.5+Math.random()*2.2, hit:false
+      });
+    }
+    nextSpawn = now + spawnDelay();
+    void gate;
+  }
+
+  function handleTap(x, y){
+    if (state !== 'playing') return;
+    const now = performance.now();
+    ripples.push({x:x||W*.5, y:y||H*.55, t:0, good:false});
+    const active = pulses.filter(p => !p.hit && now - p.due < 260 && p.due - now < 540);
+    if (!active.length) {
+      punish('EMPTY COLLAPSE', 5);
+      return;
+    }
+    active.sort((a,b) => Math.abs(now-a.due) - Math.abs(now-b.due));
+    const p = active[0];
+    const delta = Math.abs(now - p.due);
+    const win = hitWindow();
+    if (p.kind === 'truth' && delta <= win) {
+      const quality = delta < win*.32 ? 'PERFECT' : (delta < win*.68 ? 'CLEAN' : 'GRAZE');
+      collapse(p, quality, delta / win);
+    } else {
+      punish(p.kind === 'truth' ? 'OUT OF PHASE' : 'FALSE PEAK', p.kind === 'truth' ? 8 : 11);
+      p.hit = true;
+      burst(pulseX(p, now), p.y, p.kind === 'truth' ? '#eab308' : '#e14f3f', 12);
+    }
+  }
+
+  function collapse(p, quality, ratio){
+    const now = performance.now();
+    p.hit = true;
+    streak += 1;
+    bestStreak = Math.max(bestStreak, streak);
+    harmonic = Math.min(8, harmonic + (quality === 'PERFECT' ? 1 : (streak % 3 === 0 ? 1 : 0)));
+    const gain = quality === 'PERFECT' ? 140 : quality === 'CLEAN' ? 95 : 60;
+    score += Math.round(gain * (1 + Math.min(2.5, streak*.08)) + harmonic*12);
+    coherence = Math.min(100, coherence + (quality === 'PERFECT' ? 3.2 : 1.5));
+    const x = pulseX(p, now);
+    ripples.push({x, y:p.y, t:0, good:true});
+    burst(x, p.y, quality === 'PERFECT' ? '#d6ff72' : '#32f58a', quality === 'PERFECT' ? 34 : 23);
+    flash = Math.max(flash, quality === 'PERFECT' ? .24 : .14);
+    shake = Math.max(shake, quality === 'PERFECT' ? 4 : 2);
+    showToast(quality + ' ×' + streak);
+    ping(quality, ratio);
+    tuneHum();
+    vibrate(quality === 'PERFECT' ? 18 : 10);
+    updateHud();
+  }
+
+  function punish(text, amount){
+    streak = 0;
+    harmonic = Math.max(0, harmonic - (amount > 8 ? 2 : 1));
+    coherence -= amount;
+    shake = Math.max(shake, amount > 8 ? 8 : 4);
+    flash = Math.max(flash, .12);
+    showToast(text);
+    ping('MISS', 1);
+    tuneHum();
+    vibrate([12,28,12]);
+    updateHud();
+    if (coherence <= 0) finish('noise');
+  }
+
+  function burst(x, y, color, count){
+    for (let i=0;i<count;i++) {
+      const a = Math.random()*Math.PI*2;
+      const s = 30 + Math.random()*210;
+      particles.push({x,y,vx:Math.cos(a)*s,vy:Math.sin(a)*s,life:.42+Math.random()*.48,t:0,color});
+    }
+  }
+  function pulseX(p, now){
+    const gate = W * .5;
+    const distance = W * .62;
+    return gate + ((p.due - now) / Math.max(1, p.travel)) * distance;
+  }
+
+  function update(dt, now){
+    if (toastTimer > 0) {
+      toastTimer -= dt;
+      if (toastTimer <= 0 && ui.toast) ui.toast.classList.remove('show');
+    }
+    shake = Math.max(0, shake - dt*18);
+    flash = Math.max(0, flash - dt*1.8);
+    particles = particles.filter(p => (p.t += dt) < p.life);
+    ripples = ripples.filter(r => (r.t += dt) < .72);
+    if (state !== 'playing') return;
+    elapsed = (now - roundStart) / 1000;
+    if (elapsed >= roundLength) {
+      elapsed = roundLength;
+      updateHud();
+      finish('time');
+      return;
+    }
+    if (now >= nextSpawn && roundLength - elapsed > 1.5) spawnPulse(now);
+    const win = hitWindow();
+    for (const p of pulses) {
+      if (!p.hit && p.kind === 'truth' && now - p.due > win + 120) {
+        p.hit = true;
+        burst(pulseX(p, now), p.y, '#e14f3f', 10);
+        punish('MISSED CREST', 9);
       }
     }
+    pulses = pulses.filter(p => !p.hit && now - p.due < 760 && pulseX(p, now) > -240);
+    updateHud();
+  }
 
-    function buzz(ms){
-      try { if (navigator && navigator.vibrate) navigator.vibrate(ms); } catch(e) {}
-    }
+  function roundedRect(x,y,w,h,r){
+    r = Math.max(0, Math.min(r, w/2, h/2));
+    ctx.beginPath();
+    ctx.moveTo(x+r,y);
+    ctx.arcTo(x+w,y,x+w,y+h,r);
+    ctx.arcTo(x+w,y+h,x,y+h,r);
+    ctx.arcTo(x,y+h,x,y,r);
+    ctx.arcTo(x,y,x+w,y,r);
+    ctx.closePath();
+  }
 
-    function sound(kind){
-      try {
-        const AC = window.AudioContext || window.webkitAudioContext;
-        if (!AC) return;
-        if (!audioCtx) audioCtx = new AC();
-        if (audioCtx.state === "suspended") audioCtx.resume();
-        const now = audioCtx.currentTime;
-        const osc = audioCtx.createOscillator();
-        const gain = audioCtx.createGain();
-        osc.type = kind === "bad" ? "triangle" : "sine";
-        const f = kind === "perfect" ? 720 : kind === "bad" ? 140 : 460;
-        osc.frequency.setValueAtTime(f, now);
-        osc.frequency.exponentialRampToValueAtTime(kind === "bad" ? 80 : f * 1.7, now + .18);
-        gain.gain.setValueAtTime(.0001, now);
-        gain.gain.exponentialRampToValueAtTime(kind === "bad" ? .08 : .12, now + .02);
-        gain.gain.exponentialRampToValueAtTime(.0001, now + .24);
-        osc.connect(gain).connect(audioCtx.destination);
-        osc.start(now);
-        osc.stop(now + .28);
-      } catch(e) {}
-    }
-
-    function beginCycle(t){
-      game.cycleStart = t;
-      game.cycleLen = Math.max(2100, 3250 - game.attempts * 90);
-      game.window = Math.max(.074, .225 - game.attempts * .012);
-      game.center = .61 + Math.sin((game.attempts + 1) * 1.7) * .045;
-      game.holding = false;
-      game.awaiting = false;
-      game.ending = false;
-      game.pressId = null;
-      setHud();
-    }
-
-    function resetGame(){
-      game.mode = "playing";
-      game.score = 0; game.streak = 0; game.best = 0; game.misses = 0; game.attempts = 0;
-      game.window = .22; game.holding = false; game.awaiting = false; game.ending = false;
-      game.chainLit = false; game.message = ""; game.messageUntil = 0; game.shake = 0;
-      pods.length = 0; particles.length = 0;
-      const t = performance.now();
-      game.startedAt = t;
-      beginCycle(t + 260);
-      if (titleOverlay) titleOverlay.classList.add("hidden");
-      if (overOverlay) overOverlay.classList.add("hidden");
-      if (restartBtn) restartBtn.classList.remove("ready");
-      sound("ok");
-      setHud();
-    }
-
-    function finishGame(){
-      game.mode = "over";
-      game.holding = false;
-      const shipped = game.misses < 4 && game.score >= 720;
-      const chain = game.best >= 3;
-      if (overKicker) overKicker.textContent = chain ? "three-window chain achieved" : "morning report";
-      if (overTitle) overTitle.textContent = shipped ? "Dawn shipped" : "Clouds won";
-      if (overCopy) {
-        overCopy.textContent = chain
-          ? "Three launches slipped through the same sunrise seam. The phone agents are already airborne."
-          : shipped
-            ? "Enough pods found the golden band before the city woke."
-            : "The window narrowed, the shortcuts waited, and the cold ledger closed.";
-      }
-      if (overStats) overStats.textContent = "Score " + fmt(game.score) + " · Best streak " + game.best + " · Misses " + game.misses;
-      if (restartBtn) restartBtn.classList.add("ready");
-      if (overOverlay) overOverlay.classList.remove("hidden");
-      setHud();
-    }
-
-    function spark(x,y,color,count,force){
-      for (let i = 0; i < count && particles.length < MAX_PARTICLES; i++) {
-        const a = rand() * Math.PI * 2, sp = (1 + rand() * force);
-        particles.push({x,y,vx:Math.cos(a)*sp,vy:Math.sin(a)*sp-rand()*1.4,life:.45+rand()*.55,age:0,r:1.5+rand()*3.5,c:color});
-      }
-    }
-
-    function launchResult(t, ok, perfect, charge, phase){
-      const x = W * (.5 + (rand()-.5)*.1);
-      const y = H * .78;
-      const targetY = H * (.37 + (rand()-.5)*.08);
-      const targetX = W * (.5 + (phase - game.center) * 1.25);
-      pods.push({x,y,sx:x,sy:y,tx:targetX,ty:targetY,age:0,life:ok ? .9 : .72,ok,perfect,charge,spin:rand()*6.28});
-      game.attempts++;
-      if (ok) {
-        game.streak++;
-        game.best = Math.max(game.best, game.streak);
-        game.chainLit = game.best >= 3;
-        game.score += 90 + game.streak * 38 + Math.round(charge * 44) + (perfect ? 80 : 0);
-        game.message = perfect ? "Perfect sunrise window." : "Pod caught the gold.";
-        game.shake = perfect ? 5 : 2;
-        sound(perfect ? "perfect" : "ok");
-        buzz(perfect ? 35 : 18);
-        spark(targetX,targetY,perfect ? "#ffd27a" : "#f0a949", perfect ? 36 : 22, perfect ? 5.4 : 3.8);
-      } else {
-        game.misses++;
-        game.streak = 0;
-        game.message = charge < .16 ? "Shortcut undercharged." : phase < game.center ? "Released in the blue." : "Clouds closed it.";
-        game.shake = 8;
-        sound("bad");
-        buzz(60);
-        spark(x,y,"#bd5536",18,3.2);
-      }
-      game.messageUntil = t + 850;
-      game.awaiting = true;
-      game.nextAt = t + 760;
-      game.ending = game.misses >= 4 || game.attempts >= game.goal;
-      setHud();
-    }
-
-    function press(t, id){
-      if (game.mode !== "playing" || game.awaiting || game.holding) return;
-      game.holding = true;
-      game.holdStart = t;
-      game.pressId = id == null ? "key" : id;
-      sound("tap");
-      setHud();
-    }
-
-    function release(t, id){
-      if (game.mode !== "playing" || !game.holding) return;
-      if (id != null && game.pressId != null && id !== game.pressId) return;
-      const phase = phaseNow(t);
-      const held = t - game.holdStart;
-      const charge = clamp(held / 1250, 0, 1);
-      const dist = Math.abs(phase - game.center);
-      const ok = dist <= game.window * .5 && charge >= .16;
-      const perfect = ok && dist <= game.window * .18 && charge >= .38;
-      game.holding = false;
-      launchResult(t, ok, perfect, charge, phase);
-    }
-
-    function missTimeout(t){
-      if (game.mode !== "playing" || game.awaiting) return;
-      game.holding = false;
-      launchResult(t, false, false, 1, 1.15);
-    }
-
-    function update(dt,t){
-      const seconds = Math.min(.05, dt / 1000);
-      if (game.shake > 0) game.shake = Math.max(0, game.shake - dt * .025);
-      for (let i = pods.length - 1; i >= 0; i--) {
-        const p = pods[i];
-        p.age += seconds;
-        if (p.age >= p.life) pods.splice(i,1);
-      }
-      for (let i = particles.length - 1; i >= 0; i--) {
-        const p = particles[i];
-        p.age += seconds; p.x += p.vx * dt * .06; p.y += p.vy * dt * .06; p.vy += dt * .003;
-        if (p.age >= p.life) particles.splice(i,1);
-      }
-      if (game.mode === "playing") {
-        if (game.awaiting && t >= game.nextAt) {
-          if (game.ending) finishGame();
-          else beginCycle(t);
-        } else if (!game.awaiting && t > game.cycleStart && phaseNow(t) >= 1.02) {
-          missTimeout(t);
-        }
-      }
-    }
-
-    function roundRect(x,y,w,h,r){
-      const rr = Math.min(r, w/2, h/2);
-      ctx.beginPath();
-      ctx.moveTo(x+rr,y); ctx.arcTo(x+w,y,x+w,y+h,rr); ctx.arcTo(x+w,y+h,x,y+h,rr);
-      ctx.arcTo(x,y+h,x,y,rr); ctx.arcTo(x,y,x+w,y,rr); ctx.closePath();
-    }
-
-    function drawCloud(cx,cy,scale,alpha,tone){
-      ctx.save();
-      ctx.globalAlpha = alpha;
-      ctx.fillStyle = tone;
-      ctx.beginPath();
-      ctx.ellipse(cx, cy, 54*scale, 21*scale, 0, 0, Math.PI*2);
-      ctx.ellipse(cx-38*scale, cy+2*scale, 28*scale, 18*scale, -.2, 0, Math.PI*2);
-      ctx.ellipse(cx+34*scale, cy-4*scale, 34*scale, 22*scale, .18, 0, Math.PI*2);
-      ctx.ellipse(cx+4*scale, cy-14*scale, 32*scale, 24*scale, .05, 0, Math.PI*2);
-      ctx.fill();
-      ctx.restore();
-    }
-
-    function drawSky(t,phase){
-      const closeness = 1 - clamp(Math.abs(phase - game.center) / (game.window * 1.8), 0, 1);
-      const dawn = smooth(.05,.95,phase);
-      const warm = clamp(closeness * .95 + dawn * .22, 0, 1);
-      const top = dark ? mix("#07121a","#23455a",warm*.55) : mix("#bcdde7","#f3cc87",warm*.48);
-      const mid = dark ? mix("#122431","#c06f2e",warm) : mix("#eaf1e9","#f0a64a",warm);
-      const low = dark ? mix("#1f3a45","#ffd27a",warm) : mix("#fff2cd","#ffe29a",warm);
-      const g = ctx.createLinearGradient(0,0,0,H);
-      g.addColorStop(0,top); g.addColorStop(.54,mid); g.addColorStop(1,low);
-      ctx.fillStyle = g;
+  function draw(now){
+    const sx = shake ? (Math.random()-.5)*shake : 0;
+    const sy = shake ? (Math.random()-.5)*shake : 0;
+    ctx.save();
+    ctx.translate(sx, sy);
+    drawField(now);
+    drawGate(now);
+    for (const p of pulses) drawPulse(p, now);
+    drawParticles();
+    drawRipples();
+    drawDawnBar();
+    if (state === 'title') drawAttract(now);
+    if (flash > 0) {
+      ctx.globalAlpha = Math.min(.16, flash);
+      ctx.fillStyle = '#b8ffd0';
       ctx.fillRect(0,0,W,H);
-
-      ctx.globalAlpha = dark ? .75 : .35;
-      ctx.fillStyle = dark ? "#f6efdf" : "#7c8f8a";
-      for (const m of motes) {
-        ctx.beginPath();
-        ctx.arc(m.x*W, (m.y*.72)*H, m.r, 0, Math.PI*2);
-        ctx.globalAlpha = m.a * (dark ? 1 - warm*.55 : .45);
-        ctx.fill();
-      }
       ctx.globalAlpha = 1;
-
-      const bandY = H * (.49 - closeness * .025);
-      const bandH = H * (.016 + game.window * .12);
-      ctx.save();
-      ctx.globalAlpha = .16 + closeness * .7;
-      ctx.fillStyle = "#ffd27a";
-      roundRect(W*.08, bandY-bandH/2, W*.84, bandH, bandH);
-      ctx.fill();
-      ctx.globalAlpha = closeness * .22;
-      ctx.fillRect(0, bandY - bandH*3.2, W, bandH*6.4);
-      ctx.restore();
-
-      const gap = W * (.18 + game.window * 1.9);
-      const cTone = dark ? "#0f1e26" : "#fff8ea";
-      drawCloud(W*.5 - gap - W*.1, bandY + H*.005, 1.35, .52, cTone);
-      drawCloud(W*.5 + gap + W*.1, bandY - H*.004, 1.48, .54, cTone);
-      for (const c of clouds) {
-        const drift = ((t*.000025*c.s + c.x) % 1.25) - .12;
-        drawCloud(drift*W, c.y*H, c.r*6.2, c.a, cTone);
-      }
     }
+    ctx.restore();
+  }
 
-    function drawGround(phase){
-      const y = H * .73;
-      ctx.save();
-      ctx.fillStyle = dark ? "rgba(5,13,14,.74)" : "rgba(85,101,78,.26)";
+  function drawField(now){
+    const g = ctx.createLinearGradient(0,0,0,H);
+    if (dark) {
+      g.addColorStop(0,'#020605');
+      g.addColorStop(.55,'#061510');
+      g.addColorStop(1,'#03100d');
+    } else {
+      g.addColorStop(0,'#eaf4e6');
+      g.addColorStop(.58,'#d8eee3');
+      g.addColorStop(1,'#cce8dc');
+    }
+    ctx.fillStyle = g;
+    ctx.fillRect(0,0,W,H);
+    ctx.save();
+    roundedRect(12, 12, W-24, H-24, 28);
+    ctx.clip();
+    ctx.fillStyle = dark ? 'rgba(0,0,0,.35)' : 'rgba(0,21,14,.08)';
+    ctx.fillRect(12,12,W-24,H-24);
+    for (const s of stars) {
+      const tw = s.a + Math.sin(now*.0014 + s.p)*.05;
+      ctx.globalAlpha = Math.max(.03, tw);
+      ctx.fillStyle = dark ? '#8fffc0' : '#165941';
       ctx.beginPath();
-      ctx.moveTo(0,H);
-      ctx.lineTo(0,y + Math.sin(phase*5)*8);
-      for (let x = 0; x <= W; x += W/7) ctx.lineTo(x, y + Math.sin(x*.018 + phase*4)*18);
-      ctx.lineTo(W,H); ctx.closePath(); ctx.fill();
-      ctx.fillStyle = dark ? "rgba(7,20,20,.86)" : "rgba(239,218,176,.66)";
-      ctx.beginPath(); ctx.moveTo(0,H);
-      ctx.lineTo(0,y+55);
-      for (let x = 0; x <= W; x += W/8) ctx.lineTo(x, y+55 + Math.cos(x*.02 + 2)*13);
-      ctx.lineTo(W,H); ctx.closePath(); ctx.fill();
-      ctx.restore();
+      ctx.arc(s.x, s.y, s.r, 0, Math.PI*2);
+      ctx.fill();
     }
+    ctx.globalAlpha = dark ? .18 : .24;
+    ctx.strokeStyle = dark ? '#48f09b' : '#126d55';
+    ctx.lineWidth = 1;
+    const gap = Math.max(34, Math.min(54, W/9));
+    for (let x=((now*.018)%gap)-gap; x<W+gap; x+=gap) {
+      ctx.beginPath(); ctx.moveTo(x,0); ctx.lineTo(x,H); ctx.stroke();
+    }
+    for (let y=H*.18; y<H; y+=gap) {
+      ctx.beginPath(); ctx.moveTo(0,y); ctx.lineTo(W,y); ctx.stroke();
+    }
+    ctx.restore();
+    ctx.globalAlpha = 1;
+  }
 
-    function drawPhone(t,phase){
-      const held = game.holding ? clamp((t - game.holdStart)/1250,0,1) : 0;
-      const px = W*.5, py = H*.83, pw = Math.min(W*.42, 178), ph = Math.min(H*.22, 170);
-      ctx.save();
-      ctx.translate(px,py);
-      ctx.rotate((game.shake ? Math.sin(t*.09)*game.shake*.002 : 0));
-      ctx.fillStyle = dark ? "#0b1114" : "#f9efe0";
-      ctx.strokeStyle = dark ? "rgba(246,239,223,.22)" : "rgba(22,25,21,.2)";
-      ctx.lineWidth = 2;
-      roundRect(-pw/2,-ph/2,pw,ph,28); ctx.fill(); ctx.stroke();
-      ctx.fillStyle = dark ? "#18252b" : "#fff8ea";
-      roundRect(-pw/2+13,-ph/2+18,pw-26,ph-34,20); ctx.fill();
-      const cols = ["#f0a949","#e4673d","#277c69","#d9b35c"];
-      for (let i=0;i<4;i++){
-        const ix = (i%2-.5)*48, iy = (Math.floor(i/2)-.5)*48 + 2;
-        const pulse = i===game.attempts%4 ? held*8 + Math.sin(t*.012)*2 : 0;
-        ctx.fillStyle = cols[i];
-        roundRect(ix-16-pulse*.15,iy-16-pulse*.15,32+pulse*.3,32+pulse*.3,9);
-        ctx.fill();
-        ctx.fillStyle = "rgba(255,248,234,.82)";
-        ctx.fillRect(ix-5,iy-7,10,14);
-        ctx.fillRect(ix-9,iy-2,18,4);
-      }
-      if (held > 0) {
-        ctx.globalAlpha = .24 + held*.34;
-        ctx.strokeStyle = "#ffd27a";
-        ctx.lineWidth = 2 + held*4;
-        ctx.beginPath();
-        ctx.arc(0,-ph*.18, 30 + held*46 + Math.sin(t*.018)*4, 0, Math.PI*2);
-        ctx.stroke();
-      }
-      ctx.restore();
-    }
+  function drawGate(now){
+    const x = W*.5;
+    const win = state === 'playing' ? hitWindow() : 180;
+    const band = Math.max(26, Math.min(70, win*.26));
+    const pulse = .5 + .5*Math.sin(now*.006);
+    const grd = ctx.createLinearGradient(x-band,0,x+band,0);
+    grd.addColorStop(0,'rgba(50,245,138,0)');
+    grd.addColorStop(.5, dark ? 'rgba(50,245,138,.16)' : 'rgba(16,118,85,.16)');
+    grd.addColorStop(1,'rgba(50,245,138,0)');
+    ctx.fillStyle = grd;
+    ctx.fillRect(x-band, 0, band*2, H);
+    ctx.strokeStyle = dark ? 'rgba(145,255,186,.78)' : 'rgba(11,104,76,.75)';
+    ctx.lineWidth = 2 + pulse;
+    ctx.beginPath(); ctx.moveTo(x, H*.16); ctx.lineTo(x, H*.92); ctx.stroke();
+    ctx.strokeStyle = dark ? 'rgba(217,119,6,.5)' : 'rgba(180,83,9,.45)';
+    ctx.lineWidth = 1;
+    ctx.setLineDash([7,10]);
+    ctx.beginPath(); ctx.moveTo(x-band, H*.2); ctx.lineTo(x-band,H*.9); ctx.stroke();
+    ctx.beginPath(); ctx.moveTo(x+band, H*.2); ctx.lineTo(x+band,H*.9); ctx.stroke();
+    ctx.setLineDash([]);
+    ctx.font = '800 11px ui-monospace, SFMono-Regular, Menlo, monospace';
+    ctx.textAlign = 'center';
+    ctx.fillStyle = dark ? 'rgba(211,255,226,.72)' : 'rgba(13,73,57,.7)';
+    ctx.fillText('COLLAPSE GATE', x, Math.max(104, H*.17));
+  }
 
-    function drawPods(){
-      for (const p of pods) {
-        const q = clamp(p.age / p.life, 0, 1);
-        const arc = Math.sin(q*Math.PI) * (p.ok ? H*.2 : H*.08);
-        const x = p.sx + (p.tx-p.sx)*q;
-        const y = p.sy + (p.ty-p.sy)*q - arc;
-        ctx.save();
-        ctx.translate(x,y);
-        ctx.rotate(p.spin + q*5);
-        ctx.globalAlpha = 1 - smooth(.82,1,q);
-        ctx.fillStyle = p.ok ? (p.perfect ? "#ffd27a" : "#f0a949") : "#bd5536";
-        roundRect(-13,-13,26,26,7);
-        ctx.fill();
-        ctx.fillStyle = "rgba(255,248,234,.82)";
-        ctx.fillRect(-4,-8,8,16);
-        ctx.fillRect(-8,-2,16,4);
-        ctx.restore();
+  function drawPulse(p, now){
+    const x = pulseX(p, now);
+    const age = Math.max(0, (now - p.spawn) / Math.max(1, p.travel));
+    const fade = Math.max(0, Math.min(1, 1.2 - Math.abs((now-p.due)/900)));
+    const color = p.kind === 'truth' ? '#32f58a' : (p.kind === 'ghost' ? '#f59e0b' : '#59d8d0');
+    const dim = p.kind === 'truth' ? 1 : .55;
+    ctx.save();
+    ctx.globalCompositeOperation = 'lighter';
+    ctx.lineCap = 'round';
+    for (let pass=0; pass<3; pass++) {
+      ctx.beginPath();
+      const span = 190 + p.amp*2;
+      const step = 8;
+      for (let i=-span; i<=span; i+=step) {
+        const t = i / span;
+        const env = Math.exp(-t*t*3.2);
+        const noise = Math.sin((i*.04) + now*.004 + p.id) * (p.kind === 'truth' ? 1.8 : 4.2);
+        const yy = p.y + Math.sin((i*.045*p.freq) - age*7.5) * p.amp * env + noise;
+        const xx = x + i;
+        if (i === -span) ctx.moveTo(xx, yy); else ctx.lineTo(xx, yy);
       }
+      ctx.strokeStyle = color;
+      ctx.globalAlpha = fade * dim * (pass === 0 ? .1 : pass === 1 ? .22 : .88);
+      ctx.lineWidth = pass === 0 ? 14 : pass === 1 ? 7 : 2.2;
+      ctx.stroke();
     }
+    const r = p.kind === 'truth' ? 9 : 6;
+    ctx.globalAlpha = fade * (p.kind === 'truth' ? .92 : .58);
+    ctx.fillStyle = color;
+    ctx.beginPath();
+    ctx.arc(x, p.y, r + Math.sin(now*.012+p.id)*2, 0, Math.PI*2);
+    ctx.fill();
+    ctx.globalAlpha = fade * .18;
+    ctx.beginPath();
+    ctx.arc(x, p.y, r*4, 0, Math.PI*2);
+    ctx.fill();
+    ctx.restore();
+  }
 
-    function drawParticles(){
-      for (const p of particles) {
-        const q = p.age / p.life;
-        ctx.globalAlpha = Math.max(0, 1-q);
-        ctx.fillStyle = p.c;
-        ctx.beginPath();
-        ctx.arc(p.x,p.y,p.r*(1-q*.45),0,Math.PI*2);
-        ctx.fill();
+  function drawParticles(){
+    ctx.save();
+    ctx.globalCompositeOperation = 'lighter';
+    for (const p of particles) {
+      const k = 1 - p.t / p.life;
+      ctx.globalAlpha = k;
+      ctx.fillStyle = p.color;
+      ctx.beginPath();
+      ctx.arc(p.x + p.vx*p.t, p.y + p.vy*p.t + p.t*p.t*70, 1.5 + k*2.8, 0, Math.PI*2);
+      ctx.fill();
+    }
+    ctx.restore();
+    ctx.globalAlpha = 1;
+  }
+
+  function drawRipples(){
+    ctx.save();
+    ctx.globalCompositeOperation = 'lighter';
+    for (const r of ripples) {
+      const k = r.t / .72;
+      ctx.globalAlpha = (1-k) * (r.good ? .62 : .32);
+      ctx.strokeStyle = r.good ? '#b8ffd0' : '#f59e0b';
+      ctx.lineWidth = r.good ? 3 : 2;
+      ctx.beginPath();
+      ctx.arc(r.x, r.y, 14 + k*78, 0, Math.PI*2);
+      ctx.stroke();
+    }
+    ctx.restore();
+    ctx.globalAlpha = 1;
+  }
+
+  function drawDawnBar(){
+    const margin = Math.max(18, W*.05);
+    const y = H - Math.max(22, Math.min(36, H*.035));
+    const w = W - margin*2;
+    const progress = state === 'playing' ? elapsed / roundLength : (state === 'over' ? 1 : 0);
+    ctx.save();
+    ctx.globalAlpha = .88;
+    roundedRect(margin, y, w, 6, 3);
+    ctx.fillStyle = dark ? 'rgba(180,255,210,.13)' : 'rgba(10,58,44,.13)';
+    ctx.fill();
+    roundedRect(margin, y, w*progress, 6, 3);
+    const g = ctx.createLinearGradient(margin,y,margin+w,y);
+    g.addColorStop(0,'#1fbf84');
+    g.addColorStop(.72,'#f6b13a');
+    g.addColorStop(1,'#fff2a3');
+    ctx.fillStyle = g;
+    ctx.fill();
+    ctx.restore();
+  }
+
+  function drawAttract(now){
+    const mid = H * .62;
+    ctx.save();
+    ctx.globalCompositeOperation = 'lighter';
+    ctx.globalAlpha = .48;
+    ctx.strokeStyle = '#32f58a';
+    ctx.lineWidth = 2;
+    ctx.beginPath();
+    for (let x=0; x<=W; x+=7) {
+      const y = mid + Math.sin(x*.035 + now*.004)*28*Math.sin(now*.0012);
+      if (x===0) ctx.moveTo(x,y); else ctx.lineTo(x,y);
+    }
+    ctx.stroke();
+    ctx.restore();
+  }
+
+  function loop(now){
+    const dt = Math.min(.05, Math.max(.001, (now - last) / 1000));
+    last = now;
+    update(dt, now);
+    draw(now);
+    requestAnimationFrame(loop);
+  }
+
+  function ensureAudio(){
+    if (audio) return;
+    try {
+      const AC = window.AudioContext || window.webkitAudioContext;
+      if (!AC) return;
+      const ac = new AC();
+      const master = ac.createGain();
+      master.gain.value = .05;
+      master.connect(ac.destination);
+      audio = { ac, master, hum:[], noise:null };
+      if (ac.state === 'suspended' && ac.resume) ac.resume().catch(() => {});
+    } catch (_) { audio = null; }
+  }
+  function tuneHum(){
+    if (!audio || !audio.ac) return;
+    try {
+      const ac = audio.ac;
+      while (audio.hum.length < harmonic) {
+        const i = audio.hum.length;
+        const osc = ac.createOscillator();
+        const gain = ac.createGain();
+        osc.type = i % 2 ? 'triangle' : 'sine';
+        osc.frequency.value = 82.41 * (1 + i*.505);
+        gain.gain.value = 0;
+        osc.connect(gain);
+        gain.connect(audio.master);
+        osc.start();
+        audio.hum.push({osc,gain});
       }
-      ctx.globalAlpha = 1;
-    }
+      audio.hum.forEach((h,i) => {
+        const target = i < harmonic ? .012 / (i+1) : 0;
+        h.gain.gain.setTargetAtTime(target, ac.currentTime, .08);
+      });
+    } catch (_) {}
+  }
+  function stopHum(full){
+    if (!audio || !audio.ac) return;
+    try {
+      audio.hum.forEach(h => h.gain.gain.setTargetAtTime(full ? 0 : .002, audio.ac.currentTime, .15));
+    } catch (_) {}
+  }
+  function ping(kind, ratio){
+    if (!audio || !audio.ac) return;
+    try {
+      const ac = audio.ac;
+      const osc = ac.createOscillator();
+      const gain = ac.createGain();
+      const good = kind !== 'MISS';
+      osc.type = good ? 'sine' : 'sawtooth';
+      osc.frequency.value = good ? (440 + harmonic*38 + (1-ratio)*160) : 118;
+      gain.gain.value = 0;
+      gain.gain.linearRampToValueAtTime(good ? .07 : .045, ac.currentTime+.01);
+      gain.gain.exponentialRampToValueAtTime(.001, ac.currentTime+(good ? .16 : .24));
+      osc.connect(gain);
+      gain.connect(audio.master);
+      osc.start();
+      osc.stop(ac.currentTime + .28);
+    } catch (_) {}
+  }
+  function vibrate(pattern){
+    try { if (navigator.vibrate) navigator.vibrate(pattern); } catch (_) {}
+  }
 
-    function drawMessage(t){
-      if (!game.message || t > game.messageUntil) return;
-      const a = smooth(game.messageUntil, game.messageUntil-260, t);
-      ctx.save();
-      ctx.globalAlpha = clamp(a,0,1);
-      ctx.font = "700 12px ui-monospace, SFMono-Regular, Menlo, monospace";
-      ctx.textAlign = "center";
-      ctx.letterSpacing = "1px";
-      const text = game.message.toUpperCase();
-      const y = H*.61;
-      const m = ctx.measureText(text).width + 30;
-      ctx.fillStyle = dark ? "rgba(16,27,32,.68)" : "rgba(255,248,234,.72)";
-      roundRect(W*.5-m/2,y-18,m,36,18); ctx.fill();
-      ctx.fillStyle = dark ? "#f6efdf" : "#161915";
-      ctx.fillText(text,W*.5,y+4);
-      ctx.restore();
+  function onPointer(e){
+    if (e && e.cancelable) e.preventDefault();
+    handleTap(e ? e.clientX : W*.5, e ? e.clientY : H*.55);
+  }
+  canvas.addEventListener('pointerdown', onPointer, { passive:false });
+  window.addEventListener('keydown', e => {
+    if ((e.code === 'Space' || e.key === ' ') && state === 'playing') {
+      e.preventDefault();
+      handleTap(W*.5, H*.56);
     }
+  });
+  if (ui.start) ui.start.addEventListener('click', e => { e.preventDefault(); startGame(); });
+  if (ui.restart) ui.restart.addEventListener('click', e => { e.preventDefault(); startGame(); });
 
-    function draw(){
-      const t = performance.now();
-      const phase = game.mode === "playing" ? phaseNow(t) : .34 + Math.sin(t*.00025)*.08;
-      ctx.save();
-      if (game.shake) ctx.translate((rand()-.5)*game.shake, (rand()-.5)*game.shake);
-      drawSky(t,phase);
-      drawGround(phase);
-      drawPods();
-      drawParticles();
-      drawPhone(t,phase);
-      drawMessage(t);
-      if (game.chainLit && game.mode === "playing") {
-        ctx.save();
-        ctx.globalAlpha = .13 + Math.sin(t*.006)*.05;
-        ctx.strokeStyle = "#ffd27a";
-        ctx.lineWidth = 2;
-        ctx.beginPath();
-        ctx.arc(W*.5,H*.49,Math.min(W,H)*.29,0,Math.PI*2);
-        ctx.stroke();
-        ctx.restore();
-      }
-      ctx.restore();
-    }
-
-    function frame(t){
-      try {
-        const dt = last ? t - last : 16;
-        last = t;
-        update(dt,t);
-        draw();
-        requestAnimationFrame(frame);
-      } catch(e) {
-        requestAnimationFrame(frame);
-      }
-    }
-
-    function pointerDown(e){
-      if (e && e.cancelable) e.preventDefault();
-      press(performance.now(), e ? e.pointerId : null);
-      try { if (canvas.setPointerCapture && e && e.pointerId != null) canvas.setPointerCapture(e.pointerId); } catch(err) {}
-    }
-    function pointerUp(e){
-      if (e && e.cancelable) e.preventDefault();
-      release(performance.now(), e ? e.pointerId : null);
-      try { if (canvas.releasePointerCapture && e && e.pointerId != null) canvas.releasePointerCapture(e.pointerId); } catch(err) {}
-    }
-    canvas.addEventListener("pointerdown", pointerDown, {passive:false});
-    canvas.addEventListener("pointerup", pointerUp, {passive:false});
-    canvas.addEventListener("pointercancel", pointerUp, {passive:false});
-    window.addEventListener("keydown", e => {
-      if ((e.code === "Space" || e.key === " ") && !e.repeat) {
-        e.preventDefault();
-        press(performance.now(), "key");
-      }
-    });
-    window.addEventListener("keyup", e => {
-      if (e.code === "Space" || e.key === " ") {
-        e.preventDefault();
-        release(performance.now(), "key");
-      }
-    });
-    window.addEventListener("resize", resize);
-    if (mq && mq.addEventListener) mq.addEventListener("change", e => { dark = !!e.matches; });
-    else if (mq && mq.addListener) mq.addListener(e => { dark = !!e.matches; });
-    if (startBtn) startBtn.addEventListener("click", resetGame);
-    if (restartBtn) restartBtn.addEventListener("click", resetGame);
-
-    resize();
-    setHud();
-    requestAnimationFrame(frame);
-  })();
-  </script>
+  resize();
+  updateHud();
+  requestAnimationFrame(loop);
+})();
+</script>
 </body>
 </html>

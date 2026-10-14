@@ -1,0 +1,784 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Oracle Collapse</title>
+<style>
+:root{
+  --bg:#eef4ea;
+  --ink:#10211b;
+  --panel:rgba(247,252,243,.78);
+  --line:rgba(16,33,27,.16);
+  --hot:#d97706;
+  --phosphor:#32f58a;
+  --cyan:#55d6cf;
+  --danger:#e14f3f;
+  --shadow:rgba(10,26,20,.28);
+}
+@media (prefers-color-scheme: dark){
+  :root{
+    --bg:#030706;
+    --ink:#e8fff4;
+    --panel:rgba(4,12,10,.68);
+    --line:rgba(151,255,201,.18);
+    --shadow:rgba(0,0,0,.62);
+  }
+}
+*{box-sizing:border-box}
+html,body{
+  width:100dvw;
+  height:100dvh;
+  margin:0;
+  overflow:hidden;
+  background:var(--bg);
+  color:var(--ink);
+  font-family:Inter,system-ui,-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;
+}
+body{min-height:100dvh}
+#game{
+  position:fixed;
+  inset:0;
+  width:100dvw;
+  height:100dvh;
+  user-select:none;
+  -webkit-user-select:none;
+  overflow:hidden;
+  background:
+    radial-gradient(circle at 50% 18%, rgba(79,214,178,.16), transparent 38%),
+    linear-gradient(180deg, var(--bg), var(--bg));
+}
+canvas{
+  position:absolute;
+  inset:0;
+  width:100dvw;
+  height:100dvh;
+  touch-action:none;
+  display:block;
+}
+#hud{
+  position:absolute;
+  z-index:4;
+  top:max(12px, env(safe-area-inset-top));
+  left:max(12px, env(safe-area-inset-left));
+  right:max(12px, env(safe-area-inset-right));
+  display:grid;
+  grid-template-columns:repeat(4,1fr);
+  gap:8px;
+  pointer-events:none;
+}
+.meter{
+  min-height:48px;
+  padding:8px 10px;
+  border:1px solid var(--line);
+  border-radius:16px;
+  background:var(--panel);
+  box-shadow:0 12px 35px var(--shadow);
+  backdrop-filter:blur(14px);
+}
+.label{
+  display:block;
+  font:700 10px/1 ui-monospace,"SFMono-Regular",Menlo,monospace;
+  letter-spacing:.12em;
+  opacity:.62;
+}
+.value{
+  display:block;
+  margin-top:5px;
+  font:800 clamp(16px,4vw,24px)/1 ui-monospace,"SFMono-Regular",Menlo,monospace;
+  white-space:nowrap;
+}
+.overlay{
+  position:absolute;
+  z-index:12;
+  inset:0;
+  display:grid;
+  place-items:center;
+  padding:24px;
+  opacity:0;
+  visibility:hidden;
+  transition:opacity .36s ease, visibility .36s ease;
+  pointer-events:none;
+}
+.overlay.show{
+  opacity:1;
+  visibility:visible;
+}
+.card{
+  width:min(560px, calc(100dvw - 32px));
+  border:1px solid var(--line);
+  border-radius:30px;
+  padding:clamp(22px,5vw,38px);
+  background:var(--panel);
+  box-shadow:0 24px 70px var(--shadow);
+  backdrop-filter:blur(18px) saturate(1.2);
+  text-align:left;
+}
+.kicker{
+  margin:0 0 12px;
+  font:800 11px/1 ui-monospace,"SFMono-Regular",Menlo,monospace;
+  letter-spacing:.16em;
+  color:var(--hot);
+}
+h1{
+  margin:0;
+  font-size:clamp(38px,12vw,76px);
+  line-height:.88;
+  letter-spacing:-.07em;
+}
+p{
+  margin:18px 0 0;
+  color:color-mix(in srgb, var(--ink), transparent 20%);
+  font-size:clamp(15px,3.8vw,18px);
+  line-height:1.45;
+}
+.hint{
+  margin-top:18px;
+  padding:12px 14px;
+  border-radius:18px;
+  border:1px solid var(--line);
+  font:700 12px/1.35 ui-monospace,"SFMono-Regular",Menlo,monospace;
+  letter-spacing:.04em;
+}
+button{
+  appearance:none;
+  border:0;
+  min-height:52px;
+  min-width:148px;
+  margin-top:24px;
+  padding:0 22px;
+  border-radius:999px;
+  background:linear-gradient(135deg, #31e982, #20bfc2);
+  color:#04110d;
+  font:900 13px/1 ui-monospace,"SFMono-Regular",Menlo,monospace;
+  letter-spacing:.08em;
+  text-transform:uppercase;
+  box-shadow:0 14px 36px rgba(21,177,128,.38), inset 0 -2px 0 rgba(0,0,0,.18);
+  cursor:pointer;
+  pointer-events:auto;
+  position:relative;
+  z-index:20;
+}
+button:focus-visible{outline:3px solid var(--hot); outline-offset:4px}
+#toast{
+  position:absolute;
+  z-index:6;
+  left:50%;
+  bottom:max(26px, env(safe-area-inset-bottom));
+  transform:translateX(-50%);
+  padding:10px 14px;
+  border:1px solid var(--line);
+  border-radius:999px;
+  background:var(--panel);
+  box-shadow:0 14px 38px var(--shadow);
+  opacity:0;
+  transition:opacity .16s ease, transform .16s ease;
+  pointer-events:none;
+  font:800 12px/1 ui-monospace,"SFMono-Regular",Menlo,monospace;
+  letter-spacing:.09em;
+  white-space:nowrap;
+}
+#toast.show{opacity:1; transform:translate(-50%,-8px)}
+@media (max-width:430px){
+  #hud{grid-template-columns:repeat(2,1fr)}
+  .meter{min-height:43px;padding:7px 9px;border-radius:14px}
+  .value{font-size:17px}
+  .card{border-radius:25px}
+}
+</style>
+</head>
+<body>
+<main id="game" aria-label="Oracle Collapse timing game">
+  <canvas id="screen" aria-hidden="true"></canvas>
+  <div id="hud" aria-live="polite">
+    <div class="meter"><span class="label">Score</span><span class="value" id="score">0000</span></div>
+    <div class="meter"><span class="label">Harmonic</span><span class="value" id="harmonic">I</span></div>
+    <div class="meter"><span class="label">Coherence</span><span class="value" id="coherence">100%</span></div>
+    <div class="meter"><span class="label">Dawn</span><span class="value" id="time">0:52</span></div>
+  </div>
+  <section class="overlay show" id="title">
+    <div class="card">
+      <p class="kicker">CLEAR AUTUMN ORACLE</p>
+      <h1>Collapse the waveform.</h1>
+      <p>The answer is the bright green crest. Tap exactly as it crosses the center gate. Amber ghosts are noise.</p>
+      <div class="hint">ONE THUMB: TAP &nbsp;·&nbsp; KEYBOARD: SPACE</div>
+      <button data-smoke="start" id="startBtn" type="button">Begin Collapse</button>
+    </div>
+  </section>
+  <section class="overlay" id="over">
+    <div class="card">
+      <p class="kicker" id="overKicker">ORACLE RESOLVED</p>
+      <h1 id="overTitle">Signal locked.</h1>
+      <p id="overStats">The hum found its answer.</p>
+      <div class="hint" id="overHint">Perfect collapses add the cleanest harmonics.</div>
+      <button data-smoke="restart" id="restartBtn" type="button">Run Again</button>
+    </div>
+  </section>
+  <div id="toast" role="status" aria-live="polite"></div>
+</main>
+<script>
+(() => {
+  'use strict';
+  const canvas = document.getElementById('screen');
+  const ctx = canvas && canvas.getContext ? canvas.getContext('2d', { alpha:false }) : null;
+  const $ = id => document.getElementById(id);
+  const ui = {
+    score:$('score'), harmonic:$('harmonic'), coherence:$('coherence'), time:$('time'),
+    title:$('title'), over:$('over'), overKicker:$('overKicker'), overTitle:$('overTitle'),
+    overStats:$('overStats'), overHint:$('overHint'), toast:$('toast'),
+    start:$('startBtn'), restart:$('restartBtn')
+  };
+  if (!canvas || !ctx) {
+    if (ui.title) ui.title.classList.add('show');
+    return;
+  }
+
+  let W = 1, H = 1, DPR = 1, dark = false;
+  let state = 'title';
+  let last = performance.now();
+  let roundStart = 0, elapsed = 0, nextSpawn = 0, idSeq = 1;
+  const roundLength = 52;
+  let score = 0, streak = 0, bestStreak = 0, coherence = 100, harmonic = 0;
+  let pulses = [], particles = [], ripples = [], stars = [];
+  let shake = 0, flash = 0, toastTimer = 0, resultLine = '';
+  let audio = null;
+
+  function readTheme(){
+    try { dark = !!(window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches); }
+    catch (_) { dark = true; }
+  }
+  readTheme();
+  try {
+    const mq = window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)');
+    if (mq && mq.addEventListener) mq.addEventListener('change', readTheme);
+  } catch (_) {}
+
+  function resize(){
+    DPR = Math.min(2, Math.max(1, window.devicePixelRatio || 1));
+    W = Math.max(1, window.innerWidth || document.documentElement.clientWidth || 1);
+    H = Math.max(1, window.innerHeight || document.documentElement.clientHeight || 1);
+    canvas.width = Math.floor(W * DPR);
+    canvas.height = Math.floor(H * DPR);
+    canvas.style.width = W + 'px';
+    canvas.style.height = H + 'px';
+    ctx.setTransform(DPR,0,0,DPR,0,0);
+    buildStars();
+  }
+  window.addEventListener('resize', resize, { passive:true });
+
+  function buildStars(){
+    stars = [];
+    const n = Math.floor(Math.min(120, Math.max(45, W * H / 10500)));
+    for (let i=0;i<n;i++) {
+      stars.push({
+        x:Math.random()*W,
+        y:Math.random()*H,
+        r:.4+Math.random()*1.4,
+        a:.08+Math.random()*.22,
+        p:Math.random()*6.28
+      });
+    }
+  }
+
+  function fmt(n){ return String(Math.max(0, Math.floor(n))).padStart(4,'0'); }
+  function roman(n){
+    const names = ['0','I','II','III','IV','V','VI','VII','VIII'];
+    return names[Math.max(0, Math.min(names.length-1, n))];
+  }
+  function setText(node, text){ if (node) node.textContent = text; }
+  function setOverlay(node, on){ if (node) node.classList.toggle('show', !!on); }
+  function updateHud(){
+    setText(ui.score, fmt(score));
+    setText(ui.harmonic, roman(harmonic));
+    setText(ui.coherence, Math.max(0, Math.round(coherence)) + '%');
+    const remain = Math.max(0, roundLength - elapsed);
+    setText(ui.time, '0:' + String(Math.ceil(remain)).padStart(2,'0'));
+  }
+
+  function showToast(text){
+    setText(ui.toast, text);
+    if (ui.toast) ui.toast.classList.add('show');
+    toastTimer = .8;
+  }
+
+  function startGame(){
+    ensureAudio();
+    const now = performance.now();
+    state = 'playing';
+    roundStart = now;
+    elapsed = 0;
+    nextSpawn = now + 360;
+    idSeq = 1;
+    score = 0;
+    streak = 0;
+    bestStreak = 0;
+    coherence = 100;
+    harmonic = 0;
+    pulses = [];
+    particles = [];
+    ripples = [];
+    resultLine = '';
+    shake = 0;
+    flash = 0;
+    setOverlay(ui.title, false);
+    setOverlay(ui.over, false);
+    updateHud();
+    tuneHum();
+    showToast('FIND THE GREEN CREST');
+  }
+
+  function finish(reason){
+    if (state !== 'playing') return;
+    state = 'over';
+    stopHum(false);
+    const resolved = reason === 'time';
+    const title = resolved ? 'Signal locked.' : 'Noise took the oracle.';
+    const kicker = resolved ? 'DAWN RESOLUTION' : 'SUPERPOSITION LOST';
+    const clean = bestStreak >= 10 ? 'A rare clean harmonic chain.' : 'The next run can tune a brighter answer.';
+    resultLine = 'Score ' + fmt(score) + ' · best chain ' + bestStreak + ' · harmonic ' + roman(harmonic);
+    setText(ui.overKicker, kicker);
+    setText(ui.overTitle, title);
+    setText(ui.overStats, resultLine);
+    setText(ui.overHint, clean);
+    setOverlay(ui.over, true);
+    vibrate(resolved ? 38 : [25,35,25]);
+  }
+
+  function difficulty(){
+    return Math.min(9, elapsed / 5.8 + score / 1200);
+  }
+  function hitWindow(){
+    return Math.max(78, 220 - difficulty()*16 - Math.min(60, streak*3));
+  }
+  function spawnDelay(){
+    return Math.max(520, 1080 - difficulty()*48);
+  }
+
+  function spawnPulse(now){
+    const d = difficulty();
+    const travel = Math.max(760, 1450 - d*48);
+    const gate = W * .5;
+    const yMin = Math.max(130, H * .28);
+    const yMax = Math.max(yMin + 20, H - Math.max(120, H*.2));
+    const baseY = yMin + Math.random() * (yMax - yMin);
+    pulses.push({
+      id:idSeq++, kind:'truth', spawn:now, due:now+travel, travel, y:baseY,
+      amp:22 + Math.random()*18, freq:1.5 + Math.random()*1.4, hit:false
+    });
+    const decoys = (d > 2 ? 1 : 0) + (d > 6 && Math.random() < .48 ? 1 : 0);
+    for (let i=0;i<decoys;i++) {
+      const off = (Math.random() < .5 ? -1 : 1) * (hitWindow()*(.75 + Math.random()*1.35));
+      pulses.push({
+        id:idSeq++, kind:'ghost', spawn:now + Math.random()*90, due:now+travel+off,
+        travel:travel*(.92 + Math.random()*.16), y:baseY + (Math.random()*92-46),
+        amp:16 + Math.random()*16, freq:1.8 + Math.random()*2.2, hit:false
+      });
+    }
+    if (d > 5 && Math.random() < .28) {
+      pulses.push({
+        id:idSeq++, kind:'echo', spawn:now + 100, due:now+travel+260+Math.random()*170,
+        travel:travel*.9, y:yMin + Math.random()*(yMax-yMin), amp:13+Math.random()*14,
+        freq:2.5+Math.random()*2.2, hit:false
+      });
+    }
+    nextSpawn = now + spawnDelay();
+    void gate;
+  }
+
+  function handleTap(x, y){
+    if (state !== 'playing') return;
+    const now = performance.now();
+    ripples.push({x:x||W*.5, y:y||H*.55, t:0, good:false});
+    const active = pulses.filter(p => !p.hit && now - p.due < 260 && p.due - now < 540);
+    if (!active.length) {
+      punish('EMPTY COLLAPSE', 5);
+      return;
+    }
+    active.sort((a,b) => Math.abs(now-a.due) - Math.abs(now-b.due));
+    const p = active[0];
+    const delta = Math.abs(now - p.due);
+    const win = hitWindow();
+    if (p.kind === 'truth' && delta <= win) {
+      const quality = delta < win*.32 ? 'PERFECT' : (delta < win*.68 ? 'CLEAN' : 'GRAZE');
+      collapse(p, quality, delta / win);
+    } else {
+      punish(p.kind === 'truth' ? 'OUT OF PHASE' : 'FALSE PEAK', p.kind === 'truth' ? 8 : 11);
+      p.hit = true;
+      burst(pulseX(p, now), p.y, p.kind === 'truth' ? '#eab308' : '#e14f3f', 12);
+    }
+  }
+
+  function collapse(p, quality, ratio){
+    const now = performance.now();
+    p.hit = true;
+    streak += 1;
+    bestStreak = Math.max(bestStreak, streak);
+    harmonic = Math.min(8, harmonic + (quality === 'PERFECT' ? 1 : (streak % 3 === 0 ? 1 : 0)));
+    const gain = quality === 'PERFECT' ? 140 : quality === 'CLEAN' ? 95 : 60;
+    score += Math.round(gain * (1 + Math.min(2.5, streak*.08)) + harmonic*12);
+    coherence = Math.min(100, coherence + (quality === 'PERFECT' ? 3.2 : 1.5));
+    const x = pulseX(p, now);
+    ripples.push({x, y:p.y, t:0, good:true});
+    burst(x, p.y, quality === 'PERFECT' ? '#d6ff72' : '#32f58a', quality === 'PERFECT' ? 34 : 23);
+    flash = Math.max(flash, quality === 'PERFECT' ? .24 : .14);
+    shake = Math.max(shake, quality === 'PERFECT' ? 4 : 2);
+    showToast(quality + ' ×' + streak);
+    ping(quality, ratio);
+    tuneHum();
+    vibrate(quality === 'PERFECT' ? 18 : 10);
+    updateHud();
+  }
+
+  function punish(text, amount){
+    streak = 0;
+    harmonic = Math.max(0, harmonic - (amount > 8 ? 2 : 1));
+    coherence -= amount;
+    shake = Math.max(shake, amount > 8 ? 8 : 4);
+    flash = Math.max(flash, .12);
+    showToast(text);
+    ping('MISS', 1);
+    tuneHum();
+    vibrate([12,28,12]);
+    updateHud();
+    if (coherence <= 0) finish('noise');
+  }
+
+  function burst(x, y, color, count){
+    for (let i=0;i<count;i++) {
+      const a = Math.random()*Math.PI*2;
+      const s = 30 + Math.random()*210;
+      particles.push({x,y,vx:Math.cos(a)*s,vy:Math.sin(a)*s,life:.42+Math.random()*.48,t:0,color});
+    }
+  }
+  function pulseX(p, now){
+    const gate = W * .5;
+    const distance = W * .62;
+    return gate + ((p.due - now) / Math.max(1, p.travel)) * distance;
+  }
+
+  function update(dt, now){
+    if (toastTimer > 0) {
+      toastTimer -= dt;
+      if (toastTimer <= 0 && ui.toast) ui.toast.classList.remove('show');
+    }
+    shake = Math.max(0, shake - dt*18);
+    flash = Math.max(0, flash - dt*1.8);
+    particles = particles.filter(p => (p.t += dt) < p.life);
+    ripples = ripples.filter(r => (r.t += dt) < .72);
+    if (state !== 'playing') return;
+    elapsed = (now - roundStart) / 1000;
+    if (elapsed >= roundLength) {
+      elapsed = roundLength;
+      updateHud();
+      finish('time');
+      return;
+    }
+    if (now >= nextSpawn && roundLength - elapsed > 1.5) spawnPulse(now);
+    const win = hitWindow();
+    for (const p of pulses) {
+      if (!p.hit && p.kind === 'truth' && now - p.due > win + 120) {
+        p.hit = true;
+        burst(pulseX(p, now), p.y, '#e14f3f', 10);
+        punish('MISSED CREST', 9);
+      }
+    }
+    pulses = pulses.filter(p => !p.hit && now - p.due < 760 && pulseX(p, now) > -240);
+    updateHud();
+  }
+
+  function roundedRect(x,y,w,h,r){
+    r = Math.max(0, Math.min(r, w/2, h/2));
+    ctx.beginPath();
+    ctx.moveTo(x+r,y);
+    ctx.arcTo(x+w,y,x+w,y+h,r);
+    ctx.arcTo(x+w,y+h,x,y+h,r);
+    ctx.arcTo(x,y+h,x,y,r);
+    ctx.arcTo(x,y,x+w,y,r);
+    ctx.closePath();
+  }
+
+  function draw(now){
+    const sx = shake ? (Math.random()-.5)*shake : 0;
+    const sy = shake ? (Math.random()-.5)*shake : 0;
+    ctx.save();
+    ctx.translate(sx, sy);
+    drawField(now);
+    drawGate(now);
+    for (const p of pulses) drawPulse(p, now);
+    drawParticles();
+    drawRipples();
+    drawDawnBar();
+    if (state === 'title') drawAttract(now);
+    if (flash > 0) {
+      ctx.globalAlpha = Math.min(.16, flash);
+      ctx.fillStyle = '#b8ffd0';
+      ctx.fillRect(0,0,W,H);
+      ctx.globalAlpha = 1;
+    }
+    ctx.restore();
+  }
+
+  function drawField(now){
+    const g = ctx.createLinearGradient(0,0,0,H);
+    if (dark) {
+      g.addColorStop(0,'#020605');
+      g.addColorStop(.55,'#061510');
+      g.addColorStop(1,'#03100d');
+    } else {
+      g.addColorStop(0,'#eaf4e6');
+      g.addColorStop(.58,'#d8eee3');
+      g.addColorStop(1,'#cce8dc');
+    }
+    ctx.fillStyle = g;
+    ctx.fillRect(0,0,W,H);
+    ctx.save();
+    roundedRect(12, 12, W-24, H-24, 28);
+    ctx.clip();
+    ctx.fillStyle = dark ? 'rgba(0,0,0,.35)' : 'rgba(0,21,14,.08)';
+    ctx.fillRect(12,12,W-24,H-24);
+    for (const s of stars) {
+      const tw = s.a + Math.sin(now*.0014 + s.p)*.05;
+      ctx.globalAlpha = Math.max(.03, tw);
+      ctx.fillStyle = dark ? '#8fffc0' : '#165941';
+      ctx.beginPath();
+      ctx.arc(s.x, s.y, s.r, 0, Math.PI*2);
+      ctx.fill();
+    }
+    ctx.globalAlpha = dark ? .18 : .24;
+    ctx.strokeStyle = dark ? '#48f09b' : '#126d55';
+    ctx.lineWidth = 1;
+    const gap = Math.max(34, Math.min(54, W/9));
+    for (let x=((now*.018)%gap)-gap; x<W+gap; x+=gap) {
+      ctx.beginPath(); ctx.moveTo(x,0); ctx.lineTo(x,H); ctx.stroke();
+    }
+    for (let y=H*.18; y<H; y+=gap) {
+      ctx.beginPath(); ctx.moveTo(0,y); ctx.lineTo(W,y); ctx.stroke();
+    }
+    ctx.restore();
+    ctx.globalAlpha = 1;
+  }
+
+  function drawGate(now){
+    const x = W*.5;
+    const win = state === 'playing' ? hitWindow() : 180;
+    const band = Math.max(26, Math.min(70, win*.26));
+    const pulse = .5 + .5*Math.sin(now*.006);
+    const grd = ctx.createLinearGradient(x-band,0,x+band,0);
+    grd.addColorStop(0,'rgba(50,245,138,0)');
+    grd.addColorStop(.5, dark ? 'rgba(50,245,138,.16)' : 'rgba(16,118,85,.16)');
+    grd.addColorStop(1,'rgba(50,245,138,0)');
+    ctx.fillStyle = grd;
+    ctx.fillRect(x-band, 0, band*2, H);
+    ctx.strokeStyle = dark ? 'rgba(145,255,186,.78)' : 'rgba(11,104,76,.75)';
+    ctx.lineWidth = 2 + pulse;
+    ctx.beginPath(); ctx.moveTo(x, H*.16); ctx.lineTo(x, H*.92); ctx.stroke();
+    ctx.strokeStyle = dark ? 'rgba(217,119,6,.5)' : 'rgba(180,83,9,.45)';
+    ctx.lineWidth = 1;
+    ctx.setLineDash([7,10]);
+    ctx.beginPath(); ctx.moveTo(x-band, H*.2); ctx.lineTo(x-band,H*.9); ctx.stroke();
+    ctx.beginPath(); ctx.moveTo(x+band, H*.2); ctx.lineTo(x+band,H*.9); ctx.stroke();
+    ctx.setLineDash([]);
+    ctx.font = '800 11px ui-monospace, SFMono-Regular, Menlo, monospace';
+    ctx.textAlign = 'center';
+    ctx.fillStyle = dark ? 'rgba(211,255,226,.72)' : 'rgba(13,73,57,.7)';
+    ctx.fillText('COLLAPSE GATE', x, Math.max(104, H*.17));
+  }
+
+  function drawPulse(p, now){
+    const x = pulseX(p, now);
+    const age = Math.max(0, (now - p.spawn) / Math.max(1, p.travel));
+    const fade = Math.max(0, Math.min(1, 1.2 - Math.abs((now-p.due)/900)));
+    const color = p.kind === 'truth' ? '#32f58a' : (p.kind === 'ghost' ? '#f59e0b' : '#59d8d0');
+    const dim = p.kind === 'truth' ? 1 : .55;
+    ctx.save();
+    ctx.globalCompositeOperation = 'lighter';
+    ctx.lineCap = 'round';
+    for (let pass=0; pass<3; pass++) {
+      ctx.beginPath();
+      const span = 190 + p.amp*2;
+      const step = 8;
+      for (let i=-span; i<=span; i+=step) {
+        const t = i / span;
+        const env = Math.exp(-t*t*3.2);
+        const noise = Math.sin((i*.04) + now*.004 + p.id) * (p.kind === 'truth' ? 1.8 : 4.2);
+        const yy = p.y + Math.sin((i*.045*p.freq) - age*7.5) * p.amp * env + noise;
+        const xx = x + i;
+        if (i === -span) ctx.moveTo(xx, yy); else ctx.lineTo(xx, yy);
+      }
+      ctx.strokeStyle = color;
+      ctx.globalAlpha = fade * dim * (pass === 0 ? .1 : pass === 1 ? .22 : .88);
+      ctx.lineWidth = pass === 0 ? 14 : pass === 1 ? 7 : 2.2;
+      ctx.stroke();
+    }
+    const r = p.kind === 'truth' ? 9 : 6;
+    ctx.globalAlpha = fade * (p.kind === 'truth' ? .92 : .58);
+    ctx.fillStyle = color;
+    ctx.beginPath();
+    ctx.arc(x, p.y, r + Math.sin(now*.012+p.id)*2, 0, Math.PI*2);
+    ctx.fill();
+    ctx.globalAlpha = fade * .18;
+    ctx.beginPath();
+    ctx.arc(x, p.y, r*4, 0, Math.PI*2);
+    ctx.fill();
+    ctx.restore();
+  }
+
+  function drawParticles(){
+    ctx.save();
+    ctx.globalCompositeOperation = 'lighter';
+    for (const p of particles) {
+      const k = 1 - p.t / p.life;
+      ctx.globalAlpha = k;
+      ctx.fillStyle = p.color;
+      ctx.beginPath();
+      ctx.arc(p.x + p.vx*p.t, p.y + p.vy*p.t + p.t*p.t*70, 1.5 + k*2.8, 0, Math.PI*2);
+      ctx.fill();
+    }
+    ctx.restore();
+    ctx.globalAlpha = 1;
+  }
+
+  function drawRipples(){
+    ctx.save();
+    ctx.globalCompositeOperation = 'lighter';
+    for (const r of ripples) {
+      const k = r.t / .72;
+      ctx.globalAlpha = (1-k) * (r.good ? .62 : .32);
+      ctx.strokeStyle = r.good ? '#b8ffd0' : '#f59e0b';
+      ctx.lineWidth = r.good ? 3 : 2;
+      ctx.beginPath();
+      ctx.arc(r.x, r.y, 14 + k*78, 0, Math.PI*2);
+      ctx.stroke();
+    }
+    ctx.restore();
+    ctx.globalAlpha = 1;
+  }
+
+  function drawDawnBar(){
+    const margin = Math.max(18, W*.05);
+    const y = H - Math.max(22, Math.min(36, H*.035));
+    const w = W - margin*2;
+    const progress = state === 'playing' ? elapsed / roundLength : (state === 'over' ? 1 : 0);
+    ctx.save();
+    ctx.globalAlpha = .88;
+    roundedRect(margin, y, w, 6, 3);
+    ctx.fillStyle = dark ? 'rgba(180,255,210,.13)' : 'rgba(10,58,44,.13)';
+    ctx.fill();
+    roundedRect(margin, y, w*progress, 6, 3);
+    const g = ctx.createLinearGradient(margin,y,margin+w,y);
+    g.addColorStop(0,'#1fbf84');
+    g.addColorStop(.72,'#f6b13a');
+    g.addColorStop(1,'#fff2a3');
+    ctx.fillStyle = g;
+    ctx.fill();
+    ctx.restore();
+  }
+
+  function drawAttract(now){
+    const mid = H * .62;
+    ctx.save();
+    ctx.globalCompositeOperation = 'lighter';
+    ctx.globalAlpha = .48;
+    ctx.strokeStyle = '#32f58a';
+    ctx.lineWidth = 2;
+    ctx.beginPath();
+    for (let x=0; x<=W; x+=7) {
+      const y = mid + Math.sin(x*.035 + now*.004)*28*Math.sin(now*.0012);
+      if (x===0) ctx.moveTo(x,y); else ctx.lineTo(x,y);
+    }
+    ctx.stroke();
+    ctx.restore();
+  }
+
+  function loop(now){
+    const dt = Math.min(.05, Math.max(.001, (now - last) / 1000));
+    last = now;
+    update(dt, now);
+    draw(now);
+    requestAnimationFrame(loop);
+  }
+
+  function ensureAudio(){
+    if (audio) return;
+    try {
+      const AC = window.AudioContext || window.webkitAudioContext;
+      if (!AC) return;
+      const ac = new AC();
+      const master = ac.createGain();
+      master.gain.value = .05;
+      master.connect(ac.destination);
+      audio = { ac, master, hum:[], noise:null };
+      if (ac.state === 'suspended' && ac.resume) ac.resume().catch(() => {});
+    } catch (_) { audio = null; }
+  }
+  function tuneHum(){
+    if (!audio || !audio.ac) return;
+    try {
+      const ac = audio.ac;
+      while (audio.hum.length < harmonic) {
+        const i = audio.hum.length;
+        const osc = ac.createOscillator();
+        const gain = ac.createGain();
+        osc.type = i % 2 ? 'triangle' : 'sine';
+        osc.frequency.value = 82.41 * (1 + i*.505);
+        gain.gain.value = 0;
+        osc.connect(gain);
+        gain.connect(audio.master);
+        osc.start();
+        audio.hum.push({osc,gain});
+      }
+      audio.hum.forEach((h,i) => {
+        const target = i < harmonic ? .012 / (i+1) : 0;
+        h.gain.gain.setTargetAtTime(target, ac.currentTime, .08);
+      });
+    } catch (_) {}
+  }
+  function stopHum(full){
+    if (!audio || !audio.ac) return;
+    try {
+      audio.hum.forEach(h => h.gain.gain.setTargetAtTime(full ? 0 : .002, audio.ac.currentTime, .15));
+    } catch (_) {}
+  }
+  function ping(kind, ratio){
+    if (!audio || !audio.ac) return;
+    try {
+      const ac = audio.ac;
+      const osc = ac.createOscillator();
+      const gain = ac.createGain();
+      const good = kind !== 'MISS';
+      osc.type = good ? 'sine' : 'sawtooth';
+      osc.frequency.value = good ? (440 + harmonic*38 + (1-ratio)*160) : 118;
+      gain.gain.value = 0;
+      gain.gain.linearRampToValueAtTime(good ? .07 : .045, ac.currentTime+.01);
+      gain.gain.exponentialRampToValueAtTime(.001, ac.currentTime+(good ? .16 : .24));
+      osc.connect(gain);
+      gain.connect(audio.master);
+      osc.start();
+      osc.stop(ac.currentTime + .28);
+    } catch (_) {}
+  }
+  function vibrate(pattern){
+    try { if (navigator.vibrate) navigator.vibrate(pattern); } catch (_) {}
+  }
+
+  function onPointer(e){
+    if (e && e.cancelable) e.preventDefault();
+    handleTap(e ? e.clientX : W*.5, e ? e.clientY : H*.55);
+  }
+  canvas.addEventListener('pointerdown', onPointer, { passive:false });
+  window.addEventListener('keydown', e => {
+    if ((e.code === 'Space' || e.key === ' ') && state === 'playing') {
+      e.preventDefault();
+      handleTap(W*.5, H*.56);
+    }
+  });
+  if (ui.start) ui.start.addEventListener('click', e => { e.preventDefault(); startGame(); });
+  if (ui.restart) ui.restart.addEventListener('click', e => { e.preventDefault(); startGame(); });
+
+  resize();
+  updateHud();
+  requestAnimationFrame(loop);
+})();
+</script>
+</body>
+</html>
