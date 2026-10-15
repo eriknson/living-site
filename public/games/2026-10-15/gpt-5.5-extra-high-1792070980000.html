@@ -1,0 +1,652 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Stingray Release</title>
+<style>
+:root{
+  --bg:#edf7f5;
+  --ink:#092126;
+  --muted:#567177;
+  --panel:rgba(247,252,250,.78);
+  --line:rgba(5,54,63,.18);
+  --accent:#008f9a;
+  --accent2:#0fbf9f;
+  --warn:#d46b1c;
+  --good:#057d66;
+  --shadow:rgba(0,25,30,.2);
+}
+@media (prefers-color-scheme: dark){
+  :root{
+    --bg:#021015;
+    --ink:#e9fbf7;
+    --muted:#87a5a9;
+    --panel:rgba(2,18,25,.72);
+    --line:rgba(167,238,234,.2);
+    --accent:#39d5e6;
+    --accent2:#49f0b6;
+    --warn:#ff9d46;
+    --good:#7af5c4;
+    --shadow:rgba(0,0,0,.38);
+  }
+}
+*{box-sizing:border-box}
+html,body{margin:0;width:100%;height:100%;overflow:hidden;background:var(--bg);color:var(--ink);font-family:Inter,system-ui,-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif}
+body{min-height:100dvh}
+#game{position:fixed;inset:0;width:100dvw;height:100dvh;touch-action:none;user-select:none;background:var(--bg)}
+canvas{display:block;width:100%;height:100%;touch-action:none}
+.hud{position:fixed;inset:env(safe-area-inset-top) env(safe-area-inset-right) auto env(safe-area-inset-left);padding:16px 16px 0;display:grid;grid-template-columns:1fr auto;gap:10px;pointer-events:none;font-family:ui-monospace,"SFMono-Regular",Menlo,monospace;z-index:2}
+.hud .left{display:flex;gap:8px;align-items:flex-start;flex-wrap:wrap}
+.pill{border:1px solid var(--line);background:var(--panel);backdrop-filter:blur(14px);border-radius:999px;padding:8px 10px;box-shadow:0 8px 28px var(--shadow);font-size:12px;line-height:1;letter-spacing:.04em;text-transform:uppercase}
+.meter{width:min(46dvw,260px);height:32px;border:1px solid var(--line);border-radius:999px;background:var(--panel);overflow:hidden;box-shadow:0 8px 28px var(--shadow)}
+.meter b{display:block;height:100%;width:0%;background:linear-gradient(90deg,var(--accent),var(--accent2));border-radius:999px;transition:width .16s ease-out}
+.overlay{position:fixed;inset:0;display:grid;place-items:center;padding:24px;pointer-events:none;z-index:4;transition:opacity .28s ease,visibility .28s ease}
+.overlay.hidden{opacity:0;visibility:hidden}
+.card{width:min(520px,calc(100dvw - 32px));border:1px solid var(--line);background:var(--panel);backdrop-filter:blur(18px);border-radius:28px;padding:28px;box-shadow:0 24px 80px var(--shadow);text-align:left;pointer-events:none}
+h1{margin:0 0 8px;font-size:clamp(34px,11vw,64px);line-height:.88;letter-spacing:-.08em}
+h2{margin:0 0 8px;font-size:clamp(30px,9vw,54px);line-height:.92;letter-spacing:-.07em}
+p{margin:0;color:var(--muted);font-size:15px;line-height:1.5}
+.rules{display:grid;gap:8px;margin:20px 0;color:var(--ink);font-family:ui-monospace,"SFMono-Regular",Menlo,monospace;font-size:12px;letter-spacing:.02em}
+.rules span{display:flex;align-items:center;gap:8px}
+.dot{width:9px;height:9px;border-radius:50%;background:var(--accent);box-shadow:0 0 20px var(--accent)}
+.dot.warn{background:var(--warn);box-shadow:0 0 20px var(--warn)}
+button{appearance:none;border:0;border-radius:999px;min-height:48px;padding:0 22px;background:var(--ink);color:var(--bg);font-weight:800;letter-spacing:.08em;text-transform:uppercase;cursor:pointer;box-shadow:0 14px 36px var(--shadow);pointer-events:auto}
+button:focus-visible{outline:3px solid var(--accent);outline-offset:3px}
+.restartFab{position:fixed;right:calc(14px + env(safe-area-inset-right));top:calc(14px + env(safe-area-inset-top));z-index:6;min-height:44px;padding:0 14px;font-size:11px;background:var(--panel);color:var(--ink);border:1px solid var(--line);opacity:0;visibility:hidden;transform:translateY(-8px);transition:opacity .22s ease,transform .22s ease,visibility .22s ease}
+body.playing .restartFab,body.over .restartFab{opacity:1;visibility:visible;transform:none}
+#restartSlot{margin-top:18px}
+#restartSlot .restartFab{position:static;min-height:48px;padding:0 22px;font-size:13px;background:var(--ink);color:var(--bg);border:0;transform:none}
+.small{margin-top:14px;font-family:ui-monospace,"SFMono-Regular",Menlo,monospace;font-size:11px;text-transform:uppercase;letter-spacing:.08em;color:var(--muted)}
+#toast{position:fixed;left:50%;bottom:calc(18px + env(safe-area-inset-bottom));transform:translateX(-50%);z-index:3;padding:10px 14px;border-radius:999px;background:var(--panel);border:1px solid var(--line);box-shadow:0 12px 42px var(--shadow);font-family:ui-monospace,"SFMono-Regular",Menlo,monospace;font-size:12px;color:var(--ink);pointer-events:none;opacity:.9}
+@media (max-width:430px){.hud{padding:12px 12px 0}.pill{font-size:11px;padding:7px 9px}.card{padding:24px}.meter{width:45dvw}}
+</style>
+</head>
+<body>
+<div id="game"><canvas id="sea" aria-label="Stingray Release game arena"></canvas></div>
+<div class="hud" aria-hidden="true">
+  <div class="left">
+    <div class="pill">SYNC <span id="score">0</span></div>
+    <div class="pill">CHAIN <span id="combo">0</span>x</div>
+    <div class="pill">WAVE <span id="wave">1</span></div>
+  </div>
+  <div class="meter" title="Release progress"><b id="releaseMeter"></b></div>
+</div>
+<section id="title" class="overlay">
+  <div class="card">
+    <h1>Stingray Release</h1>
+    <p>Ride the cable lanes. Swipe on the beat to catch blue packets at the sync gate. Dodge orange storms before the stream times out.</p>
+    <div class="rules">
+      <span><i class="dot"></i>Blue packet: be in its lane when it reaches the gate.</span>
+      <span><i class="dot warn"></i>Orange storm: switch away before impact.</span>
+      <span>Swipe left/right, tap edges, or use arrows. Space sends a tiny sync pulse.</span>
+    </div>
+    <button data-smoke="start" id="startBtn" type="button">Begin Surf</button>
+    <div class="small">Clear autumn water / stingray build channel</div>
+  </div>
+</section>
+<section id="gameover" class="overlay hidden">
+  <div class="card">
+    <h2 id="overTitle">Signal Lost</h2>
+    <p id="overText">The cable stream dissolved into static.</p>
+    <div class="rules">
+      <span>Score <b id="finalScore">0</b></span>
+      <span>Best chain <b id="bestCombo">0</b>x</span>
+    </div>
+    <div id="restartSlot"></div>
+    <div class="small">No reload. Same ocean, new current.</div>
+  </div>
+</section>
+<div id="toast">Swipe lanes to catch the packet beat</div>
+<button data-smoke="restart" id="restartBtn" class="restartFab" type="button">Restart</button>
+<script>
+(() => {
+  "use strict";
+  const canvas = document.getElementById("sea");
+  const ctx = canvas && canvas.getContext ? canvas.getContext("2d", { alpha:false }) : null;
+  const gameEl = document.getElementById("game");
+  const title = document.getElementById("title");
+  const over = document.getElementById("gameover");
+  const startBtn = document.getElementById("startBtn");
+  const restartBtn = document.getElementById("restartBtn");
+  const restartSlot = document.getElementById("restartSlot");
+  const scoreEl = document.getElementById("score");
+  const comboEl = document.getElementById("combo");
+  const waveEl = document.getElementById("wave");
+  const releaseMeter = document.getElementById("releaseMeter");
+  const overTitle = document.getElementById("overTitle");
+  const overText = document.getElementById("overText");
+  const finalScore = document.getElementById("finalScore");
+  const bestComboEl = document.getElementById("bestCombo");
+  const toast = document.getElementById("toast");
+  if (!canvas || !ctx || !gameEl || !title || !over || !startBtn || !restartBtn) return;
+
+  const TAU = Math.PI * 2;
+  let W = 1, H = 1, DPR = 1;
+  let state = "title";
+  let last = performance.now();
+  let t = 0;
+  let spawnTimer = 0;
+  let pulseTimer = 0;
+  let shake = 0;
+  let flash = 0;
+  let lane = 2;
+  let laneTarget = 2;
+  let rayX = 0;
+  let health = 100;
+  let release = 0;
+  let score = 0;
+  let combo = 0;
+  let bestCombo = 0;
+  let wave = 1;
+  let spawnCount = 0;
+  let startTouch = null;
+  let audio = null;
+  let notes = [];
+  let particles = [];
+  let ripples = [];
+  let stars = [];
+
+  function clamp(v,a,b){ return Math.max(a, Math.min(b, v)); }
+  function lerp(a,b,n){ return a + (b-a)*n; }
+  function rand(a,b){ return a + Math.random() * (b-a); }
+  function laneX(i){
+    const margin = Math.min(74, W * .16);
+    const span = W - margin * 2;
+    return margin + span * (i / 4);
+  }
+  function gateY(){ return H * .72; }
+
+  function resize(){
+    DPR = Math.min(2, Math.max(1, window.devicePixelRatio || 1));
+    W = Math.max(1, Math.floor(window.innerWidth));
+    H = Math.max(1, Math.floor(window.innerHeight));
+    canvas.width = Math.floor(W * DPR);
+    canvas.height = Math.floor(H * DPR);
+    canvas.style.width = W + "px";
+    canvas.style.height = H + "px";
+    ctx.setTransform(DPR,0,0,DPR,0,0);
+    rayX = laneX(laneTarget);
+    stars = Array.from({length:44}, () => ({x:Math.random()*W,y:Math.random()*H,r:rand(.4,1.7),s:rand(.08,.35)}));
+  }
+
+  function setOverlay(which){
+    title.classList.toggle("hidden", which !== "title");
+    over.classList.toggle("hidden", which !== "over");
+    document.body.classList.remove("title","playing","over");
+    document.body.classList.add(which === "title" ? "title" : which === "over" ? "over" : "playing");
+    if (restartSlot && restartBtn) {
+      if (which === "over") {
+        if (restartBtn.parentElement !== restartSlot) restartSlot.appendChild(restartBtn);
+        restartBtn.textContent = "Restart Run";
+      } else {
+        if (restartBtn.parentElement !== document.body) document.body.appendChild(restartBtn);
+        restartBtn.textContent = "Restart";
+      }
+    }
+  }
+
+  function ensureAudio(){
+    if (audio) return audio;
+    const AC = window.AudioContext || window.webkitAudioContext;
+    if (!AC) return null;
+    try {
+      audio = new AC();
+      return audio;
+    } catch (_) {
+      return null;
+    }
+  }
+
+  function beep(freq, dur, type, gain){
+    const ac = ensureAudio();
+    if (!ac) return;
+    try {
+      if (ac.state === "suspended") ac.resume().catch(() => {});
+      const o = ac.createOscillator();
+      const g = ac.createGain();
+      o.type = type || "sine";
+      o.frequency.setValueAtTime(freq, ac.currentTime);
+      g.gain.setValueAtTime(0.0001, ac.currentTime);
+      g.gain.exponentialRampToValueAtTime(gain || 0.035, ac.currentTime + .01);
+      g.gain.exponentialRampToValueAtTime(0.0001, ac.currentTime + dur);
+      o.connect(g).connect(ac.destination);
+      o.start();
+      o.stop(ac.currentTime + dur + .02);
+    } catch (_) {}
+  }
+
+  function haptic(ms){
+    try { if (navigator.vibrate) navigator.vibrate(ms); } catch (_) {}
+  }
+
+  function resetGame(){
+    state = "playing";
+    setOverlay("none");
+    t = 0; spawnTimer = .45; pulseTimer = 0; shake = 0; flash = 0;
+    lane = 2; laneTarget = 2; rayX = laneX(2);
+    health = 100; release = 0; score = 0; combo = 0; bestCombo = 0; wave = 1; spawnCount = 0;
+    notes = []; particles = []; ripples = [];
+    toast.textContent = "Swipe lanes to catch the packet beat";
+    updateHud();
+    beep(220,.08,"sine",.025);
+    beep(440,.12,"triangle",.025);
+  }
+
+  function finish(win){
+    if (state !== "playing") return;
+    state = "over";
+    setOverlay("over");
+    overTitle.textContent = win ? "Release Propagated" : "Signal Lost";
+    overText.textContent = win ? "The stingray build resolved across the cable ocean." : "The packet stream timed out in the storm drift.";
+    finalScore.textContent = String(score);
+    bestComboEl.textContent = String(bestCombo);
+    haptic(win ? 45 : 90);
+    beep(win ? 660 : 130, win ? .22 : .3, win ? "triangle" : "sawtooth", .04);
+  }
+
+  function updateHud(){
+    scoreEl.textContent = String(score);
+    comboEl.textContent = String(combo);
+    waveEl.textContent = String(wave);
+    releaseMeter.style.width = clamp(release,0,100) + "%";
+  }
+
+  function spawnNote(forceLane){
+    const nextWave = Math.min(7, 1 + Math.floor((score + spawnCount * 6) / 210));
+    wave = nextWave;
+    const stormChance = Math.min(.34, .10 + wave * .032);
+    const isStorm = Math.random() < stormChance && spawnCount > 4;
+    const drift = wave >= 3 ? rand(-.42,.42) : 0;
+    let targetLane = forceLane;
+    if (targetLane == null) {
+      const bias = Math.random() < .45 ? laneTarget + (Math.random() < .5 ? -1 : 1) : Math.floor(rand(0,5));
+      targetLane = clamp(Math.round(bias), 0, 4);
+    }
+    notes.push({
+      lane:targetLane,
+      kind:isStorm ? "storm" : "packet",
+      born:t,
+      travel:Math.max(1.15, 2.35 - wave * .14 + rand(-.05,.12)),
+      caught:false,
+      drift,
+      spin:rand(0,TAU),
+      id:spawnCount++
+    });
+    if (wave >= 5 && Math.random() < .22) {
+      const l2 = clamp(targetLane + (Math.random() < .5 ? -1 : 1), 0, 4);
+      if (l2 !== targetLane) notes.push({lane:l2,kind:"packet",born:t+.09,travel:Math.max(1.1,2.2-wave*.12),caught:false,drift:rand(-.25,.25),spin:rand(0,TAU),id:spawnCount++});
+    }
+    spawnTimer = Math.max(.34, 1.08 - wave * .08 + rand(-.08,.12));
+    updateHud();
+  }
+
+  function switchLane(dir){
+    if (state !== "playing") return;
+    laneTarget = clamp(laneTarget + dir, 0, 4);
+    toast.textContent = dir < 0 ? "left cable" : "right cable";
+    beep(260 + laneTarget * 45, .055, "sine", .018);
+  }
+
+  function syncPulse(){
+    if (state !== "playing" || pulseTimer > 0) return;
+    pulseTimer = .55;
+    ripples.push({x:rayX,y:gateY(),life:.38,max:.38,r:18});
+    toast.textContent = "sync pulse";
+    haptic(12);
+    beep(520,.07,"triangle",.026);
+    const g = gateY();
+    for (const n of notes) {
+      if (n.caught || n.kind !== "packet") continue;
+      const p = (t - n.born) / n.travel;
+      const y = -70 + p * (g + 100);
+      if (Math.abs(y - g) < 52 && Math.abs(n.lane - laneTarget) <= 1) {
+        catchNote(n, true);
+        break;
+      }
+    }
+  }
+
+  function catchNote(n, pulse){
+    if (n.caught) return;
+    n.caught = true;
+    combo += 1;
+    bestCombo = Math.max(bestCombo, combo);
+    const gain = 10 + Math.min(32, combo * 2) + (pulse ? 6 : 0);
+    score += gain;
+    release = clamp(release + 2.2 + Math.min(2.3, combo * .1), 0, 100);
+    health = clamp(health + 1.1, 0, 100);
+    flash = .12;
+    for (let i=0;i<12;i++) particles.push({x:laneX(n.lane)+rand(-8,8),y:gateY()+rand(-8,8),vx:rand(-90,90),vy:rand(-160,40),life:rand(.32,.62),max:.62,c:n.kind});
+    ripples.push({x:laneX(n.lane),y:gateY(),life:.34,max:.34,r:12});
+    toast.textContent = combo >= 8 ? "dependency chain x" + combo : "packet resolved";
+    haptic(combo % 8 === 0 ? 28 : 8);
+    beep(420 + Math.min(420, combo * 24), .075, "triangle", .035);
+    if (release >= 100) finish(true);
+    updateHud();
+  }
+
+  function missNote(n, stormHit){
+    if (n.caught) return;
+    n.caught = true;
+    if (stormHit) {
+      health -= 22;
+      shake = .38;
+      toast.textContent = "storm collision";
+      beep(110,.18,"sawtooth",.038);
+      haptic(55);
+    } else {
+      health -= 14;
+      toast.textContent = "packet missed";
+      beep(170,.12,"square",.026);
+      haptic(25);
+    }
+    combo = 0;
+    release = clamp(release - (stormHit ? 4 : 2.5), 0, 100);
+    for (let i=0;i<16;i++) particles.push({x:laneX(n.lane)+rand(-10,10),y:gateY()+rand(-6,8),vx:rand(-120,120),vy:rand(-120,80),life:rand(.26,.55),max:.55,c:stormHit ? "storm" : "miss"});
+    updateHud();
+    if (health <= 0) finish(false);
+  }
+
+  function update(dt){
+    if (state === "playing") {
+      t += dt;
+      spawnTimer -= dt;
+      pulseTimer = Math.max(0, pulseTimer - dt);
+      health -= dt * (1.55 + wave * .12);
+      if (spawnTimer <= 0) spawnNote();
+      rayX = lerp(rayX, laneX(laneTarget), Math.min(1, dt * 12));
+      if (Math.abs(rayX - laneX(laneTarget)) < 2) lane = laneTarget;
+      const g = gateY();
+      const windowPx = Math.max(24, 46 - wave * 2.4);
+      for (const n of notes) {
+        if (n.caught) continue;
+        const p = (t - n.born) / n.travel;
+        const y = -70 + p * (g + 100);
+        if (n.kind === "packet" && n.lane === laneTarget && Math.abs(y - g) < windowPx) catchNote(n, false);
+        if (n.kind === "storm" && n.lane === laneTarget && Math.abs(y - g) < windowPx * .82) missNote(n, true);
+        if (!n.caught && y > g + windowPx + 22) {
+          if (n.kind === "packet") missNote(n, false);
+          else n.caught = true;
+        }
+      }
+      notes = notes.filter(n => !n.caught || t - n.born < n.travel + .45);
+      if (health <= 0) finish(false);
+    }
+    shake = Math.max(0, shake - dt);
+    flash = Math.max(0, flash - dt);
+    particles.forEach(p => { p.x += p.vx * dt; p.y += p.vy * dt; p.vy += 220 * dt; p.life -= dt; });
+    particles = particles.filter(p => p.life > 0);
+    ripples.forEach(r => { r.life -= dt; r.r += 160 * dt; });
+    ripples = ripples.filter(r => r.life > 0);
+  }
+
+  function drawBg(){
+    const dark = getComputedStyle(document.documentElement).getPropertyValue("--bg").trim().startsWith("#02");
+    const sky = ctx.createLinearGradient(0,0,0,H);
+    if (dark) {
+      sky.addColorStop(0,"#021015");
+      sky.addColorStop(.55,"#032631");
+      sky.addColorStop(1,"#041b20");
+    } else {
+      sky.addColorStop(0,"#edf7f5");
+      sky.addColorStop(.58,"#d5f1ec");
+      sky.addColorStop(1,"#b9dedb");
+    }
+    ctx.fillStyle = sky;
+    ctx.fillRect(0,0,W,H);
+    ctx.save();
+    ctx.globalAlpha = dark ? .75 : .45;
+    for (const s of stars) {
+      const yy = (s.y + t * 10 * s.s) % H;
+      ctx.fillStyle = dark ? "rgba(125,235,226,.75)" : "rgba(0,99,112,.32)";
+      ctx.beginPath();
+      ctx.arc(s.x, yy, s.r, 0, TAU);
+      ctx.fill();
+    }
+    ctx.restore();
+  }
+
+  function drawCables(){
+    const g = gateY();
+    ctx.save();
+    ctx.lineCap = "round";
+    for (let i=0;i<5;i++) {
+      const x = laneX(i);
+      const active = i === laneTarget;
+      ctx.beginPath();
+      ctx.moveTo(x, -20);
+      for (let y=-20;y<=H+40;y+=26) {
+        const sway = Math.sin(y*.017 + t*1.2 + i) * (8 + wave);
+        ctx.lineTo(x + sway, y);
+      }
+      ctx.strokeStyle = active ? "rgba(70,240,196,.9)" : "rgba(53,183,201,.32)";
+      ctx.lineWidth = active ? 4 : 2;
+      ctx.shadowColor = active ? "rgba(70,240,196,.65)" : "transparent";
+      ctx.shadowBlur = active ? 14 : 0;
+      ctx.stroke();
+    }
+    ctx.shadowBlur = 0;
+    ctx.setLineDash([9,9]);
+    ctx.strokeStyle = "rgba(255,255,255,.26)";
+    ctx.lineWidth = 1;
+    ctx.beginPath();
+    ctx.moveTo(22,g);
+    ctx.lineTo(W-22,g);
+    ctx.stroke();
+    ctx.setLineDash([]);
+    ctx.fillStyle = "rgba(255,255,255,.16)";
+    ctx.fillRect(0,g-1,W,2);
+    ctx.restore();
+  }
+
+  function notePosition(n){
+    const g = gateY();
+    const p = (t - n.born) / n.travel;
+    const x = laneX(n.lane) + Math.sin((p*5 + n.spin) * 1.7) * n.drift * 26;
+    const y = -70 + p * (g + 100);
+    return {x,y,p};
+  }
+
+  function drawNotes(){
+    ctx.save();
+    for (const n of notes) {
+      if (n.caught) continue;
+      const pos = notePosition(n);
+      if (pos.y < -90 || pos.y > H+80) continue;
+      const packet = n.kind === "packet";
+      const r = packet ? 12 + Math.sin(t*9+n.id)*1.5 : 15;
+      ctx.translate(pos.x,pos.y);
+      ctx.rotate(n.spin + t * (packet ? 1.2 : -2.1));
+      ctx.shadowBlur = packet ? 18 : 22;
+      ctx.shadowColor = packet ? "rgba(52,224,238,.8)" : "rgba(255,143,60,.82)";
+      ctx.fillStyle = packet ? "rgba(56,220,230,.92)" : "rgba(255,135,54,.92)";
+      ctx.strokeStyle = packet ? "rgba(219,255,248,.9)" : "rgba(255,238,194,.9)";
+      ctx.lineWidth = 2;
+      if (packet) {
+        ctx.beginPath();
+        for (let i=0;i<6;i++) {
+          const a = i * TAU / 6;
+          ctx.lineTo(Math.cos(a)*r, Math.sin(a)*r*.72);
+        }
+        ctx.closePath();
+        ctx.fill(); ctx.stroke();
+        ctx.fillStyle = "rgba(255,255,255,.72)";
+        ctx.fillRect(-5,-1,10,2);
+      } else {
+        ctx.beginPath();
+        for (let i=0;i<8;i++) {
+          const a = i * TAU / 8;
+          const rr = i % 2 ? r*.48 : r;
+          ctx.lineTo(Math.cos(a)*rr, Math.sin(a)*rr);
+        }
+        ctx.closePath();
+        ctx.fill(); ctx.stroke();
+      }
+      ctx.setTransform(DPR,0,0,DPR,0,0);
+    }
+    ctx.restore();
+  }
+
+  function drawRay(){
+    const y = gateY() + 42 + Math.sin(t*5)*3;
+    ctx.save();
+    ctx.translate(rayX,y);
+    const tilt = (laneX(laneTarget) - rayX) * .015;
+    ctx.rotate(tilt);
+    ctx.shadowColor = "rgba(73,240,182,.8)";
+    ctx.shadowBlur = 24;
+    ctx.fillStyle = "rgba(48,213,214,.86)";
+    ctx.strokeStyle = "rgba(226,255,249,.88)";
+    ctx.lineWidth = 2;
+    ctx.beginPath();
+    ctx.moveTo(0,-21);
+    ctx.bezierCurveTo(38,-10,54,12,12,21);
+    ctx.lineTo(0,34);
+    ctx.lineTo(-12,21);
+    ctx.bezierCurveTo(-54,12,-38,-10,0,-21);
+    ctx.closePath();
+    ctx.fill(); ctx.stroke();
+    ctx.shadowBlur = 0;
+    ctx.strokeStyle = "rgba(3,48,54,.45)";
+    for (let i=-2;i<=2;i++) {
+      ctx.beginPath();
+      ctx.moveTo(0,-11);
+      ctx.quadraticCurveTo(i*10,4,i*18,16);
+      ctx.stroke();
+    }
+    ctx.beginPath();
+    ctx.moveTo(0,30);
+    ctx.quadraticCurveTo(Math.sin(t*8)*14,58,Math.sin(t*7)*8,82);
+    ctx.strokeStyle = "rgba(73,240,182,.86)";
+    ctx.lineWidth = 3;
+    ctx.stroke();
+    if (pulseTimer > 0) {
+      ctx.globalAlpha = pulseTimer / .55;
+      ctx.strokeStyle = "rgba(255,255,255,.8)";
+      ctx.beginPath();
+      ctx.arc(0,0,54 * (1 - pulseTimer / .55),0,TAU);
+      ctx.stroke();
+    }
+    ctx.restore();
+  }
+
+  function drawFx(dt){
+    ctx.save();
+    for (const r of ripples) {
+      ctx.globalAlpha = Math.max(0, r.life / r.max);
+      ctx.strokeStyle = "rgba(229,255,246,.76)";
+      ctx.lineWidth = 2;
+      ctx.beginPath();
+      ctx.arc(r.x,r.y,r.r,0,TAU);
+      ctx.stroke();
+    }
+    for (const p of particles) {
+      ctx.globalAlpha = Math.max(0, p.life / p.max);
+      ctx.fillStyle = p.c === "storm" ? "rgba(255,145,60,.9)" : p.c === "miss" ? "rgba(238,244,232,.65)" : "rgba(79,240,197,.92)";
+      ctx.beginPath();
+      ctx.arc(p.x,p.y,Math.max(1,3*p.life/p.max),0,TAU);
+      ctx.fill();
+    }
+    ctx.restore();
+    if (flash > 0) {
+      ctx.save();
+      ctx.globalAlpha = flash / .12 * .16;
+      ctx.fillStyle = "#ffffff";
+      ctx.fillRect(0,0,W,H);
+      ctx.restore();
+    }
+  }
+
+  function drawHealth(){
+    const w = Math.min(260, W*.58);
+    const x = (W-w)/2;
+    const y = H - 24;
+    ctx.save();
+    ctx.fillStyle = "rgba(255,255,255,.16)";
+    ctx.strokeStyle = "rgba(255,255,255,.24)";
+    roundRect(x,y,w,8,4);
+    ctx.fill();
+    ctx.stroke();
+    ctx.fillStyle = health < 34 ? "rgba(255,143,60,.95)" : "rgba(73,240,182,.92)";
+    roundRect(x,y,w*clamp(health/100,0,1),8,4);
+    ctx.fill();
+    ctx.restore();
+  }
+
+  function roundRect(x,y,w,h,r){
+    ctx.beginPath();
+    ctx.moveTo(x+r,y);
+    ctx.arcTo(x+w,y,x+w,y+h,r);
+    ctx.arcTo(x+w,y+h,x,y+h,r);
+    ctx.arcTo(x,y+h,x,y,r);
+    ctx.arcTo(x,y,x+w,y,r);
+    ctx.closePath();
+  }
+
+  function render(dt){
+    ctx.save();
+    if (shake > 0) ctx.translate(rand(-8,8)*shake, rand(-8,8)*shake);
+    drawBg();
+    drawCables();
+    drawNotes();
+    drawRay();
+    drawFx(dt);
+    drawHealth();
+    ctx.restore();
+  }
+
+  function loop(now){
+    const dt = Math.min(.033, Math.max(.001, (now - last) / 1000));
+    last = now;
+    update(dt);
+    render(dt);
+    requestAnimationFrame(loop);
+  }
+
+  function pointerDown(e){
+    if (e.cancelable) e.preventDefault();
+    startTouch = {x:e.clientX,y:e.clientY,time:performance.now()};
+  }
+  function pointerMove(e){
+    if (e.cancelable) e.preventDefault();
+  }
+  function pointerUp(e){
+    if (e.cancelable) e.preventDefault();
+    if (!startTouch) return;
+    const dx = e.clientX - startTouch.x;
+    const dy = e.clientY - startTouch.y;
+    if (Math.abs(dx) > 28 && Math.abs(dx) > Math.abs(dy)) switchLane(dx > 0 ? 1 : -1);
+    else if (state === "playing") {
+      const third = W / 3;
+      if (e.clientX < third) switchLane(-1);
+      else if (e.clientX > third * 2) switchLane(1);
+      else syncPulse();
+    }
+    startTouch = null;
+  }
+
+  function keyDown(e){
+    if (e.key === "ArrowLeft" || e.key === "a" || e.key === "A") { e.preventDefault(); switchLane(-1); }
+    else if (e.key === "ArrowRight" || e.key === "d" || e.key === "D") { e.preventDefault(); switchLane(1); }
+    else if (e.key === " " || e.key === "ArrowUp") { e.preventDefault(); syncPulse(); }
+    else if ((e.key === "Enter") && state === "title") resetGame();
+    else if ((e.key === "Enter") && state === "over") resetGame();
+  }
+
+  startBtn.addEventListener("click", resetGame);
+  restartBtn.addEventListener("click", resetGame);
+  gameEl.addEventListener("pointerdown", pointerDown, {passive:false});
+  gameEl.addEventListener("pointermove", pointerMove, {passive:false});
+  gameEl.addEventListener("pointerup", pointerUp, {passive:false});
+  gameEl.addEventListener("pointercancel", pointerUp, {passive:false});
+  window.addEventListener("keydown", keyDown);
+  window.addEventListener("resize", resize);
+  resize();
+  setOverlay("title");
+  updateHud();
+  requestAnimationFrame(loop);
+})();
+</script>
+</body>
+</html>

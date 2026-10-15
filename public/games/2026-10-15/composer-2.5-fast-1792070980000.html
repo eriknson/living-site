@@ -1,0 +1,693 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Ominous Olive — Firmware Graft</title>
+<style>
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+:root{
+  --bg:#e8e4dc;--pcb:#f2efe8;--trace:#c8d4c0;--phosphor:#1a6b12;--phosphor-dim:#2d8a22;
+  --amber:#c87800;--cyan:#0a8a82;--blue:#1868c8;--danger:#c82030;--olive:#5a6830;
+  --text:#1a3a1a;--text-dim:#5a7a5a;--overlay:rgba(232,228,220,.92);--btn-bg:#f8f6f2;--btn-border:#1a6b12;
+}
+@media(prefers-color-scheme:dark){
+  :root{
+    --bg:#0a0c0a;--pcb:#121612;--trace:#1a2e1a;--phosphor:#39ff14;--phosphor-dim:#1a8f12;
+    --amber:#ffb020;--cyan:#20d4c8;--blue:#3a9fff;--danger:#ff3344;--olive:#6b7c3a;
+    --text:#b8ffb8;--text-dim:#5a8a5a;--overlay:rgba(8,10,8,.88);--btn-bg:#0f1a0f;--btn-border:#39ff14;
+  }
+}
+html,body{width:100%;height:100%;overflow:hidden;background:var(--bg);color:var(--text);
+  font-family:ui-monospace,'SFMono-Regular',Menlo,monospace;touch-action:manipulation;
+  -webkit-tap-highlight-color:transparent;user-select:none;-webkit-user-select:none}
+#app{position:fixed;inset:0;width:100dvw;height:100dvh;display:flex;flex-direction:column}
+#hud{display:flex;justify-content:space-between;align-items:center;padding:10px 16px;
+  font-size:11px;letter-spacing:.08em;text-transform:uppercase;z-index:2;flex-shrink:0}
+#hud span{color:var(--text-dim)}
+#hud b{color:var(--phosphor);font-weight:600}
+#surge-wrap{flex:1;margin:0 12px;height:6px;background:var(--trace);border-radius:3px;overflow:hidden;max-width:180px}
+#surge-bar{height:100%;width:100%;background:var(--phosphor);border-radius:3px;transition:width .1s linear,background .3s}
+#surge-bar.warn{background:var(--amber)}
+#surge-bar.crit{background:var(--danger)}
+#canvas-wrap{flex:1;position:relative;min-height:0}
+canvas{display:block;width:100%;height:100%;touch-action:none}
+.overlay{position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;
+  justify-content:center;background:var(--overlay);z-index:10;pointer-events:none;
+  opacity:0;visibility:hidden;transition:opacity .35s ease,visibility .35s}
+.overlay.show{opacity:1;visibility:visible;pointer-events:none}
+.overlay h1{font-size:clamp(1.4rem,5vw,2rem);color:var(--phosphor);text-shadow:0 0 20px var(--phosphor-dim);
+  letter-spacing:.12em;margin-bottom:6px;text-align:center;padding:0 20px}
+.overlay .sub{font-size:clamp(.65rem,2.8vw,.8rem);color:var(--text-dim);text-align:center;
+  max-width:320px;line-height:1.6;margin-bottom:28px;padding:0 24px}
+.overlay .hint{font-size:10px;color:var(--olive);letter-spacing:.15em;margin-top:16px;text-transform:uppercase}
+.btn{pointer-events:auto;min-width:180px;min-height:48px;padding:14px 32px;
+  font-family:inherit;font-size:13px;letter-spacing:.14em;text-transform:uppercase;
+  background:var(--btn-bg);color:var(--phosphor);border:2px solid var(--btn-border);
+  border-radius:2px;cursor:pointer;transition:transform .12s,box-shadow .12s,background .12s}
+.btn:active{transform:scale(.96)}
+.btn:focus-visible{outline:2px solid var(--phosphor);outline-offset:3px}
+#go-stats{font-size:clamp(.75rem,3vw,.9rem);color:var(--text);margin-bottom:20px;text-align:center;line-height:1.8}
+#boot-flash{position:absolute;inset:0;background:var(--phosphor);opacity:0;pointer-events:none;
+  z-index:20;transition:opacity .15s}
+#scanlines{position:absolute;inset:0;pointer-events:none;z-index:3;opacity:.04;
+  background:repeating-linear-gradient(0deg,transparent,transparent 2px,rgba(0,0,0,.45) 2px,rgba(0,0,0,.45) 4px)}
+@media(prefers-color-scheme:dark){#scanlines{opacity:.07}}
+#tip{position:absolute;bottom:14px;left:0;right:0;text-align:center;font-size:10px;
+  letter-spacing:.12em;color:var(--text-dim);pointer-events:none;z-index:4;opacity:0;transition:opacity .4s}
+#tip.show{opacity:1}
+</style>
+</head>
+<body>
+<div id="app">
+  <div id="hud">
+    <div><span>score </span><b id="score">0</b></div>
+    <div id="surge-wrap"><div id="surge-bar"></div></div>
+    <div><span>wave </span><b id="wave">1</b></div>
+  </div>
+  <div id="canvas-wrap">
+    <canvas id="game"></canvas>
+    <div id="boot-flash"></div>
+    <div id="scanlines"></div>
+    <div id="tip">Match chip color to pulsing socket · avoid ? decoys</div>
+    <div id="title-overlay" class="overlay show">
+      <h1>OMINOUS OLIVE</h1>
+      <p class="sub">Graft firmware branches onto the motherboard tree before the power surge fries unconnected chips. Tap matching nodes — avoid corrupt olive decoys.</p>
+      <button class="btn" data-smoke="start" id="btn-start">Initialize Root</button>
+      <p class="hint">tap compatible chips · space on desktop</p>
+    </div>
+    <div id="go-overlay" class="overlay">
+      <h1>SURGE FRIED</h1>
+      <p id="go-stats"></p>
+      <button class="btn" data-smoke="restart" id="btn-restart">Reboot Tree</button>
+    </div>
+  </div>
+</div>
+<script>
+(function(){
+'use strict';
+
+var TYPES = [
+  { id:0, name:'CORE', color:null, sym:'◉' },
+  { id:1, name:'BUS',  color:null, sym:'═' },
+  { id:2, name:'MEM',  color:null, sym:'▣' },
+  { id:3, name:'I/O',  color:null, sym:'◈' }
+];
+
+var canvas, ctx, W, H, dpr;
+var state = 'title';
+var score = 0, combo = 0, maxCombo = 0, wave = 1, grafts = 0, corruptHits = 0;
+var surgeMax = 28, surgeTimer = 28, surgeDrain = 0.38;
+var trunk = { x:0, y:0 };
+var sockets = [], chips = [], particles = [], traces = [], flyers = [];
+var bootFlash = 0, shake = 0, hitPause = 0, playTime = 0, surgePulse = 0;
+var lastTime = 0, spawnAcc = 0, waveSocketsDone = 0, waveSocketsNeeded = 3;
+var audioCtx = null;
+
+function css(name){ return getComputedStyle(document.documentElement).getPropertyValue(name).trim(); }
+function initColors(){
+  TYPES[0].color = css('--phosphor');
+  TYPES[1].color = css('--cyan');
+  TYPES[2].color = css('--amber');
+  TYPES[3].color = css('--blue');
+}
+
+function $(id){ return document.getElementById(id); }
+
+function initCanvas(){
+  canvas = $('game');
+  if(!canvas) return;
+  ctx = canvas.getContext('2d');
+  resize();
+  window.addEventListener('resize', resize);
+}
+
+function resize(){
+  if(!canvas) return;
+  dpr = Math.min(window.devicePixelRatio || 1, 2);
+  var wrap = canvas.parentElement;
+  W = wrap.clientWidth || window.innerWidth;
+  H = wrap.clientHeight || Math.max(window.innerHeight - 50, 200);
+  canvas.width = W * dpr;
+  canvas.height = H * dpr;
+  trunk.x = W * 0.5;
+  trunk.y = H * 0.82;
+}
+
+function ensureAudio(){
+  if(audioCtx) return audioCtx;
+  try{
+    var AC = window.AudioContext || window.webkitAudioContext;
+    if(AC) audioCtx = new AC();
+  }catch(e){}
+  return audioCtx;
+}
+
+function tone(freq, dur, type, vol){
+  var ac = ensureAudio();
+  if(!ac) return;
+  try{
+    if(ac.state === 'suspended') ac.resume();
+    var o = ac.createOscillator();
+    var g = ac.createGain();
+    o.type = type || 'square';
+    o.frequency.value = freq;
+    g.gain.setValueAtTime(vol || 0.06, ac.currentTime);
+    g.gain.exponentialRampToValueAtTime(0.001, ac.currentTime + dur);
+    o.connect(g); g.connect(ac.destination);
+    o.start(); o.stop(ac.currentTime + dur);
+  }catch(e){}
+}
+
+function sfxGraft(){ tone(440 + combo * 30, 0.08, 'square', 0.05); tone(880, 0.05, 'sine', 0.03); }
+function sfxCorrupt(){ tone(80, 0.25, 'sawtooth', 0.08); }
+function sfxBoot(){
+  [220,330,440,660,880].forEach(function(f,i){
+    setTimeout(function(){ tone(f, 0.12, 'sine', 0.04); }, i * 70);
+  });
+}
+function sfxSurge(){ tone(120, 0.4, 'sawtooth', 0.06); }
+
+function vibrate(ms){
+  try{ if(navigator.vibrate) navigator.vibrate(ms); }catch(e){}
+}
+
+function resetGame(){
+  score = 0; combo = 0; maxCombo = 0; wave = 1; grafts = 0; corruptHits = 0;
+  surgeMax = 28; surgeTimer = 28; surgeDrain = 0.38;
+  sockets = []; chips = []; particles = []; traces = []; flyers = [];
+  waveSocketsDone = 0; waveSocketsNeeded = 3; spawnAcc = 0; bootFlash = 0; playTime = 0;
+  buildTree();
+  updateHUD();
+}
+
+function buildTree(){
+  sockets = [];
+  traces = [];
+  var count = waveSocketsNeeded;
+  var startAngle = -Math.PI * 0.75;
+  var endAngle = -Math.PI * 0.25;
+  for(var i = 0; i < count; i++){
+    var t = count === 1 ? 0.5 : i / (count - 1);
+    var ang = startAngle + (endAngle - startAngle) * t;
+    var len = Math.min(W, H) * (0.22 + (i % 2) * 0.06);
+    var sx = trunk.x + Math.cos(ang) * len * 0.15;
+    var sy = trunk.y + Math.sin(ang) * len * 0.15;
+    var ex = trunk.x + Math.cos(ang) * len;
+    var ey = trunk.y + Math.sin(ang) * len;
+    traces.push({ x1:sx, y1:sy, x2:ex, y2:ey, lit:0 });
+    var typeId = i % 4;
+    sockets.push({
+      x:ex, y:ey, typeId:typeId, filled:false, pending:false,
+      pulse:Math.random() * Math.PI * 2, branch:i
+    });
+  }
+  waveSocketsDone = 0;
+  spawnChips(count + 1);
+}
+
+function spawnChips(n){
+  var needed = {};
+  sockets.forEach(function(s){ if(!s.filled) needed[s.typeId] = (needed[s.typeId]||0)+1; });
+  var toSpawn = [];
+  Object.keys(needed).forEach(function(k){ for(var j=0;j<needed[k];j++) toSpawn.push(+k); });
+  while(toSpawn.length < n){
+    toSpawn.push(Math.floor(Math.random()*4));
+  }
+  if(wave >= 2 && Math.random() < 0.25 + wave * 0.05){
+    toSpawn.push(-1);
+  }
+  if(wave >= 3 && Math.random() < 0.2){
+    toSpawn.push(-1);
+  }
+  for(var i = 0; i < toSpawn.length && chips.length < 8; i++){
+    addChip(toSpawn[i]);
+  }
+}
+
+function addChip(typeId){
+  var corrupt = typeId === -1;
+  if(!corrupt) typeId = typeId % 4;
+  var margin = 36;
+  var ang = Math.random() * Math.PI * 2;
+  var rx = W * 0.5 + Math.cos(ang) * (W * 0.32 + Math.random() * 40);
+  var ry = H * 0.42 + Math.sin(ang) * (H * 0.22 + Math.random() * 30);
+  rx = Math.max(margin, Math.min(W - margin, rx));
+  ry = Math.max(margin + 20, Math.min(H * 0.72, ry));
+  chips.push({
+    x:rx, y:ry, typeId:corrupt ? -1 : typeId, corrupt:corrupt,
+    r:22, pulse:Math.random()*Math.PI*2,
+    vx:(Math.random()-0.5)*8, vy:(Math.random()-0.5)*8,
+    spawnT:0
+  });
+}
+
+function findChipAt(px, py){
+  var best = null, bestD = 999;
+  for(var i = chips.length - 1; i >= 0; i--){
+    var c = chips[i];
+    var dx = px - c.x, dy = py - c.y;
+    var d = Math.sqrt(dx*dx + dy*dy);
+    if(d < c.r + 14 && d < bestD){ bestD = d; best = c; }
+  }
+  return best;
+}
+
+function findSocketFor(typeId){
+  for(var i = 0; i < sockets.length; i++){
+    if(!sockets[i].filled && !sockets[i].pending && sockets[i].typeId === typeId) return sockets[i];
+  }
+  return null;
+}
+
+function addParticles(x, y, color, n){
+  for(var i = 0; i < n; i++){
+    var a = Math.random() * Math.PI * 2;
+    var sp = 40 + Math.random() * 120;
+    particles.push({
+      x:x, y:y, vx:Math.cos(a)*sp, vy:Math.sin(a)*sp,
+      life:0.4 + Math.random()*0.4, maxLife:0.8, color:color, size:2 + Math.random()*3
+    });
+  }
+}
+
+function tryGraft(chip){
+  if(state !== 'playing' || !chip) return;
+  if(chip.corrupt){
+    combo = 0; corruptHits++;
+    surgeTimer = Math.max(0, surgeTimer - 4);
+    surgeDrain += 0.04;
+    shake = 8; hitPause = 0.1;
+    sfxCorrupt(); vibrate(80);
+    addParticles(chip.x, chip.y, css('--olive'), 16);
+    chips.splice(chips.indexOf(chip), 1);
+    if(corruptHits >= 3){
+      endGame('Corrupt firmware collapsed the tree.');
+      return;
+    }
+    spawnChips(1);
+    return;
+  }
+  var sock = findSocketFor(chip.typeId);
+  if(!sock){
+    combo = 0;
+    surgeTimer = Math.max(0, surgeTimer - 1.5);
+    shake = 4;
+    sfxCorrupt();
+    addParticles(chip.x, chip.y, css('--danger'), 8);
+    return;
+  }
+  sock.pending = true;
+  var idx = chips.indexOf(chip);
+  if(idx >= 0) chips.splice(idx, 1);
+  flyers.push({
+    sx:chip.x, sy:chip.y, x:chip.x, y:chip.y, tx:sock.x, ty:sock.y, t:0,
+    typeId:chip.typeId, corrupt:false, sock:sock, branch:sock.branch
+  });
+  hitPause = 0.05;
+  sfxGraft(); vibrate(15);
+}
+
+function finishGraft(f){
+  if(!f.sock || f.sock.filled){ if(f.sock) f.sock.pending = false; return; }
+  f.sock.pending = false;
+  f.sock.filled = true;
+  waveSocketsDone++;
+  grafts++; combo++; if(combo > maxCombo) maxCombo = combo;
+  score += 100 + combo * 25 + wave * 10;
+  surgeTimer = Math.min(surgeMax, surgeTimer + 2.2 + combo * 0.15);
+  var col = TYPES[f.typeId].color;
+  addParticles(f.tx, f.ty, col, 14);
+  if(traces[f.branch]) traces[f.branch].lit = 1;
+  if(sockets.every(function(s){ return s.filled; })){
+    waveComplete();
+  } else {
+    spawnAcc = 0;
+    if(chips.length < 4) spawnChips(2);
+  }
+  updateHUD();
+}
+
+function waveComplete(){
+  bootFlash = 1;
+  sfxBoot(); vibrate([20,30,20]);
+  var flash = $('boot-flash');
+  if(flash){ flash.style.opacity = '0.55'; setTimeout(function(){ flash.style.opacity = '0'; }, 180); }
+  wave++;
+  waveSocketsNeeded = Math.min(6, 2 + wave);
+  surgeMax = Math.max(14, surgeMax - 1.5);
+  surgeTimer = Math.min(surgeMax, surgeTimer + 6);
+  surgeDrain += 0.06;
+  waveSocketsDone = 0;
+  setTimeout(function(){
+    if(state === 'playing'){
+      buildTree();
+      updateHUD();
+    }
+  }, 400);
+}
+
+function endGame(reason){
+  state = 'gameover';
+  sfxSurge(); vibrate(120);
+  var stats = $('go-stats');
+  if(stats){
+    stats.innerHTML = 'Score <b style="color:var(--phosphor)">' + score + '</b><br>' +
+      'Wave ' + wave + ' · Grafts ' + grafts + ' · Best combo ' + maxCombo +
+      (reason ? '<br><span style="font-size:.85em;color:var(--text-dim)">' + reason + '</span>' : '');
+  }
+  var go = $('go-overlay');
+  if(go) go.classList.add('show');
+  var title = $('title-overlay');
+  if(title) title.classList.remove('show');
+  var tip = $('tip');
+  if(tip) tip.classList.remove('show');
+}
+
+function updateHUD(){
+  var s = $('score'); if(s) s.textContent = score;
+  var w = $('wave'); if(w) w.textContent = wave;
+  var pct = Math.max(0, Math.min(100, (surgeTimer / surgeMax) * 100));
+  var bar = $('surge-bar');
+  if(bar){
+    bar.style.width = pct + '%';
+    bar.className = pct < 25 ? 'crit' : pct < 45 ? 'warn' : '';
+  }
+}
+
+function startGame(){
+  resetGame();
+  state = 'playing';
+  var title = $('title-overlay');
+  var go = $('go-overlay');
+  var tip = $('tip');
+  if(title) title.classList.remove('show');
+  if(go) go.classList.remove('show');
+  if(tip) tip.classList.add('show');
+  setTimeout(function(){ if(tip) tip.classList.remove('show'); }, 7000);
+  ensureAudio();
+  updateHUD();
+}
+
+function handleTap(clientX, clientY){
+  if(!canvas) return;
+  var rect = canvas.getBoundingClientRect();
+  var px = (clientX - rect.left) * (W / rect.width);
+  var py = (clientY - rect.top) * (H / rect.height);
+  if(state === 'playing'){
+    var chip = findChipAt(px, py);
+    if(chip) tryGraft(chip);
+  }
+}
+
+function drawBackground(){
+  ctx.fillStyle = css('--bg');
+  ctx.fillRect(0, 0, W, H);
+  ctx.fillStyle = css('--pcb');
+  ctx.fillRect(0, 0, W, H);
+  ctx.strokeStyle = css('--trace');
+  ctx.lineWidth = 1;
+  var gs = 24;
+  ctx.globalAlpha = 0.35;
+  for(var x = 0; x < W; x += gs){
+    ctx.beginPath(); ctx.moveTo(x, 0); ctx.lineTo(x, H); ctx.stroke();
+  }
+  for(var y = 0; y < H; y += gs){
+    ctx.beginPath(); ctx.moveTo(0, y); ctx.lineTo(W, y); ctx.stroke();
+  }
+  ctx.globalAlpha = 1;
+  ctx.fillStyle = css('--trace');
+  ctx.globalAlpha = 0.15;
+  for(var i = 0; i < 6; i++){
+    ctx.fillRect(W * 0.1 + i * 30, H * 0.15, 8, H * 0.5);
+  }
+  ctx.globalAlpha = 1;
+}
+
+function drawTraces(){
+  traces.forEach(function(tr){
+    ctx.beginPath();
+    ctx.moveTo(tr.x1, tr.y1);
+    ctx.lineTo(tr.x2, tr.y2);
+    ctx.strokeStyle = tr.lit > 0 ? css('--phosphor') : css('--trace');
+    ctx.globalAlpha = tr.lit > 0 ? 0.5 + tr.lit * 0.5 : 0.4;
+    ctx.lineWidth = tr.lit > 0 ? 2.5 : 1.5;
+    ctx.stroke();
+    if(tr.lit > 0) tr.lit = Math.max(0, tr.lit - 0.003);
+  });
+  ctx.globalAlpha = 1;
+}
+
+function drawTrunk(){
+  var g = ctx.createLinearGradient(trunk.x, trunk.y - 20, trunk.x, trunk.y + 30);
+  g.addColorStop(0, css('--trace'));
+  g.addColorStop(1, css('--pcb'));
+  ctx.fillStyle = g;
+  ctx.beginPath();
+  ctx.moveTo(trunk.x - 18, trunk.y + 20);
+  ctx.lineTo(trunk.x + 18, trunk.y + 20);
+  ctx.lineTo(trunk.x + 10, trunk.y - 30);
+  ctx.lineTo(trunk.x - 10, trunk.y - 30);
+  ctx.closePath();
+  ctx.fill();
+  ctx.strokeStyle = css('--phosphor-dim');
+  ctx.lineWidth = 1;
+  ctx.stroke();
+  ctx.fillStyle = css('--phosphor');
+  ctx.globalAlpha = 0.6 + Math.sin(Date.now() * 0.003) * 0.2;
+  ctx.font = '9px ui-monospace,monospace';
+  ctx.textAlign = 'center';
+  ctx.fillText('ROOT', trunk.x, trunk.y + 8);
+  ctx.globalAlpha = 1;
+}
+
+function drawSocket(s, t){
+  var col = TYPES[s.typeId].color;
+  var pulse = 0.7 + Math.sin(s.pulse + t * 3) * 0.3;
+  s.pulse += 0.02;
+  ctx.beginPath();
+  ctx.arc(s.x, s.y, s.filled ? 14 : 16, 0, Math.PI * 2);
+  if(s.filled){
+    ctx.fillStyle = col;
+    ctx.shadowColor = col;
+    ctx.shadowBlur = 12;
+    ctx.fill();
+    ctx.shadowBlur = 0;
+  } else {
+    ctx.strokeStyle = col;
+    ctx.lineWidth = 2;
+    ctx.globalAlpha = pulse;
+    ctx.setLineDash([4, 4]);
+    ctx.stroke();
+    ctx.setLineDash([]);
+    ctx.globalAlpha = 1;
+  }
+  if(!s.filled){
+    ctx.fillStyle = col;
+    ctx.globalAlpha = 0.5;
+    ctx.font = '8px ui-monospace,monospace';
+    ctx.textAlign = 'center';
+    ctx.fillText(TYPES[s.typeId].sym, s.x, s.y + 3);
+    ctx.globalAlpha = 1;
+  }
+}
+
+function drawChip(c, t){
+  c.pulse += 0.04;
+  c.spawnT = Math.min(1, c.spawnT + 0.05);
+  var scale = 0.5 + c.spawnT * 0.5;
+  var r = c.r * scale;
+  var corrupt = c.corrupt;
+  var col = corrupt ? css('--olive') : TYPES[c.typeId].color;
+  var pulse = 0.85 + Math.sin(c.pulse + t * 2) * 0.15;
+
+  ctx.save();
+  ctx.translate(c.x, c.y);
+  ctx.beginPath();
+  if(corrupt){
+    ctx.fillStyle = css('--pcb');
+    ctx.strokeStyle = col;
+    ctx.lineWidth = 2;
+    ctx.rect(-r, -r, r * 2, r * 2);
+    ctx.fill(); ctx.stroke();
+    ctx.fillStyle = col;
+    ctx.font = 'bold 11px ui-monospace,monospace';
+    ctx.textAlign = 'center';
+    ctx.fillText('?', 0, 4);
+  } else {
+    ctx.fillStyle = css('--pcb');
+    ctx.strokeStyle = col;
+    ctx.lineWidth = 2;
+    var cr = 4;
+    ctx.moveTo(-r + cr, -r);
+    ctx.lineTo(r - cr, -r); ctx.quadraticCurveTo(r, -r, r, -r + cr);
+    ctx.lineTo(r, r - cr); ctx.quadraticCurveTo(r, r, r - cr, r);
+    ctx.lineTo(-r + cr, r); ctx.quadraticCurveTo(-r, r, -r, r - cr);
+    ctx.lineTo(-r, -r + cr); ctx.quadraticCurveTo(-r, -r, -r + cr, -r);
+    ctx.fill(); ctx.stroke();
+    ctx.fillStyle = col;
+    ctx.globalAlpha = pulse;
+    ctx.font = '10px ui-monospace,monospace';
+    ctx.textAlign = 'center';
+    ctx.fillText(TYPES[c.typeId].name, 0, -2);
+    ctx.font = '12px ui-monospace,monospace';
+    ctx.fillText(TYPES[c.typeId].sym, 0, 10);
+    ctx.globalAlpha = 1;
+  }
+  ctx.restore();
+}
+
+function drawParticles(dt){
+  for(var i = particles.length - 1; i >= 0; i--){
+    var p = particles[i];
+    p.life -= dt;
+    if(p.life <= 0){ particles.splice(i, 1); continue; }
+    p.x += p.vx * dt; p.y += p.vy * dt;
+    p.vy += 80 * dt;
+    ctx.globalAlpha = p.life / p.maxLife;
+    ctx.fillStyle = p.color;
+    ctx.fillRect(p.x - p.size/2, p.y - p.size/2, p.size, p.size);
+  }
+  ctx.globalAlpha = 1;
+}
+
+function drawCombo(){
+  if(combo < 2 || state !== 'playing') return;
+  ctx.fillStyle = css('--phosphor');
+  ctx.globalAlpha = 0.7;
+  ctx.font = '11px ui-monospace,monospace';
+  ctx.textAlign = 'left';
+  ctx.fillText('COMBO x' + combo, 12, H - 16);
+  ctx.globalAlpha = 1;
+}
+
+function update(dt){
+  if(state !== 'playing') return;
+  playTime += dt;
+  if(hitPause > 0){ hitPause -= dt; if(hitPause > 0) return; }
+  surgeTimer -= surgeDrain * dt;
+  surgePulse += dt * (surgeTimer / surgeMax < 0.3 ? 8 : 3);
+  for(var fi = flyers.length - 1; fi >= 0; fi--){
+    var f = flyers[fi];
+    f.t = Math.min(1, f.t + dt * 3.2);
+    var e = 1 - Math.pow(1 - f.t, 3);
+    f.x = f.sx + (f.tx - f.sx) * e;
+    f.y = f.sy + (f.ty - f.sy) * e;
+    if(f.t >= 1){
+      finishGraft(f);
+      flyers.splice(fi, 1);
+    }
+  }
+  if(surgeTimer <= 0){
+    endGame('Power surge reached the unconnected chips.');
+    return;
+  }
+  spawnAcc += dt;
+  if(spawnAcc > 2.5 - wave * 0.15 && chips.length < 6){
+    spawnAcc = 0;
+    spawnChips(1);
+  }
+  chips.forEach(function(c){
+    c.x += c.vx * dt; c.y += c.vy * dt;
+    if(c.x < 30 || c.x > W - 30) c.vx *= -1;
+    if(c.y < 40 || c.y > H * 0.75) c.vy *= -1;
+  });
+  if(shake > 0) shake *= 0.85;
+  updateHUD();
+}
+
+function render(t){
+  if(!ctx) return;
+  var dt = Math.min(0.05, (t - lastTime) / 1000 || 0.016);
+  lastTime = t;
+  update(dt);
+
+  ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+  if(shake > 0.5){
+    ctx.translate((Math.random()-0.5)*shake, (Math.random()-0.5)*shake);
+  }
+
+  drawBackground();
+  drawTraces();
+  drawTrunk();
+  sockets.forEach(function(s){ drawSocket(s, t * 0.001); });
+  chips.forEach(function(c){ drawChip(c, t * 0.001); });
+  flyers.forEach(function(f){
+    drawChip({ x:f.x, y:f.y, typeId:f.typeId, corrupt:false, r:22, pulse:t*0.004, spawnT:1 }, t * 0.001);
+  });
+  drawParticles(dt);
+  drawCombo();
+
+  if(state === 'playing' && surgeTimer / surgeMax < 0.35){
+    var sp = 0.08 + Math.sin(surgePulse) * 0.06;
+    ctx.strokeStyle = css('--danger');
+    ctx.lineWidth = 3;
+    ctx.globalAlpha = sp;
+    ctx.strokeRect(2, 2, W - 4, H - 4);
+    ctx.globalAlpha = 1;
+  }
+
+  if(bootFlash > 0){
+    ctx.fillStyle = css('--phosphor');
+    ctx.globalAlpha = bootFlash * 0.25;
+    ctx.fillRect(0, 0, W, H);
+    ctx.globalAlpha = 1;
+    bootFlash = Math.max(0, bootFlash - dt * 2);
+  }
+
+  requestAnimationFrame(render);
+}
+
+function bindEvents(){
+  var btnStart = $('btn-start');
+  var btnRestart = $('btn-restart');
+  if(btnStart) btnStart.addEventListener('click', function(e){ e.stopPropagation(); startGame(); });
+  if(btnRestart) btnRestart.addEventListener('click', function(e){ e.stopPropagation(); startGame(); });
+
+  if(canvas){
+    canvas.addEventListener('pointerdown', function(e){
+      e.preventDefault();
+      handleTap(e.clientX, e.clientY);
+    });
+    canvas.addEventListener('touchstart', function(e){
+      e.preventDefault();
+      if(e.touches && e.touches[0]) handleTap(e.touches[0].clientX, e.touches[0].clientY);
+    }, { passive:false });
+  }
+
+  document.addEventListener('keydown', function(e){
+    if(e.code === 'Space'){
+      e.preventDefault();
+      if(state === 'title'){
+        startGame();
+      } else if(state === 'playing' && chips.length){
+        tryGraft(chips[0]);
+      }
+    }
+  });
+
+  var mq = window.matchMedia('(prefers-color-scheme: dark)');
+  if(mq && mq.addEventListener){
+    mq.addEventListener('change', initColors);
+  } else if(mq && mq.addListener){
+    mq.addListener(initColors);
+  }
+}
+
+function init(){
+  initColors();
+  initCanvas();
+  bindEvents();
+  buildTree();
+  requestAnimationFrame(render);
+}
+
+if(document.readyState === 'loading'){
+  document.addEventListener('DOMContentLoaded', init);
+} else {
+  init();
+}
+})();
+</script>
+</body>
+</html>
