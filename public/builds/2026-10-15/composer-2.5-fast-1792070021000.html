@@ -1,0 +1,738 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Erik Nilsson — eriks.design</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Caveat:wght@400;500&family=Newsreader:ital,opsz,wght@0,6..72,400;0,6..72,500;0,6..72,600;1,6..72,400;1,6..72,500&family=IBM+Plex+Mono:wght@400;500&display=swap" rel="stylesheet">
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    :root {
+      --paper: #f7f2ea;
+      --ink: #1a1814;
+      --ink-soft: #5c564c;
+      --ink-faint: #9a9288;
+      --rule: #e4ddd2;
+      --margin: #d44a3a;
+      --accent: #c45c3e;
+      --accent-teal: #2a6b62;
+      --highlight: #f0d890;
+      --serif: "Newsreader", "Iowan Old Style", "Palatino Linotype", Georgia, serif;
+      --hand: "Caveat", cursive;
+      --mono: "IBM Plex Mono", "SF Mono", monospace;
+      --measure: 38rem;
+      --gutter: 1.5rem;
+      --margin-line: 3.25rem;
+    }
+
+    @supports (color: color(display-p3 1 1 1)) {
+      :root {
+        --paper: color(display-p3 0.968 0.949 0.918);
+        --ink: color(display-p3 0.102 0.094 0.078);
+        --ink-soft: color(display-p3 0.357 0.337 0.298);
+        --ink-faint: color(display-p3 0.604 0.573 0.533);
+        --rule: color(display-p3 0.894 0.867 0.824);
+        --margin: color(display-p3 0.831 0.290 0.227);
+        --accent: color(display-p3 0.769 0.361 0.243);
+        --accent-teal: color(display-p3 0.165 0.420 0.384);
+        --highlight: color(display-p3 0.941 0.847 0.565);
+      }
+    }
+
+    @media (prefers-color-scheme: dark) {
+      :root {
+        --paper: #141210;
+        --ink: #ece6dc;
+        --ink-soft: #a8a095;
+        --ink-faint: #6b655c;
+        --rule: #2a2722;
+        --margin: #e05a48;
+        --accent: #e07858;
+        --accent-teal: #5aab9e;
+        --highlight: #3d3520;
+      }
+
+      @supports (color: color(display-p3 1 1 1)) {
+        :root {
+          --paper: color(display-p3 0.078 0.071 0.063);
+          --ink: color(display-p3 0.925 0.902 0.863);
+          --ink-soft: color(display-p3 0.659 0.627 0.584);
+          --ink-faint: color(display-p3 0.416 0.396 0.361);
+          --rule: color(display-p3 0.165 0.153 0.133);
+          --margin: color(display-p3 0.878 0.353 0.282);
+          --accent: color(display-p3 0.878 0.471 0.345);
+          --accent-teal: color(display-p3 0.353 0.671 0.620);
+          --highlight: color(display-p3 0.239 0.208 0.125);
+        }
+      }
+    }
+
+    html {
+      font-size: 17px;
+      -webkit-font-smoothing: antialiased;
+      text-rendering: optimizeLegibility;
+    }
+
+    body {
+      font-family: var(--serif);
+      background: var(--paper);
+      color: var(--ink);
+      line-height: 1.55;
+      min-height: 100dvh;
+      overflow-x: hidden;
+    }
+
+    ::selection {
+      background: var(--highlight);
+      color: var(--ink);
+    }
+
+    :focus-visible {
+      outline: 2px solid var(--accent-teal);
+      outline-offset: 3px;
+    }
+
+    .page {
+      position: relative;
+      z-index: 1;
+      max-width: 640px;
+      margin: 0 auto;
+      padding: 2.5rem var(--gutter) 4rem;
+      padding-left: calc(var(--gutter) + var(--margin-line));
+    }
+
+    /* notebook margin line */
+    .page::before {
+      content: "";
+      position: absolute;
+      left: var(--margin-line);
+      top: 0;
+      bottom: 0;
+      width: 1.5px;
+      background: var(--margin);
+      opacity: 0.55;
+    }
+
+    /* binder holes */
+    .holes {
+      position: absolute;
+      left: calc(var(--margin-line) * 0.38);
+      top: 4.5rem;
+      display: flex;
+      flex-direction: column;
+      gap: 6.5rem;
+      pointer-events: none;
+    }
+
+    .holes span {
+      display: block;
+      width: 0.5rem;
+      height: 0.5rem;
+      border: 1px solid var(--rule);
+      border-radius: 50%;
+      opacity: 0.55;
+    }
+
+    /* ── masthead ── */
+    .masthead {
+      display: flex;
+      justify-content: space-between;
+      align-items: baseline;
+      gap: 1rem;
+      padding-bottom: 1.75rem;
+      border-bottom: 1px solid var(--ink);
+      margin-bottom: 2.25rem;
+    }
+
+    .masthead__title {
+      font-size: 0.72rem;
+      font-family: var(--mono);
+      font-weight: 500;
+      letter-spacing: 0.14em;
+      text-transform: uppercase;
+      color: var(--ink-soft);
+    }
+
+    .masthead__meta {
+      text-align: right;
+    }
+
+    .masthead__issue {
+      display: block;
+      font-family: var(--hand);
+      font-size: 0.95rem;
+      color: var(--accent);
+      line-height: 1.2;
+      margin-bottom: 0.15rem;
+      transform: rotate(2deg);
+    }
+
+    .masthead__date {
+      font-size: 0.72rem;
+      font-family: var(--mono);
+      font-weight: 400;
+      letter-spacing: 0.06em;
+      color: var(--ink-faint);
+      white-space: nowrap;
+    }
+
+    /* ── hero ── */
+    .hero {
+      margin-bottom: 2.5rem;
+    }
+
+    .hero__name {
+      font-size: clamp(2.4rem, 7vw, 3.4rem);
+      font-weight: 500;
+      letter-spacing: -0.025em;
+      line-height: 1.05;
+      margin-bottom: 0.6rem;
+    }
+
+    .hero__role {
+      font-size: 1.05rem;
+      color: var(--ink-soft);
+      font-weight: 400;
+    }
+
+    .hero__role a {
+      color: var(--accent-teal);
+      text-decoration: none;
+      border-bottom: 1px solid transparent;
+      transition: border-color 0.2s ease;
+    }
+
+    .hero__role a:hover {
+      border-bottom-color: var(--accent-teal);
+    }
+
+    /* ── lede ── */
+    .lede {
+      font-size: 1.15rem;
+      line-height: 1.65;
+      font-weight: 400;
+      max-width: 32em;
+      margin-bottom: 2.75rem;
+      position: relative;
+    }
+
+    .lede em {
+      font-style: italic;
+      font-weight: 500;
+      position: relative;
+      white-space: nowrap;
+    }
+
+    .lede em svg {
+      position: absolute;
+      left: -0.15em;
+      right: -0.15em;
+      bottom: -0.05em;
+      width: calc(100% + 0.3em);
+      height: 0.45em;
+      pointer-events: none;
+    }
+
+    .lede em svg path {
+      stroke: var(--accent);
+      stroke-width: 1.5;
+      fill: none;
+      stroke-linecap: round;
+    }
+
+    .annotation {
+      position: absolute;
+      font-family: var(--hand);
+      font-size: 1.15rem;
+      color: var(--accent);
+      line-height: 1.2;
+      pointer-events: none;
+      white-space: nowrap;
+    }
+
+    .annotation--living {
+      right: -0.5rem;
+      top: -0.2rem;
+      transform: rotate(-8deg);
+    }
+
+    .annotation-arrow {
+      display: inline-block;
+      margin-right: 0.15em;
+      font-size: 1.3em;
+    }
+
+    /* ── section labels ── */
+    .section-label {
+      font-family: var(--mono);
+      font-size: 0.68rem;
+      font-weight: 500;
+      letter-spacing: 0.16em;
+      text-transform: uppercase;
+      color: var(--ink-faint);
+      margin-bottom: 1rem;
+      display: flex;
+      align-items: center;
+      gap: 0.75rem;
+    }
+
+    .section-label::after {
+      content: "";
+      flex: 1;
+      height: 1px;
+      background: var(--rule);
+    }
+
+    /* ── field notes ── */
+    .field-notes {
+      margin-bottom: 2.75rem;
+      position: relative;
+    }
+
+    .weather-chip {
+      display: inline-flex;
+      align-items: baseline;
+      gap: 0.5rem;
+      font-family: var(--mono);
+      font-size: 0.78rem;
+      color: var(--ink-soft);
+      background: var(--highlight);
+      padding: 0.3rem 0.65rem;
+      margin-bottom: 1.1rem;
+      letter-spacing: 0.02em;
+    }
+
+    .weather-chip__temp {
+      font-weight: 500;
+      color: var(--ink);
+    }
+
+    .signals {
+      list-style: none;
+      display: flex;
+      flex-direction: column;
+      gap: 0.55rem;
+    }
+
+    .signals li {
+      font-size: 0.95rem;
+      color: var(--ink-soft);
+      padding-left: 1.1rem;
+      position: relative;
+      line-height: 1.5;
+    }
+
+    .signals li::before {
+      content: "—";
+      position: absolute;
+      left: 0;
+      color: var(--ink-faint);
+    }
+
+    .signals li:first-child {
+      color: var(--ink);
+      font-style: italic;
+    }
+
+    .annotation--fog {
+      right: -1rem;
+      bottom: -1.8rem;
+      transform: rotate(4deg);
+      font-size: 1.05rem;
+      color: var(--accent-teal);
+    }
+
+    /* ── jottings ── */
+    .jottings {
+      margin-bottom: 2.75rem;
+    }
+
+    .jottings__list {
+      list-style: none;
+      display: flex;
+      flex-direction: column;
+      gap: 1.25rem;
+    }
+
+    .jotting {
+      position: relative;
+      padding-left: 0.25rem;
+    }
+
+    .jotting__text {
+      font-size: 1.05rem;
+      line-height: 1.55;
+      font-style: italic;
+      color: var(--ink);
+    }
+
+    .jotting__text a {
+      color: inherit;
+      text-decoration: none;
+      border-bottom: 1px solid var(--rule);
+      transition: border-color 0.2s ease, color 0.2s ease;
+    }
+
+    .jotting__text a:hover {
+      color: var(--accent-teal);
+      border-bottom-color: var(--accent-teal);
+    }
+
+    .jotting__meta {
+      font-family: var(--mono);
+      font-size: 0.68rem;
+      color: var(--ink-faint);
+      margin-top: 0.35rem;
+      letter-spacing: 0.04em;
+    }
+
+    .jotting__mark {
+      position: absolute;
+      left: -1.5rem;
+      top: 0.15rem;
+      width: 0.55rem;
+      height: 0.55rem;
+      border: 1.5px solid var(--accent);
+      border-radius: 50%;
+      opacity: 0.7;
+    }
+
+    /* ── writing index ── */
+    .writing {
+      margin-bottom: 3rem;
+    }
+
+    .writing__list {
+      list-style: none;
+    }
+
+    .writing__item {
+      display: grid;
+      grid-template-columns: 2rem 1fr auto;
+      align-items: baseline;
+      gap: 0.5rem 0.75rem;
+      padding: 0.65rem 0;
+      border-bottom: 1px solid var(--rule);
+      transition: background 0.15s ease;
+    }
+
+    .writing__item:first-child {
+      border-top: 1px solid var(--rule);
+    }
+
+    .writing__item:hover {
+      background: color-mix(in srgb, var(--highlight) 35%, transparent);
+    }
+
+    @supports (color: color(display-p3 1 1 1)) {
+      .writing__item:hover {
+        background: color(display-p3 0.941 0.847 0.565 / 0.18);
+      }
+    }
+
+    .writing__num {
+      font-family: var(--mono);
+      font-size: 0.72rem;
+      color: var(--ink-faint);
+      text-align: right;
+    }
+
+    .writing__title {
+      font-size: 1rem;
+      font-weight: 500;
+      color: var(--ink);
+      text-decoration: none;
+      line-height: 1.35;
+      transition: color 0.2s ease;
+    }
+
+    .writing__title:hover {
+      color: var(--accent-teal);
+    }
+
+    .writing__year {
+      font-family: var(--mono);
+      font-size: 0.68rem;
+      color: var(--ink-faint);
+      letter-spacing: 0.03em;
+    }
+
+    .writing__external {
+      font-family: var(--hand);
+      font-size: 0.85rem;
+      color: var(--accent);
+      margin-left: 0.35rem;
+      vertical-align: baseline;
+    }
+
+    /* ── footer ── */
+    .footer {
+      padding-top: 1.5rem;
+      border-top: 1px solid var(--ink);
+      display: flex;
+      flex-wrap: wrap;
+      justify-content: space-between;
+      align-items: baseline;
+      gap: 1rem 1.5rem;
+    }
+
+    .footer__links {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 0.35rem 1.1rem;
+      list-style: none;
+    }
+
+    .footer__links a {
+      font-family: var(--mono);
+      font-size: 0.72rem;
+      letter-spacing: 0.06em;
+      text-transform: uppercase;
+      color: var(--ink-soft);
+      text-decoration: none;
+      border-bottom: 1px solid transparent;
+      transition: color 0.2s ease, border-color 0.2s ease;
+    }
+
+    .footer__links a:hover {
+      color: var(--accent-teal);
+      border-bottom-color: var(--accent-teal);
+    }
+
+    .footer__sig {
+      font-family: var(--hand);
+      font-size: 1.2rem;
+      color: var(--accent);
+      transform: rotate(-3deg);
+      opacity: 0.85;
+    }
+
+    /* ── entrance motion ── */
+    @media (prefers-reduced-motion: no-preference) {
+      .page > * {
+        animation: rise 0.7s ease both;
+      }
+
+      .masthead { animation-delay: 0s; }
+      .hero { animation-delay: 0.06s; }
+      .lede { animation-delay: 0.12s; }
+      .field-notes { animation-delay: 0.18s; }
+      .jottings { animation-delay: 0.24s; }
+      .writing { animation-delay: 0.3s; }
+      .footer { animation-delay: 0.36s; }
+
+      @keyframes rise {
+        from {
+          opacity: 0;
+          transform: translateY(10px);
+        }
+        to {
+          opacity: 1;
+          transform: translateY(0);
+        }
+      }
+
+      .annotation {
+        animation: scribble 0.5s ease 0.8s both;
+      }
+
+      @keyframes scribble {
+        from { opacity: 0; transform: rotate(-8deg) scale(0.92); }
+        to { opacity: 1; }
+      }
+
+      .annotation--fog {
+        animation: scribble-fog 0.5s ease 1s both;
+      }
+
+      @keyframes scribble-fog {
+        from { opacity: 0; transform: rotate(4deg) scale(0.92); }
+        to { opacity: 1; transform: rotate(4deg); }
+      }
+    }
+
+    /* ── responsive ── */
+    @media (max-width: 540px) {
+      :root {
+        --margin-line: 1.75rem;
+        --gutter: 1.1rem;
+      }
+
+      html { font-size: 16px; }
+
+      .page {
+        padding-left: calc(var(--gutter) + var(--margin-line));
+        padding-top: 2rem;
+      }
+
+      .annotation--living {
+        position: static;
+        display: block;
+        transform: rotate(-4deg);
+        margin-top: 0.75rem;
+        white-space: normal;
+      }
+
+      .annotation--fog {
+        position: static;
+        display: block;
+        transform: rotate(3deg);
+        margin-top: 0.75rem;
+        white-space: normal;
+      }
+
+      .jotting__mark {
+        left: -1.1rem;
+        width: 0.45rem;
+        height: 0.45rem;
+      }
+
+      .writing__item {
+        grid-template-columns: 1.5rem 1fr;
+      }
+
+      .writing__year {
+        grid-column: 2;
+        margin-top: -0.25rem;
+      }
+
+      .footer {
+        flex-direction: column;
+        align-items: flex-start;
+      }
+    }
+
+    @media (max-width: 380px) {
+      .masthead {
+        flex-direction: column;
+        gap: 0.35rem;
+      }
+    }
+  </style>
+
+<style id="__living_site_scroll_guard">
+  /* Scroll guard injected at build time to ensure generated pages remain scrollable in iframes. */
+  html, body {
+    height: auto !important;
+    min-height: 100% !important;
+    max-height: none !important;
+    overflow-y: auto !important;
+    overflow-x: hidden !important;
+    position: static !important;
+    -webkit-overflow-scrolling: touch !important;
+    touch-action: pan-y !important;
+    overscroll-behavior-y: contain !important;
+  }
+  /* Avoid accidental fixed full-screen traps that break scrolling on mobile. */
+  body {
+    inset: auto !important;
+  }
+</style>
+</head>
+<body>
+  <main class="page">
+    <div class="holes" aria-hidden="true"><span></span><span></span><span></span><span></span></div>
+
+    <header class="masthead">
+      <div class="masthead__title">eriks.design</div>
+      <div class="masthead__meta">
+        <span class="masthead__issue" aria-hidden="true">vol. daily</span>
+        <time class="masthead__date" datetime="2026-10-15">Thu · Oct 15 · autumn</time>
+      </div>
+    </header>
+
+    <section class="hero">
+      <h1 class="hero__name">Erik Nilsson</h1>
+      <p class="hero__role">Product designer at <a href="https://cursor.com">Cursor</a> · San Francisco</p>
+    </section>
+
+    <p class="lede">
+      Designing how people build software with AI. Off-hours, tinkering with a <em>living site<svg viewBox="0 0 120 8" preserveAspectRatio="none" aria-hidden="true"><path d="M2 6 Q30 1, 60 4 T118 3"/></svg></em> — agents rebuild this corner of the web from fresh activity data each day.
+      <span class="annotation annotation--living" aria-hidden="true"><span class="annotation-arrow">↗</span>still figuring this out</span>
+    </p>
+
+    <section class="field-notes" aria-labelledby="field-notes-label">
+      <h2 class="section-label" id="field-notes-label">Field notes</h2>
+      <div class="weather-chip">
+        <span class="weather-chip__temp">12°</span>
+        <span>clear · San Francisco</span>
+      </div>
+      <ul class="signals">
+        <li>open firmware quietly rooting under codename Ominous Olive</li>
+        <li>Ubuntu's stingray release surfacing in October</li>
+        <li>Istanbul streets submerged after rain not seen in eighty-four years</li>
+        <li>clear autumn night over San Francisco at twelve degrees</li>
+        <li>October sunset already past, bay fog gathering offshore</li>
+      </ul>
+      <span class="annotation annotation--fog" aria-hidden="true">← watch the fog roll in</span>
+    </section>
+
+    <section class="jottings" aria-labelledby="jottings-label">
+      <h2 class="section-label" id="jottings-label">Jottings</h2>
+      <ul class="jottings__list">
+        <li class="jotting">
+          <span class="jotting__mark" aria-hidden="true"></span>
+          <p class="jotting__text"><a href="https://x.com/flowstated/status/2002167999353241901">imagine 2026</a></p>
+          <p class="jotting__meta">Dec 20</p>
+        </li>
+        <li class="jotting">
+          <span class="jotting__mark" aria-hidden="true"></span>
+          <p class="jotting__text"><a href="https://x.com/flowstated/status/2000889983562080578">shipping by sunrise</a></p>
+          <p class="jotting__meta">Dec 16</p>
+        </li>
+        <li class="jotting">
+          <span class="jotting__mark" aria-hidden="true"></span>
+          <p class="jotting__text"><a href="https://x.com/flowstated/status/2000691637190861180">exploring ways to spin up agents from my phone — iOS shortcuts × github actions × cursor cli</a></p>
+          <p class="jotting__meta">Dec 15</p>
+        </li>
+      </ul>
+    </section>
+
+    <section class="writing" aria-labelledby="writing-label">
+      <h2 class="section-label" id="writing-label">Writing</h2>
+      <ol class="writing__list">
+        <li class="writing__item">
+          <span class="writing__num">01</span>
+          <a class="writing__title" href="https://cursor.com/blog/design-mode">Directing agents visually<span class="writing__external" aria-hidden="true">↗</span></a>
+          <span class="writing__year">2026</span>
+        </li>
+        <li class="writing__item">
+          <span class="writing__num">02</span>
+          <a class="writing__title" href="/posts/a-living-site">A living site</a>
+          <span class="writing__year">2025</span>
+        </li>
+        <li class="writing__item">
+          <span class="writing__num">03</span>
+          <a class="writing__title" href="/posts/surgical-edits">Surgical edits</a>
+          <span class="writing__year">2025</span>
+        </li>
+        <li class="writing__item">
+          <span class="writing__num">04</span>
+          <a class="writing__title" href="/posts/familiar-differentiation">Familiar differentiation</a>
+          <span class="writing__year">2024</span>
+        </li>
+        <li class="writing__item">
+          <span class="writing__num">05</span>
+          <a class="writing__title" href="/posts/hackathon-energy-but-add-users">Hackathon energy, but add users</a>
+          <span class="writing__year">2022</span>
+        </li>
+      </ol>
+    </section>
+
+    <footer class="footer">
+      <ul class="footer__links">
+        <li><a href="https://cursor.com">Cursor</a></li>
+        <li><a href="https://x.com/flowstated">X</a></li>
+        <li><a href="https://github.com/eriknson">GitHub</a></li>
+        <li><a href="https://linkedin.com/in/eriknson">LinkedIn</a></li>
+        <li><a href="mailto:contact@eriks.design">Email</a></li>
+      </ul>
+      <span class="footer__sig" aria-hidden="true">— Erik</span>
+    </footer>
+
+  </main>
+</body>
+</html>

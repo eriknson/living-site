@@ -1,0 +1,518 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Erik Nilsson — Product Designer</title>
+  
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Caveat:wght@500&family=Instrument+Serif:ital@0;1&family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
+  
+  <style>
+    :root {
+      --grid: 24px;
+      --bg: #F2EFE9;
+      --text: #191815;
+      --text-muted: #7A7569;
+      --border: #D6D1C4;
+      
+      /* Display-P3 Colors for vibrant pop */
+      --border-margin: color(display-p3 0.85 0.25 0.25 / 0.4);
+      --accent-red: color(display-p3 0.9 0.15 0.1);
+      --accent-blue: color(display-p3 0.1 0.25 0.95);
+      --highlight-yellow: color(display-p3 0.95 0.9 0.2 / 0.6);
+    }
+    
+    /* Fallbacks for non-P3 displays */
+    @supports not (color: color(display-p3 1 0 0)) {
+      :root {
+        --border-margin: rgba(217, 64, 64, 0.4);
+        --accent-red: #e6261a;
+        --accent-blue: #1a40f2;
+        --highlight-yellow: rgba(242, 230, 51, 0.6);
+      }
+    }
+
+    @media (prefers-color-scheme: dark) {
+      :root {
+        --bg: #1a1a1a;
+        --text: #e0e0e0;
+        --text-muted: #9a9589;
+        --border: #3d3a35;
+      }
+
+      body::before {
+        background-image: url('data:image/svg+xml;utf8,<svg width="24" height="24" xmlns="http://www.w3.org/2000/svg"><path d="M 24 0 L 0 0 0 24" fill="none" stroke="rgba(255,255,255,0.035)" stroke-width="1"/></svg>');
+      }
+    }
+
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
+
+    body {
+      font-family: 'Inter', sans-serif;
+      background-color: var(--bg);
+      color: var(--text);
+      overflow-x: hidden;
+      -webkit-font-smoothing: antialiased;
+      -moz-osx-font-smoothing: grayscale;
+    }
+
+    /* Notebook Background Texture */
+    body::before {
+      content: "";
+      position: fixed;
+      inset: 0;
+      background-image: url('data:image/svg+xml;utf8,<svg width="24" height="24" xmlns="http://www.w3.org/2000/svg"><path d="M 24 0 L 0 0 0 24" fill="none" stroke="rgba(0,0,0,0.035)" stroke-width="1"/></svg>');
+      z-index: -2;
+      pointer-events: none;
+    }
+
+    /* Notebook Red Margin Line */
+    body::after {
+      content: "";
+      position: fixed;
+      top: 0;
+      bottom: 0;
+      left: calc(max(var(--grid) * 3, 50vw - 600px + var(--grid) * 3));
+      width: 2px;
+      border-left: 1px solid var(--border-margin);
+      box-shadow: 3px 0 0 var(--border-margin);
+      z-index: -1;
+      pointer-events: none;
+    }
+
+    @media (max-width: 1240px) {
+      body::after { left: calc(var(--grid) * 3); }
+    }
+    @media (max-width: 768px) {
+      body::after { left: calc(var(--grid) * 1.5); }
+    }
+
+    .container {
+      max-width: 640px;
+      margin: 0 auto;
+      padding: 0 calc(var(--grid) * 2);
+      padding-left: calc(var(--grid) * 5);
+      position: relative;
+    }
+    @media (max-width: 1240px) {
+      .container { padding-left: calc(var(--grid) * 5); }
+    }
+    @media (max-width: 768px) {
+      .container { 
+        padding-left: calc(var(--grid) * 3); 
+        padding-right: var(--grid);
+      }
+    }
+
+    /* Typography */
+    .meta-row {
+      display: flex;
+      justify-content: space-between;
+      border-bottom: 1px solid var(--text);
+      padding-bottom: calc(var(--grid) * 0.5 - 1px);
+      margin-top: calc(var(--grid) * 3);
+      font-size: 0.75rem;
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+      color: var(--text-muted);
+    }
+    @media (max-width: 600px) {
+      .meta-row {
+        flex-direction: column;
+        gap: 0.5rem;
+        border-bottom: none;
+      }
+      .meta-row .meta-item {
+        border-bottom: 1px solid var(--border);
+        padding-bottom: 0.25rem;
+      }
+    }
+
+    .hero-title {
+      font-family: 'Instrument Serif', serif;
+      font-size: clamp(5rem, 12vw, 10rem);
+      line-height: 0.85;
+      letter-spacing: -0.02em;
+      font-weight: 400;
+      margin: calc(var(--grid) * 4) 0 calc(var(--grid) * 4) 0;
+      color: var(--text);
+      font-style: italic;
+    }
+    .hero-title .roman {
+      font-style: normal;
+    }
+    .hero-title .punct {
+      color: var(--accent-red);
+    }
+
+    .grid-layout {
+      display: grid;
+      grid-template-columns: 2fr 1fr;
+      gap: calc(var(--grid) * 3);
+      margin-bottom: calc(var(--grid) * 5);
+      align-items: start;
+    }
+    @media (max-width: 800px) {
+      .grid-layout { grid-template-columns: 1fr; gap: calc(var(--grid) * 4); }
+    }
+
+    .lead {
+      font-family: 'Instrument Serif', serif;
+      font-size: clamp(2rem, 3.5vw, 2.75rem);
+      line-height: 1.15;
+      margin-bottom: calc(var(--grid) * 1.5);
+      color: var(--text);
+      max-width: 24ch;
+      letter-spacing: -0.01em;
+    }
+    
+    .body-text {
+      font-size: 1.125rem;
+      line-height: 1.6;
+      color: var(--text);
+      max-width: 38ch;
+      margin-bottom: var(--grid);
+    }
+
+    .link {
+      color: inherit;
+      text-decoration-thickness: 1px;
+      text-underline-offset: 4px;
+      transition: color 0.2s;
+    }
+    .link:hover {
+      color: var(--accent-blue);
+    }
+
+    /* Links Block */
+    .links-block {
+      display: flex;
+      flex-wrap: wrap;
+      gap: calc(var(--grid) * 0.75);
+      margin-top: calc(var(--grid) * 2.5);
+    }
+    .links-block a {
+      font-size: 0.875rem;
+      font-weight: 500;
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+      color: var(--text);
+      text-decoration: none;
+      border: 1px solid var(--border);
+      padding: calc(var(--grid) * 0.25) calc(var(--grid) * 0.75);
+      border-radius: 100px;
+      transition: all 0.2s ease;
+      background-color: transparent;
+    }
+    .links-block a:hover {
+      border-color: var(--text);
+      background-color: var(--text);
+      color: var(--bg);
+    }
+
+    /* Marginalia Sidebar */
+    .section-label {
+      font-size: 0.75rem;
+      font-weight: 600;
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+      color: var(--text-muted);
+      border-bottom: 1px solid var(--border);
+      padding-bottom: calc(var(--grid) * 0.5 - 1px);
+      margin-bottom: calc(var(--grid) * 1.5);
+    }
+    .signals-list {
+      list-style: none;
+    }
+    .signals-list li {
+      font-size: 0.875rem;
+      line-height: 1.5;
+      margin-bottom: calc(var(--grid) * 1.5);
+      color: var(--text-muted);
+      position: relative;
+    }
+    .strikethrough {
+      text-decoration: line-through;
+      opacity: 0.6;
+    }
+
+    /* Index Section */
+    .index-section {
+      margin-bottom: calc(var(--grid) * 5);
+      max-width: 800px;
+    }
+    .index-list {
+      list-style: none;
+      border-top: 1px solid var(--text);
+    }
+    .index-list li {
+      display: flex;
+      align-items: baseline;
+      border-bottom: 1px solid var(--border);
+      padding: calc(var(--grid) * 1.5) 0;
+      transition: padding-left 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+      position: relative;
+    }
+    @media (max-width: 600px) {
+      .index-list li { flex-wrap: wrap; }
+    }
+    .index-list li:hover {
+      padding-left: calc(var(--grid) * 1);
+      border-bottom-color: var(--text);
+    }
+    .index-num {
+      font-size: 0.75rem;
+      color: var(--text-muted);
+      width: calc(var(--grid) * 2);
+      flex-shrink: 0;
+    }
+    .index-link {
+      font-family: 'Instrument Serif', serif;
+      font-size: clamp(1.75rem, 4vw, 2.5rem);
+      color: var(--text);
+      text-decoration: none;
+      flex-grow: 1;
+      font-style: normal;
+      transition: color 0.2s ease, font-style 0.2s ease;
+      line-height: 1.1;
+    }
+    .index-list li:hover .index-link {
+      color: var(--accent-red);
+      font-style: italic;
+    }
+    .index-meta {
+      font-size: 0.75rem;
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+      color: var(--text-muted);
+      flex-shrink: 0;
+      margin-left: calc(var(--grid) * 1);
+    }
+    @media (max-width: 600px) {
+      .index-meta {
+        width: 100%;
+        margin-left: calc(var(--grid) * 2);
+        margin-top: 0.5rem;
+      }
+    }
+
+    /* Footer */
+    .footer-meta {
+      font-size: 0.75rem;
+      line-height: 1.6;
+      color: var(--text-muted);
+      border-top: 1px solid var(--border);
+      padding-top: calc(var(--grid) * 1.5);
+      margin-bottom: calc(var(--grid) * 4);
+      max-width: 60ch;
+    }
+
+    /* Annotations & Handwritten */
+    .relative-wrap {
+      position: relative;
+      display: inline-block;
+      white-space: nowrap;
+    }
+    .annotation {
+      position: absolute;
+      pointer-events: none;
+      z-index: 10;
+    }
+    .handwritten {
+      font-family: 'Caveat', cursive;
+      font-size: 1.5rem;
+      line-height: 1;
+      white-space: nowrap;
+      display: inline-block;
+    }
+
+    /* Highlighter Marker */
+    .marker-highlight {
+      position: relative;
+      z-index: 1;
+    }
+    .marker-highlight::before {
+      content: "";
+      position: absolute;
+      inset: -0.1em -0.3em;
+      background-color: var(--highlight-yellow);
+      z-index: -1;
+      transform: rotate(-1.5deg);
+      border-radius: 2px;
+      opacity: 0;
+      animation: fade-in 0.5s ease forwards;
+      animation-delay: 0.8s;
+    }
+
+    /* SVG Drawings */
+    .svg-draw {
+      position: absolute;
+      fill: none;
+      stroke: currentColor;
+      stroke-width: 1.5;
+      stroke-linecap: round;
+      stroke-linejoin: round;
+    }
+    .annotation-circle {
+      position: absolute;
+      top: 50%;
+      left: 50%;
+      width: 110%;
+      height: 140%;
+      transform: translate(-50%, -50%);
+      fill: none;
+      stroke: currentColor;
+      stroke-width: 1.5;
+      pointer-events: none;
+    }
+
+    /* Animations */
+    @keyframes ink-draw {
+      from { stroke-dashoffset: 200; }
+      to { stroke-dashoffset: 0; }
+    }
+    .path-draw {
+      stroke-dasharray: 200;
+      stroke-dashoffset: 200;
+      animation: ink-draw 1.2s cubic-bezier(0.4, 0, 0.2, 1) forwards;
+    }
+    .delay-1 { animation-delay: 0.5s; }
+    .delay-2 { animation-delay: 1.5s; }
+    
+    .handwritten {
+      opacity: 0;
+      animation: fade-in-rot 0.5s ease forwards;
+    }
+    .hw-delay-1 { animation-delay: 1s; }
+    .hw-delay-2 { animation-delay: 2s; }
+
+    @keyframes fade-in {
+      from { opacity: 0; }
+      to { opacity: 1; }
+    }
+    @keyframes fade-in-rot {
+      from { opacity: 0; transform: translateY(5px) rotate(var(--rot, 0deg)); }
+      to { opacity: 1; transform: translateY(0) rotate(var(--rot, 0deg)); }
+    }
+  </style>
+
+<style id="__living_site_scroll_guard">
+  /* Scroll guard injected at build time to ensure generated pages remain scrollable in iframes. */
+  html, body {
+    height: auto !important;
+    min-height: 100% !important;
+    max-height: none !important;
+    overflow-y: auto !important;
+    overflow-x: hidden !important;
+    position: static !important;
+    -webkit-overflow-scrolling: touch !important;
+    touch-action: pan-y !important;
+    overscroll-behavior-y: contain !important;
+  }
+  /* Avoid accidental fixed full-screen traps that break scrolling on mobile. */
+  body {
+    inset: auto !important;
+  }
+</style>
+</head>
+<body>
+
+  <main class="container">
+    <header class="masthead">
+      <div class="meta-row">
+        <div class="meta-item">Erik Nilsson</div>
+        <div class="meta-item">San Francisco, CA</div>
+        <div class="meta-item">15 Oct 2026</div>
+      </div>
+      
+      <h1 class="hero-title">
+        <span class="roman">Erik</span><br>
+        Nilsson<span class="punct">.</span>
+      </h1>
+    </header>
+
+    <div class="grid-layout">
+      <section class="bio-section">
+        <p class="lead">
+          I'm a product designer at <a href="https://cursor.com" class="link" target="_blank" rel="noopener noreferrer">Cursor</a>, working on how people build software with AI.
+        </p>
+        <p class="body-text">
+          Off-hours, I'm tinkering with 
+          <span class="marker-highlight">living-site</span>
+          <span class="annotation" style="top: -2.5rem; left: 10rem; color: var(--accent-red);">
+            <svg class="svg-draw" width="40" height="40" viewBox="0 0 40 40" style="top: 20px; left: -35px;">
+              <path class="path-draw delay-1" d="M35 5 Q20 20 5 35" />
+              <path class="path-draw delay-1" d="M5 35 L15 35 M5 35 L5 25" />
+            </svg>
+            <span class="handwritten hw-delay-1" style="--rot: -8deg; margin-left: 10px;">rebuilds daily!</span>
+          </span>
+           — agents rebuild this corner of the web from fresh activity data each day.
+        </p>
+        
+        <div class="links-block">
+          <a href="https://x.com/flowstated" target="_blank" rel="noopener noreferrer">X / Twitter</a>
+          <a href="https://github.com/eriknson" target="_blank" rel="noopener noreferrer">GitHub</a>
+          <a href="https://linkedin.com/in/eriknson" target="_blank" rel="noopener noreferrer">LinkedIn</a>
+          <a href="mailto:contact@eriks.design">Email</a>
+        </div>
+      </section>
+
+      <aside class="sidebar-signals">
+        <h3 class="section-label">Signals & Marginalia</h3>
+        <ul class="signals-list">
+          <li>clear autumn night over San Francisco at twelve degrees</li>
+          <li class="strikethrough">October sunset already past, bay fog gathering offshore</li>
+          <li>
+            open firmware quietly rooting under codename <span class="relative-wrap" style="color: var(--text);">Ominous Olive
+              <svg class="annotation-circle" viewBox="0 0 100 40" preserveAspectRatio="none" style="stroke: var(--accent-blue);">
+                <path class="path-draw delay-2" d="M 5,20 C 5,5 95,0 95,20 C 100,40 5,40 5,20 Z" />
+              </svg>
+            </span>
+          </li>
+          <li>
+            game mechanic idea: memory pattern match
+            <span class="annotation" style="top: 100%; right: 0; color: var(--accent-blue);">
+              <span class="handwritten hw-delay-2" style="--rot: -3deg;">twilight gradient</span>
+            </span>
+          </li>
+        </ul>
+      </aside>
+    </div>
+
+    <section class="index-section">
+      <h2 class="section-label">Recent Notes</h2>
+      <ul class="index-list">
+        <li>
+          <span class="index-num">01</span>
+          <a href="https://x.com/flowstated/status/2002167999353241901" class="index-link" target="_blank" rel="noopener noreferrer">Imagine 2026</a>
+          <span class="index-meta">Dec 20</span>
+        </li>
+        <li>
+          <span class="index-num">02</span>
+          <a href="https://x.com/flowstated/status/2000889983562080578" class="index-link" target="_blank" rel="noopener noreferrer">Shipping by sunrise</a>
+          <span class="index-meta">Dec 16</span>
+          <span class="annotation" style="right: 5%; top: 30%; color: var(--accent-red);">
+            <span class="handwritten hw-delay-1" style="--rot: 4deg;">*favorite</span>
+          </span>
+        </li>
+        <li>
+          <span class="index-num">03</span>
+          <a href="https://x.com/flowstated/status/2000691637190861180" class="index-link" target="_blank" rel="noopener noreferrer">Spinning up agents from my phone</a>
+          <span class="index-meta">Dec 15</span>
+        </li>
+      </ul>
+    </section>
+
+    <footer class="footer-meta">
+      <p>© 2026 E. Nilsson. GitHub repos are side projects and experiments — small personal things I tinker with outside of work.</p>
+    </footer>
+  </main>
+
+</body>
+</html>

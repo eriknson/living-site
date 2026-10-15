@@ -3,22 +3,22 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <meta name="color-scheme" content="light dark">
   <title>Erik Nilsson - Editorial Notebook</title>
-  <meta name="description" content="Erik Nilsson is a product designer at Cursor, working on how people build software with AI.">
+  <meta name="description" content="A concise editorial notebook for Erik Nilsson, product designer at Cursor.">
   <style>
     :root {
-      --paper: #f8f2e8;
-      --paper-soft: #fcf8f0;
-      --ink: #17130f;
-      --muted: #6d655c;
-      --quiet: #9c9186;
-      --line: rgba(23, 19, 15, 0.15);
-      --line-strong: rgba(23, 19, 15, 0.28);
-      --accent: #ec3f1f;
-      --accent-2: #1054ff;
-      --accent-3: #15a56c;
-      --shadow: 0 24px 70px rgba(63, 43, 24, 0.1);
+      color-scheme: light;
+      --paper: #f6efe3;
+      --paper-2: #fffaf0;
+      --ink: #191511;
+      --muted: #756d61;
+      --faint: #d8ccba;
+      --hairline: #bfb19d;
+      --blue: #2547ff;
+      --red: #ff4b36;
+      --green: #00a66a;
+      --yellow: #f6b900;
+      --shadow: rgba(25, 21, 17, 0.12);
       --serif: "Iowan Old Style", "Palatino Linotype", Palatino, Georgia, serif;
       --sans: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
       --hand: "Bradley Hand", "Segoe Print", "Comic Sans MS", cursive;
@@ -26,51 +26,13 @@
 
     @supports (color: color(display-p3 1 0 0)) {
       :root {
-        --paper: color(display-p3 0.972 0.942 0.89);
-        --paper-soft: color(display-p3 0.992 0.974 0.936);
-        --ink: color(display-p3 0.085 0.074 0.058);
-        --muted: color(display-p3 0.42 0.39 0.35);
-        --quiet: color(display-p3 0.6 0.56 0.51);
-        --accent: color(display-p3 0.96 0.18 0.08);
-        --accent-2: color(display-p3 0.02 0.26 1);
-        --accent-3: color(display-p3 0.0 0.62 0.34);
-      }
-    }
-
-    @media (prefers-color-scheme: dark) {
-      :root {
-        --paper: #1a1612;
-        --paper-soft: #221e18;
-        --ink: #e8e2d8;
-        --muted: #a89f94;
-        --quiet: #7a746b;
-        --line: rgba(232, 226, 216, 0.15);
-        --line-strong: rgba(232, 226, 216, 0.28);
-        --shadow: 0 24px 70px rgba(0, 0, 0, 0.35);
-      }
-
-      body::before {
-        border-color: rgba(232, 226, 216, 0.04);
-      }
-
-      .side-note {
-        background: rgba(34, 30, 24, 0.72);
-      }
-
-      .scrap {
-        box-shadow: 10px 14px 0 rgba(0, 0, 0, 0.2);
-      }
-
-      .scrap:hover {
-        box-shadow: 8px 18px 0 rgba(0, 0, 0, 0.28);
-      }
-
-      .signals li {
-        background: rgba(34, 30, 24, 0.55);
-      }
-
-      .links a {
-        background: rgba(34, 30, 24, 0.62);
+        --paper: color(display-p3 0.965 0.927 0.862);
+        --paper-2: color(display-p3 1 0.985 0.94);
+        --ink: color(display-p3 0.095 0.079 0.06);
+        --blue: color(display-p3 0.05 0.18 1);
+        --red: color(display-p3 1 0.22 0.14);
+        --green: color(display-p3 0 0.68 0.42);
+        --yellow: color(display-p3 0.94 0.68 0);
       }
     }
 
@@ -80,461 +42,448 @@
 
     html {
       scroll-behavior: smooth;
-      background: var(--paper);
     }
 
     body {
-      min-height: 100vh;
       margin: 0;
-      color: var(--ink);
+      min-height: 100vh;
       background: var(--paper);
+      color: var(--ink);
       font-family: var(--sans);
-      -webkit-font-smoothing: antialiased;
       text-rendering: optimizeLegibility;
+      -webkit-font-smoothing: antialiased;
+    }
+
+    body::before,
+    body::after {
+      content: "";
+      position: fixed;
+      pointer-events: none;
+      z-index: 0;
     }
 
     body::before {
-      content: "";
-      position: fixed;
-      inset: 0;
-      pointer-events: none;
-      border: 14px solid rgba(23, 19, 15, 0.035);
-      opacity: 0.8;
+      inset: 18px;
+      border: 1px solid rgba(25, 21, 17, 0.08);
+    }
+
+    body::after {
+      right: 6vw;
+      top: 0;
+      width: 1px;
+      height: 100vh;
+      background: var(--red);
+      opacity: 0.28;
+    }
+
+    ::selection {
+      background: var(--yellow);
+      color: var(--ink);
     }
 
     a {
       color: inherit;
-      text-decoration: none;
+      text-decoration-color: currentColor;
+      text-decoration-thickness: 0.08em;
+      text-underline-offset: 0.18em;
     }
 
     a:focus-visible,
     button:focus-visible {
-      outline: 2px solid var(--accent-2);
+      outline: 2px solid var(--blue);
       outline-offset: 4px;
-      border-radius: 4px;
     }
 
-    ::selection {
-      color: var(--paper-soft);
-      background: var(--accent);
-    }
-
-    .page {
-      width: min(1180px, calc(100vw - 32px));
+    .sheet {
+      position: relative;
+      z-index: 1;
+      width: min(100%, 40rem);
+      max-width: 40rem;
       margin: 0 auto;
-      padding: 26px 0 64px;
+      padding: 28px;
     }
 
-    .topbar {
+    .paper {
+      position: relative;
+      min-height: calc(100vh - 56px);
+      padding: clamp(26px, 5vw, 76px);
+      background: var(--paper-2);
+      border: 1px solid rgba(25, 21, 17, 0.14);
+      box-shadow: 0 24px 80px var(--shadow);
+      overflow: hidden;
+    }
+
+    .paper::before,
+    .paper::after {
+      content: "";
+      position: absolute;
+      pointer-events: none;
+    }
+
+    .paper::before {
+      inset: 18px;
+      border: 1px solid rgba(37, 71, 255, 0.12);
+    }
+
+    .paper::after {
+      left: clamp(18px, 4vw, 58px);
+      top: 0;
+      bottom: 0;
+      width: 1px;
+      background: var(--red);
+      opacity: 0.32;
+    }
+
+    .topline {
       display: grid;
       grid-template-columns: 1fr auto 1fr;
-      align-items: center;
       gap: 18px;
-      min-height: 52px;
-      border-bottom: 1px solid var(--line);
-      font-size: 11px;
-      font-weight: 680;
-      letter-spacing: 0.14em;
+      align-items: center;
+      padding-bottom: 28px;
+      border-bottom: 1px solid var(--hairline);
+      font-size: 12px;
+      letter-spacing: 0.13em;
       text-transform: uppercase;
     }
 
-    .topbar .center {
-      justify-self: center;
-      width: 112px;
-      height: 28px;
-      display: grid;
-      place-items: center;
-      border: 1px solid var(--ink);
-      border-radius: 999px;
-      transform: rotate(-1.5deg);
-      background: var(--paper-soft);
-      box-shadow: 3px 3px 0 var(--ink);
+    .topline a {
+      text-decoration: none;
     }
 
-    .topbar .right {
+    .topline__right {
       justify-self: end;
-      color: var(--muted);
+      display: flex;
+      gap: 16px;
+      flex-wrap: wrap;
+      justify-content: flex-end;
+    }
+
+    .seal {
+      display: grid;
+      place-items: center;
+      width: 46px;
+      height: 46px;
+      border: 1px solid var(--ink);
+      border-radius: 999px;
+      font-family: var(--serif);
+      font-size: 15px;
+      letter-spacing: -0.02em;
+      background: var(--paper);
+      transform: rotate(-7deg);
     }
 
     .hero {
       position: relative;
       display: grid;
-      grid-template-columns: minmax(0, 1fr) 288px;
-      gap: clamp(28px, 5vw, 72px);
-      padding: clamp(54px, 8vw, 104px) 0 clamp(42px, 7vw, 84px);
-      border-bottom: 1px solid var(--line);
-    }
-
-    .hero-main {
-      min-width: 0;
+      grid-template-columns: minmax(0, 1.18fr) minmax(240px, 0.62fr);
+      gap: clamp(34px, 7vw, 92px);
+      padding: clamp(54px, 8vw, 116px) 0 clamp(38px, 7vw, 92px);
+      border-bottom: 1px solid var(--hairline);
     }
 
     .kicker {
-      display: inline-flex;
-      align-items: center;
+      display: flex;
       gap: 10px;
-      margin-bottom: 22px;
+      align-items: center;
+      margin: 0 0 22px;
       color: var(--muted);
       font-size: 12px;
       font-weight: 700;
-      letter-spacing: 0.18em;
+      letter-spacing: 0.16em;
       text-transform: uppercase;
     }
 
     .kicker::before {
       content: "";
-      width: 42px;
+      width: 34px;
       height: 1px;
-      background: var(--accent);
+      background: var(--ink);
     }
 
     h1 {
-      max-width: 910px;
+      max-width: 900px;
       margin: 0;
       font-family: var(--serif);
-      font-size: clamp(64px, 11.6vw, 164px);
-      font-weight: 480;
-      line-height: 0.82;
+      font-size: clamp(58px, 11vw, 154px);
+      font-weight: 500;
       letter-spacing: -0.085em;
+      line-height: 0.84;
     }
 
-    .hero-title-line {
-      display: block;
-    }
-
-    .hero-title-line:nth-child(2) {
-      margin-left: clamp(18px, 5vw, 76px);
-      font-style: italic;
-      letter-spacing: -0.105em;
-    }
-
-    .hero-title-line:nth-child(3) {
-      margin-left: clamp(2px, 1.7vw, 24px);
-    }
-
-    .dek {
-      max-width: 620px;
-      margin: clamp(26px, 4vw, 42px) 0 0;
-      font-family: var(--serif);
-      font-size: clamp(24px, 3.4vw, 43px);
-      line-height: 1.06;
-      letter-spacing: -0.046em;
-    }
-
-    .dek a {
-      text-decoration: underline;
-      text-decoration-thickness: 0.06em;
-      text-underline-offset: 0.12em;
-      transition: color 180ms ease;
-    }
-
-    .dek a:hover {
-      color: var(--accent-2);
-    }
-
-    .side-note {
-      align-self: end;
-      padding: 22px 20px 20px;
-      border: 1px solid var(--line-strong);
-      border-radius: 2px;
-      background: rgba(252, 248, 240, 0.72);
-      box-shadow: var(--shadow);
-      transform: rotate(1.4deg);
-    }
-
-    .side-note::before {
-      content: "today";
+    h1 span {
       display: inline-block;
-      margin-bottom: 36px;
-      color: var(--accent);
+    }
+
+    .hero__summary {
+      max-width: 620px;
+      margin: 28px 0 0;
+      font-family: var(--serif);
+      font-size: clamp(22px, 3vw, 38px);
+      line-height: 1.08;
+      letter-spacing: -0.035em;
+    }
+
+    .hero__summary em {
+      font-style: normal;
+      color: var(--blue);
+    }
+
+    .margin-note {
+      align-self: start;
+      position: relative;
+      padding: 22px 0 22px 28px;
+      border-left: 1px solid var(--ink);
+    }
+
+    .margin-note::before {
+      content: "field note";
+      position: absolute;
+      top: -16px;
+      left: 18px;
+      padding: 0 8px;
+      background: var(--paper-2);
+      color: var(--red);
       font-family: var(--hand);
-      font-size: 21px;
-      letter-spacing: -0.06em;
-      text-decoration: underline;
-      text-decoration-thickness: 1px;
-      text-underline-offset: 4px;
+      font-size: 18px;
+      letter-spacing: 0.01em;
       transform: rotate(-5deg);
     }
 
-    .side-note p {
+    .margin-note p {
       margin: 0;
-      font-size: 13px;
-      line-height: 1.55;
       color: var(--muted);
+      font-size: 15px;
+      line-height: 1.7;
     }
 
-    .side-note strong {
+    .margin-note strong {
       display: block;
-      margin-bottom: 8px;
+      margin-bottom: 12px;
       color: var(--ink);
       font-family: var(--serif);
-      font-size: 23px;
-      font-weight: 520;
-      line-height: 1;
+      font-size: 26px;
+      font-weight: 500;
       letter-spacing: -0.04em;
+      line-height: 1.05;
     }
 
     .scribble {
       position: absolute;
-      right: 22%;
-      bottom: 34px;
-      color: var(--accent-3);
+      right: min(8vw, 84px);
+      bottom: 38px;
+      color: var(--green);
       font-family: var(--hand);
-      font-size: clamp(18px, 2.2vw, 26px);
-      line-height: 1;
+      font-size: clamp(18px, 2.2vw, 30px);
       transform: rotate(-8deg);
-      opacity: 0.9;
     }
 
     .scribble::after {
       content: "";
       display: block;
-      width: 106%;
-      height: 12px;
+      width: 100%;
+      height: 7px;
       margin-top: -2px;
-      border: solid var(--accent-3);
-      border-width: 0 0 2px;
-      border-radius: 50%;
-      transform: rotate(1deg);
+      border: 1px solid currentColor;
+      border-top: 0;
+      border-radius: 0 0 999px 999px;
+      transform: skewX(-14deg);
     }
 
-    .section-grid {
+    .grid {
       display: grid;
-      grid-template-columns: 188px minmax(0, 1fr);
-      gap: clamp(24px, 5vw, 74px);
-      padding: clamp(40px, 7vw, 80px) 0;
-      border-bottom: 1px solid var(--line);
+      grid-template-columns: minmax(0, 0.75fr) minmax(280px, 1fr);
+      gap: clamp(36px, 7vw, 96px);
+      padding: clamp(38px, 6vw, 84px) 0;
+      border-bottom: 1px solid var(--hairline);
+    }
+
+    h2 {
+      margin: 0 0 22px;
+      font-family: var(--serif);
+      font-size: clamp(34px, 5vw, 70px);
+      font-weight: 500;
+      letter-spacing: -0.065em;
+      line-height: 0.92;
     }
 
     .section-label {
-      position: sticky;
-      top: 20px;
-      align-self: start;
-      color: var(--quiet);
-      font-size: 11px;
-      font-weight: 720;
-      letter-spacing: 0.18em;
-      text-transform: uppercase;
-    }
-
-    .section-label span {
-      display: block;
-      margin-bottom: 12px;
-      color: var(--accent);
-      font-family: var(--serif);
-      font-size: 38px;
-      font-weight: 500;
-      letter-spacing: -0.08em;
-      line-height: 0.8;
-    }
-
-    .note-copy {
-      max-width: 780px;
-      font-family: var(--serif);
-      font-size: clamp(26px, 4.1vw, 56px);
-      line-height: 1.03;
-      letter-spacing: -0.055em;
-    }
-
-    .note-copy p {
-      margin: 0;
-    }
-
-    .note-copy em {
-      font-style: italic;
-      text-decoration: underline;
-      text-decoration-color: var(--accent);
-      text-decoration-thickness: 0.055em;
-      text-underline-offset: 0.08em;
-    }
-
-    .micro {
-      max-width: 430px;
-      margin-top: 30px;
-      color: var(--muted);
-      font-size: 14px;
-      line-height: 1.7;
-    }
-
-    .writing {
-      display: grid;
-      gap: 1px;
-      max-width: 850px;
-      border-top: 1px solid var(--ink);
-      border-bottom: 1px solid var(--ink);
-      background: var(--ink);
-    }
-
-    .writing-link {
-      position: relative;
-      display: grid;
-      grid-template-columns: 78px minmax(0, 1fr) auto;
-      gap: 18px;
-      align-items: baseline;
-      min-height: 78px;
-      padding: 22px 0;
-      background: var(--paper);
-      transition: background 180ms ease, padding 180ms ease, color 180ms ease;
-    }
-
-    .writing-link::before {
-      content: "";
-      position: absolute;
-      left: -14px;
-      top: 50%;
-      width: 7px;
-      height: 7px;
-      border: 1px solid var(--accent);
-      border-radius: 50%;
-      opacity: 0;
-      transform: translateY(-50%) scale(0.5);
-      transition: opacity 180ms ease, transform 180ms ease;
-    }
-
-    .writing-link:hover {
-      padding-left: 14px;
-      background: var(--paper-soft);
-      color: var(--accent-2);
-    }
-
-    .writing-link:hover::before {
-      opacity: 1;
-      transform: translateY(-50%) scale(1);
-    }
-
-    .writing-date {
-      color: var(--muted);
-      font-size: 11px;
-      font-weight: 700;
-      letter-spacing: 0.13em;
-      text-transform: uppercase;
-      transition: color 180ms ease;
-    }
-
-    .writing-title {
-      font-family: var(--serif);
-      font-size: clamp(25px, 3vw, 42px);
-      line-height: 0.98;
-      letter-spacing: -0.055em;
-    }
-
-    .writing-meta {
+      margin: 0 0 16px;
       color: var(--muted);
       font-size: 12px;
-      white-space: nowrap;
-      transition: color 180ms ease;
-    }
-
-    .writing-link:hover .writing-date,
-    .writing-link:hover .writing-meta {
-      color: var(--accent-2);
-    }
-
-    .margin-board {
-      display: grid;
-      grid-template-columns: repeat(3, minmax(0, 1fr));
-      gap: 14px;
-      max-width: 920px;
-    }
-
-    .scrap {
-      position: relative;
-      min-height: 170px;
-      padding: 18px;
-      border: 1px solid var(--line-strong);
-      background: var(--paper-soft);
-      box-shadow: 10px 14px 0 rgba(23, 19, 15, 0.055);
-      transition: transform 180ms ease, box-shadow 180ms ease;
-    }
-
-    .scrap:nth-child(2) {
-      transform: rotate(-1.2deg);
-    }
-
-    .scrap:nth-child(3) {
-      transform: rotate(1.3deg);
-    }
-
-    .scrap:hover {
-      transform: translateY(-4px) rotate(0deg);
-      box-shadow: 8px 18px 0 rgba(23, 19, 15, 0.075);
-    }
-
-    .scrap small {
-      color: var(--accent);
-      font-size: 11px;
       font-weight: 800;
       letter-spacing: 0.14em;
       text-transform: uppercase;
     }
 
-    .scrap p {
-      margin: 22px 0 0;
+    .today-copy {
+      margin: 0;
       font-family: var(--serif);
-      font-size: clamp(22px, 2.3vw, 30px);
-      line-height: 1.05;
+      font-size: clamp(24px, 3.2vw, 44px);
       letter-spacing: -0.045em;
+      line-height: 1.08;
     }
 
-    .scrap a {
-      text-decoration: underline;
-      text-decoration-thickness: 1px;
-      text-underline-offset: 4px;
-      transition: color 180ms ease;
-    }
-
-    .scrap a:hover {
-      color: var(--accent-2);
+    .today-copy mark {
+      background: transparent;
+      color: var(--red);
     }
 
     .signals {
-      display: flex;
-      flex-wrap: wrap;
-      gap: 10px;
-      max-width: 870px;
-      margin: 0;
+      display: grid;
+      gap: 0;
+      margin: 4px 0 0;
       padding: 0;
       list-style: none;
+      border-top: 1px solid var(--hairline);
     }
 
     .signals li {
-      display: inline-flex;
-      align-items: center;
-      min-height: 38px;
-      padding: 8px 12px;
-      border: 1px solid var(--line-strong);
-      border-radius: 999px;
-      background: rgba(252, 248, 240, 0.55);
-      color: var(--muted);
-      font-family: var(--serif);
-      font-size: 17px;
-      letter-spacing: -0.025em;
-    }
-
-    .signals li:nth-child(2n) {
-      color: var(--ink);
-      transform: rotate(-1deg);
-    }
-
-    .signals li:nth-child(3n) {
-      border-color: rgba(236, 63, 31, 0.36);
-      transform: rotate(1deg);
-    }
-
-    .footer {
       display: grid;
-      grid-template-columns: minmax(0, 1fr) auto;
-      gap: 24px;
-      align-items: end;
-      padding-top: 36px;
+      grid-template-columns: 54px minmax(0, 1fr);
+      gap: 18px;
+      padding: 18px 0;
+      border-bottom: 1px solid var(--hairline);
       color: var(--muted);
-      font-size: 13px;
-      line-height: 1.6;
+      font-size: clamp(15px, 1.8vw, 20px);
+      line-height: 1.35;
     }
 
-    .footer strong {
+    .signals b {
       color: var(--ink);
-      font-weight: 650;
+      font-family: var(--serif);
+      font-size: 28px;
+      font-weight: 500;
+      letter-spacing: -0.05em;
+      line-height: 1;
+    }
+
+    .annotation {
+      width: fit-content;
+      margin-top: 26px;
+      padding: 10px 14px 12px;
+      border: 1px solid var(--green);
+      color: var(--green);
+      font-family: var(--hand);
+      font-size: 19px;
+      line-height: 1.2;
+      transform: rotate(2.5deg);
+    }
+
+    .writing {
+      padding: clamp(38px, 6vw, 84px) 0;
+      border-bottom: 1px solid var(--hairline);
+    }
+
+    .writing__head {
+      display: grid;
+      grid-template-columns: minmax(0, 0.8fr) minmax(260px, 1fr);
+      gap: clamp(24px, 6vw, 72px);
+      align-items: end;
+      margin-bottom: 24px;
+    }
+
+    .writing__head p {
+      max-width: 520px;
+      margin: 0 0 8px;
+      color: var(--muted);
+      font-size: 17px;
+      line-height: 1.55;
+    }
+
+    .index {
+      counter-reset: writing;
+      margin: 0;
+      padding: 0;
+      list-style: none;
+      border-top: 2px solid var(--ink);
+    }
+
+    .index li {
+      counter-increment: writing;
+      position: relative;
+      display: grid;
+      grid-template-columns: 74px minmax(0, 1fr) auto;
+      gap: 22px;
+      align-items: baseline;
+      padding: 22px 0;
+      border-bottom: 1px solid var(--hairline);
+    }
+
+    .index li::before {
+      content: counter(writing, decimal-leading-zero);
+      color: var(--red);
+      font-family: var(--serif);
+      font-size: 22px;
+      letter-spacing: -0.04em;
+    }
+
+    .index a {
+      width: fit-content;
+      font-family: var(--serif);
+      font-size: clamp(27px, 4vw, 58px);
+      letter-spacing: -0.065em;
+      line-height: 0.94;
+      text-decoration: none;
+    }
+
+    .index a span {
+      box-shadow: inset 0 -0.04em 0 var(--faint);
+      transition: box-shadow 220ms ease, color 220ms ease;
+    }
+
+    .index a:hover span {
+      box-shadow: inset 0 -0.15em 0 var(--yellow);
+      color: var(--blue);
+    }
+
+    .index small {
+      color: var(--muted);
+      font-size: 12px;
+      font-weight: 700;
+      letter-spacing: 0.13em;
+      text-transform: uppercase;
+      white-space: nowrap;
+    }
+
+    .index .dek {
+      grid-column: 2 / -1;
+      max-width: 620px;
+      margin-top: -8px;
+      color: var(--muted);
+      font-size: 15px;
+      line-height: 1.45;
+    }
+
+    .index .is-external a::after {
+      content: " outside";
+      margin-left: 8px;
+      color: var(--green);
+      font-family: var(--hand);
+      font-size: 18px;
+      letter-spacing: 0;
+      vertical-align: 0.12em;
+    }
+
+    .closing {
+      display: grid;
+      grid-template-columns: minmax(0, 1fr) minmax(220px, 0.45fr);
+      gap: clamp(30px, 7vw, 88px);
+      padding-top: clamp(38px, 6vw, 76px);
+      align-items: end;
+    }
+
+    .closing p {
+      max-width: 760px;
+      margin: 0;
+      font-family: var(--serif);
+      font-size: clamp(32px, 5.5vw, 82px);
+      letter-spacing: -0.07em;
+      line-height: 0.93;
+    }
+
+    .closing p em {
+      font-style: normal;
+      color: var(--blue);
     }
 
     .links {
@@ -545,102 +494,152 @@
     }
 
     .links a {
-      display: inline-grid;
-      place-items: center;
-      min-height: 34px;
-      padding: 0 12px;
-      border: 1px solid var(--line-strong);
+      display: inline-flex;
+      align-items: center;
+      min-height: 38px;
+      padding: 8px 12px;
+      border: 1px solid var(--hairline);
       border-radius: 999px;
-      background: rgba(252, 248, 240, 0.62);
+      background: transparent;
       color: var(--ink);
       font-size: 12px;
-      font-weight: 700;
-      transition: background 180ms ease, color 180ms ease, transform 180ms ease;
+      font-weight: 800;
+      letter-spacing: 0.11em;
+      text-decoration: none;
+      text-transform: uppercase;
+      transition: border-color 180ms ease, color 180ms ease, transform 180ms ease;
     }
 
     .links a:hover {
-      color: var(--paper-soft);
-      background: var(--ink);
+      border-color: var(--blue);
+      color: var(--blue);
       transform: translateY(-2px);
     }
 
-    .rule {
-      width: 100%;
-      height: 1px;
-      margin: 20px 0;
-      background: var(--line);
+    .stamp {
+      position: absolute;
+      right: clamp(28px, 5vw, 74px);
+      top: clamp(112px, 12vw, 178px);
+      display: grid;
+      place-items: center;
+      width: clamp(84px, 10vw, 126px);
+      aspect-ratio: 1;
+      border: 2px solid var(--red);
+      border-radius: 999px;
+      color: var(--red);
+      font-size: 10px;
+      font-weight: 900;
+      letter-spacing: 0.18em;
+      line-height: 1.35;
+      text-align: center;
+      text-transform: uppercase;
+      transform: rotate(12deg);
+      opacity: 0.9;
+    }
+
+    .stamp::before {
+      content: "";
+      position: absolute;
+      inset: 8px;
+      border: 1px solid currentColor;
+      border-radius: inherit;
+    }
+
+    @media (prefers-color-scheme: dark) {
+      :root {
+        color-scheme: dark;
+        --paper: #1a1814;
+        --paper-2: #221f1a;
+        --ink: #e8e2d6;
+        --muted: #9a9286;
+        --faint: #3a3530;
+        --hairline: #4a4238;
+        --shadow: rgba(0, 0, 0, 0.45);
+      }
     }
 
     @media (prefers-reduced-motion: no-preference) {
-      .side-note {
-        animation: settle 720ms cubic-bezier(0.19, 1, 0.22, 1) both;
+      .seal,
+      .scribble,
+      .annotation,
+      .stamp {
+        animation: settle 700ms cubic-bezier(0.19, 1, 0.22, 1) both;
       }
 
-      .scribble {
-        animation: ink-in 760ms 220ms cubic-bezier(0.19, 1, 0.22, 1) both;
+      .index li {
+        transition: transform 220ms ease;
       }
 
-      .writing-link,
-      .scrap,
-      .signals li {
-        animation: lift-in 620ms cubic-bezier(0.19, 1, 0.22, 1) both;
+      .index li:hover {
+        transform: translateX(6px);
       }
 
-      .writing-link:nth-child(2) { animation-delay: 60ms; }
-      .writing-link:nth-child(3) { animation-delay: 120ms; }
-      .writing-link:nth-child(4) { animation-delay: 180ms; }
-      .writing-link:nth-child(5) { animation-delay: 240ms; }
-    }
-
-    @keyframes settle {
-      from {
-        opacity: 0;
-        transform: translateY(16px) rotate(3deg);
-      }
-    }
-
-    @keyframes ink-in {
-      from {
-        clip-path: inset(0 100% 0 0);
-        opacity: 0;
-      }
-    }
-
-    @keyframes lift-in {
-      from {
-        opacity: 0;
-        transform: translateY(14px);
+      @keyframes settle {
+        from {
+          opacity: 0;
+          translate: 0 10px;
+        }
+        to {
+          opacity: 1;
+          translate: 0 0;
+        }
       }
     }
 
     @media (max-width: 900px) {
+      body::after,
+      .paper::after,
+      .stamp {
+        display: none;
+      }
+
+      .sheet {
+        padding: 12px;
+      }
+
+      .paper {
+        min-height: calc(100vh - 24px);
+        padding: 24px;
+      }
+
+      .topline,
       .hero,
-      .section-grid,
-      .footer {
+      .grid,
+      .writing__head,
+      .closing {
         grid-template-columns: 1fr;
       }
 
-      .side-note {
-        max-width: 390px;
-        transform: rotate(-0.8deg);
+      .topline {
+        gap: 14px;
       }
 
-      .section-label {
+      .seal,
+      .topline__right {
+        justify-self: start;
+      }
+
+      .margin-note {
+        padding-left: 18px;
+      }
+
+      .scribble {
         position: static;
+        width: fit-content;
+        margin-top: 28px;
       }
 
-      .margin-board {
-        grid-template-columns: 1fr;
+      .index li {
+        grid-template-columns: 44px minmax(0, 1fr);
+        gap: 14px;
       }
 
-      .scrap,
-      .scrap:nth-child(2),
-      .scrap:nth-child(3) {
-        transform: none;
+      .index small {
+        grid-column: 2;
       }
 
-      .footer {
-        align-items: start;
+      .index .dek {
+        grid-column: 2;
       }
 
       .links {
@@ -648,176 +647,132 @@
       }
     }
 
-    @media (max-width: 640px) {
-      .page {
-        width: min(100% - 22px, 1180px);
-        padding-top: 14px;
+    @media (max-width: 560px) {
+      .paper {
+        padding: 18px;
       }
 
-      .topbar {
-        grid-template-columns: 1fr;
+      .topline__right {
+        display: grid;
         gap: 8px;
-        padding-bottom: 14px;
-      }
-
-      .topbar .center,
-      .topbar .right {
-        justify-self: start;
-      }
-
-      .hero {
-        padding-top: 46px;
       }
 
       h1 {
-        font-size: clamp(60px, 21vw, 108px);
+        font-size: clamp(50px, 19vw, 86px);
       }
 
-      .scribble {
-        position: static;
-        display: inline-block;
-        margin-top: 28px;
-      }
-
-      .writing-link {
-        grid-template-columns: 1fr;
-        gap: 6px;
-        padding: 20px 0;
-      }
-
-      .writing-meta {
-        white-space: normal;
-      }
-
-      .note-copy {
-        font-size: clamp(30px, 10vw, 48px);
+      .signals li {
+        grid-template-columns: 38px minmax(0, 1fr);
       }
     }
   </style>
 </head>
 <body>
-  <main class="page">
-    <header class="topbar" aria-label="Site masthead">
-      <div>Erik Nilsson</div>
-      <div class="center">No. 10 / 14</div>
-      <div class="right">San Francisco - clear, 11 deg C</div>
-    </header>
+  <main class="sheet" aria-label="Erik Nilsson editorial notebook">
+    <article class="paper">
+      <div class="stamp" aria-hidden="true">Autumn<br>edition</div>
 
-    <section class="hero" aria-labelledby="page-title">
-      <div class="hero-main">
-        <div class="kicker">Product designer at Cursor</div>
-        <h1 id="page-title" aria-label="Erik Nilsson">
-          <span class="hero-title-line">Erik</span>
-          <span class="hero-title-line">Nilsson</span>
-          <span class="hero-title-line">Notebook</span>
-        </h1>
-        <p class="dek">
-          Designing how people build software with AI at
-          <a href="https://cursor.com">Cursor</a>. This page is a quiet field note from a living site that rebuilds itself.
-        </p>
-        <div class="scribble">part magazine, part margin note</div>
-      </div>
+      <header class="topline">
+        <a href="https://eriks.design" aria-label="eriks.design">eriks.design</a>
+        <div class="seal" aria-hidden="true">EN</div>
+        <nav class="topline__right" aria-label="Primary links">
+          <a href="https://cursor.com">Cursor</a>
+          <a href="https://x.com/flowstated">Notes</a>
+          <a href="mailto:contact@eriks.design">Contact</a>
+        </nav>
+      </header>
 
-      <aside class="side-note" aria-label="Today">
-        <strong>Autumn, after dark.</strong>
-        <p>
-          Oracle queries hum in quantum circuits. Database indexes race faster than their namesakes.
-          The sky over San Francisco is clear and cool.
-        </p>
-      </aside>
-    </section>
+      <section class="hero" aria-labelledby="intro-title">
+        <div>
+          <p class="kicker">Product designer, San Francisco</p>
+          <h1 id="intro-title"><span>Erik</span><br><span>Nilsson</span></h1>
+          <p class="hero__summary">
+            Designing software with AI at <em>Cursor</em>, and tending a living site that rebuilds itself from fresh signals.
+          </p>
+          <div class="scribble" aria-hidden="true">polish until it feels inevitable</div>
+        </div>
 
-    <section class="section-grid" aria-labelledby="current-note">
-      <div class="section-label"><span>01</span>Current Note</div>
-      <div>
-        <div class="note-copy" id="current-note">
+        <aside class="margin-note" aria-label="Notebook note">
+          <strong>Part magazine page, part designer notebook.</strong>
           <p>
-            I care about <em>simple surfaces</em> that still leave room for taste, agency, and fast iteration.
+            A small public desk for writing about interfaces, agents, speed, taste, and the useful details that disappear when software is working.
+          </p>
+        </aside>
+      </section>
+
+      <section class="grid" aria-labelledby="today-title">
+        <div>
+          <p class="section-label">Today, Oct 15 2026</p>
+          <h2 id="today-title">Clear air, quiet feeds, fog offshore.</h2>
+          <p class="today-copy">
+            Twelve degrees in San Francisco. The repos are quiet, the feed is dormant, and the page has room to listen. <mark>Good conditions for editing.</mark>
+          </p>
+          <div class="annotation" aria-hidden="true">current mood: shipping by sunrise</div>
+        </div>
+
+        <div>
+          <p class="section-label">Signals in the margins</p>
+          <ul class="signals">
+            <li><b>01</b><span>Open firmware rooting under the codename Ominous Olive.</span></li>
+            <li><b>02</b><span>Ubuntu's stingray release surfacing in October.</span></li>
+            <li><b>03</b><span>Istanbul streets submerged after rain not seen in eighty-four years.</span></li>
+            <li><b>04</b><span>Bay fog gathering offshore after an early October sunset.</span></li>
+          </ul>
+        </div>
+      </section>
+
+      <section class="writing" aria-labelledby="writing-title">
+        <div class="writing__head">
+          <div>
+            <p class="section-label">Writing index</p>
+            <h2 id="writing-title">Notes worth keeping close.</h2>
+          </div>
+          <p>
+            A compact ledger of published essays: visual direction for agents, living websites, sharper edits, and product details with personality.
           </p>
         </div>
-        <p class="micro">
-          Erik works on product design at Cursor. Off-hours, he tinkers with a living corner of the web:
-          agents pull fresh activity data, make a new version, and leave yesterday visible in the archive.
+
+        <ol class="index">
+          <li class="is-external">
+            <a href="https://cursor.com/blog/design-mode"><span>Directing agents visually</span></a>
+            <small>2026 / 6 min</small>
+            <div class="dek">A Cursor piece on moving from prompts alone toward visual, situated direction.</div>
+          </li>
+          <li>
+            <a href="/posts/a-living-site"><span>A living site</span></a>
+            <small>2025 / 7 min</small>
+            <div class="dek">How this corner of the web rebuilds itself with CI, agents, fresh context, and a daily commit.</div>
+          </li>
+          <li>
+            <a href="/posts/surgical-edits"><span>Surgical edits</span></a>
+            <small>2025 / 4 min</small>
+            <div class="dek">Point at an element, describe the change, and keep the thread between browser and editor intact.</div>
+          </li>
+          <li>
+            <a href="/posts/familiar-differentiation"><span>Familiar differentiation</span></a>
+            <small>2024 / 5 min</small>
+            <div class="dek">A note on making products feel distinct without making them harder to understand.</div>
+          </li>
+          <li>
+            <a href="/posts/hackathon-energy-but-add-users"><span>Hackathon energy, but add users</span></a>
+            <small>2022 / 4 min</small>
+            <div class="dek">Principles for fast teams: draft sooner, collaborate across disciplines, and scope down until the thing works.</div>
+          </li>
+        </ol>
+      </section>
+
+      <footer class="closing">
+        <p>
+          Minimal notes for making interfaces feel <em>clear, alive,</em> and a little less generic.
         </p>
-      </div>
-    </section>
-
-    <section class="section-grid" aria-labelledby="writing-index">
-      <div class="section-label"><span>02</span>Writing Index</div>
-      <div>
-        <nav class="writing" id="writing-index" aria-label="Writing index">
-          <a class="writing-link" href="https://cursor.com/blog/design-mode">
-            <span class="writing-date">2026</span>
-            <span class="writing-title">Directing agents visually</span>
-            <span class="writing-meta">6 min - Cursor blog</span>
-          </a>
-          <a class="writing-link" href="/posts/a-living-site">
-            <span class="writing-date">2025</span>
-            <span class="writing-title">A living site</span>
-            <span class="writing-meta">7 min</span>
-          </a>
-          <a class="writing-link" href="/posts/surgical-edits">
-            <span class="writing-date">2025</span>
-            <span class="writing-title">Surgical edits</span>
-            <span class="writing-meta">4 min</span>
-          </a>
-          <a class="writing-link" href="/posts/familiar-differentiation">
-            <span class="writing-date">2024</span>
-            <span class="writing-title">Familiar differentiation</span>
-            <span class="writing-meta">5 min</span>
-          </a>
-          <a class="writing-link" href="/posts/hackathon-energy-but-add-users">
-            <span class="writing-date">2022</span>
-            <span class="writing-title">Hackathon energy, but add users</span>
-            <span class="writing-meta">4 min</span>
-          </a>
+        <nav class="links" aria-label="External links">
+          <a href="https://github.com/eriknson">GitHub</a>
+          <a href="https://linkedin.com/in/eriknson">LinkedIn</a>
+          <a href="https://x.com/flowstated">X</a>
+          <a href="mailto:contact@eriks.design">Email</a>
         </nav>
-      </div>
-    </section>
-
-    <section class="section-grid" aria-labelledby="margin-notes">
-      <div class="section-label"><span>03</span>Margin Notes</div>
-      <div class="margin-board" id="margin-notes">
-        <article class="scrap">
-          <small>recent line</small>
-          <p><a href="https://x.com/flowstated/status/2002167999353241901">imagine 2026</a></p>
-        </article>
-        <article class="scrap">
-          <small>ship note</small>
-          <p><a href="https://x.com/flowstated/status/2000889983562080578">shipping by sunrise</a></p>
-        </article>
-        <article class="scrap">
-          <small>prototype thought</small>
-          <p><a href="https://x.com/flowstated/status/2000691637190861180">iOS shortcuts x GitHub Actions x Cursor CLI</a></p>
-        </article>
-      </div>
-    </section>
-
-    <section class="section-grid" aria-labelledby="signals">
-      <div class="section-label"><span>04</span>World Signals</div>
-      <div>
-        <ul class="signals" id="signals">
-          <li>humility circulating among smart minds online</li>
-          <li>clear autumn night over San Francisco</li>
-          <li>sunrise at seven-seventeen</li>
-          <li>sunset creeping toward six-thirty</li>
-          <li>agents as collaborators, not replacements</li>
-        </ul>
-      </div>
-    </section>
-
-    <footer class="footer">
-      <p>
-        <strong>Erik Nilsson</strong><br>
-        Product Designer at Cursor. San Francisco, CA.
-      </p>
-      <div class="links" aria-label="Links">
-        <a href="mailto:contact@eriks.design">Email</a>
-        <a href="https://x.com/flowstated">X</a>
-        <a href="https://github.com/eriknson">GitHub</a>
-        <a href="https://linkedin.com/in/eriknson">LinkedIn</a>
-      </div>
-    </footer>
+      </footer>
+    </article>
   </main>
 </body>
 </html>

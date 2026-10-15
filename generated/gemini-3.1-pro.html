@@ -7,44 +7,44 @@
   
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=Caveat:wght@500&family=Instrument+Sans:ital,wght@0,400;0,500;0,600;1,400&family=Instrument+Serif:ital@0;1&display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Caveat:wght@500&family=Instrument+Serif:ital@0;1&family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
   
   <style>
     :root {
-      --bg-canvas: #E8E6E0;
-      --bg-page: #F8F7F4;
-      --text-main: #141311;
-      --text-muted: #737067;
-      --border-color: #DFDCD1;
+      --grid: 24px;
+      --bg: #F2EFE9;
+      --text: #191815;
+      --text-muted: #7A7569;
+      --border: #D6D1C4;
       
-      --pen-red: #E62A10;
-      --pen-blue: #1A3BE0;
+      /* Display-P3 Colors for vibrant pop */
+      --border-margin: color(display-p3 0.85 0.25 0.25 / 0.4);
+      --accent-red: color(display-p3 0.9 0.15 0.1);
+      --accent-blue: color(display-p3 0.1 0.25 0.95);
+      --highlight-yellow: color(display-p3 0.95 0.9 0.2 / 0.6);
     }
-
-    @media (color-gamut: p3) {
+    
+    /* Fallbacks for non-P3 displays */
+    @supports not (color: color(display-p3 1 0 0)) {
       :root {
-        --pen-red: color(display-p3 0.95 0.1 0.05);
-        --pen-blue: color(display-p3 0.05 0.15 1);
+        --border-margin: rgba(217, 64, 64, 0.4);
+        --accent-red: #e6261a;
+        --accent-blue: #1a40f2;
+        --highlight-yellow: rgba(242, 230, 51, 0.6);
       }
     }
 
     @media (prefers-color-scheme: dark) {
       :root {
-        --bg-canvas: #1a1a18;
-        --bg-page: #222220;
-        --text-main: #e8e6e0;
-        --text-muted: #9a9690;
-        --border-color: #3a3832;
+        --bg: #1a1a1a;
+        --text: #e0e0e0;
+        --text-muted: #9a9589;
+        --border: #3d3a35;
       }
 
-      .page {
-        background-image: radial-gradient(#3a3832 1px, transparent 1px);
-        box-shadow: 0 12px 48px rgba(0,0,0,0.2), 0 2px 6px rgba(0,0,0,0.15);
+      body::before {
+        background-image: url('data:image/svg+xml;utf8,<svg width="24" height="24" xmlns="http://www.w3.org/2000/svg"><path d="M 24 0 L 0 0 0 24" fill="none" stroke="rgba(255,255,255,0.035)" stroke-width="1"/></svg>');
       }
-
-      .hero-statement i { color: #a8a49c; }
-      .bio-text { color: #d4d2cc; }
-      .marginalia { color: #5a5850; }
     }
 
     * {
@@ -54,467 +54,446 @@
     }
 
     body {
-      background-color: var(--bg-canvas);
-      color: var(--text-main);
-      font-family: 'Instrument Sans', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
-      font-size: 16px;
-      line-height: 1.5;
-      padding: clamp(1rem, 4vw, 3rem);
-      min-height: 100vh;
-      display: flex;
-      flex-direction: column;
+      font-family: 'Inter', sans-serif;
+      background-color: var(--bg);
+      color: var(--text);
+      overflow-x: hidden;
       -webkit-font-smoothing: antialiased;
       -moz-osx-font-smoothing: grayscale;
     }
 
-    .page {
-      background-color: var(--bg-page);
-      background-image: radial-gradient(#DCDAD0 1px, transparent 1px);
-      background-size: 24px 24px;
-      background-position: center top;
-      border: 1px solid var(--border-color);
-      box-shadow: 0 12px 48px rgba(0,0,0,0.03), 0 2px 6px rgba(0,0,0,0.02);
-      flex: 1;
-      display: flex;
-      flex-direction: column;
-      position: relative;
+    /* Notebook Background Texture */
+    body::before {
+      content: "";
+      position: fixed;
+      inset: 0;
+      background-image: url('data:image/svg+xml;utf8,<svg width="24" height="24" xmlns="http://www.w3.org/2000/svg"><path d="M 24 0 L 0 0 0 24" fill="none" stroke="rgba(0,0,0,0.035)" stroke-width="1"/></svg>');
+      z-index: -2;
+      pointer-events: none;
+    }
+
+    /* Notebook Red Margin Line */
+    body::after {
+      content: "";
+      position: fixed;
+      top: 0;
+      bottom: 0;
+      left: calc(max(var(--grid) * 3, 50vw - 600px + var(--grid) * 3));
+      width: 2px;
+      border-left: 1px solid var(--border-margin);
+      box-shadow: 3px 0 0 var(--border-margin);
+      z-index: -1;
+      pointer-events: none;
+    }
+
+    @media (max-width: 1240px) {
+      body::after { left: calc(var(--grid) * 3); }
+    }
+    @media (max-width: 768px) {
+      body::after { left: calc(var(--grid) * 1.5); }
+    }
+
+    .container {
       max-width: 640px;
       margin: 0 auto;
-      width: 100%;
-      overflow: hidden;
-    }
-
-    .masthead {
-      display: grid;
-      grid-template-columns: 1fr 1fr 1fr;
-      padding: 1.5rem 3rem;
-      border-bottom: 1px solid var(--border-color);
-      font-size: 0.85rem;
-      text-transform: uppercase;
-      letter-spacing: 0.08em;
-      font-weight: 500;
+      padding: 0 calc(var(--grid) * 2);
+      padding-left: calc(var(--grid) * 5);
       position: relative;
-      background: var(--bg-page); /* cover the dots behind text */
+    }
+    @media (max-width: 1240px) {
+      .container { padding-left: calc(var(--grid) * 5); }
+    }
+    @media (max-width: 768px) {
+      .container { 
+        padding-left: calc(var(--grid) * 3); 
+        padding-right: var(--grid);
+      }
     }
 
-    .masthead .role { text-align: center; color: var(--text-muted); }
-    .masthead .location { text-align: right; }
-
-    .content {
-      padding: 5rem 3rem 6rem;
-      display: grid;
-      grid-template-columns: repeat(12, 1fr);
-      gap: 2rem;
-      position: relative;
-      flex: 1;
-      background: var(--bg-page); /* Solid bg for content to keep it readable over dots if desired, but actually we want dots everywhere */
-      background: transparent; 
-    }
-    
-    /* Ensure text readability against dots by adding slight text-shadow or keeping bg transparent */
-    .content > * {
-      position: relative;
-      z-index: 2;
-    }
-
-    .hero-statement {
-      grid-column: 2 / 12;
-      font-family: 'Instrument Serif', "Times New Roman", Times, serif;
-      font-size: clamp(2.5rem, 6.5vw, 6.25rem);
-      line-height: 0.95;
-      letter-spacing: -0.02em;
-      margin-bottom: 6rem;
-      font-weight: 400;
-      color: var(--text-main);
-    }
-
-    .hero-statement i {
-      font-style: italic;
-      color: #5C5951;
-    }
-
-    .bio-section {
-      grid-column: 2 / 6;
+    /* Typography */
+    .meta-row {
       display: flex;
-      flex-direction: column;
-      gap: 1.5rem;
-    }
-
-    .index-section {
-      grid-column: 7 / 12;
-    }
-
-    .section-label {
+      justify-content: space-between;
+      border-bottom: 1px solid var(--text);
+      padding-bottom: calc(var(--grid) * 0.5 - 1px);
+      margin-top: calc(var(--grid) * 3);
       font-size: 0.75rem;
       text-transform: uppercase;
-      letter-spacing: 0.08em;
-      font-weight: 600;
+      letter-spacing: 0.05em;
       color: var(--text-muted);
-      border-bottom: 1px solid var(--border-color);
-      padding-bottom: 0.75rem;
-      margin-bottom: 1.5rem;
-      display: block;
+    }
+    @media (max-width: 600px) {
+      .meta-row {
+        flex-direction: column;
+        gap: 0.5rem;
+        border-bottom: none;
+      }
+      .meta-row .meta-item {
+        border-bottom: 1px solid var(--border);
+        padding-bottom: 0.25rem;
+      }
     }
 
-    .bio-text {
+    .hero-title {
+      font-family: 'Instrument Serif', serif;
+      font-size: clamp(5rem, 12vw, 10rem);
+      line-height: 0.85;
+      letter-spacing: -0.02em;
+      font-weight: 400;
+      margin: calc(var(--grid) * 4) 0 calc(var(--grid) * 4) 0;
+      color: var(--text);
+      font-style: italic;
+    }
+    .hero-title .roman {
+      font-style: normal;
+    }
+    .hero-title .punct {
+      color: var(--accent-red);
+    }
+
+    .grid-layout {
+      display: grid;
+      grid-template-columns: 2fr 1fr;
+      gap: calc(var(--grid) * 3);
+      margin-bottom: calc(var(--grid) * 5);
+      align-items: start;
+    }
+    @media (max-width: 800px) {
+      .grid-layout { grid-template-columns: 1fr; gap: calc(var(--grid) * 4); }
+    }
+
+    .lead {
+      font-family: 'Instrument Serif', serif;
+      font-size: clamp(2rem, 3.5vw, 2.75rem);
+      line-height: 1.15;
+      margin-bottom: calc(var(--grid) * 1.5);
+      color: var(--text);
+      max-width: 24ch;
+      letter-spacing: -0.01em;
+    }
+    
+    .body-text {
       font-size: 1.125rem;
       line-height: 1.6;
-      color: #2D2C28;
+      color: var(--text);
+      max-width: 38ch;
+      margin-bottom: var(--grid);
     }
 
-    .github-context {
-      font-size: 0.95rem;
-      color: var(--text-muted);
-      margin-top: 1.5rem;
-      line-height: 1.5;
-    }
-
-    .github-context a {
+    .link {
       color: inherit;
-      text-decoration: underline;
-      text-decoration-color: var(--border-color);
-      text-underline-offset: 3px;
-      transition: color 0.2s, text-decoration-color 0.2s;
-    }
-
-    .github-context a:hover {
-      color: var(--text-main);
-      text-decoration-color: var(--text-main);
-    }
-
-    .writing-list {
-      list-style: none;
-    }
-
-    .writing-list li {
-      border-bottom: 1px solid var(--border-color);
-    }
-
-    .index-item {
-      display: flex;
-      justify-content: space-between;
-      align-items: baseline;
-      padding: 1.25rem 0;
-      text-decoration: none;
-      color: var(--text-main);
-      gap: 2rem;
-    }
-
-    .index-item:hover .writing-title {
-      color: var(--pen-blue);
-    }
-
-    .index-content {
-      display: flex;
-      flex-direction: column;
-      gap: 0.25rem;
-    }
-
-    .writing-title {
-      font-size: 1.125rem;
-      font-weight: 500;
-      transition: color 0.2s ease;
-    }
-
-    .writing-sub {
-      font-size: 0.9rem;
-      color: var(--text-muted);
-    }
-
-    .writing-date {
-      font-family: 'Instrument Serif', serif;
-      font-style: italic;
-      font-size: 1.25rem;
-      color: var(--text-muted);
-      white-space: nowrap;
-    }
-
-    .footer {
-      grid-column: 2 / 12;
-      margin-top: 6rem;
-      padding-top: 2rem;
-      border-top: 1px solid var(--border-color);
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
-    }
-
-    .footer-meta {
-      font-size: 0.85rem;
-      color: var(--text-muted);
-    }
-
-    .footer-links {
-      display: flex;
-      gap: 2rem;
-    }
-
-    .footer-links a {
-      font-size: 0.95rem;
-      color: var(--text-main);
-      text-decoration: none;
-      font-weight: 500;
+      text-decoration-thickness: 1px;
+      text-underline-offset: 4px;
       transition: color 0.2s;
     }
-
-    .footer-links a:hover {
-      color: var(--pen-blue);
+    .link:hover {
+      color: var(--accent-blue);
     }
 
-    /* Handwritten and Interactive Elements */
-    .handwritten {
-      font-family: 'Caveat', cursive;
+    /* Links Block */
+    .links-block {
+      display: flex;
+      flex-wrap: wrap;
+      gap: calc(var(--grid) * 0.75);
+      margin-top: calc(var(--grid) * 2.5);
+    }
+    .links-block a {
+      font-size: 0.875rem;
       font-weight: 500;
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+      color: var(--text);
+      text-decoration: none;
+      border: 1px solid var(--border);
+      padding: calc(var(--grid) * 0.25) calc(var(--grid) * 0.75);
+      border-radius: 100px;
+      transition: all 0.2s ease;
+      background-color: transparent;
+    }
+    .links-block a:hover {
+      border-color: var(--text);
+      background-color: var(--text);
+      color: var(--bg);
     }
 
-    .inline-relative {
+    /* Marginalia Sidebar */
+    .section-label {
+      font-size: 0.75rem;
+      font-weight: 600;
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+      color: var(--text-muted);
+      border-bottom: 1px solid var(--border);
+      padding-bottom: calc(var(--grid) * 0.5 - 1px);
+      margin-bottom: calc(var(--grid) * 1.5);
+    }
+    .signals-list {
+      list-style: none;
+    }
+    .signals-list li {
+      font-size: 0.875rem;
+      line-height: 1.5;
+      margin-bottom: calc(var(--grid) * 1.5);
+      color: var(--text-muted);
+      position: relative;
+    }
+    .strikethrough {
+      text-decoration: line-through;
+      opacity: 0.6;
+    }
+
+    /* Index Section */
+    .index-section {
+      margin-bottom: calc(var(--grid) * 5);
+      max-width: 800px;
+    }
+    .index-list {
+      list-style: none;
+      border-top: 1px solid var(--text);
+    }
+    .index-list li {
+      display: flex;
+      align-items: baseline;
+      border-bottom: 1px solid var(--border);
+      padding: calc(var(--grid) * 1.5) 0;
+      transition: padding-left 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+      position: relative;
+    }
+    @media (max-width: 600px) {
+      .index-list li { flex-wrap: wrap; }
+    }
+    .index-list li:hover {
+      padding-left: calc(var(--grid) * 1);
+      border-bottom-color: var(--text);
+    }
+    .index-num {
+      font-size: 0.75rem;
+      color: var(--text-muted);
+      width: calc(var(--grid) * 2);
+      flex-shrink: 0;
+    }
+    .index-link {
+      font-family: 'Instrument Serif', serif;
+      font-size: clamp(1.75rem, 4vw, 2.5rem);
+      color: var(--text);
+      text-decoration: none;
+      flex-grow: 1;
+      font-style: normal;
+      transition: color 0.2s ease, font-style 0.2s ease;
+      line-height: 1.1;
+    }
+    .index-list li:hover .index-link {
+      color: var(--accent-red);
+      font-style: italic;
+    }
+    .index-meta {
+      font-size: 0.75rem;
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+      color: var(--text-muted);
+      flex-shrink: 0;
+      margin-left: calc(var(--grid) * 1);
+    }
+    @media (max-width: 600px) {
+      .index-meta {
+        width: 100%;
+        margin-left: calc(var(--grid) * 2);
+        margin-top: 0.5rem;
+      }
+    }
+
+    /* Footer */
+    .footer-meta {
+      font-size: 0.75rem;
+      line-height: 1.6;
+      color: var(--text-muted);
+      border-top: 1px solid var(--border);
+      padding-top: calc(var(--grid) * 1.5);
+      margin-bottom: calc(var(--grid) * 4);
+      max-width: 60ch;
+    }
+
+    /* Annotations & Handwritten */
+    .relative-wrap {
       position: relative;
       display: inline-block;
       white-space: nowrap;
     }
-
     .annotation {
       position: absolute;
+      pointer-events: none;
+      z-index: 10;
+    }
+    .handwritten {
+      font-family: 'Caveat', cursive;
+      font-size: 1.5rem;
       line-height: 1;
-      pointer-events: none;
-      opacity: 0;
-      animation: fadeIn 0.4s ease forwards;
-    }
-
-    @keyframes fadeIn {
-      to { opacity: 1; }
-    }
-
-    /* SVG Animations */
-    .svg-underline, .svg-circle, .svg-arrow {
-      position: absolute;
-      pointer-events: none;
-      z-index: -1;
-    }
-
-    .svg-underline path, .svg-circle path, .svg-arrow path {
-      animation: drawStroke 1s cubic-bezier(0.25, 1, 0.5, 1) forwards;
-    }
-
-    @keyframes drawStroke {
-      to { stroke-dashoffset: 0; }
-    }
-
-    /* Timings & Dash Arrays */
-    .hero-statement .svg-underline path {
-      stroke-dasharray: 150;
-      stroke-dashoffset: 150;
-      animation-delay: 0.5s;
-    }
-
-    .bio-section .svg-circle path {
-      stroke-dasharray: 300;
-      stroke-dashoffset: 300;
-      animation-delay: 1.2s;
-    }
-    .bio-section .annotation { animation-delay: 1.8s; }
-
-    .index-section .svg-arrow path {
-      stroke-dasharray: 50;
-      stroke-dashoffset: 50;
-      animation-delay: 2.2s;
-    }
-    .index-section .annotation { animation-delay: 2.5s; }
-
-    .footer-links .svg-circle path {
-      stroke-dasharray: 250;
-      stroke-dashoffset: 250;
-      animation-delay: 3s;
-    }
-
-    /* Marginalia */
-    .marginalia {
-      position: absolute;
-      top: 50%;
-      font-family: 'Instrument Sans', sans-serif;
-      font-size: 0.65rem;
-      text-transform: uppercase;
-      letter-spacing: 0.15em;
-      color: #BCB9AF;
       white-space: nowrap;
-      pointer-events: none;
+      display: inline-block;
+    }
+
+    /* Highlighter Marker */
+    .marker-highlight {
+      position: relative;
       z-index: 1;
     }
-    .marginalia.left {
-      left: 1.5rem;
-      transform: translateY(-50%) rotate(180deg);
-      writing-mode: vertical-rl;
-    }
-    .marginalia.right {
-      right: 1.5rem;
-      transform: translateY(-50%);
-      writing-mode: vertical-rl;
-    }
-
-    @media (max-width: 1024px) {
-      .masthead {
-        grid-template-columns: auto auto;
-        justify-content: space-between;
-      }
-      .masthead .role { display: none; }
-      
-      .content {
-        grid-template-columns: repeat(6, 1fr);
-        padding: 4rem 2rem 5rem;
-      }
-      .hero-statement {
-        grid-column: 1 / 7;
-        margin-bottom: 4rem;
-      }
-      .bio-section {
-        grid-column: 1 / 7;
-        margin-bottom: 3rem;
-      }
-      .index-section {
-        grid-column: 1 / 7;
-      }
-      .footer {
-        grid-column: 1 / 7;
-      }
-      .marginalia { display: none; }
+    .marker-highlight::before {
+      content: "";
+      position: absolute;
+      inset: -0.1em -0.3em;
+      background-color: var(--highlight-yellow);
+      z-index: -1;
+      transform: rotate(-1.5deg);
+      border-radius: 2px;
+      opacity: 0;
+      animation: fade-in 0.5s ease forwards;
+      animation-delay: 0.8s;
     }
 
-    @media (max-width: 600px) {
-      body { padding: 0.5rem; }
-      .masthead { padding: 1.5rem; flex-direction: column; gap: 0.5rem; text-align: left; }
-      .masthead .location { text-align: left; }
-      .content { padding: 3rem 1.5rem 4rem; }
-      .index-item { flex-direction: column; gap: 0.5rem; align-items: flex-start; }
-      .footer { flex-direction: column; align-items: flex-start; gap: 2rem; }
-      .footer-links { flex-wrap: wrap; gap: 1.5rem; }
+    /* SVG Drawings */
+    .svg-draw {
+      position: absolute;
+      fill: none;
+      stroke: currentColor;
+      stroke-width: 1.5;
+      stroke-linecap: round;
+      stroke-linejoin: round;
+    }
+    .annotation-circle {
+      position: absolute;
+      top: 50%;
+      left: 50%;
+      width: 110%;
+      height: 140%;
+      transform: translate(-50%, -50%);
+      fill: none;
+      stroke: currentColor;
+      stroke-width: 1.5;
+      pointer-events: none;
+    }
+
+    /* Animations */
+    @keyframes ink-draw {
+      from { stroke-dashoffset: 200; }
+      to { stroke-dashoffset: 0; }
+    }
+    .path-draw {
+      stroke-dasharray: 200;
+      stroke-dashoffset: 200;
+      animation: ink-draw 1.2s cubic-bezier(0.4, 0, 0.2, 1) forwards;
+    }
+    .delay-1 { animation-delay: 0.5s; }
+    .delay-2 { animation-delay: 1.5s; }
+    
+    .handwritten {
+      opacity: 0;
+      animation: fade-in-rot 0.5s ease forwards;
+    }
+    .hw-delay-1 { animation-delay: 1s; }
+    .hw-delay-2 { animation-delay: 2s; }
+
+    @keyframes fade-in {
+      from { opacity: 0; }
+      to { opacity: 1; }
+    }
+    @keyframes fade-in-rot {
+      from { opacity: 0; transform: translateY(5px) rotate(var(--rot, 0deg)); }
+      to { opacity: 1; transform: translateY(0) rotate(var(--rot, 0deg)); }
     }
   </style>
 </head>
 <body>
 
-  <div class="page">
-    
-    <div class="marginalia left">world signal / oracle queries humming in quantum circuits</div>
-    <div class="marginalia right">world signal / database indexes racing faster than their namesakes</div>
-
+  <main class="container">
     <header class="masthead">
-      <div class="name">
-        Erik Nilsson 
-        <span class="handwritten" style="color: var(--pen-blue); margin-left: 0.5rem; font-size: 1.1rem; transform: rotate(-4deg); display: inline-block;">v.3</span>
+      <div class="meta-row">
+        <div class="meta-item">Erik Nilsson</div>
+        <div class="meta-item">San Francisco, CA</div>
+        <div class="meta-item">15 Oct 2026</div>
       </div>
-      <div class="role">Product Designer</div>
-      <div class="location">
-        San Francisco 
-        <span class="handwritten" style="color: var(--text-muted); margin-left: 0.5rem; font-size: 1.1rem;">11°C, clear</span>
-      </div>
+      
+      <h1 class="hero-title">
+        <span class="roman">Erik</span><br>
+        Nilsson<span class="punct">.</span>
+      </h1>
     </header>
 
-    <main class="content">
-      
-      <h1 class="hero-statement">
-        I’m a product designer at <br class="desktop-only" style="display: none;">
-        <span class="inline-relative">
-          Cursor
-          <svg class="svg-underline" viewBox="0 0 100 20" preserveAspectRatio="none" style="width: 104%; height: 16px; left: -2%; bottom: 2px;">
-            <path d="M 0,14 Q 45,18 100,8" fill="none" stroke="var(--pen-blue)" stroke-width="3" stroke-linecap="round"/>
-          </svg>
-        </span>, <i>working on how</i> <br>
-        <i>people</i> build software with AI.
-      </h1>
-
-      <div class="bio-section">
-        <span class="section-label">Bio / Context</span>
-        <div class="bio-text">
-          <p>Off-hours, I'm tinkering with 
-            <span class="inline-relative">
-              living-site
-              <svg class="svg-circle" viewBox="0 0 100 40" preserveAspectRatio="none" style="width: 120%; height: 140%; left: -10%; top: -20%;">
-                <path d="M 50,5 C 85,5 95,15 95,25 C 95,35 70,38 50,38 C 25,38 5,35 5,25 C 5,15 20,5 50,5 Z" fill="none" stroke="var(--pen-red)" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
-              </svg>
-              <span class="handwritten annotation" style="top: -26px; left: 75%; transform: rotate(10deg); color: var(--pen-red); font-size: 1.15rem;">
-                always shifting
-              </span>
-            </span> 
-            — agents rebuild this corner of the web from fresh activity data each day.
-          </p>
-          <p class="github-context">
-            My <a href="https://github.com/eriknson" target="_blank">GitHub repos</a> are side projects and experiments — small personal things I tinker with outside of work, not my main job.
-          </p>
+    <div class="grid-layout">
+      <section class="bio-section">
+        <p class="lead">
+          I'm a product designer at <a href="https://cursor.com" class="link" target="_blank" rel="noopener noreferrer">Cursor</a>, working on how people build software with AI.
+        </p>
+        <p class="body-text">
+          Off-hours, I'm tinkering with 
+          <span class="marker-highlight">living-site</span>
+          <span class="annotation" style="top: -2.5rem; left: 10rem; color: var(--accent-red);">
+            <svg class="svg-draw" width="40" height="40" viewBox="0 0 40 40" style="top: 20px; left: -35px;">
+              <path class="path-draw delay-1" d="M35 5 Q20 20 5 35" />
+              <path class="path-draw delay-1" d="M5 35 L15 35 M5 35 L5 25" />
+            </svg>
+            <span class="handwritten hw-delay-1" style="--rot: -8deg; margin-left: 10px;">rebuilds daily!</span>
+          </span>
+           — agents rebuild this corner of the web from fresh activity data each day.
+        </p>
+        
+        <div class="links-block">
+          <a href="https://x.com/flowstated" target="_blank" rel="noopener noreferrer">X / Twitter</a>
+          <a href="https://github.com/eriknson" target="_blank" rel="noopener noreferrer">GitHub</a>
+          <a href="https://linkedin.com/in/eriknson" target="_blank" rel="noopener noreferrer">LinkedIn</a>
+          <a href="mailto:contact@eriks.design">Email</a>
         </div>
-      </div>
+      </section>
 
-      <div class="index-section">
-        <span class="section-label">Recent Notes</span>
-        <ul class="writing-list">
+      <aside class="sidebar-signals">
+        <h3 class="section-label">Signals & Marginalia</h3>
+        <ul class="signals-list">
+          <li>clear autumn night over San Francisco at twelve degrees</li>
+          <li class="strikethrough">October sunset already past, bay fog gathering offshore</li>
           <li>
-            <a href="https://x.com/flowstated/status/2002167999353241901" target="_blank" class="index-item">
-              <div class="index-content">
-                <span class="writing-title">Imagine 2026</span>
-              </div>
-              <span class="writing-date">Dec 20</span>
-            </a>
+            open firmware quietly rooting under codename <span class="relative-wrap" style="color: var(--text);">Ominous Olive
+              <svg class="annotation-circle" viewBox="0 0 100 40" preserveAspectRatio="none" style="stroke: var(--accent-blue);">
+                <path class="path-draw delay-2" d="M 5,20 C 5,5 95,0 95,20 C 100,40 5,40 5,20 Z" />
+              </svg>
+            </span>
           </li>
           <li>
-            <a href="https://x.com/flowstated/status/2000889983562080578" target="_blank" class="index-item">
-              <div class="index-content">
-                <span class="inline-relative">
-                  <span class="writing-title">Shipping by sunrise</span>
-                  <span class="handwritten annotation" style="top: -6px; right: -85px; transform: rotate(-5deg); font-size: 1.1rem; color: var(--pen-red);">
-                    <svg class="svg-arrow" width="28" height="16" viewBox="0 0 28 16" style="position:absolute; left:-32px; top:4px;">
-                      <path d="M 26 8 Q 14 12 2 8 M 8 3 L 2 8 L 8 13" fill="none" stroke="var(--pen-red)" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
-                    </svg>
-                    literally
-                  </span>
-                </span>
-              </div>
-              <span class="writing-date">Dec 16</span>
-            </a>
-          </li>
-          <li>
-            <a href="https://x.com/flowstated/status/2000691637190861180" target="_blank" class="index-item">
-              <div class="index-content">
-                <span class="writing-title">Exploring ways to spin up agents from my phone</span>
-                <span class="writing-sub">iOS shortcuts × github actions × cursor cli</span>
-              </div>
-              <span class="writing-date">Dec 15</span>
-            </a>
+            game mechanic idea: memory pattern match
+            <span class="annotation" style="top: 100%; right: 0; color: var(--accent-blue);">
+              <span class="handwritten hw-delay-2" style="--rot: -3deg;">twilight gradient</span>
+            </span>
           </li>
         </ul>
-      </div>
+      </aside>
+    </div>
 
-      <footer class="footer">
-        <div class="footer-meta">
-          Last updated: 14 Oct 2026
-        </div>
-        <div class="footer-links">
-          <a href="https://cursor.com" target="_blank">Cursor</a>
-          <a href="https://x.com/flowstated" target="_blank">X</a>
-          <a href="https://github.com/eriknson" target="_blank">GitHub</a>
-          <a href="https://linkedin.com/in/eriknson" target="_blank">LinkedIn</a>
-          <a href="mailto:contact@eriks.design" class="inline-relative">
-            Email
-            <svg class="svg-circle" viewBox="0 0 100 40" preserveAspectRatio="none" style="width: 140%; height: 160%; left: -20%; top: -30%;">
-              <path d="M 50,2 C 85,2 95,12 95,20 C 95,28 85,38 50,38 C 15,38 5,28 5,20 C 5,12 15,2 50,2 Z" fill="none" stroke="var(--pen-blue)" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
-            </svg>
-          </a>
-        </div>
-      </footer>
+    <section class="index-section">
+      <h2 class="section-label">Recent Notes</h2>
+      <ul class="index-list">
+        <li>
+          <span class="index-num">01</span>
+          <a href="https://x.com/flowstated/status/2002167999353241901" class="index-link" target="_blank" rel="noopener noreferrer">Imagine 2026</a>
+          <span class="index-meta">Dec 20</span>
+        </li>
+        <li>
+          <span class="index-num">02</span>
+          <a href="https://x.com/flowstated/status/2000889983562080578" class="index-link" target="_blank" rel="noopener noreferrer">Shipping by sunrise</a>
+          <span class="index-meta">Dec 16</span>
+          <span class="annotation" style="right: 5%; top: 30%; color: var(--accent-red);">
+            <span class="handwritten hw-delay-1" style="--rot: 4deg;">*favorite</span>
+          </span>
+        </li>
+        <li>
+          <span class="index-num">03</span>
+          <a href="https://x.com/flowstated/status/2000691637190861180" class="index-link" target="_blank" rel="noopener noreferrer">Spinning up agents from my phone</a>
+          <span class="index-meta">Dec 15</span>
+        </li>
+      </ul>
+    </section>
 
-    </main>
-  </div>
+    <footer class="footer-meta">
+      <p>© 2026 E. Nilsson. GitHub repos are side projects and experiments — small personal things I tinker with outside of work.</p>
+    </footer>
+  </main>
 
-  <script>
-    // Handle responsive BR for hero text
-    const breakEl = document.querySelector('.desktop-only');
-    function handleResize() {
-      if(window.innerWidth > 768) {
-        breakEl.style.display = 'inline';
-      } else {
-        breakEl.style.display = 'none';
-      }
-    }
-    window.addEventListener('resize', handleResize);
-    handleResize();
-  </script>
 </body>
 </html>
