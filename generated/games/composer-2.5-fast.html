@@ -3,83 +3,123 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
-<title>Ominous Olive — Firmware Graft</title>
+<title>Folder.lang</title>
 <style>
 *,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
 :root{
-  --bg:#e8e4dc;--pcb:#f2efe8;--trace:#c8d4c0;--phosphor:#1a6b12;--phosphor-dim:#2d8a22;
-  --amber:#c87800;--cyan:#0a8a82;--blue:#1868c8;--danger:#c82030;--olive:#5a6830;
-  --text:#1a3a1a;--text-dim:#5a7a5a;--overlay:rgba(232,228,220,.92);--btn-bg:#f8f6f2;--btn-border:#1a6b12;
+  --bg:#f4efe6;--grid:#ddd5c8;--grid-major:#ccc3b4;
+  --text:#2a2520;--muted:#7a7268;--manila:#d4b483;--manila-edge:#b8956a;
+  --manila-tab:#e8c98a;--slot:#ebe4d8;--slot-active:#fff8ee;
+  --accent:#c45c26;--success:#2d6a4f;--danger:#b33a3a;
+  --terminal-bg:#1e2428;--terminal-text:#7ec699;--terminal-dim:#5a8068;
+  --overlay:rgba(244,239,230,.92);--shadow:rgba(42,37,32,.15);
+  --btn-bg:#2a2520;--btn-text:#f4efe6;
 }
 @media(prefers-color-scheme:dark){
   :root{
-    --bg:#0a0c0a;--pcb:#121612;--trace:#1a2e1a;--phosphor:#39ff14;--phosphor-dim:#1a8f12;
-    --amber:#ffb020;--cyan:#20d4c8;--blue:#3a9fff;--danger:#ff3344;--olive:#6b7c3a;
-    --text:#b8ffb8;--text-dim:#5a8a5a;--overlay:rgba(8,10,8,.88);--btn-bg:#0f1a0f;--btn-border:#39ff14;
+    --bg:#141820;--grid:#1e2530;--grid-major:#283040;
+    --text:#e8e4dc;--muted:#8a8490;--manila:#a08050;--manila-edge:#806840;
+    --manila-tab:#b89560;--slot:#1c2230;--slot-active:#242c3c;
+    --accent:#e07030;--success:#4a9a72;--danger:#d05050;
+    --terminal-bg:#0a0e12;--terminal-text:#6ec99a;--terminal-dim:#3a6850;
+    --overlay:rgba(20,24,32,.94);--shadow:rgba(0,0,0,.4);
+    --btn-bg:#e8e4dc;--btn-text:#141820;
   }
 }
-html,body{width:100%;height:100%;overflow:hidden;background:var(--bg);color:var(--text);
-  font-family:ui-monospace,'SFMono-Regular',Menlo,monospace;touch-action:manipulation;
-  -webkit-tap-highlight-color:transparent;user-select:none;-webkit-user-select:none}
-#app{position:fixed;inset:0;width:100dvw;height:100dvh;display:flex;flex-direction:column}
-#hud{display:flex;justify-content:space-between;align-items:center;padding:10px 16px;
-  font-size:11px;letter-spacing:.08em;text-transform:uppercase;z-index:2;flex-shrink:0}
-#hud span{color:var(--text-dim)}
-#hud b{color:var(--phosphor);font-weight:600}
-#surge-wrap{flex:1;margin:0 12px;height:6px;background:var(--trace);border-radius:3px;overflow:hidden;max-width:180px}
-#surge-bar{height:100%;width:100%;background:var(--phosphor);border-radius:3px;transition:width .1s linear,background .3s}
-#surge-bar.warn{background:var(--amber)}
-#surge-bar.crit{background:var(--danger)}
-#canvas-wrap{flex:1;position:relative;min-height:0}
-canvas{display:block;width:100%;height:100%;touch-action:none}
-.overlay{position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;
-  justify-content:center;background:var(--overlay);z-index:10;pointer-events:none;
-  opacity:0;visibility:hidden;transition:opacity .35s ease,visibility .35s}
-.overlay.show{opacity:1;visibility:visible;pointer-events:none}
-.overlay h1{font-size:clamp(1.4rem,5vw,2rem);color:var(--phosphor);text-shadow:0 0 20px var(--phosphor-dim);
-  letter-spacing:.12em;margin-bottom:6px;text-align:center;padding:0 20px}
-.overlay .sub{font-size:clamp(.65rem,2.8vw,.8rem);color:var(--text-dim);text-align:center;
-  max-width:320px;line-height:1.6;margin-bottom:28px;padding:0 24px}
-.overlay .hint{font-size:10px;color:var(--olive);letter-spacing:.15em;margin-top:16px;text-transform:uppercase}
-.btn{pointer-events:auto;min-width:180px;min-height:48px;padding:14px 32px;
-  font-family:inherit;font-size:13px;letter-spacing:.14em;text-transform:uppercase;
-  background:var(--btn-bg);color:var(--phosphor);border:2px solid var(--btn-border);
-  border-radius:2px;cursor:pointer;transition:transform .12s,box-shadow .12s,background .12s}
+html,body{width:100%;height:100%;overflow:hidden;touch-action:none;user-select:none;-webkit-user-select:none}
+body{font-family:ui-monospace,'SFMono-Regular',Menlo,Consolas,monospace;background:var(--bg);color:var(--text)}
+#app{position:fixed;inset:0;width:100dvw;height:100dvh;display:flex;flex-direction:column;overflow:hidden}
+#bgCanvas{position:absolute;inset:0;width:100%;height:100%;pointer-events:none;z-index:0}
+#hud{position:relative;z-index:2;display:flex;justify-content:space-between;align-items:center;padding:12px 16px;padding-top:max(12px,env(safe-area-inset-top));flex-shrink:0}
+.hud-item{display:flex;flex-direction:column;gap:2px}
+.hud-label{font-size:10px;letter-spacing:.12em;text-transform:uppercase;color:var(--muted)}
+.hud-value{font-size:18px;font-weight:600;font-variant-numeric:tabular-nums}
+#timer-bar-wrap{flex:1;max-width:140px;margin:0 12px;height:6px;background:var(--grid);border-radius:3px;overflow:hidden;align-self:center}
+#timer-bar{height:100%;width:100%;background:var(--accent);border-radius:3px;transition:width .1s linear}
+#arena{position:relative;z-index:1;flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;padding:8px 16px;min-height:0;gap:12px}
+#target-panel{width:100%;max-width:360px;background:var(--slot);border:1px solid var(--grid-major);border-radius:8px;padding:10px 14px;flex-shrink:0}
+#target-label{font-size:10px;letter-spacing:.1em;text-transform:uppercase;color:var(--muted);margin-bottom:6px}
+#target-tree{font-size:13px;line-height:1.6;color:var(--text);white-space:pre;font-family:inherit}
+.tree-decoy{color:var(--muted);text-decoration:line-through;opacity:.5}
+#slots-wrap{width:100%;max-width:360px;display:flex;flex-direction:column;gap:8px;flex-shrink:0}
+.slot-row{display:flex;align-items:center;gap:10px}
+.slot-depth{font-size:11px;color:var(--muted);width:28px;text-align:right;flex-shrink:0}
+.slot{flex:1;min-height:52px;background:var(--slot);border:2px dashed var(--grid-major);border-radius:6px;display:flex;align-items:center;justify-content:center;transition:background .15s,border-color .15s,border-style .15s}
+.slot.drag-over{background:var(--slot-active);border-color:var(--accent);border-style:solid}
+.slot.filled{border-style:solid;border-color:var(--manila-edge);background:var(--slot-active)}
+.slot.correct{border-color:var(--success)}
+.slot.wrong{border-color:var(--danger);animation:shake .35s ease}
+@keyframes shake{0%,100%{transform:translateX(0)}20%,60%{transform:translateX(-6px)}40%,80%{transform:translateX(6px)}}
+#pool-wrap{width:100%;max-width:360px;flex-shrink:0}
+#pool-label{font-size:10px;letter-spacing:.1em;text-transform:uppercase;color:var(--muted);margin-bottom:8px;text-align:center}
+#pool{display:flex;flex-wrap:wrap;gap:8px;justify-content:center;min-height:60px;padding:8px;background:var(--slot);border:1px solid var(--grid-major);border-radius:8px}
+.folder{position:relative;min-width:80px;height:44px;background:linear-gradient(180deg,var(--manila-tab) 0%,var(--manila) 100%);border:1px solid var(--manila-edge);border-radius:0 6px 6px 6px;cursor:grab;display:flex;align-items:center;justify-content:center;font-size:12px;font-weight:600;color:var(--text);box-shadow:0 2px 4px var(--shadow);touch-action:none;transition:transform .12s,box-shadow .12s}
+.folder::before{content:'';position:absolute;top:-8px;left:-1px;width:36px;height:10px;background:var(--manila-tab);border:1px solid var(--manila-edge);border-bottom:none;border-radius:4px 4px 0 0}
+.folder:active,.folder.dragging{cursor:grabbing;transform:scale(1.06);box-shadow:0 6px 16px var(--shadow);z-index:100}
+.folder.decoy{opacity:.85}
+.folder.decoy::after{content:'?';position:absolute;top:-4px;right:-4px;width:16px;height:16px;background:var(--danger);color:#fff;font-size:9px;border-radius:50%;display:flex;align-items:center;justify-content:center;line-height:16px;text-align:center}
+.folder.in-slot{cursor:default;transform:none}
+.folder.in-slot:active{transform:none}
+#terminal{position:relative;z-index:2;flex-shrink:0;background:var(--terminal-bg);padding:10px 16px;padding-bottom:max(10px,env(safe-area-inset-bottom));min-height:72px;max-height:100px;overflow-y:auto}
+#terminal-label{font-size:9px;letter-spacing:.14em;text-transform:uppercase;color:var(--terminal-dim);margin-bottom:4px}
+#terminal-out{font-size:12px;line-height:1.5;color:var(--terminal-text);font-family:inherit}
+.term-line{opacity:0;animation:fadeIn .3s forwards}
+@keyframes fadeIn{to{opacity:1}}
+.term-cursor{display:inline-block;width:7px;height:14px;background:var(--terminal-text);animation:blink .8s step-end infinite;vertical-align:text-bottom;margin-left:1px}
+@keyframes blink{50%{opacity:0}}
+.overlay{position:absolute;inset:0;z-index:10;display:flex;flex-direction:column;align-items:center;justify-content:center;background:var(--overlay);pointer-events:none;transition:opacity .35s}
+.overlay.hidden{opacity:0;visibility:hidden;pointer-events:none}
+.overlay:not(.hidden){pointer-events:auto}
+.overlay-content{text-align:center;padding:24px;max-width:340px;pointer-events:none}
+.overlay-title{font-size:28px;font-weight:700;letter-spacing:-.02em;margin-bottom:6px}
+.overlay-sub{font-size:13px;color:var(--muted);line-height:1.5;margin-bottom:24px}
+.overlay-hint{font-size:11px;color:var(--muted);margin-top:16px;line-height:1.4}
+.btn{display:inline-flex;align-items:center;justify-content:center;min-width:160px;min-height:48px;padding:12px 28px;background:var(--btn-bg);color:var(--btn-text);border:none;border-radius:8px;font-family:inherit;font-size:14px;font-weight:600;letter-spacing:.04em;cursor:pointer;pointer-events:auto;touch-action:manipulation;transition:transform .12s,opacity .12s}
 .btn:active{transform:scale(.96)}
-.btn:focus-visible{outline:2px solid var(--phosphor);outline-offset:3px}
-#go-stats{font-size:clamp(.75rem,3vw,.9rem);color:var(--text);margin-bottom:20px;text-align:center;line-height:1.8}
-#boot-flash{position:absolute;inset:0;background:var(--phosphor);opacity:0;pointer-events:none;
-  z-index:20;transition:opacity .15s}
-#scanlines{position:absolute;inset:0;pointer-events:none;z-index:3;opacity:.04;
-  background:repeating-linear-gradient(0deg,transparent,transparent 2px,rgba(0,0,0,.45) 2px,rgba(0,0,0,.45) 4px)}
-@media(prefers-color-scheme:dark){#scanlines{opacity:.07}}
-#tip{position:absolute;bottom:14px;left:0;right:0;text-align:center;font-size:10px;
-  letter-spacing:.12em;color:var(--text-dim);pointer-events:none;z-index:4;opacity:0;transition:opacity .4s}
-#tip.show{opacity:1}
+.btn:focus-visible{outline:2px solid var(--accent);outline-offset:3px}
+#go-stats{margin:16px 0;font-size:15px;line-height:1.8}
+#go-stats span{color:var(--accent);font-weight:700}
+#fxCanvas{position:absolute;inset:0;pointer-events:none;z-index:5}
+.level-badge{display:inline-block;background:var(--accent);color:#fff;font-size:10px;padding:2px 8px;border-radius:10px;margin-left:8px;vertical-align:middle}
 </style>
 </head>
 <body>
 <div id="app">
+  <canvas id="bgCanvas"></canvas>
+  <canvas id="fxCanvas"></canvas>
   <div id="hud">
-    <div><span>score </span><b id="score">0</b></div>
-    <div id="surge-wrap"><div id="surge-bar"></div></div>
-    <div><span>wave </span><b id="wave">1</b></div>
+    <div class="hud-item"><span class="hud-label">Depth</span><span class="hud-value" id="hud-level">1</span></div>
+    <div id="timer-bar-wrap"><div id="timer-bar"></div></div>
+    <div class="hud-item" style="align-items:flex-end"><span class="hud-label">Score</span><span class="hud-value" id="hud-score">0</span></div>
   </div>
-  <div id="canvas-wrap">
-    <canvas id="game"></canvas>
-    <div id="boot-flash"></div>
-    <div id="scanlines"></div>
-    <div id="tip">Match chip color to pulsing socket · avoid ? decoys</div>
-    <div id="title-overlay" class="overlay show">
-      <h1>OMINOUS OLIVE</h1>
-      <p class="sub">Graft firmware branches onto the motherboard tree before the power surge fries unconnected chips. Tap matching nodes — avoid corrupt olive decoys.</p>
-      <button class="btn" data-smoke="start" id="btn-start">Initialize Root</button>
-      <p class="hint">tap compatible chips · space on desktop</p>
+  <div id="arena">
+    <div id="target-panel">
+      <div id="target-label">Target tree <span class="level-badge" id="level-badge">L1</span></div>
+      <div id="target-tree"></div>
     </div>
-    <div id="go-overlay" class="overlay">
-      <h1>SURGE FRIED</h1>
-      <p id="go-stats"></p>
-      <button class="btn" data-smoke="restart" id="btn-restart">Reboot Tree</button>
+    <div id="slots-wrap"></div>
+    <div id="pool-wrap">
+      <div id="pool-label">Drag folders into slots</div>
+      <div id="pool"></div>
+    </div>
+  </div>
+  <div id="terminal">
+    <div id="terminal-label">interpreter.out</div>
+    <div id="terminal-out"><span class="term-cursor"></span></div>
+  </div>
+  <div id="overlay-title" class="overlay">
+    <div class="overlay-content">
+      <div class="overlay-title">Folder.lang</div>
+      <div class="overlay-sub">Nest manila tabs into valid directory trees before the interpreter times out.<br>Each level compiles one line of output.</div>
+      <button class="btn" data-smoke="start" id="btn-start">Compile</button>
+      <div class="overlay-hint">Drag folders · Tap slot to return · 50s deadline</div>
+    </div>
+  </div>
+  <div id="overlay-go" class="overlay hidden">
+    <div class="overlay-content">
+      <div class="overlay-title" id="go-title">Timeout</div>
+      <div id="go-stats"></div>
+      <button class="btn" data-smoke="restart" id="btn-restart">Recompile</button>
     </div>
   </div>
 </div>
@@ -87,606 +127,624 @@ canvas{display:block;width:100%;height:100%;touch-action:none}
 (function(){
 'use strict';
 
-var TYPES = [
-  { id:0, name:'CORE', color:null, sym:'◉' },
-  { id:1, name:'BUS',  color:null, sym:'═' },
-  { id:2, name:'MEM',  color:null, sym:'▣' },
-  { id:3, name:'I/O',  color:null, sym:'◈' }
+var OUTPUT_LINES = [
+  '> parsing ./root',
+  '> mkdir src/lib OK',
+  '> linking core.fldr',
+  '> heap alloc 4096b',
+  '> agent.spawn() ready',
+  '> parallel.build sync',
+  '> license.check pass',
+  '> sunrise.ship v0.1',
+  '> stdout: "shipped"',
+  '> exit 0'
 ];
 
-var canvas, ctx, W, H, dpr;
-var state = 'title';
-var score = 0, combo = 0, maxCombo = 0, wave = 1, grafts = 0, corruptHits = 0;
-var surgeMax = 28, surgeTimer = 28, surgeDrain = 0.38;
-var trunk = { x:0, y:0 };
-var sockets = [], chips = [], particles = [], traces = [], flyers = [];
-var bootFlash = 0, shake = 0, hitPause = 0, playTime = 0, surgePulse = 0;
-var lastTime = 0, spawnAcc = 0, waveSocketsDone = 0, waveSocketsNeeded = 3;
-var audioCtx = null;
+var FOLDER_NAMES = [
+  'src','lib','core','main','app','mod','init','util','io','root',
+  'bin','cfg','data','api','net','sys','run','test','pkg','src_old',
+  'lib_bak','tmp','cache','node_mod','dist','build','out','dev'
+];
 
-function css(name){ return getComputedStyle(document.documentElement).getPropertyValue(name).trim(); }
-function initColors(){
-  TYPES[0].color = css('--phosphor');
-  TYPES[1].color = css('--cyan');
-  TYPES[2].color = css('--amber');
-  TYPES[3].color = css('--blue');
-}
+var DECOYS = ['src_old','lib_bak','tmp','cache','node_mod','dist_old','bak','.trash','misc','old'];
 
-function $(id){ return document.getElementById(id); }
+var state = {
+  phase: 'title',
+  level: 0,
+  score: 0,
+  combo: 0,
+  timeLeft: 50,
+  timerId: null,
+  target: [],
+  slots: [],
+  pool: [],
+  dragging: null,
+  dragGhost: null,
+  dragOffset: {x:0,y:0},
+  particles: [],
+  audioCtx: null
+};
+
+var $ = function(id){ return document.getElementById(id); };
+var bgCanvas = $('bgCanvas');
+var fxCanvas = $('fxCanvas');
+var bgCtx, fxCtx;
+var slotsWrap = $('slots-wrap');
+var poolEl = $('pool');
+var targetTree = $('target-tree');
+var terminalOut = $('terminal-out');
+var overlayTitle = $('overlay-title');
+var overlayGo = $('overlay-go');
+var timerBar = $('timer-bar');
+var hudLevel = $('hud-level');
+var hudScore = $('hud-score');
+var levelBadge = $('level-badge');
 
 function initCanvas(){
-  canvas = $('game');
-  if(!canvas) return;
-  ctx = canvas.getContext('2d');
-  resize();
-  window.addEventListener('resize', resize);
+  try {
+    bgCtx = bgCanvas.getContext('2d');
+    fxCtx = fxCanvas.getContext('2d');
+    resizeCanvas();
+    drawGrid();
+  } catch(e){}
 }
 
-function resize(){
-  if(!canvas) return;
-  dpr = Math.min(window.devicePixelRatio || 1, 2);
-  var wrap = canvas.parentElement;
-  W = wrap.clientWidth || window.innerWidth;
-  H = wrap.clientHeight || Math.max(window.innerHeight - 50, 200);
-  canvas.width = W * dpr;
-  canvas.height = H * dpr;
-  trunk.x = W * 0.5;
-  trunk.y = H * 0.82;
-}
-
-function ensureAudio(){
-  if(audioCtx) return audioCtx;
-  try{
-    var AC = window.AudioContext || window.webkitAudioContext;
-    if(AC) audioCtx = new AC();
-  }catch(e){}
-  return audioCtx;
-}
-
-function tone(freq, dur, type, vol){
-  var ac = ensureAudio();
-  if(!ac) return;
-  try{
-    if(ac.state === 'suspended') ac.resume();
-    var o = ac.createOscillator();
-    var g = ac.createGain();
-    o.type = type || 'square';
-    o.frequency.value = freq;
-    g.gain.setValueAtTime(vol || 0.06, ac.currentTime);
-    g.gain.exponentialRampToValueAtTime(0.001, ac.currentTime + dur);
-    o.connect(g); g.connect(ac.destination);
-    o.start(); o.stop(ac.currentTime + dur);
-  }catch(e){}
-}
-
-function sfxGraft(){ tone(440 + combo * 30, 0.08, 'square', 0.05); tone(880, 0.05, 'sine', 0.03); }
-function sfxCorrupt(){ tone(80, 0.25, 'sawtooth', 0.08); }
-function sfxBoot(){
-  [220,330,440,660,880].forEach(function(f,i){
-    setTimeout(function(){ tone(f, 0.12, 'sine', 0.04); }, i * 70);
+function resizeCanvas(){
+  var dpr = Math.min(window.devicePixelRatio || 1, 2);
+  [bgCanvas, fxCanvas].forEach(function(c){
+    c.width = window.innerWidth * dpr;
+    c.height = window.innerHeight * dpr;
+    c.style.width = '100%';
+    c.style.height = '100%';
+    var ctx = c.getContext('2d');
+    if(ctx) ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
   });
+  drawGrid();
 }
-function sfxSurge(){ tone(120, 0.4, 'sawtooth', 0.06); }
+
+function getCSS(v){
+  return getComputedStyle(document.documentElement).getPropertyValue(v).trim();
+}
+
+function drawGrid(){
+  if(!bgCtx) return;
+  var w = window.innerWidth, h = window.innerHeight;
+  bgCtx.clearRect(0, 0, w, h);
+  var gridCol = getCSS('--grid');
+  var majorCol = getCSS('--grid-major');
+  var step = 20;
+  bgCtx.strokeStyle = gridCol;
+  bgCtx.lineWidth = 0.5;
+  for(var x = 0; x < w; x += step){
+    bgCtx.beginPath(); bgCtx.moveTo(x, 0); bgCtx.lineTo(x, h); bgCtx.stroke();
+  }
+  for(var y = 0; y < h; y += step){
+    bgCtx.beginPath(); bgCtx.moveTo(0, y); bgCtx.lineTo(w, y); bgCtx.stroke();
+  }
+  bgCtx.strokeStyle = majorCol;
+  bgCtx.lineWidth = 1;
+  for(var x2 = 0; x2 < w; x2 += step * 5){
+    bgCtx.beginPath(); bgCtx.moveTo(x2, 0); bgCtx.lineTo(x2, h); bgCtx.stroke();
+  }
+  for(var y2 = 0; y2 < h; y2 += step * 5){
+    bgCtx.beginPath(); bgCtx.moveTo(0, y2); bgCtx.lineTo(w, y2); bgCtx.stroke();
+  }
+}
+
+function playTone(freq, dur, type){
+  try {
+    if(!state.audioCtx){
+      var AC = window.AudioContext || window.webkitAudioContext;
+      if(!AC) return;
+      state.audioCtx = new AC();
+    }
+    var ctx = state.audioCtx;
+    if(ctx.state === 'suspended') ctx.resume();
+    var osc = ctx.createOscillator();
+    var gain = ctx.createGain();
+    osc.type = type || 'sine';
+    osc.frequency.value = freq;
+    gain.gain.setValueAtTime(0.08, ctx.currentTime);
+    gain.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + dur);
+    osc.connect(gain);
+    gain.connect(ctx.destination);
+    osc.start();
+    osc.stop(ctx.currentTime + dur);
+  } catch(e){}
+}
 
 function vibrate(ms){
-  try{ if(navigator.vibrate) navigator.vibrate(ms); }catch(e){}
+  try { if(navigator.vibrate) navigator.vibrate(ms); } catch(e){}
 }
 
-function resetGame(){
-  score = 0; combo = 0; maxCombo = 0; wave = 1; grafts = 0; corruptHits = 0;
-  surgeMax = 28; surgeTimer = 28; surgeDrain = 0.38;
-  sockets = []; chips = []; particles = []; traces = []; flyers = [];
-  waveSocketsDone = 0; waveSocketsNeeded = 3; spawnAcc = 0; bootFlash = 0; playTime = 0;
-  buildTree();
-  updateHUD();
-}
-
-function buildTree(){
-  sockets = [];
-  traces = [];
-  var count = waveSocketsNeeded;
-  var startAngle = -Math.PI * 0.75;
-  var endAngle = -Math.PI * 0.25;
-  for(var i = 0; i < count; i++){
-    var t = count === 1 ? 0.5 : i / (count - 1);
-    var ang = startAngle + (endAngle - startAngle) * t;
-    var len = Math.min(W, H) * (0.22 + (i % 2) * 0.06);
-    var sx = trunk.x + Math.cos(ang) * len * 0.15;
-    var sy = trunk.y + Math.sin(ang) * len * 0.15;
-    var ex = trunk.x + Math.cos(ang) * len;
-    var ey = trunk.y + Math.sin(ang) * len;
-    traces.push({ x1:sx, y1:sy, x2:ex, y2:ey, lit:0 });
-    var typeId = i % 4;
-    sockets.push({
-      x:ex, y:ey, typeId:typeId, filled:false, pending:false,
-      pulse:Math.random() * Math.PI * 2, branch:i
-    });
+function genLevel(n){
+  var depth = Math.min(2 + Math.floor(n / 2), 6);
+  var target = [];
+  var used = {};
+  for(var i = 0; i < depth; i++){
+    var name;
+    var attempts = 0;
+    do {
+      name = FOLDER_NAMES[Math.floor(Math.random() * Math.min(FOLDER_NAMES.length, 12 + n))];
+      attempts++;
+    } while(used[name] && attempts < 30);
+    if(used[name]) name = FOLDER_NAMES[i % FOLDER_NAMES.length];
+    used[name] = true;
+    target.push(name);
   }
-  waveSocketsDone = 0;
-  spawnChips(count + 1);
-}
-
-function spawnChips(n){
-  var needed = {};
-  sockets.forEach(function(s){ if(!s.filled) needed[s.typeId] = (needed[s.typeId]||0)+1; });
-  var toSpawn = [];
-  Object.keys(needed).forEach(function(k){ for(var j=0;j<needed[k];j++) toSpawn.push(+k); });
-  while(toSpawn.length < n){
-    toSpawn.push(Math.floor(Math.random()*4));
-  }
-  if(wave >= 2 && Math.random() < 0.25 + wave * 0.05){
-    toSpawn.push(-1);
-  }
-  if(wave >= 3 && Math.random() < 0.2){
-    toSpawn.push(-1);
-  }
-  for(var i = 0; i < toSpawn.length && chips.length < 8; i++){
-    addChip(toSpawn[i]);
-  }
-}
-
-function addChip(typeId){
-  var corrupt = typeId === -1;
-  if(!corrupt) typeId = typeId % 4;
-  var margin = 36;
-  var ang = Math.random() * Math.PI * 2;
-  var rx = W * 0.5 + Math.cos(ang) * (W * 0.32 + Math.random() * 40);
-  var ry = H * 0.42 + Math.sin(ang) * (H * 0.22 + Math.random() * 30);
-  rx = Math.max(margin, Math.min(W - margin, rx));
-  ry = Math.max(margin + 20, Math.min(H * 0.72, ry));
-  chips.push({
-    x:rx, y:ry, typeId:corrupt ? -1 : typeId, corrupt:corrupt,
-    r:22, pulse:Math.random()*Math.PI*2,
-    vx:(Math.random()-0.5)*8, vy:(Math.random()-0.5)*8,
-    spawnT:0
-  });
-}
-
-function findChipAt(px, py){
-  var best = null, bestD = 999;
-  for(var i = chips.length - 1; i >= 0; i--){
-    var c = chips[i];
-    var dx = px - c.x, dy = py - c.y;
-    var d = Math.sqrt(dx*dx + dy*dy);
-    if(d < c.r + 14 && d < bestD){ bestD = d; best = c; }
-  }
-  return best;
-}
-
-function findSocketFor(typeId){
-  for(var i = 0; i < sockets.length; i++){
-    if(!sockets[i].filled && !sockets[i].pending && sockets[i].typeId === typeId) return sockets[i];
-  }
-  return null;
-}
-
-function addParticles(x, y, color, n){
-  for(var i = 0; i < n; i++){
-    var a = Math.random() * Math.PI * 2;
-    var sp = 40 + Math.random() * 120;
-    particles.push({
-      x:x, y:y, vx:Math.cos(a)*sp, vy:Math.sin(a)*sp,
-      life:0.4 + Math.random()*0.4, maxLife:0.8, color:color, size:2 + Math.random()*3
-    });
-  }
-}
-
-function tryGraft(chip){
-  if(state !== 'playing' || !chip) return;
-  if(chip.corrupt){
-    combo = 0; corruptHits++;
-    surgeTimer = Math.max(0, surgeTimer - 4);
-    surgeDrain += 0.04;
-    shake = 8; hitPause = 0.1;
-    sfxCorrupt(); vibrate(80);
-    addParticles(chip.x, chip.y, css('--olive'), 16);
-    chips.splice(chips.indexOf(chip), 1);
-    if(corruptHits >= 3){
-      endGame('Corrupt firmware collapsed the tree.');
-      return;
+  var decoyCount = n < 2 ? 0 : Math.min(1 + Math.floor(n / 3), 3);
+  var decoys = [];
+  for(var d = 0; d < decoyCount; d++){
+    var dec = DECOYS[Math.floor(Math.random() * DECOYS.length)];
+    if(dec !== target[decoys.length % target.length] && decoys.indexOf(dec) === -1){
+      decoys.push(dec);
     }
-    spawnChips(1);
-    return;
   }
-  var sock = findSocketFor(chip.typeId);
-  if(!sock){
-    combo = 0;
-    surgeTimer = Math.max(0, surgeTimer - 1.5);
-    shake = 4;
-    sfxCorrupt();
-    addParticles(chip.x, chip.y, css('--danger'), 8);
-    return;
-  }
-  sock.pending = true;
-  var idx = chips.indexOf(chip);
-  if(idx >= 0) chips.splice(idx, 1);
-  flyers.push({
-    sx:chip.x, sy:chip.y, x:chip.x, y:chip.y, tx:sock.x, ty:sock.y, t:0,
-    typeId:chip.typeId, corrupt:false, sock:sock, branch:sock.branch
-  });
-  hitPause = 0.05;
-  sfxGraft(); vibrate(15);
+  return { depth: depth, target: target, decoys: decoys };
 }
 
-function finishGraft(f){
-  if(!f.sock || f.sock.filled){ if(f.sock) f.sock.pending = false; return; }
-  f.sock.pending = false;
-  f.sock.filled = true;
-  waveSocketsDone++;
-  grafts++; combo++; if(combo > maxCombo) maxCombo = combo;
-  score += 100 + combo * 25 + wave * 10;
-  surgeTimer = Math.min(surgeMax, surgeTimer + 2.2 + combo * 0.15);
-  var col = TYPES[f.typeId].color;
-  addParticles(f.tx, f.ty, col, 14);
-  if(traces[f.branch]) traces[f.branch].lit = 1;
-  if(sockets.every(function(s){ return s.filled; })){
-    waveComplete();
+function renderTarget(levelData){
+  var lines = [];
+  for(var i = 0; i < levelData.target.length; i++){
+    var indent = '  '.repeat(i);
+    var prefix = i === levelData.target.length - 1 ? '└─ ' : '├─ ';
+    if(i === 0) prefix = '';
+    lines.push(indent + prefix + levelData.target[i] + '/');
+  }
+  if(levelData.decoys.length){
+    lines.push('');
+    levelData.decoys.forEach(function(d){
+      lines.push('<span class="tree-decoy">  ✗ ' + d + '/</span>');
+    });
+  }
+  targetTree.innerHTML = lines.join('\n').replace(/\n/g, '<br>');
+}
+
+function buildSlots(depth){
+  slotsWrap.innerHTML = '';
+  state.slots = new Array(depth).fill(null);
+  for(var i = 0; i < depth; i++){
+    var row = document.createElement('div');
+    row.className = 'slot-row';
+    var depthLabel = document.createElement('div');
+    depthLabel.className = 'slot-depth';
+    depthLabel.textContent = 'L' + (i + 1);
+    var slot = document.createElement('div');
+    slot.className = 'slot';
+    slot.dataset.index = i;
+    slot.innerHTML = '<span style="color:var(--muted);font-size:11px">drop here</span>';
+    setupSlotEvents(slot, i);
+    row.appendChild(depthLabel);
+    row.appendChild(slot);
+    slotsWrap.appendChild(row);
+  }
+}
+
+function createFolder(name, isDecoy){
+  var el = document.createElement('div');
+  el.className = 'folder' + (isDecoy ? ' decoy' : '');
+  el.textContent = name;
+  el.dataset.name = name;
+  el.dataset.decoy = isDecoy ? '1' : '0';
+  setupFolderEvents(el);
+  return el;
+}
+
+function buildPool(levelData){
+  poolEl.innerHTML = '';
+  var items = levelData.target.slice();
+  levelData.decoys.forEach(function(d){ items.push(d); });
+  shuffle(items);
+  state.pool = items.map(function(name){
+    var isDecoy = levelData.decoys.indexOf(name) !== -1;
+    var el = createFolder(name, isDecoy);
+    poolEl.appendChild(el);
+    return { name: name, isDecoy: isDecoy, el: el, inSlot: -1 };
+  });
+}
+
+function shuffle(arr){
+  for(var i = arr.length - 1; i > 0; i--){
+    var j = Math.floor(Math.random() * (i + 1));
+    var t = arr[i]; arr[i] = arr[j]; arr[j] = t;
+  }
+}
+
+function setupFolderEvents(el){
+  el.addEventListener('pointerdown', onFolderPointerDown);
+}
+
+function setupSlotEvents(slot, index){
+  slot.addEventListener('pointerup', function(e){
+    if(state.dragging){
+      e.preventDefault();
+      dropOnSlot(index);
+    }
+  });
+  slot.addEventListener('pointerenter', function(){
+    if(state.dragging) slot.classList.add('drag-over');
+  });
+  slot.addEventListener('pointerleave', function(){
+    slot.classList.remove('drag-over');
+  });
+  slot.addEventListener('click', function(){
+    if(state.phase !== 'playing') return;
+    var idx = parseInt(slot.dataset.index, 10);
+    if(state.slots[idx]){
+      returnFolderToPool(idx);
+    }
+  });
+}
+
+function onFolderPointerDown(e){
+  if(state.phase !== 'playing') return;
+  e.preventDefault();
+  var el = e.currentTarget;
+  if(el.classList.contains('in-slot')) return;
+  var poolItem = state.pool.find(function(p){ return p.el === el; });
+  if(!poolItem) return;
+
+  state.dragging = poolItem;
+  el.classList.add('dragging');
+  el.setPointerCapture(e.pointerId);
+
+  var rect = el.getBoundingClientRect();
+  state.dragOffset.x = e.clientX - rect.left;
+  state.dragOffset.y = e.clientY - rect.top;
+
+  if(state.dragGhost) state.dragGhost.remove();
+  state.dragGhost = el.cloneNode(true);
+  state.dragGhost.classList.add('dragging');
+  state.dragGhost.style.position = 'fixed';
+  state.dragGhost.style.zIndex = '200';
+  state.dragGhost.style.pointerEvents = 'none';
+  state.dragGhost.style.opacity = '0.9';
+  document.body.appendChild(state.dragGhost);
+  moveGhost(e.clientX, e.clientY);
+  el.style.opacity = '0.3';
+
+  el.addEventListener('pointermove', onFolderPointerMove);
+  el.addEventListener('pointerup', onFolderPointerUp);
+  el.addEventListener('pointercancel', onFolderPointerUp);
+}
+
+function onFolderPointerMove(e){
+  e.preventDefault();
+  if(!state.dragging) return;
+  moveGhost(e.clientX, e.clientY);
+  highlightSlotAt(e.clientX, e.clientY);
+}
+
+function moveGhost(x, y){
+  if(!state.dragGhost) return;
+  state.dragGhost.style.left = (x - state.dragOffset.x) + 'px';
+  state.dragGhost.style.top = (y - state.dragOffset.y) + 'px';
+}
+
+function highlightSlotAt(x, y){
+  document.querySelectorAll('.slot').forEach(function(s){ s.classList.remove('drag-over'); });
+  var el = document.elementFromPoint(x, y);
+  if(el && el.classList.contains('slot')) el.classList.add('drag-over');
+}
+
+function onFolderPointerUp(e){
+  e.preventDefault();
+  var el = e.currentTarget;
+  el.removeEventListener('pointermove', onFolderPointerMove);
+  el.removeEventListener('pointerup', onFolderPointerUp);
+  el.removeEventListener('pointercancel', onFolderPointerUp);
+  el.classList.remove('dragging');
+  el.style.opacity = '';
+
+  if(state.dragGhost){
+    state.dragGhost.remove();
+    state.dragGhost = null;
+  }
+  document.querySelectorAll('.slot').forEach(function(s){ s.classList.remove('drag-over'); });
+
+  if(!state.dragging) return;
+
+  var slotEl = document.elementFromPoint(e.clientX, e.clientY);
+  while(slotEl && !slotEl.classList.contains('slot') && slotEl !== document.body){
+    slotEl = slotEl.parentElement;
+  }
+  if(slotEl && slotEl.classList.contains('slot')){
+    dropOnSlot(parseInt(slotEl.dataset.index, 10));
+  }
+  state.dragging = null;
+}
+
+function dropOnSlot(index){
+  if(!state.dragging || state.phase !== 'playing') return;
+  var item = state.dragging;
+  if(state.slots[index]){
+    returnFolderToPool(index);
+  }
+  state.slots[index] = item;
+  item.inSlot = index;
+  var slotEl = slotsWrap.children[index].querySelector('.slot');
+  slotEl.innerHTML = '';
+  slotEl.classList.add('filled');
+  var clone = item.el;
+  clone.classList.add('in-slot');
+  clone.style.opacity = '';
+  slotEl.appendChild(clone);
+  item.el.style.display = 'none';
+  playTone(440 + index * 60, 0.08, 'triangle');
+  state.dragging = null;
+
+  if(state.slots.every(function(s){ return s !== null; })){
+    validateTree();
+  }
+}
+
+function returnFolderToPool(index){
+  var item = state.slots[index];
+  if(!item) return;
+  var slotEl = slotsWrap.children[index].querySelector('.slot');
+  slotEl.innerHTML = '<span style="color:var(--muted);font-size:11px">drop here</span>';
+  slotEl.classList.remove('filled','correct','wrong');
+  item.el.classList.remove('in-slot');
+  item.el.style.display = '';
+  item.el.style.opacity = '';
+  if(!poolEl.contains(item.el)) poolEl.appendChild(item.el);
+  item.inSlot = -1;
+  state.slots[index] = null;
+}
+
+function validateTree(){
+  var levelData = state.currentLevel;
+  var allFilled = state.slots.every(function(s){ return s !== null; });
+  if(!allFilled) return;
+
+  var correct = true;
+  for(var i = 0; i < levelData.target.length; i++){
+    if(!state.slots[i] || state.slots[i].name !== levelData.target[i]){
+      correct = false;
+      break;
+    }
+  }
+  for(var j = 0; j < state.slots.length; j++){
+    if(state.slots[j] && state.slots[j].isDecoy){
+      correct = false;
+      break;
+    }
+  }
+
+  if(correct){
+    onLevelComplete();
   } else {
-    spawnAcc = 0;
-    if(chips.length < 4) spawnChips(2);
+    onLevelFail();
   }
-  updateHUD();
 }
 
-function waveComplete(){
-  bootFlash = 1;
-  sfxBoot(); vibrate([20,30,20]);
-  var flash = $('boot-flash');
-  if(flash){ flash.style.opacity = '0.55'; setTimeout(function(){ flash.style.opacity = '0'; }, 180); }
-  wave++;
-  waveSocketsNeeded = Math.min(6, 2 + wave);
-  surgeMax = Math.max(14, surgeMax - 1.5);
-  surgeTimer = Math.min(surgeMax, surgeTimer + 6);
-  surgeDrain += 0.06;
-  waveSocketsDone = 0;
+function onLevelComplete(){
+  state.combo++;
+  var bonus = 100 + state.combo * 25 + state.currentLevel.depth * 10;
+  state.score += bonus;
+  hudScore.textContent = state.score;
+  playTone(660, 0.12, 'sine');
+  playTone(880, 0.15, 'sine');
+  vibrate(30);
+
+  document.querySelectorAll('.slot').forEach(function(s){ s.classList.add('correct'); });
+  spawnParticles(window.innerWidth / 2, window.innerHeight / 2, getCSS('--success'));
+
+  var lineIdx = Math.min(state.level, OUTPUT_LINES.length - 1);
+  appendTerminal(OUTPUT_LINES[lineIdx]);
+
   setTimeout(function(){
-    if(state === 'playing'){
-      buildTree();
-      updateHUD();
+    state.level++;
+    if(state.level >= OUTPUT_LINES.length){
+      endGame(true);
+    } else if(state.timeLeft > 0){
+      loadLevel(state.level);
     }
-  }, 400);
+  }, 600);
 }
 
-function endGame(reason){
-  state = 'gameover';
-  sfxSurge(); vibrate(120);
-  var stats = $('go-stats');
-  if(stats){
-    stats.innerHTML = 'Score <b style="color:var(--phosphor)">' + score + '</b><br>' +
-      'Wave ' + wave + ' · Grafts ' + grafts + ' · Best combo ' + maxCombo +
-      (reason ? '<br><span style="font-size:.85em;color:var(--text-dim)">' + reason + '</span>' : '');
-  }
-  var go = $('go-overlay');
-  if(go) go.classList.add('show');
-  var title = $('title-overlay');
-  if(title) title.classList.remove('show');
-  var tip = $('tip');
-  if(tip) tip.classList.remove('show');
+function onLevelFail(){
+  state.combo = 0;
+  playTone(180, 0.2, 'sawtooth');
+  vibrate([40, 30, 40]);
+  document.querySelectorAll('.slot').forEach(function(s){ s.classList.add('wrong'); });
+  setTimeout(function(){
+    document.querySelectorAll('.slot').forEach(function(s){ s.classList.remove('wrong'); });
+    for(var i = state.slots.length - 1; i >= 0; i--){
+      if(state.slots[i]) returnFolderToPool(i);
+    }
+  }, 500);
 }
 
-function updateHUD(){
-  var s = $('score'); if(s) s.textContent = score;
-  var w = $('wave'); if(w) w.textContent = wave;
-  var pct = Math.max(0, Math.min(100, (surgeTimer / surgeMax) * 100));
-  var bar = $('surge-bar');
-  if(bar){
-    bar.style.width = pct + '%';
-    bar.className = pct < 25 ? 'crit' : pct < 45 ? 'warn' : '';
+function appendTerminal(text){
+  var line = document.createElement('div');
+  line.className = 'term-line';
+  terminalOut.insertBefore(line, terminalOut.querySelector('.term-cursor'));
+  var i = 0;
+  function typeChar(){
+    if(i < text.length){
+      line.textContent += text.charAt(i);
+      i++;
+      setTimeout(typeChar, 18 + Math.random() * 22);
+    }
   }
+  typeChar();
+  while(terminalOut.children.length > 9){
+    var first = terminalOut.firstChild;
+    if(first && !first.classList.contains('term-cursor')) terminalOut.removeChild(first);
+  }
+}
+
+function loadLevel(n){
+  var levelData = genLevel(n);
+  state.currentLevel = levelData;
+  hudLevel.textContent = n + 1;
+  levelBadge.textContent = 'L' + (n + 1);
+  renderTarget(levelData);
+  buildSlots(levelData.depth);
+  buildPool(levelData);
+}
+
+function spawnParticles(x, y, color){
+  for(var i = 0; i < 20; i++){
+    var angle = Math.random() * Math.PI * 2;
+    var speed = 2 + Math.random() * 4;
+    state.particles.push({
+      x: x, y: y,
+      vx: Math.cos(angle) * speed,
+      vy: Math.sin(angle) * speed,
+      life: 1,
+      color: color,
+      size: 3 + Math.random() * 4
+    });
+  }
+}
+
+function updateParticles(){
+  if(!fxCtx) return;
+  fxCtx.clearRect(0, 0, window.innerWidth, window.innerHeight);
+  state.particles = state.particles.filter(function(p){
+    p.x += p.vx;
+    p.y += p.vy;
+    p.vy += 0.12;
+    p.life -= 0.025;
+    if(p.life <= 0) return false;
+    fxCtx.globalAlpha = p.life;
+    fxCtx.fillStyle = p.color;
+    fxCtx.beginPath();
+    fxCtx.arc(p.x, p.y, p.size * p.life, 0, Math.PI * 2);
+    fxCtx.fill();
+    return true;
+  });
+  fxCtx.globalAlpha = 1;
+}
+
+var animFrame;
+function gameLoop(){
+  updateParticles();
+  animFrame = requestAnimationFrame(gameLoop);
+}
+
+function startTimer(){
+  clearInterval(state.timerId);
+  state.timerId = setInterval(function(){
+    if(state.phase !== 'playing') return;
+    state.timeLeft -= 0.1;
+    var pct = Math.max(0, (state.timeLeft / 50) * 100);
+    timerBar.style.width = pct + '%';
+    if(state.timeLeft <= 10) timerBar.style.background = getCSS('--danger');
+    if(state.timeLeft <= 0){
+      state.timeLeft = 0;
+      endGame(false);
+    }
+  }, 100);
 }
 
 function startGame(){
-  resetGame();
-  state = 'playing';
-  var title = $('title-overlay');
-  var go = $('go-overlay');
-  var tip = $('tip');
-  if(title) title.classList.remove('show');
-  if(go) go.classList.remove('show');
-  if(tip) tip.classList.add('show');
-  setTimeout(function(){ if(tip) tip.classList.remove('show'); }, 7000);
-  ensureAudio();
-  updateHUD();
+  state.phase = 'playing';
+  state.level = 0;
+  state.score = 0;
+  state.combo = 0;
+  state.timeLeft = 50;
+  state.particles = [];
+  hudScore.textContent = '0';
+  timerBar.style.width = '100%';
+  timerBar.style.background = getCSS('--accent');
+  terminalOut.innerHTML = '<span class="term-cursor"></span>';
+  overlayTitle.classList.add('hidden');
+  overlayGo.classList.add('hidden');
+  loadLevel(0);
+  startTimer();
+  if(!animFrame) gameLoop();
+  playTone(523, 0.1, 'sine');
 }
 
-function handleTap(clientX, clientY){
-  if(!canvas) return;
-  var rect = canvas.getBoundingClientRect();
-  var px = (clientX - rect.left) * (W / rect.width);
-  var py = (clientY - rect.top) * (H / rect.height);
-  if(state === 'playing'){
-    var chip = findChipAt(px, py);
-    if(chip) tryGraft(chip);
-  }
-}
-
-function drawBackground(){
-  ctx.fillStyle = css('--bg');
-  ctx.fillRect(0, 0, W, H);
-  ctx.fillStyle = css('--pcb');
-  ctx.fillRect(0, 0, W, H);
-  ctx.strokeStyle = css('--trace');
-  ctx.lineWidth = 1;
-  var gs = 24;
-  ctx.globalAlpha = 0.35;
-  for(var x = 0; x < W; x += gs){
-    ctx.beginPath(); ctx.moveTo(x, 0); ctx.lineTo(x, H); ctx.stroke();
-  }
-  for(var y = 0; y < H; y += gs){
-    ctx.beginPath(); ctx.moveTo(0, y); ctx.lineTo(W, y); ctx.stroke();
-  }
-  ctx.globalAlpha = 1;
-  ctx.fillStyle = css('--trace');
-  ctx.globalAlpha = 0.15;
-  for(var i = 0; i < 6; i++){
-    ctx.fillRect(W * 0.1 + i * 30, H * 0.15, 8, H * 0.5);
-  }
-  ctx.globalAlpha = 1;
-}
-
-function drawTraces(){
-  traces.forEach(function(tr){
-    ctx.beginPath();
-    ctx.moveTo(tr.x1, tr.y1);
-    ctx.lineTo(tr.x2, tr.y2);
-    ctx.strokeStyle = tr.lit > 0 ? css('--phosphor') : css('--trace');
-    ctx.globalAlpha = tr.lit > 0 ? 0.5 + tr.lit * 0.5 : 0.4;
-    ctx.lineWidth = tr.lit > 0 ? 2.5 : 1.5;
-    ctx.stroke();
-    if(tr.lit > 0) tr.lit = Math.max(0, tr.lit - 0.003);
-  });
-  ctx.globalAlpha = 1;
-}
-
-function drawTrunk(){
-  var g = ctx.createLinearGradient(trunk.x, trunk.y - 20, trunk.x, trunk.y + 30);
-  g.addColorStop(0, css('--trace'));
-  g.addColorStop(1, css('--pcb'));
-  ctx.fillStyle = g;
-  ctx.beginPath();
-  ctx.moveTo(trunk.x - 18, trunk.y + 20);
-  ctx.lineTo(trunk.x + 18, trunk.y + 20);
-  ctx.lineTo(trunk.x + 10, trunk.y - 30);
-  ctx.lineTo(trunk.x - 10, trunk.y - 30);
-  ctx.closePath();
-  ctx.fill();
-  ctx.strokeStyle = css('--phosphor-dim');
-  ctx.lineWidth = 1;
-  ctx.stroke();
-  ctx.fillStyle = css('--phosphor');
-  ctx.globalAlpha = 0.6 + Math.sin(Date.now() * 0.003) * 0.2;
-  ctx.font = '9px ui-monospace,monospace';
-  ctx.textAlign = 'center';
-  ctx.fillText('ROOT', trunk.x, trunk.y + 8);
-  ctx.globalAlpha = 1;
-}
-
-function drawSocket(s, t){
-  var col = TYPES[s.typeId].color;
-  var pulse = 0.7 + Math.sin(s.pulse + t * 3) * 0.3;
-  s.pulse += 0.02;
-  ctx.beginPath();
-  ctx.arc(s.x, s.y, s.filled ? 14 : 16, 0, Math.PI * 2);
-  if(s.filled){
-    ctx.fillStyle = col;
-    ctx.shadowColor = col;
-    ctx.shadowBlur = 12;
-    ctx.fill();
-    ctx.shadowBlur = 0;
+function endGame(won){
+  state.phase = 'over';
+  clearInterval(state.timerId);
+  var title = won ? 'Compiled!' : 'Timeout';
+  $('go-title').textContent = title;
+  $('go-stats').innerHTML = 'Depth reached: <span>' + (state.level + 1) + '</span><br>Score: <span>' + state.score + '</span>';
+  overlayGo.classList.remove('hidden');
+  if(won){
+    playTone(784, 0.15, 'sine');
+    playTone(988, 0.2, 'sine');
   } else {
-    ctx.strokeStyle = col;
-    ctx.lineWidth = 2;
-    ctx.globalAlpha = pulse;
-    ctx.setLineDash([4, 4]);
-    ctx.stroke();
-    ctx.setLineDash([]);
-    ctx.globalAlpha = 1;
-  }
-  if(!s.filled){
-    ctx.fillStyle = col;
-    ctx.globalAlpha = 0.5;
-    ctx.font = '8px ui-monospace,monospace';
-    ctx.textAlign = 'center';
-    ctx.fillText(TYPES[s.typeId].sym, s.x, s.y + 3);
-    ctx.globalAlpha = 1;
+    playTone(220, 0.3, 'sawtooth');
   }
 }
 
-function drawChip(c, t){
-  c.pulse += 0.04;
-  c.spawnT = Math.min(1, c.spawnT + 0.05);
-  var scale = 0.5 + c.spawnT * 0.5;
-  var r = c.r * scale;
-  var corrupt = c.corrupt;
-  var col = corrupt ? css('--olive') : TYPES[c.typeId].color;
-  var pulse = 0.85 + Math.sin(c.pulse + t * 2) * 0.15;
+function restartGame(){
+  startGame();
+}
 
-  ctx.save();
-  ctx.translate(c.x, c.y);
-  ctx.beginPath();
-  if(corrupt){
-    ctx.fillStyle = css('--pcb');
-    ctx.strokeStyle = col;
-    ctx.lineWidth = 2;
-    ctx.rect(-r, -r, r * 2, r * 2);
-    ctx.fill(); ctx.stroke();
-    ctx.fillStyle = col;
-    ctx.font = 'bold 11px ui-monospace,monospace';
-    ctx.textAlign = 'center';
-    ctx.fillText('?', 0, 4);
-  } else {
-    ctx.fillStyle = css('--pcb');
-    ctx.strokeStyle = col;
-    ctx.lineWidth = 2;
-    var cr = 4;
-    ctx.moveTo(-r + cr, -r);
-    ctx.lineTo(r - cr, -r); ctx.quadraticCurveTo(r, -r, r, -r + cr);
-    ctx.lineTo(r, r - cr); ctx.quadraticCurveTo(r, r, r - cr, r);
-    ctx.lineTo(-r + cr, r); ctx.quadraticCurveTo(-r, r, -r, r - cr);
-    ctx.lineTo(-r, -r + cr); ctx.quadraticCurveTo(-r, -r, -r + cr, -r);
-    ctx.fill(); ctx.stroke();
-    ctx.fillStyle = col;
-    ctx.globalAlpha = pulse;
-    ctx.font = '10px ui-monospace,monospace';
-    ctx.textAlign = 'center';
-    ctx.fillText(TYPES[c.typeId].name, 0, -2);
-    ctx.font = '12px ui-monospace,monospace';
-    ctx.fillText(TYPES[c.typeId].sym, 0, 10);
-    ctx.globalAlpha = 1;
+$('btn-start').addEventListener('click', function(e){
+  e.stopPropagation();
+  startGame();
+});
+
+$('btn-restart').addEventListener('click', function(e){
+  e.stopPropagation();
+  restartGame();
+});
+
+document.addEventListener('pointerdown', function(e){
+  if(state.phase === 'title' || state.phase === 'over') return;
+  var arena = $('arena');
+  if(arena && arena.contains(e.target)) e.preventDefault();
+}, { passive: false });
+
+function firstEmptySlot(){
+  for(var i = 0; i < state.slots.length; i++){
+    if(!state.slots[i]) return i;
   }
-  ctx.restore();
+  return -1;
 }
 
-function drawParticles(dt){
-  for(var i = particles.length - 1; i >= 0; i--){
-    var p = particles[i];
-    p.life -= dt;
-    if(p.life <= 0){ particles.splice(i, 1); continue; }
-    p.x += p.vx * dt; p.y += p.vy * dt;
-    p.vy += 80 * dt;
-    ctx.globalAlpha = p.life / p.maxLife;
-    ctx.fillStyle = p.color;
-    ctx.fillRect(p.x - p.size/2, p.y - p.size/2, p.size, p.size);
-  }
-  ctx.globalAlpha = 1;
+function placePoolItemByIndex(idx){
+  if(state.phase !== 'playing' || idx < 0) return;
+  var available = state.pool.filter(function(p){ return p.inSlot === -1; });
+  if(idx >= available.length) return;
+  var item = available[idx];
+  var slotIdx = firstEmptySlot();
+  if(slotIdx === -1) return;
+  state.dragging = item;
+  dropOnSlot(slotIdx);
 }
 
-function drawCombo(){
-  if(combo < 2 || state !== 'playing') return;
-  ctx.fillStyle = css('--phosphor');
-  ctx.globalAlpha = 0.7;
-  ctx.font = '11px ui-monospace,monospace';
-  ctx.textAlign = 'left';
-  ctx.fillText('COMBO x' + combo, 12, H - 16);
-  ctx.globalAlpha = 1;
-}
-
-function update(dt){
-  if(state !== 'playing') return;
-  playTime += dt;
-  if(hitPause > 0){ hitPause -= dt; if(hitPause > 0) return; }
-  surgeTimer -= surgeDrain * dt;
-  surgePulse += dt * (surgeTimer / surgeMax < 0.3 ? 8 : 3);
-  for(var fi = flyers.length - 1; fi >= 0; fi--){
-    var f = flyers[fi];
-    f.t = Math.min(1, f.t + dt * 3.2);
-    var e = 1 - Math.pow(1 - f.t, 3);
-    f.x = f.sx + (f.tx - f.sx) * e;
-    f.y = f.sy + (f.ty - f.sy) * e;
-    if(f.t >= 1){
-      finishGraft(f);
-      flyers.splice(fi, 1);
+document.addEventListener('keydown', function(e){
+  if(e.key === 'Enter' || e.key === ' '){
+    if(state.phase === 'title' && !overlayTitle.classList.contains('hidden')){
+      e.preventDefault();
+      startGame();
+      return;
+    }
+    if(state.phase === 'over'){
+      e.preventDefault();
+      restartGame();
+      return;
     }
   }
-  if(surgeTimer <= 0){
-    endGame('Power surge reached the unconnected chips.');
+  if(state.phase !== 'playing') return;
+  var num = parseInt(e.key, 10);
+  if(num >= 1 && num <= 9){
+    placePoolItemByIndex(num - 1);
     return;
   }
-  spawnAcc += dt;
-  if(spawnAcc > 2.5 - wave * 0.15 && chips.length < 6){
-    spawnAcc = 0;
-    spawnChips(1);
-  }
-  chips.forEach(function(c){
-    c.x += c.vx * dt; c.y += c.vy * dt;
-    if(c.x < 30 || c.x > W - 30) c.vx *= -1;
-    if(c.y < 40 || c.y > H * 0.75) c.vy *= -1;
-  });
-  if(shake > 0) shake *= 0.85;
-  updateHUD();
-}
-
-function render(t){
-  if(!ctx) return;
-  var dt = Math.min(0.05, (t - lastTime) / 1000 || 0.016);
-  lastTime = t;
-  update(dt);
-
-  ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
-  if(shake > 0.5){
-    ctx.translate((Math.random()-0.5)*shake, (Math.random()-0.5)*shake);
-  }
-
-  drawBackground();
-  drawTraces();
-  drawTrunk();
-  sockets.forEach(function(s){ drawSocket(s, t * 0.001); });
-  chips.forEach(function(c){ drawChip(c, t * 0.001); });
-  flyers.forEach(function(f){
-    drawChip({ x:f.x, y:f.y, typeId:f.typeId, corrupt:false, r:22, pulse:t*0.004, spawnT:1 }, t * 0.001);
-  });
-  drawParticles(dt);
-  drawCombo();
-
-  if(state === 'playing' && surgeTimer / surgeMax < 0.35){
-    var sp = 0.08 + Math.sin(surgePulse) * 0.06;
-    ctx.strokeStyle = css('--danger');
-    ctx.lineWidth = 3;
-    ctx.globalAlpha = sp;
-    ctx.strokeRect(2, 2, W - 4, H - 4);
-    ctx.globalAlpha = 1;
-  }
-
-  if(bootFlash > 0){
-    ctx.fillStyle = css('--phosphor');
-    ctx.globalAlpha = bootFlash * 0.25;
-    ctx.fillRect(0, 0, W, H);
-    ctx.globalAlpha = 1;
-    bootFlash = Math.max(0, bootFlash - dt * 2);
-  }
-
-  requestAnimationFrame(render);
-}
-
-function bindEvents(){
-  var btnStart = $('btn-start');
-  var btnRestart = $('btn-restart');
-  if(btnStart) btnStart.addEventListener('click', function(e){ e.stopPropagation(); startGame(); });
-  if(btnRestart) btnRestart.addEventListener('click', function(e){ e.stopPropagation(); startGame(); });
-
-  if(canvas){
-    canvas.addEventListener('pointerdown', function(e){
-      e.preventDefault();
-      handleTap(e.clientX, e.clientY);
-    });
-    canvas.addEventListener('touchstart', function(e){
-      e.preventDefault();
-      if(e.touches && e.touches[0]) handleTap(e.touches[0].clientX, e.touches[0].clientY);
-    }, { passive:false });
-  }
-
-  document.addEventListener('keydown', function(e){
-    if(e.code === 'Space'){
-      e.preventDefault();
-      if(state === 'title'){
-        startGame();
-      } else if(state === 'playing' && chips.length){
-        tryGraft(chips[0]);
-      }
+  if(e.key === 'Backspace'){
+    for(var i = state.slots.length - 1; i >= 0; i--){
+      if(state.slots[i]){ returnFolderToPool(i); break; }
     }
-  });
-
-  var mq = window.matchMedia('(prefers-color-scheme: dark)');
-  if(mq && mq.addEventListener){
-    mq.addEventListener('change', initColors);
-  } else if(mq && mq.addListener){
-    mq.addListener(initColors);
   }
-}
+});
 
-function init(){
-  initColors();
-  initCanvas();
-  bindEvents();
-  buildTree();
-  requestAnimationFrame(render);
-}
+window.addEventListener('resize', function(){
+  resizeCanvas();
+});
 
-if(document.readyState === 'loading'){
-  document.addEventListener('DOMContentLoaded', init);
-} else {
-  init();
-}
+initCanvas();
+gameLoop();
+
 })();
 </script>
 </body>

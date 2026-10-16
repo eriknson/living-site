@@ -1,0 +1,471 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Dawn Agent Chain</title>
+<style>
+:root{
+  color-scheme:light;
+  --sky0:#fff3d7;
+  --sky1:#f59e43;
+  --sky2:#19394a;
+  --ink:#10242a;
+  --muted:#597176;
+  --panel:rgba(255,249,232,.78);
+  --line:rgba(20,54,62,.2);
+  --green:#00a96b;
+  --green2:#20d68d;
+  --amber:#ec7f22;
+  --red:#e6462f;
+  --shadow:rgba(9,28,33,.23);
+}
+@media (prefers-color-scheme:dark){
+  :root{
+    color-scheme:dark;
+    --sky0:#061316;
+    --sky1:#934c1d;
+    --sky2:#e27b2e;
+    --ink:#eaf7eb;
+    --muted:#9db3ae;
+    --panel:rgba(3,20,22,.76);
+    --line:rgba(157,244,192,.22);
+    --green:#3cff9a;
+    --green2:#97ffbd;
+    --amber:#ff9b3d;
+    --red:#ff604c;
+    --shadow:rgba(0,0,0,.42);
+  }
+}
+*{box-sizing:border-box}
+html,body{margin:0;width:100%;height:100%;overflow:hidden;background:var(--sky0);color:var(--ink);font-family:Inter,ui-sans-serif,system-ui,-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif}
+body{min-height:100dvh}
+#game{position:fixed;inset:0;width:100dvw;height:100dvh;touch-action:none;user-select:none;background:linear-gradient(180deg,var(--sky0) 0%,var(--sky1) 57%,var(--sky2) 100%)}
+canvas{display:block;width:100%;height:100%;touch-action:none}
+.hud{position:fixed;inset:env(safe-area-inset-top) env(safe-area-inset-right) auto env(safe-area-inset-left);z-index:3;display:grid;grid-template-columns:1fr auto;gap:10px;align-items:start;padding:14px 14px 0;pointer-events:none;font-family:ui-monospace,"SFMono-Regular",Menlo,monospace}
+.stack{display:flex;flex-wrap:wrap;gap:8px}
+.pill,.meter{border:1px solid var(--line);background:var(--panel);box-shadow:0 14px 40px var(--shadow);backdrop-filter:blur(16px)}
+.pill{border-radius:999px;padding:8px 10px;font-size:12px;line-height:1;letter-spacing:.07em;text-transform:uppercase}
+.meter{width:min(38dvw,250px);height:34px;border-radius:999px;overflow:hidden}
+.meter b{display:block;width:0%;height:100%;border-radius:999px;background:linear-gradient(90deg,var(--green),var(--green2));transition:width .18s ease-out}
+.overlay{position:fixed;inset:0;z-index:5;display:grid;place-items:center;padding:22px;pointer-events:none;transition:opacity .25s ease,visibility .25s ease}
+.overlay.hidden{opacity:0;visibility:hidden}
+.card{width:min(540px,calc(100dvw - 30px));border:1px solid var(--line);border-radius:30px;background:var(--panel);box-shadow:0 24px 90px var(--shadow);backdrop-filter:blur(20px);padding:28px;pointer-events:none}
+h1,h2{margin:0 0 10px;line-height:.88;letter-spacing:-.075em}
+h1{font-size:clamp(42px,13vw,72px)}
+h2{font-size:clamp(36px,10vw,62px)}
+p{margin:0;color:var(--muted);font-size:15px;line-height:1.48}
+.rules{display:grid;gap:9px;margin:20px 0;font-family:ui-monospace,"SFMono-Regular",Menlo,monospace;font-size:12px;color:var(--ink)}
+.rules span{display:flex;gap:9px;align-items:center}
+.dot{width:9px;height:9px;border-radius:50%;background:var(--green);box-shadow:0 0 18px var(--green)}
+.dot.bad{background:var(--amber);box-shadow:0 0 18px var(--amber)}
+button{appearance:none;border:0;border-radius:999px;min-height:48px;padding:0 22px;background:var(--ink);color:var(--sky0);font-weight:900;letter-spacing:.09em;text-transform:uppercase;cursor:pointer;box-shadow:0 16px 42px var(--shadow);pointer-events:auto}
+button:focus-visible{outline:3px solid var(--green);outline-offset:3px}
+#restartBtn{position:fixed;right:calc(14px + env(safe-area-inset-right));top:calc(14px + env(safe-area-inset-top));z-index:7;min-height:44px;padding:0 15px;font-size:11px;background:var(--panel);color:var(--ink);border:1px solid var(--line);opacity:0;visibility:hidden;transform:translateY(-8px);transition:opacity .18s ease,transform .18s ease,visibility .18s ease}
+body.playing #restartBtn,body.over #restartBtn{opacity:1;visibility:visible;transform:none}
+.small{margin-top:14px;color:var(--muted);font-family:ui-monospace,"SFMono-Regular",Menlo,monospace;font-size:11px;letter-spacing:.08em;text-transform:uppercase}
+#toast{position:fixed;left:50%;bottom:calc(18px + env(safe-area-inset-bottom));z-index:4;transform:translateX(-50%);max-width:calc(100dvw - 28px);padding:10px 14px;border:1px solid var(--line);border-radius:999px;background:var(--panel);box-shadow:0 14px 46px var(--shadow);backdrop-filter:blur(14px);pointer-events:none;font-family:ui-monospace,"SFMono-Regular",Menlo,monospace;font-size:12px;color:var(--ink);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+@media (max-width:430px){
+  .hud{padding:12px 12px 0}.pill{font-size:11px;padding:7px 9px}.meter{width:42dvw;height:30px}.card{padding:24px;border-radius:26px}
+}
+</style>
+</head>
+<body>
+<div id="game"><canvas id="arena" aria-label="Dawn Agent Chain game arena"></canvas></div>
+<div class="hud" aria-hidden="true">
+  <div class="stack">
+    <div class="pill">SHIP <span id="score">0</span></div>
+    <div class="pill">CHAIN <span id="chain">0</span>x</div>
+    <div class="pill">STABLE <span id="stable">100</span>%</div>
+  </div>
+  <div class="meter" title="Sunrise build progress"><b id="bar"></b></div>
+</div>
+<section id="title" class="overlay">
+  <div class="card">
+    <h1>Dawn Agent Chain</h1>
+    <p>Wake parallel helpers before sunrise. Tap the green glyph exactly when its ring closes. Leave amber decoys asleep.</p>
+    <div class="rules">
+      <span><i class="dot"></i>Tap the lit node on the beat window.</span>
+      <span><i class="dot bad"></i>Ignore off-beat decoys and shrinking traps.</span>
+      <span>Keyboard: Space wakes the active node. Arrows nudge the cursor.</span>
+    </div>
+    <button data-smoke="start" id="startBtn" type="button">Wake Agents</button>
+    <div class="small">Clear autumn bay / ship by sunrise</div>
+  </div>
+</section>
+<section id="gameover" class="overlay hidden">
+  <div class="card">
+    <h2 id="overTitle">Build Drifted</h2>
+    <p id="overText">The dock went quiet before the final helper came online.</p>
+    <div class="rules">
+      <span>Score <b id="finalScore">0</b></span>
+      <span>Best chain <b id="bestChain">0</b>x</span>
+      <span>Launches <b id="launches">0</b></span>
+    </div>
+    <div class="small">Use the restart button in the corner. No reload needed.</div>
+  </div>
+</section>
+<div id="toast">Tap green glyphs as their rings close</div>
+<button data-smoke="restart" id="restartBtn" type="button">Restart</button>
+<script>
+(() => {
+"use strict";
+const $ = (id) => document.getElementById(id);
+const canvas = $("arena");
+const game = $("game");
+const ctx = canvas && canvas.getContext ? canvas.getContext("2d", { alpha:false }) : null;
+const els = {
+  title:$("title"), over:$("gameover"), start:$("startBtn"), restart:$("restartBtn"),
+  score:$("score"), chain:$("chain"), stable:$("stable"), bar:$("bar"),
+  overTitle:$("overTitle"), overText:$("overText"), finalScore:$("finalScore"),
+  bestChain:$("bestChain"), launches:$("launches"), toast:$("toast")
+};
+let W=1,H=1,D=1,last=0,raf=0,audio=null,muted=false;
+let state="title", score=0, chain=0, bestChain=0, stability=100, progress=0, wave=1, launches=0;
+let active=null, decoys=[], particles=[], pulses=[], stars=[], buildings=[], rocket=null, shake=0, cursor=0, toastTimer=0;
+const rand = (a,b) => a + Math.random() * (b-a);
+const clamp = (v,a,b) => Math.max(a, Math.min(b, v));
+const dist = (a,b,c,d) => Math.hypot(a-c,b-d);
+function css(name){return getComputedStyle(document.documentElement).getPropertyValue(name).trim() || "#000"}
+function vibrate(ms){try{if(navigator && navigator.vibrate) navigator.vibrate(ms)}catch(e){}}
+function sound(type){
+  if(muted) return;
+  try{
+    const AC = window.AudioContext || window.webkitAudioContext;
+    if(!AC) return;
+    audio = audio || new AC();
+    if(audio.state === "suspended") audio.resume().catch(()=>{});
+    const t = audio.currentTime, o = audio.createOscillator(), g = audio.createGain();
+    o.type = type === "bad" ? "sawtooth" : "sine";
+    const f = type === "launch" ? 150 : type === "bad" ? 90 : 420 + Math.min(chain,18)*18;
+    o.frequency.setValueAtTime(f,t);
+    o.frequency.exponentialRampToValueAtTime(type === "launch" ? 760 : f*1.45,t+.16);
+    g.gain.setValueAtTime(.0001,t);
+    g.gain.exponentialRampToValueAtTime(type === "bad" ? .07 : .045,t+.015);
+    g.gain.exponentialRampToValueAtTime(.0001,t+(type === "launch" ? .5 : .18));
+    o.connect(g); g.connect(audio.destination); o.start(t); o.stop(t+(type === "launch" ? .55 : .2));
+  }catch(e){muted=true}
+}
+function resize(){
+  const r = game ? game.getBoundingClientRect() : {width:innerWidth,height:innerHeight};
+  W = Math.max(1, r.width || innerWidth || 1);
+  H = Math.max(1, r.height || innerHeight || 1);
+  D = Math.min(2, Math.max(1, window.devicePixelRatio || 1));
+  if(canvas){
+    canvas.width = Math.floor(W*D); canvas.height = Math.floor(H*D);
+    canvas.style.width = W+"px"; canvas.style.height = H+"px";
+  }
+  if(ctx) ctx.setTransform(D,0,0,D,0,0);
+  makeSkyBits();
+}
+function makeSkyBits(){
+  stars = [];
+  for(let i=0;i<90;i++) stars.push({x:Math.random()*W,y:Math.random()*H*.5,a:rand(.12,.9),s:rand(.4,1.8)});
+  buildings = [];
+  const n = Math.ceil(W/36)+2;
+  for(let i=0;i<n;i++) buildings.push({x:i*36-20,w:rand(24,46),h:rand(24,88)});
+}
+function setToast(text){
+  if(els.toast){els.toast.textContent=text; els.toast.style.opacity="1"; toastTimer=1.7}
+}
+function updateHud(){
+  if(els.score) els.score.textContent = String(score);
+  if(els.chain) els.chain.textContent = String(chain);
+  if(els.stable) els.stable.textContent = String(Math.max(0, Math.round(stability)));
+  if(els.bar) els.bar.style.width = clamp(progress,0,100)+"%";
+}
+function start(){
+  state = "playing";
+  score=0; chain=0; bestChain=0; stability=100; progress=0; wave=1; launches=0;
+  decoys=[]; particles=[]; pulses=[]; rocket=null; shake=0; cursor=0;
+  document.body.className = "playing";
+  if(els.title) els.title.classList.add("hidden");
+  if(els.over) els.over.classList.add("hidden");
+  spawnActive(true);
+  setToast("wake the green glyph on the beat");
+  updateHud();
+  sound("ok");
+}
+function restart(){
+  start();
+}
+function finish(win){
+  state = "over";
+  document.body.className = "over";
+  if(els.overTitle) els.overTitle.textContent = win ? "Build Shipped" : "Signal Broke";
+  if(els.overText) els.overText.textContent = win ? "The dock rocket clears the bay just as sunrise hits the water." : "Too many helpers woke off-beat and the chain collapsed.";
+  if(els.finalScore) els.finalScore.textContent = String(score);
+  if(els.bestChain) els.bestChain.textContent = String(bestChain);
+  if(els.launches) els.launches.textContent = String(launches);
+  if(els.over) els.over.classList.remove("hidden");
+  setToast(win ? "shipped by sunrise" : "restart and catch the beat");
+  sound(win ? "launch" : "bad");
+  vibrate(win ? [30,40,60] : 45);
+}
+function targetPoint(){
+  const margin = Math.min(W,H)*.14 + 22;
+  const cols = [W*.23,W*.5,W*.77];
+  const rows = [H*.30,H*.47,H*.64];
+  let x = cols[Math.floor(rand(0,cols.length))] + rand(-margin*.28,margin*.28);
+  let y = rows[Math.floor(rand(0,rows.length))] + rand(-margin*.22,margin*.22);
+  return {x:clamp(x,48,W-48), y:clamp(y,96,H-80)};
+}
+function spawnActive(first){
+  const p = targetPoint();
+  const tempo = clamp(1.18 - wave*.055 - progress*.0026, .56, 1.18);
+  const windowSize = clamp(.18 - wave*.007 - progress*.00055, .07, .18);
+  active = {x:p.x,y:p.y,t:0,dur:first?1.35:tempo,win:windowSize,r:30,hit:false,label:agentName()};
+  spawnDecoys();
+}
+function agentName(){
+  const a = ["ios","cli","ci","sdk","lint","ship","dock","wake","bay","sun"];
+  const b = ["agent","runner","helper","bot","node","thread"];
+  return a[Math.floor(rand(0,a.length))]+"."+b[Math.floor(rand(0,b.length))];
+}
+function spawnDecoys(){
+  decoys = [];
+  const count = wave > 2 ? Math.min(5, 1 + Math.floor(wave/2) + (progress>55?1:0)) : Math.floor(rand(0,2));
+  for(let i=0;i<count;i++){
+    let p = targetPoint();
+    if(active && dist(p.x,p.y,active.x,active.y)<92){p.x = W - p.x; p.y = clamp(p.y + rand(-70,70),96,H-80)}
+    decoys.push({x:p.x,y:p.y,t:rand(0,.35),dur:rand(.8,1.45),r:rand(23,33),spin:rand(-1,1),life:rand(1.2,2.6),label:agentName()});
+  }
+}
+function burst(x,y,color,n){
+  for(let i=0;i<n;i++) particles.push({x,y,vx:rand(-150,150),vy:rand(-180,110),life:rand(.45,.9),max:1,color,size:rand(2,5)});
+  pulses.push({x,y,r:8,life:.55,color});
+}
+function hitActive(quality){
+  const gain = Math.round(90 + quality*170 + chain*7);
+  score += gain; chain++; bestChain = Math.max(bestChain, chain);
+  progress += 2.7 + Math.min(2.3, chain*.13);
+  stability = clamp(stability + 1.4,0,100);
+  wave = 1 + Math.floor(progress/17);
+  burst(active.x, active.y, css("--green"), 18 + Math.min(chain,14));
+  sound("ok"); vibrate(12);
+  setToast(quality>.72 ? "perfect wake +" + gain : "helper online +" + gain);
+  if(progress >= 100){launch(true); return}
+  if(chain>0 && chain%8===0) launch(false);
+  spawnActive(false);
+  updateHud();
+}
+function bad(reason){
+  stability -= reason === "decoy" ? 18 : 12;
+  chain = 0;
+  shake = .35;
+  burst(active ? active.x : W/2, active ? active.y : H/2, css("--red"), 12);
+  sound("bad"); vibrate(30);
+  setToast(reason === "decoy" ? "decoy woke the wrong thread" : "missed beat window");
+  if(stability <= 0){updateHud(); finish(false); return}
+  spawnActive(false);
+  updateHud();
+}
+function launch(finale){
+  launches++;
+  const baseY = H*.78, x = W*.5;
+  rocket = {x,y:baseY,vy:finale?-260:-155,life:finale?2.2:1.25,finale};
+  progress = finale ? 100 : Math.min(96, progress + 5.5);
+  burst(x,baseY,css("--amber"),35);
+  sound("launch"); vibrate([20,25,25]);
+  setToast(finale ? "rocket away - build shipped" : "mini launch: chain checkpoint");
+  if(finale) setTimeout(()=>{ if(state==="playing") finish(true) }, 1250);
+}
+function tap(x,y){
+  if(state !== "playing" || !active) return;
+  for(const d of decoys){
+    if(dist(x,y,d.x,d.y) < d.r+20){bad("decoy"); return}
+  }
+  const near = dist(x,y,active.x,active.y) < active.r+24;
+  const beat = Math.abs(active.t/active.dur - 1);
+  if(near && beat <= active.win){
+    hitActive(1 - beat/active.win);
+  }else if(near || beat < .12){
+    bad("miss");
+  }else{
+    pulses.push({x,y,r:4,life:.28,color:css("--amber")});
+  }
+}
+function key(e){
+  if(e.repeat) return;
+  if(e.key === " " || e.key === "Enter"){
+    e.preventDefault();
+    if(state === "title") start();
+    else if(state === "playing" && active) tap(active.x, active.y);
+    else if(state === "over") restart();
+  }
+  if(state === "playing" && /^Arrow/.test(e.key)){
+    e.preventDefault();
+    cursor += e.key === "ArrowRight" || e.key === "ArrowDown" ? 1 : -1;
+    const all = [active].concat(decoys).filter(Boolean);
+    const t = all[((cursor%all.length)+all.length)%all.length];
+    if(t) tap(t.x,t.y);
+  }
+}
+function pointer(e){
+  if(e.cancelable) e.preventDefault();
+  const r = canvas ? canvas.getBoundingClientRect() : {left:0,top:0};
+  tap((e.clientX || W/2) - r.left, (e.clientY || H/2) - r.top);
+}
+function step(ts){
+  if(!last) last = ts;
+  const dt = Math.min(.045, (ts-last)/1000 || .016);
+  last = ts;
+  tick(dt);
+  draw();
+  raf = requestAnimationFrame(step);
+}
+function tick(dt){
+  if(toastTimer>0){toastTimer-=dt; if(toastTimer<=0 && els.toast) els.toast.style.opacity=".86"}
+  shake = Math.max(0, shake - dt);
+  particles = particles.filter(p => (p.life -= dt) > 0);
+  for(const p of particles){p.x += p.vx*dt; p.y += p.vy*dt; p.vy += 260*dt}
+  pulses = pulses.filter(p => (p.life -= dt) > 0);
+  for(const p of pulses) p.r += 160*dt;
+  if(rocket){rocket.life -= dt; rocket.y += rocket.vy*dt; rocket.vy -= 36*dt; if(rocket.life <= 0) rocket = null}
+  if(state !== "playing" || !active) return;
+  active.t += dt;
+  for(const d of decoys){d.t += dt; d.life -= dt}
+  decoys = decoys.filter(d => d.life > 0);
+  if(active.t > active.dur + active.win + .16) bad("miss");
+}
+function draw(){
+  if(!ctx) return;
+  ctx.save();
+  if(shake){ctx.translate(rand(-5,5)*shake, rand(-5,5)*shake)}
+  sky();
+  dock();
+  if(state === "title") titleScene();
+  drawDecoys();
+  drawActive();
+  drawRocket();
+  drawFX();
+  if(state === "over") overTint();
+  ctx.restore();
+}
+function sky(){
+  const g = ctx.createLinearGradient(0,0,0,H);
+  g.addColorStop(0,css("--sky0")); g.addColorStop(.57,css("--sky1")); g.addColorStop(1,css("--sky2"));
+  ctx.fillStyle = g; ctx.fillRect(0,0,W,H);
+  ctx.fillStyle = "rgba(255,232,165,.76)";
+  ctx.beginPath(); ctx.arc(W*.82,H*.20,Math.min(W,H)*.055,0,7); ctx.fill();
+  ctx.fillStyle = "rgba(12,34,38,.17)";
+  for(const s of stars){ctx.globalAlpha=s.a*(state==="title"?.7:.45); ctx.fillRect(s.x,s.y,s.s,s.s)}
+  ctx.globalAlpha=1;
+  ctx.strokeStyle = "rgba(42,255,151,.14)"; ctx.lineWidth=1;
+  for(let x=-20;x<W+20;x+=28){ctx.beginPath(); ctx.moveTo(x,H*.18); ctx.lineTo(x+W*.18,H); ctx.stroke()}
+  for(let y=H*.22;y<H;y+=38){ctx.beginPath(); ctx.moveTo(0,y); ctx.lineTo(W,y+H*.08); ctx.stroke()}
+}
+function dock(){
+  const water = H*.72;
+  ctx.fillStyle = "rgba(5,26,31,.34)"; ctx.fillRect(0,water,W,H-water);
+  ctx.strokeStyle = "rgba(36,255,147,.26)"; ctx.lineWidth=1.5;
+  for(let i=0;i<8;i++){
+    const y = water + i*20 + (performance.now()*.018+i*7)%20;
+    ctx.beginPath();
+    for(let x=0;x<=W;x+=26) ctx.lineTo(x, y + Math.sin(x*.025+i)*3);
+    ctx.stroke();
+  }
+  ctx.fillStyle = "rgba(8,28,31,.72)";
+  for(const b of buildings) ctx.fillRect(b.x,H*.72-b.h,b.w,b.h);
+  ctx.fillStyle = "rgba(0,0,0,.38)";
+  ctx.fillRect(W*.18,H*.75,W*.64,12);
+  for(let x=W*.2;x<W*.82;x+=54) ctx.fillRect(x,H*.75,9,H*.19);
+  ctx.fillStyle = css("--green");
+  ctx.font = "12px ui-monospace, Menlo, monospace";
+  ctx.globalAlpha=.75;
+  ctx.fillText("parallel agents // dock 14c // sunrise deadline", 16, H-18);
+  ctx.globalAlpha=1;
+}
+function node(x,y,r,label,kind,phase){
+  const green = css("--green"), amber = css("--amber");
+  const col = kind === "decoy" ? amber : green;
+  ctx.save();
+  ctx.translate(x,y);
+  ctx.strokeStyle = col; ctx.fillStyle = col;
+  ctx.shadowBlur = kind === "decoy" ? 12 : 20; ctx.shadowColor = col;
+  ctx.globalAlpha = kind === "decoy" ? .72 : 1;
+  ctx.lineWidth = 2;
+  ctx.beginPath(); ctx.arc(0,0,r,0,7); ctx.stroke();
+  ctx.globalAlpha *= .22;
+  ctx.beginPath(); ctx.arc(0,0,r*.72,0,7); ctx.fill();
+  ctx.globalAlpha = kind === "decoy" ? .65 : .95;
+  ctx.font = "11px ui-monospace, Menlo, monospace";
+  ctx.textAlign = "center";
+  ctx.fillText(label,0,4);
+  if(kind !== "decoy"){
+    const rr = r + Math.max(0, 60*(1-phase));
+    ctx.globalAlpha = .88;
+    ctx.beginPath(); ctx.arc(0,0,rr,0,7); ctx.stroke();
+    ctx.globalAlpha = phase>.82 && phase<1.12 ? .22 : .07;
+    ctx.beginPath(); ctx.arc(0,0,r+16,0,7); ctx.fill();
+  }else{
+    ctx.rotate(phase*6.28);
+    ctx.beginPath(); ctx.moveTo(-r-9,0); ctx.lineTo(-r-1,0); ctx.moveTo(r+1,0); ctx.lineTo(r+9,0); ctx.stroke();
+  }
+  ctx.restore();
+}
+function drawActive(){
+  if(!active || state === "over") return;
+  const phase = active.t / active.dur;
+  node(active.x, active.y, active.r, active.label, "active", phase);
+}
+function drawDecoys(){
+  for(const d of decoys) node(d.x,d.y,d.r,d.label,"decoy",(d.t/d.dur)%1);
+}
+function drawRocket(){
+  const r = rocket || (state==="title" ? {x:W*.5,y:H*.77,life:1,finale:false} : null);
+  if(!r) return;
+  ctx.save(); ctx.translate(r.x,r.y);
+  ctx.fillStyle = css("--ink");
+  ctx.beginPath(); ctx.moveTo(0,-26); ctx.lineTo(14,18); ctx.lineTo(0,10); ctx.lineTo(-14,18); ctx.closePath(); ctx.fill();
+  ctx.fillStyle = css("--green"); ctx.fillRect(-5,-4,10,10);
+  ctx.fillStyle = css("--amber");
+  const flame = rocket ? rand(18,34) : 12;
+  ctx.beginPath(); ctx.moveTo(-8,18); ctx.lineTo(0,18+flame); ctx.lineTo(8,18); ctx.fill();
+  ctx.restore();
+}
+function drawFX(){
+  for(const p of pulses){
+    ctx.globalAlpha = Math.max(0,p.life/.55);
+    ctx.strokeStyle = p.color; ctx.lineWidth=2;
+    ctx.beginPath(); ctx.arc(p.x,p.y,p.r,0,7); ctx.stroke();
+  }
+  for(const p of particles){
+    ctx.globalAlpha = Math.max(0,p.life/.9);
+    ctx.fillStyle = p.color;
+    ctx.fillRect(p.x,p.y,p.size,p.size);
+  }
+  ctx.globalAlpha=1;
+}
+function titleScene(){
+  ctx.save();
+  ctx.globalAlpha=.85;
+  for(let i=0;i<6;i++){
+    const a = performance.now()*.001 + i;
+    node(W*.5 + Math.cos(a)*Math.min(W,H)*.22, H*.55 + Math.sin(a*1.3)*Math.min(W,H)*.14, 18, "idle."+i, i%3===0?"decoy":"active", (Math.sin(a)+1)/2);
+  }
+  ctx.restore();
+}
+function overTint(){
+  ctx.fillStyle = "rgba(0,0,0,.18)";
+  ctx.fillRect(0,0,W,H);
+}
+if(!ctx){
+  if(els.toast) els.toast.textContent = "Canvas unavailable, but controls are safe";
+}else{
+  resize();
+  window.addEventListener("resize", resize, {passive:true});
+  if(window.matchMedia) {
+    try{ window.matchMedia("(prefers-color-scheme: dark)").addEventListener("change", () => makeSkyBits()) }catch(e){}
+  }
+  canvas.addEventListener("pointerdown", pointer, {passive:false});
+  window.addEventListener("keydown", key);
+  els.start && els.start.addEventListener("click", start);
+  els.restart && els.restart.addEventListener("click", restart);
+  updateHud();
+  raf = requestAnimationFrame(step);
+}
+})();
+</script>
+</body>
+</html>

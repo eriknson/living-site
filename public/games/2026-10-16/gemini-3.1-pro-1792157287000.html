@@ -1,0 +1,841 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Patent Ricochet</title>
+<style>
+  :root {
+    --bg: #0a0a0c;
+    --fg: #e0e0e0;
+    --node: #00ffd0;
+    --node-glow: rgba(0, 255, 208, 0.5);
+    --crystal: #ffffff;
+    --btn-bg: #00ffd0;
+    --btn-fg: #0a0a0c;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root {
+      --bg: #0a0a0c;
+      --fg: #e0e0e0;
+      --node: #00ffd0;
+      --node-glow: rgba(0, 255, 208, 0.5);
+      --crystal: #ffffff;
+      --btn-bg: #00ffd0;
+      --btn-fg: #0a0a0c;
+    }
+    .screen {
+      background: rgba(0,0,0,0.8);
+    }
+  }
+  @media (prefers-color-scheme: light) {
+    :root {
+      --bg: #f0f4f8;
+      --fg: #1a1a1a;
+      --node: #0088aa;
+      --node-glow: rgba(0, 136, 170, 0.4);
+      --crystal: #333333;
+      --btn-bg: #0088aa;
+      --btn-fg: #ffffff;
+    }
+  }
+  body, html {
+    margin: 0; padding: 0;
+    width: 100dvw; height: 100dvh;
+    background: var(--bg);
+    color: var(--fg);
+    font-family: ui-monospace, 'SFMono-Regular', Menlo, monospace;
+    overflow: hidden;
+    touch-action: none;
+    user-select: none;
+    -webkit-user-select: none;
+  }
+  canvas {
+    display: block;
+    width: 100%; height: 100%;
+  }
+  #ui {
+    position: absolute;
+    top: 0; left: 0; right: 0; bottom: 0;
+    pointer-events: none;
+  }
+  .hud {
+    display: flex;
+    justify-content: space-between;
+    padding: env(safe-area-inset-top, 20px) 20px 0 20px;
+    font-size: 1.1rem;
+    font-weight: bold;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+    color: var(--node);
+    text-shadow: 0 0 10px var(--node-glow);
+  }
+  .hud-hidden { display: none; }
+  
+  #screens {
+    position: absolute;
+    top: 0; left: 0; right: 0; bottom: 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    pointer-events: none;
+  }
+  .screen {
+    display: none;
+    flex-direction: column;
+    align-items: center;
+    text-align: center;
+    background: rgba(0,0,0,0.8);
+    padding: 40px;
+    border: 1px solid var(--node);
+    border-radius: 12px;
+    backdrop-filter: blur(5px);
+    -webkit-backdrop-filter: blur(5px);
+    box-shadow: 0 0 40px var(--node-glow);
+  }
+  @media (prefers-color-scheme: light) {
+    .screen {
+      background: rgba(255,255,255,0.8);
+    }
+  }
+  .screen.active {
+    display: flex;
+  }
+  button {
+    pointer-events: auto;
+    appearance: none;
+    background: var(--btn-bg);
+    color: var(--btn-fg);
+    border: none;
+    padding: 15px 30px;
+    font-family: inherit;
+    font-size: 1.2rem;
+    font-weight: bold;
+    text-transform: uppercase;
+    letter-spacing: 2px;
+    border-radius: 8px;
+    cursor: pointer;
+    margin-top: 25px;
+    box-shadow: 0 0 15px var(--node-glow);
+    transition: transform 0.1s;
+  }
+  button:active {
+    transform: scale(0.95);
+  }
+  h1 { margin: 0 0 15px 0; font-size: 2rem; color: var(--node); letter-spacing: 2px; }
+  p { margin: 0; opacity: 0.8; max-width: 320px; line-height: 1.5; }
+  
+</style>
+</head>
+<body>
+
+<canvas id="gameCanvas"></canvas>
+
+<div id="ui">
+  <div class="hud hud-hidden" id="hud">
+    <div id="scoreDisplay">SCORE: 0</div>
+    <div id="crystalDisplay">LOCKS: 0 / 8</div>
+  </div>
+</div>
+
+<div id="screens">
+  <div class="screen active" id="startScreen">
+    <h1>PATENT RICOCHET</h1>
+    <p>Flick patent shards to fuse them in the central processor. Smashing locked shards splits them. Don't let the grid lock up.</p>
+    <button data-smoke="start" id="startBtn">Initiate</button>
+  </div>
+  <div class="screen" id="gameOverScreen">
+    <h1>SYSTEM OVERLOAD</h1>
+    <p id="finalScore">SCORE: 0</p>
+    <button data-smoke="restart" id="restartBtn">Reboot</button>
+  </div>
+</div>
+
+<script>
+const canvas = document.getElementById('gameCanvas');
+const ctx = canvas.getContext('2d');
+
+const colors = {
+  dark: {
+    bg: '#0a0a0c',
+    grid: 'rgba(255,255,255,0.05)',
+    node: '#00ffd0',
+    nodeGlow: 'rgba(0, 255, 208, 0.3)',
+    frag: ['#ff6b00', '#ffcc00', '#ff2a00'],
+    crystal: '#ffffff',
+    circuit: '#00ffd0'
+  },
+  light: {
+    bg: '#f0f4f8',
+    grid: 'rgba(0,0,0,0.05)',
+    node: '#0088aa',
+    nodeGlow: 'rgba(0, 136, 170, 0.3)',
+    frag: ['#cc5500', '#d4aa00', '#cc2200'], 
+    crystal: '#333333',
+    circuit: '#0088aa'
+  }
+};
+let theme = window.matchMedia('(prefers-color-scheme: dark)').matches ? colors.dark : colors.light;
+window.matchMedia('(prefers-color-scheme: dark)').addEventListener('change', e => {
+  theme = e.matches ? colors.dark : colors.light;
+});
+
+const AudioContextClass = window.AudioContext || window.webkitAudioContext;
+const audioCtx = AudioContextClass ? new AudioContextClass() : null;
+
+function playSynth(freq, type, duration, vol=0.1) {
+  if (!audioCtx || audioCtx.state === 'suspended') return;
+  try {
+    const osc = audioCtx.createOscillator();
+    const gain = audioCtx.createGain();
+    osc.type = type;
+    osc.frequency.setValueAtTime(freq, audioCtx.currentTime);
+    gain.gain.setValueAtTime(vol, audioCtx.currentTime);
+    gain.gain.exponentialRampToValueAtTime(0.01, audioCtx.currentTime + duration);
+    osc.connect(gain);
+    gain.connect(audioCtx.destination);
+    osc.start();
+    osc.stop(audioCtx.currentTime + duration);
+  } catch(e) {}
+}
+function playBounce() { playSynth(400 + Math.random()*200, 'sine', 0.1, 0.05); }
+function playCatchSound() { 
+  playSynth(800, 'square', 0.1, 0.1); 
+  setTimeout(() => playSynth(1200, 'sine', 0.2, 0.1), 50);
+}
+function playBreak() { playSynth(150, 'square', 0.2, 0.2); }
+
+let width, height;
+let node = {x: 0, y: 0, r: 40, pulse: 0};
+let state = 'start';
+let score = 0;
+let crystals = 0;
+const maxCrystals = 8;
+let fragments = [];
+let particles = [];
+let circuits = [];
+let gameTime = 0;
+let spawnTimer = 1.0;
+
+function resize() {
+  width = window.innerWidth;
+  height = window.innerHeight;
+  let dpr = window.devicePixelRatio || 1;
+  canvas.width = width * dpr;
+  canvas.height = height * dpr;
+  if(ctx) ctx.scale(dpr, dpr);
+  node.x = width/2;
+  node.y = height/2;
+}
+window.addEventListener('resize', resize);
+resize();
+
+const startBtn = document.getElementById('startBtn');
+const restartBtn = document.getElementById('restartBtn');
+const startScreen = document.getElementById('startScreen');
+const gameOverScreen = document.getElementById('gameOverScreen');
+const hud = document.getElementById('hud');
+
+startBtn.addEventListener('click', () => {
+  if (audioCtx && audioCtx.state === 'suspended') audioCtx.resume();
+  startGame();
+});
+restartBtn.addEventListener('click', () => {
+  if (audioCtx && audioCtx.state === 'suspended') audioCtx.resume();
+  startGame();
+});
+
+function startGame() {
+  state = 'playing';
+  score = 0;
+  crystals = 0;
+  fragments = [];
+  particles = [];
+  circuits = [];
+  gameTime = 0;
+  spawnTimer = 1.0;
+  pointer.down = false;
+  activeFrag = null;
+  pointerHistory = [];
+  timeScale = 1.0;
+  
+  startScreen.classList.remove('active');
+  gameOverScreen.classList.remove('active');
+  hud.classList.remove('hud-hidden');
+  updateHUD();
+}
+
+function gameOver() {
+  state = 'gameover';
+  document.getElementById('finalScore').innerText = `SCORE: ${score}`;
+  gameOverScreen.classList.add('active');
+  hud.classList.add('hud-hidden');
+  if (navigator.vibrate) navigator.vibrate([50, 100, 50, 100, 200]);
+  playSynth(150, 'sawtooth', 0.5, 0.2);
+  setTimeout(() => playSynth(100, 'sawtooth', 1.0, 0.2), 200);
+}
+
+function updateHUD() {
+  document.getElementById('scoreDisplay').innerText = `SCORE: ${score}`;
+  document.getElementById('crystalDisplay').innerText = `LOCKS: ${crystals} / ${maxCrystals}`;
+}
+
+let pointer = {x: 0, y: 0, down: false};
+let pointerHistory = [];
+let activeFrag = null;
+let timeScale = 1.0;
+
+window.addEventListener('pointerdown', e => {
+  if(state !== 'playing' || e.target.tagName === 'BUTTON') return;
+  pointer.down = true;
+  pointer.x = e.clientX;
+  pointer.y = e.clientY;
+  pointerHistory = [{x: e.clientX, y: e.clientY, time: performance.now()}];
+  
+  let minDist = 80;
+  activeFrag = null;
+  for (let f of fragments) {
+    if (f.state === 'crystallized') continue;
+    let dist = Math.hypot(f.x - e.clientX, f.y - e.clientY);
+    if (dist < minDist) {
+      minDist = dist;
+      activeFrag = f;
+    }
+  }
+});
+
+window.addEventListener('pointermove', e => {
+  if(state !== 'playing' || !pointer.down) return;
+  pointer.x = e.clientX;
+  pointer.y = e.clientY;
+  pointerHistory.push({x: e.clientX, y: e.clientY, time: performance.now()});
+  if (pointerHistory.length > 5) pointerHistory.shift();
+});
+
+window.addEventListener('pointerup', handleRelease);
+window.addEventListener('pointercancel', handleRelease);
+
+function handleRelease(e) {
+  if(state !== 'playing' || !pointer.down) return;
+  pointer.down = false;
+  
+  if (activeFrag && pointerHistory.length > 1) {
+    let first = pointerHistory[0];
+    let last = pointerHistory[pointerHistory.length-1];
+    let dt = (last.time - first.time) / 1000;
+    
+    if (dt > 0.01) {
+      let vx = (last.x - first.x) / dt;
+      let vy = (last.y - first.y) / dt;
+      let speed = Math.hypot(vx, vy);
+      
+      if (speed > 200) {
+        if (speed > 2500) {
+          vx = (vx/speed) * 2500;
+          vy = (vy/speed) * 2500;
+        }
+        activeFrag.vx = vx;
+        activeFrag.vy = vy;
+        activeFrag.state = 'flicked';
+        activeFrag.timer = Math.min(activeFrag.maxTimer, activeFrag.timer + 1.0);
+        playSynth(600, 'triangle', 0.1, 0.05);
+        if (navigator.vibrate) navigator.vibrate(10);
+      }
+    }
+  }
+  activeFrag = null;
+}
+
+canvas.addEventListener('contextmenu', e => e.preventDefault());
+
+function flickNearestFragment(vx, vy) {
+  if (state !== 'playing') return;
+  let minDist = Infinity;
+  let target = null;
+  for (let f of fragments) {
+    if (f.state === 'crystallized') continue;
+    let dist = Math.hypot(f.x - node.x, f.y - node.y);
+    if (dist < minDist) {
+      minDist = dist;
+      target = f;
+    }
+  }
+  if (!target) return;
+  let speed = 800;
+  let len = Math.hypot(vx, vy) || 1;
+  target.vx = (vx / len) * speed;
+  target.vy = (vy / len) * speed;
+  target.state = 'flicked';
+  target.timer = Math.min(target.maxTimer, target.timer + 1.0);
+  playSynth(600, 'triangle', 0.1, 0.05);
+  if (navigator.vibrate) navigator.vibrate(10);
+}
+
+function handleKeyDown(e) {
+  if (e.target.tagName === 'BUTTON') return;
+  if ((e.code === 'Space' || e.code === 'Enter') && (state === 'start' || state === 'gameover')) {
+    e.preventDefault();
+    if (audioCtx && audioCtx.state === 'suspended') audioCtx.resume();
+    startGame();
+    return;
+  }
+  if (state !== 'playing') return;
+  const keyMap = {
+    ArrowUp: [0, -1],
+    ArrowDown: [0, 1],
+    ArrowLeft: [-1, 0],
+    ArrowRight: [1, 0]
+  };
+  if (keyMap[e.code]) {
+    e.preventDefault();
+    flickNearestFragment(keyMap[e.code][0], keyMap[e.code][1]);
+  }
+}
+
+function handleKeyUp(e) {}
+
+document.addEventListener('keydown', handleKeyDown);
+document.addEventListener('keyup', handleKeyUp);
+
+function generatePolygon(r) {
+  let pts = [];
+  let sides = 4 + Math.floor(Math.random() * 3);
+  for(let i=0; i<sides; i++) {
+    let angle = (i / sides) * Math.PI * 2;
+    let dist = r * (0.7 + Math.random() * 0.3);
+    pts.push({a: angle, d: dist});
+  }
+  return pts;
+}
+
+function spawnFragment() {
+  let side = Math.floor(Math.random() * 4);
+  let r = 18;
+  let x, y;
+  if (side === 0) { x = Math.random() * width; y = -r; }
+  else if (side === 1) { x = width + r; y = Math.random() * height; }
+  else if (side === 2) { x = Math.random() * width; y = height + r; }
+  else { x = -r; y = Math.random() * height; }
+  
+  let angle = Math.atan2(height/2 - y, width/2 - x) + (Math.random() - 0.5) * 0.5;
+  let speed = 50 + Math.random() * 50;
+  let baseTimer = Math.max(4.0, 10.0 - (gameTime / 60) * 6.0);
+  
+  fragments.push({
+    x, y,
+    vx: Math.cos(angle) * speed,
+    vy: Math.sin(angle) * speed,
+    r: r,
+    color: theme.frag[Math.floor(Math.random() * theme.frag.length)],
+    points: generatePolygon(r),
+    timer: baseTimer,
+    maxTimer: baseTimer,
+    state: 'drifting',
+    splitCount: 0,
+    dead: false,
+    rotation: 0
+  });
+}
+
+function splitFragment(f, toAdd) {
+  for(let i=0; i<2; i++) {
+    let angle = Math.atan2(f.vy, f.vx) + (i === 0 ? 0.5 : -0.5);
+    let speed = Math.max(150, Math.hypot(f.vx, f.vy) * 0.6);
+    let r = Math.max(12, f.r * 0.8);
+    toAdd.push({
+      x: f.x + Math.cos(angle) * 5, 
+      y: f.y + Math.sin(angle) * 5,
+      vx: Math.cos(angle) * speed,
+      vy: Math.sin(angle) * speed,
+      r: r,
+      color: f.color,
+      points: generatePolygon(r),
+      timer: 5.0,
+      maxTimer: 5.0,
+      state: 'flicked',
+      splitCount: f.splitCount + 1,
+      dead: false,
+      rotation: f.rotation
+    });
+  }
+}
+
+class Particle {
+  constructor(x, y, color) {
+    this.x = x; this.y = y;
+    let a = Math.random() * Math.PI * 2;
+    let s = 50 + Math.random() * 150;
+    this.vx = Math.cos(a) * s;
+    this.vy = Math.sin(a) * s;
+    this.life = 1.0;
+    this.color = color;
+    this.size = 2 + Math.random() * 3;
+  }
+  update(dt) {
+    this.x += this.vx * dt;
+    this.y += this.vy * dt;
+    this.life -= dt * 1.5;
+  }
+  draw(ctx) {
+    ctx.globalAlpha = Math.max(0, this.life);
+    ctx.fillStyle = this.color;
+    ctx.fillRect(this.x - this.size/2, this.y - this.size/2, this.size, this.size);
+    ctx.globalAlpha = 1.0;
+  }
+}
+
+class CircuitBranch {
+  constructor(sx, sy) {
+    this.lines = [];
+    this.life = 1.0;
+    let x = sx, y = sy;
+    let angle = Math.floor(Math.random() * 4) * (Math.PI / 2);
+    for(let i=0; i<3; i++) {
+      let len = 40 + Math.random() * 60;
+      let nx = x + Math.cos(angle) * len;
+      let ny = y + Math.sin(angle) * len;
+      this.lines.push({x1: x, y1: y, x2: nx, y2: ny});
+      x = nx; y = ny;
+      angle += (Math.random() > 0.5 ? 1 : -1) * (Math.PI / 2);
+    }
+  }
+  update(dt) { this.life -= dt * 1.5; }
+  draw(ctx, theme) {
+    ctx.beginPath();
+    for (let l of this.lines) { ctx.moveTo(l.x1, l.y1); ctx.lineTo(l.x2, l.y2); }
+    ctx.strokeStyle = theme.circuit;
+    ctx.lineWidth = 2;
+    ctx.globalAlpha = Math.max(0, this.life);
+    ctx.shadowColor = theme.circuit;
+    ctx.shadowBlur = 10;
+    ctx.stroke();
+    ctx.globalAlpha = 1.0;
+    ctx.shadowBlur = 0;
+  }
+}
+
+function catchFragment(f) {
+  score++;
+  updateHUD();
+  if (navigator.vibrate) navigator.vibrate([15, 30, 15]);
+  playCatchSound();
+  
+  let numBranches = 3 + Math.floor(Math.random() * 3);
+  for(let i=0; i<numBranches; i++) circuits.push(new CircuitBranch(node.x, node.y));
+  
+  node.pulse = 1.0;
+  for(let i=0; i<10; i++) particles.push(new Particle(f.x, f.y, f.color));
+}
+
+function crystallize(f) {
+  f.state = 'crystallized';
+  crystals++;
+  updateHUD();
+  if (navigator.vibrate) navigator.vibrate(50);
+  if (crystals >= maxCrystals) gameOver();
+}
+
+function update(dt) {
+  if (state !== 'playing') {
+    for(let f of fragments) {
+      if (f.state !== 'crystallized') {
+        f.x += f.vx * dt * 0.1;
+        f.y += f.vy * dt * 0.1;
+      }
+    }
+    for(let p of particles) p.update(dt);
+    particles = particles.filter(p => p.life > 0);
+    for(let c of circuits) c.update(dt);
+    circuits = circuits.filter(c => c.life > 0);
+    return;
+  }
+  
+  gameTime += dt * (1.0 / timeScale);
+  spawnTimer -= dt * (1.0 / timeScale);
+  let currentSpawnRate = Math.max(0.5, 3.0 - (gameTime / 60) * 2.5);
+  if (spawnTimer <= 0) {
+    spawnFragment();
+    spawnTimer = currentSpawnRate;
+  }
+  
+  let toAdd = [];
+  
+  for (let i = 0; i < fragments.length; i++) {
+    let f = fragments[i];
+    if (f.dead || f.state === 'crystallized') continue;
+    
+    if (f.state === 'flicked') {
+      let speed = Math.hypot(f.vx, f.vy);
+      if (speed > 100) {
+        let friction = 0.5 * dt;
+        f.vx -= f.vx * friction;
+        f.vy -= f.vy * friction;
+      } else {
+        f.state = 'drifting';
+      }
+    } else if (f.state === 'drifting') {
+      let targetSpeed = 50 + (gameTime / 60) * 50;
+      let speed = Math.hypot(f.vx, f.vy) || 1;
+      let diff = targetSpeed - speed;
+      let ratio = (speed + diff * dt * 0.5) / speed;
+      f.vx *= ratio;
+      f.vy *= ratio;
+    }
+    
+    f.x += f.vx * dt;
+    f.y += f.vy * dt;
+    
+    if (f.x < f.r) { f.x = f.r; f.vx = Math.abs(f.vx); if(f.state==='flicked') playBounce(); }
+    if (f.x > width - f.r) { f.x = width - f.r; f.vx = -Math.abs(f.vx); if(f.state==='flicked') playBounce(); }
+    if (f.y < f.r) { f.y = f.r; f.vy = Math.abs(f.vy); if(f.state==='flicked') playBounce(); }
+    if (f.y > height - f.r) { f.y = height - f.r; f.vy = -Math.abs(f.vy); if(f.state==='flicked') playBounce(); }
+    
+    let distToNode = Math.hypot(f.x - node.x, f.y - node.y);
+    if (distToNode < f.r + node.r) {
+      catchFragment(f);
+      f.dead = true;
+      continue;
+    }
+    
+    f.timer -= dt;
+    if (f.timer <= 0) crystallize(f);
+  }
+  
+  for (let i = 0; i < fragments.length; i++) {
+    for (let j = i + 1; j < fragments.length; j++) {
+      let f1 = fragments[i];
+      let f2 = fragments[j];
+      if (f1.dead || f2.dead) continue;
+      
+      let dx = f2.x - f1.x;
+      let dy = f2.y - f1.y;
+      let dist = Math.hypot(dx, dy);
+      if (dist < 0.001) { dx = 0.001; dist = 0.001; }
+      let minDist = f1.r + f2.r;
+      
+      if (dist < minDist) {
+        let overlap = minDist - dist;
+        let nx = dx / dist;
+        let ny = dy / dist;
+        
+        if (f1.state !== 'crystallized' && f2.state !== 'crystallized') {
+          f1.x -= nx * overlap / 2; f1.y -= ny * overlap / 2;
+          f2.x += nx * overlap / 2; f2.y += ny * overlap / 2;
+          
+          let kx = f1.vx - f2.vx;
+          let ky = f1.vy - f2.vy;
+          let p = 2.0 * (nx * kx + ny * ky) / 2.0; 
+          
+          if (p < 0) {
+            f1.vx -= p * nx; f1.vy -= p * ny;
+            f2.vx += p * nx; f2.vy += p * ny;
+            playBounce();
+          }
+        } else if (f1.state === 'crystallized' && f2.state !== 'crystallized') {
+           handleCrystalHit(f1, f2, nx, ny, overlap, toAdd);
+        } else if (f2.state === 'crystallized' && f1.state !== 'crystallized') {
+           handleCrystalHit(f2, f1, -nx, -ny, overlap, toAdd);
+        }
+      }
+    }
+  }
+  
+  fragments = fragments.filter(f => !f.dead);
+  fragments.push(...toAdd);
+  
+  for(let p of particles) p.update(dt);
+  particles = particles.filter(p => p.life > 0);
+  for(let c of circuits) c.update(dt);
+  circuits = circuits.filter(c => c.life > 0);
+}
+
+function handleCrystalHit(cryst, mov, nx, ny, overlap, toAdd) {
+  mov.x += nx * overlap;
+  let dot = mov.vx * nx + mov.vy * ny;
+  if (dot < 0) {
+    mov.vx -= 2 * dot * nx;
+    mov.vy -= 2 * dot * ny;
+  }
+  
+  if (mov.state === 'flicked') {
+    if (!cryst.dead) {
+      cryst.dead = true;
+      crystals--;
+      updateHUD();
+      playBreak();
+      for(let i=0; i<15; i++) particles.push(new Particle(cryst.x, cryst.y, theme.crystal));
+    }
+    if (mov.splitCount < 2 && !mov.dead) {
+      mov.dead = true;
+      splitFragment(mov, toAdd);
+    }
+  } else {
+    if (dot < 0) playBounce();
+  }
+}
+
+function draw() {
+  if (!ctx) return;
+  
+  let bgGrad = ctx.createLinearGradient(0, 0, width, height);
+  bgGrad.addColorStop(0, theme.bg);
+  bgGrad.addColorStop(1, theme.bg);
+  ctx.fillStyle = bgGrad;
+  ctx.fillRect(0, 0, width, height);
+  
+  let grad = ctx.createRadialGradient(width/2, height/2, 0, width/2, height/2, Math.max(width, height)/2);
+  grad.addColorStop(0, theme.nodeGlow);
+  grad.addColorStop(1, 'transparent');
+  ctx.fillStyle = grad;
+  ctx.fillRect(0, 0, width, height);
+  
+  ctx.strokeStyle = theme.grid;
+  ctx.lineWidth = 1;
+  ctx.beginPath();
+  let step = 40;
+  for(let x=0; x<width; x+=step) { ctx.moveTo(x, 0); ctx.lineTo(x, height); }
+  for(let y=0; y<height; y+=step) { ctx.moveTo(0, y); ctx.lineTo(width, y); }
+  ctx.stroke();
+  
+  for (let c of circuits) c.draw(ctx, theme);
+  
+  ctx.beginPath();
+  ctx.arc(node.x, node.y, node.r, 0, Math.PI*2);
+  ctx.fillStyle = theme.node + '33';
+  ctx.fill();
+  ctx.strokeStyle = theme.node;
+  ctx.lineWidth = 2 + node.pulse * 5;
+  ctx.shadowColor = theme.node;
+  ctx.shadowBlur = 10 + node.pulse * 20;
+  ctx.stroke();
+  ctx.shadowBlur = 0;
+  if (node.pulse > 0) node.pulse -= 0.05;
+  
+  ctx.fillStyle = theme.node;
+  ctx.font = '10px ui-monospace, monospace';
+  ctx.textAlign = 'center';
+  ctx.textBaseline = 'middle';
+  ctx.fillText('FUSE', node.x, node.y);
+  
+  for(let p of particles) p.draw(ctx);
+  
+  for (let f of fragments) {
+    ctx.save();
+    ctx.translate(f.x, f.y);
+    
+    if (f.state !== 'crystallized') {
+      f.rotation += (Math.hypot(f.vx, f.vy) * 0.001);
+    }
+    ctx.rotate(f.rotation);
+    
+    ctx.beginPath();
+    for(let i=0; i<f.points.length; i++) {
+      let p = f.points[i];
+      let px = Math.cos(p.a) * p.d;
+      let py = Math.sin(p.a) * p.d;
+      if (i===0) ctx.moveTo(px, py); else ctx.lineTo(px, py);
+    }
+    ctx.closePath();
+    
+    if (f.state === 'crystallized') {
+      ctx.fillStyle = theme.bg;
+      ctx.fill();
+      ctx.strokeStyle = theme.crystal;
+      ctx.lineWidth = 2;
+      ctx.setLineDash([5, 5]);
+      ctx.stroke();
+      ctx.setLineDash([]);
+      ctx.fillStyle = theme.crystal + '33';
+      ctx.fill();
+    } else {
+      ctx.fillStyle = f.color + '1A';
+      ctx.fill();
+      ctx.strokeStyle = f.color;
+      ctx.lineWidth = 2;
+      
+      if (f.timer < 3.0) {
+        if (Math.floor(performance.now() / 100) % 2 === 0) {
+          ctx.fillStyle = f.color + '66';
+          ctx.fill();
+        }
+      }
+      
+      if (f.state === 'flicked') {
+        ctx.shadowColor = f.color;
+        ctx.shadowBlur = 10;
+      }
+      ctx.stroke();
+      ctx.shadowBlur = 0;
+      
+      let pArc = Math.max(0, f.timer / f.maxTimer);
+      ctx.beginPath();
+      ctx.arc(0, 0, f.r + 6, -Math.PI/2, -Math.PI/2 + Math.PI * 2 * pArc);
+      ctx.strokeStyle = (f.timer < 3.0) ? theme.crystal : f.color;
+      ctx.lineWidth = 2;
+      ctx.globalAlpha = (f.timer < 3.0 && Math.floor(performance.now()/100)%2===0) ? 1.0 : 0.5;
+      ctx.stroke();
+      ctx.globalAlpha = 1.0;
+    }
+    ctx.restore();
+  }
+  
+  if (activeFrag) {
+    ctx.beginPath();
+    ctx.arc(activeFrag.x, activeFrag.y, activeFrag.r + 15, 0, Math.PI*2);
+    ctx.strokeStyle = activeFrag.color;
+    ctx.lineWidth = 1;
+    ctx.globalAlpha = 0.5;
+    ctx.stroke();
+    ctx.globalAlpha = 1.0;
+    
+    if (pointer.down) {
+      let last = pointerHistory[pointerHistory.length-1];
+      let first = pointerHistory[0];
+      if (last && first) {
+        let dx = last.x - first.x;
+        let dy = last.y - first.y;
+        let pTime = (last.time - first.time) / 1000;
+        if (pTime > 0.01) {
+          let vx = dx / pTime;
+          let vy = dy / pTime;
+          let speed = Math.hypot(vx, vy);
+          if (speed > 2500) { vx = (vx/speed)*2500; vy = (vy/speed)*2500; }
+          
+          ctx.beginPath();
+          ctx.moveTo(activeFrag.x, activeFrag.y);
+          ctx.lineTo(activeFrag.x + vx * 0.2, activeFrag.y + vy * 0.2);
+          ctx.strokeStyle = activeFrag.color;
+          ctx.lineWidth = 3;
+          ctx.setLineDash([8, 8]);
+          ctx.stroke();
+          ctx.setLineDash([]);
+        }
+      }
+    }
+  }
+}
+
+let lastTime = 0;
+function loop(timestamp) {
+  requestAnimationFrame(loop);
+  let dt = (timestamp - lastTime) / 1000;
+  if (dt > 0.1) dt = 0.1;
+  lastTime = timestamp;
+  
+  if (activeFrag) {
+    timeScale += (0.2 - timeScale) * 0.1;
+  } else {
+    timeScale += (1.0 - timeScale) * 0.1;
+  }
+  
+  update(dt);
+  draw();
+}
+
+requestAnimationFrame((timestamp) => {
+  lastTime = timestamp;
+  loop(timestamp);
+});
+</script>
+</body>
+</html>
