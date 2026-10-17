@@ -1,490 +1,471 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Erik Nilsson — Product Designer</title>
-<style>
-  :root {
-    --bg: #F4F2EC;
-    --text: #1C1B1A;
-    --text-muted: #7A7873;
-    --border: #DEDCD3;
-    --accent-red: #E63946;
-    --accent-blue: #1D3557;
-  }
-
-  @media (color-gamut: p3) {
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Erik Nilsson — Designer</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Caveat:wght@500&family=Instrument+Serif:ital@0;1&family=Newsreader:ital,opsz,wght@0,6..72,200..800;1,6..72,200..800&family=Inter:wght@400;500&display=swap" rel="stylesheet">
+  <style>
     :root {
-      --accent-red: color(display-p3 0.95 0.15 0.05);
-      --accent-blue: color(display-p3 0.05 0.25 0.95);
+      --bg-color: #F4F2ED;
+      --text-main: #1A1A19;
+      --text-muted: #666560;
+      --hairline: #DCDAD3;
     }
-  }
-
-  @media (prefers-color-scheme: dark) {
-    :root {
-      --bg: #1a1a1a;
-      --text: #e0e0e0;
-      --text-muted: #9a9893;
-      --border: #3a3833;
+    
+    @supports (color: color(display-p3 1 1 1)) {
+      :root {
+        --ink-red: color(display-p3 0.92 0.15 0.15);
+        --ink-blue: color(display-p3 0.12 0.25 0.95);
+      }
     }
-  }
+    @supports not (color: color(display-p3 1 1 1)) {
+      :root {
+        --ink-red: #E62626;
+        --ink-blue: #1F40F2;
+      }
+    }
 
-  @import url('https://fonts.googleapis.com/css2?family=Caveat:wght@500&family=Instrument+Serif:ital@0;1&family=Inter:wght@400;500&display=swap');
+    @media (prefers-color-scheme: dark) {
+      :root {
+        --bg-color: #1a1a1a;
+        --text-main: #e0e0e0;
+        --text-muted: #9a9a94;
+        --hairline: #333330;
+      }
+    }
 
-  * { box-sizing: border-box; }
-  
-  body {
-    margin: 0;
-    padding: 0;
-    background-color: var(--bg);
-    background-image: url("data:image/svg+xml,%3Csvg width='24' height='24' xmlns='http://www.w3.org/2000/svg'%3E%3Ccircle cx='2' cy='2' r='1' fill='%23DEDCD3' opacity='0.6'/%3E%3C/svg%3E");
-    color: var(--text);
-    font-family: 'Inter', system-ui, -apple-system, sans-serif;
-    font-size: 16px;
-    line-height: 1.5;
-    -webkit-font-smoothing: antialiased;
-    -moz-osx-font-smoothing: grayscale;
-    overflow-x: hidden;
-  }
+    body {
+      background-color: var(--bg-color);
+      color: var(--text-main);
+      font-family: 'Inter', sans-serif;
+      -webkit-font-smoothing: antialiased;
+      -moz-osx-font-smoothing: grayscale;
+      margin: 0;
+      padding: 0;
+      overflow-x: hidden;
+    }
 
-  body::before {
-    content: '';
-    position: fixed;
-    top: 0; left: 0; width: 100%; height: 100%;
-    background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noiseFilter'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noiseFilter)' opacity='0.04'/%3E%3C/svg%3E");
-    pointer-events: none;
-    z-index: 50;
-  }
+    /* Subtle paper grain */
+    body::before {
+      content: "";
+      position: fixed;
+      top: 0; left: 0; width: 100vw; height: 100vh;
+      pointer-events: none;
+      z-index: 50;
+      opacity: 0.35;
+      background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noiseFilter'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noiseFilter)'/%3E%3C/svg%3E");
+      mix-blend-mode: multiply;
+    }
 
-  h1, h2, h3, .serif {
-    font-family: 'Instrument Serif', serif;
-    font-weight: 400;
-  }
+    .notebook-wrapper {
+      max-width: 640px;
+      margin: 0 auto;
+      padding: 2rem 4rem;
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+    }
 
-  .hand {
-    font-family: 'Caveat', cursive;
-    font-weight: 500;
-  }
+    .page-header {
+      display: flex;
+      justify-content: space-between;
+      border-bottom: 1px solid var(--hairline);
+      padding-bottom: 1rem;
+      margin-bottom: 6rem;
+      font-size: 0.75rem;
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+      color: var(--text-muted);
+    }
 
-  a {
-    color: inherit;
-    text-decoration: none;
-  }
+    .layout-grid {
+      display: grid;
+      grid-template-columns: repeat(12, 1fr);
+      gap: 2rem;
+      flex-grow: 1;
+    }
 
-  .page-container {
-    max-width: 640px;
-    margin: 0 auto;
-    padding: 2rem 4rem 2rem 6rem;
-    min-height: 100vh;
-    display: flex;
-    flex-direction: column;
-    position: relative;
-  }
+    .header-span {
+      grid-column: 1 / -1;
+      margin-bottom: 4rem;
+    }
 
-  .folio {
-    position: fixed;
-    left: 2rem;
-    top: 50%;
-    transform: translateY(-50%) rotate(-90deg);
-    transform-origin: center;
-    font-family: 'Inter', sans-serif;
-    font-size: 0.65rem;
-    text-transform: uppercase;
-    letter-spacing: 0.2em;
-    color: var(--text-muted);
-    display: flex;
-    gap: 1rem;
-    white-space: nowrap;
-    z-index: 10;
-  }
+    .display-name {
+      font-family: 'Instrument Serif', serif;
+      font-size: clamp(5rem, 12vw, 11rem);
+      line-height: 0.85;
+      font-weight: 400;
+      margin: 0 0 0 -0.03em;
+      letter-spacing: -0.02em;
+      color: var(--text-main);
+    }
 
-  .grid {
-    display: grid;
-    grid-template-columns: repeat(12, 1fr);
-    gap: 1.5rem;
-  }
+    .sidebar {
+      grid-column: 1 / 4;
+      display: flex;
+      flex-direction: column;
+      gap: 4rem;
+    }
 
-  header.grid {
-    margin-bottom: 8rem;
-    padding-top: 2rem;
-    border-top: 2px solid var(--text);
-    align-items: start;
-  }
+    .role-subtitle {
+      font-size: 1rem;
+      font-weight: 500;
+      line-height: 1.5;
+      margin: 0;
+    }
 
-  .site-title {
-    grid-column: 1 / 7;
-  }
+    .role-subtitle a {
+      color: inherit;
+      text-decoration: none;
+      border-bottom: 1px solid var(--text-main);
+      transition: color 0.2s, border-color 0.2s;
+    }
 
-  .site-title h1 {
-    font-size: clamp(4rem, 8vw, 6rem);
-    line-height: 0.9;
-    letter-spacing: -0.02em;
-    margin: 0;
-  }
+    .role-subtitle a:hover {
+      color: var(--ink-blue);
+      border-color: var(--ink-blue);
+    }
 
-  .site-meta {
-    grid-column: 9 / 13;
-    display: flex;
-    flex-direction: column;
-    gap: 1rem;
-    margin-top: 0.5rem;
-  }
+    .nav-group {
+      display: flex;
+      flex-direction: column;
+      gap: 0.75rem;
+    }
 
-  .meta-item {
-    display: flex;
-    justify-content: space-between;
-    font-size: 0.75rem;
-    text-transform: uppercase;
-    letter-spacing: 0.05em;
-    border-bottom: 1px solid var(--border);
-    padding-bottom: 0.5rem;
-  }
+    .nav-title {
+      font-size: 0.75rem;
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+      color: var(--text-muted);
+      margin: 0 0 0.5rem 0;
+    }
 
-  .meta-item .label { color: var(--text-muted); }
-  .meta-item .value { color: var(--text); font-weight: 500; }
+    .nav-group a {
+      color: var(--text-main);
+      text-decoration: none;
+      font-size: 0.95rem;
+      transition: color 0.2s;
+      width: fit-content;
+    }
 
-  .status-indicator {
-    display: flex;
-    align-items: center;
-    gap: 0.5rem;
-  }
-  .status-indicator::before {
-    content: '';
-    display: inline-block;
-    width: 6px;
-    height: 6px;
-    border-radius: 50%;
-    background-color: var(--accent-red);
-  }
+    .nav-group a:hover {
+      color: var(--ink-red);
+    }
 
-  .hero-bio {
-    grid-column: 2 / 11;
-    font-size: clamp(2rem, 4vw, 3.5rem);
-    line-height: 1.15;
-    margin-bottom: 10rem;
-    position: relative;
-    font-family: 'Instrument Serif', serif;
-  }
+    .marginalia {
+      margin-top: auto;
+      font-family: 'Newsreader', serif;
+      font-style: italic;
+      font-size: 0.95rem;
+      color: var(--text-muted);
+      line-height: 1.4;
+      padding-top: 2rem;
+      border-top: 1px solid var(--hairline);
+    }
 
-  .hero-bio p { margin: 0 0 1.5em 0; }
+    .marginalia p {
+      margin: 0 0 0.5rem 0;
+    }
 
-  .hero-bio a.cursor-link {
-    color: inherit;
-    text-decoration: none;
-    border-bottom: 2px solid var(--border);
-    transition: color 0.3s, border-color 0.3s;
-  }
-  .hero-bio a.cursor-link:hover {
-    color: var(--accent-red);
-    border-color: var(--accent-red);
-  }
-
-  .annotated-text {
-    position: relative;
-    display: inline-block;
-    white-space: nowrap;
-  }
-
-  .circle-sketch {
-    position: absolute;
-    top: -15%;
-    left: -5%;
-    width: 110%;
-    height: 130%;
-    color: var(--accent-red);
-    z-index: -1;
-    pointer-events: none;
-  }
-
-  .sketch-underline {
-    position: absolute;
-    bottom: -5px;
-    left: 0;
-    width: 100%;
-    height: 10px;
-    color: var(--accent-blue);
-    z-index: -1;
-    pointer-events: none;
-  }
-
-  @keyframes drawPath {
-    0% { stroke-dasharray: 0 1; opacity: 1; }
-    100% { stroke-dasharray: 1 1; opacity: 1; }
-  }
-
-  .circle-sketch path, .sketch-underline path, .note-arrow path {
-    stroke-dasharray: 1 1;
-    opacity: 0;
-    animation: drawPath 0.8s ease-out forwards;
-  }
-  
-  .circle-sketch path { animation-delay: 0.5s; }
-  .sketch-underline path { animation-delay: 1s; }
-  .note-arrow path { animation-delay: 1.5s; }
-
-  .note-living-site {
-    position: absolute;
-    right: -5%;
-    bottom: -15%;
-    width: 250px;
-    font-size: 1.5rem;
-    line-height: 1.2;
-    color: var(--accent-red);
-    transform: rotate(-2deg);
-  }
-
-  .note-arrow {
-    position: absolute;
-    left: -50px;
-    top: -20px;
-    width: 40px;
-    height: 40px;
-    stroke: var(--accent-red);
-    fill: none;
-    stroke-width: 1.5;
-    stroke-linecap: round;
-    stroke-linejoin: round;
-  }
-
-  .lower-content {
-    grid-column: 2 / 12;
-    display: grid;
-    grid-template-columns: 1fr 1fr;
-    gap: 6rem;
-    margin-bottom: 6rem;
-  }
-
-  .section-header {
-    font-size: 0.75rem;
-    text-transform: uppercase;
-    letter-spacing: 0.1em;
-    color: var(--text-muted);
-    border-bottom: 1px solid var(--border);
-    padding-bottom: 0.5rem;
-    margin-bottom: 2rem;
-    display: flex;
-    justify-content: space-between;
-    align-items: baseline;
-  }
-
-  .index-list { list-style: none; padding: 0; margin: 0; }
-  .index-list li { border-bottom: 1px solid var(--border); margin: 0; }
-  .index-list li:last-child { border-bottom: none; }
-  
-  .index-list a {
-    display: flex;
-    flex-direction: column;
-    gap: 0.5rem;
-    padding: 1.25rem 0;
-    border-bottom: 1px solid transparent;
-    transition: border-color 0.3s;
-  }
-  .index-list a:hover { border-bottom-color: var(--accent-blue); }
-
-  .index-list .title {
-    font-family: 'Instrument Serif', serif;
-    font-size: 2rem;
-    line-height: 1.1;
-    color: var(--text);
-    transition: color 0.3s;
-  }
-  .index-list a:hover .title { color: var(--accent-blue); }
-
-  .index-list .meta {
-    font-family: 'Inter', sans-serif;
-    font-size: 0.75rem;
-    text-transform: uppercase;
-    letter-spacing: 0.05em;
-    color: var(--text-muted);
-    display: flex;
-    gap: 1rem;
-  }
-
-  .signals-list { list-style: none; padding: 0; margin: 0; }
-  .signals-list li {
-    font-family: 'Inter', sans-serif;
-    font-size: 1rem;
-    line-height: 1.6;
-    margin-bottom: 1.25rem;
-    padding-left: 1.5rem;
-    position: relative;
-    color: var(--text);
-  }
-  .signals-list li::before {
-    content: '→';
-    position: absolute;
-    left: 0;
-    color: var(--accent-blue);
-    font-family: system-ui;
-  }
-
-  footer {
-    margin-top: auto;
-    padding-top: 2rem;
-    border-bottom: 2px solid var(--text);
-    padding-bottom: 2rem;
-    display: flex;
-    justify-content: space-between;
-    font-size: 0.875rem;
-    color: var(--text-muted);
-  }
-
-  .footer-links { display: flex; gap: 2rem; }
-  .footer-links a { transition: color 0.2s; }
-  .footer-links a:hover { color: var(--text); }
-
-  @media (max-width: 1200px) {
-    .folio { display: none; }
-    .page-container { padding-left: 4rem; padding-right: 4rem; }
-    .note-living-site { right: 0; }
-  }
-
-  @media (max-width: 1024px) {
-    .site-title { grid-column: 1 / 8; }
-    .site-meta { grid-column: 8 / 13; }
-    .hero-bio { grid-column: 1 / 13; }
-    .lower-content { grid-column: 1 / 13; gap: 4rem; }
-  }
-
-  @media (max-width: 640px) {
-    .page-container { padding-left: 1.5rem; padding-right: 1.5rem; }
-    .site-title h1 { font-size: clamp(3rem, 12vw, 4rem); }
-  }
-
-  @media (max-width: 768px) {
-    .page-container { padding-left: 2rem; padding-right: 2rem; }
-    .site-title { grid-column: 1 / -1; }
-    .site-meta { grid-column: 1 / -1; margin-top: 3rem; }
-    .lower-content { grid-template-columns: 1fr; }
-    .note-living-site {
+    .main-content {
+      grid-column: 5 / 12;
       position: relative;
-      right: auto;
-      bottom: auto;
-      margin-top: 2rem;
-      transform: none;
-      display: block;
     }
-    .note-arrow { display: none; }
-    .footer-links { flex-wrap: wrap; gap: 1rem; }
-    footer { flex-direction: column; gap: 1rem; }
-  }
-</style>
+
+    @media (min-width: 769px) {
+      .main-content::before {
+        content: "";
+        position: absolute;
+        top: 0;
+        bottom: -4rem;
+        left: -2rem;
+        width: 1px;
+        background-color: var(--hairline);
+      }
+    }
+
+    .bio-large {
+      font-family: 'Newsreader', serif;
+      font-size: clamp(2rem, 4vw, 3.5rem);
+      line-height: 1.15;
+      font-weight: 400;
+      letter-spacing: -0.02em;
+      max-width: 22ch;
+      margin-bottom: 2.5rem;
+    }
+
+    .bio-secondary {
+      font-family: 'Newsreader', serif;
+      font-size: clamp(1.25rem, 2vw, 1.75rem);
+      line-height: 1.4;
+      font-weight: 400;
+      color: var(--text-muted);
+      max-width: 35ch;
+      margin-bottom: 6rem;
+      position: relative;
+    }
+
+    /* Annotations */
+    .annotated-text {
+      position: relative;
+      display: inline-block;
+      white-space: nowrap;
+      color: var(--text-main);
+    }
+
+    .annotation-underline {
+      position: absolute;
+      bottom: -4px;
+      left: -5%;
+      width: 110%;
+      height: 14px;
+      pointer-events: none;
+      mix-blend-mode: multiply;
+    }
+
+    .annotation-circle {
+      position: absolute;
+      top: -15%;
+      left: -10%;
+      width: 120%;
+      height: 130%;
+      pointer-events: none;
+      mix-blend-mode: multiply;
+    }
+
+    .red-ink { color: var(--ink-red); }
+    .blue-ink { color: var(--ink-blue); }
+
+    @keyframes drawStroke {
+      to { stroke-dashoffset: 0; }
+    }
+
+    .annotation-underline path,
+    .annotation-circle path {
+      stroke-dasharray: 1000;
+      stroke-dashoffset: 1000;
+      animation: drawStroke 1.5s cubic-bezier(0.2, 1, 0.3, 1) forwards;
+    }
+    
+    .annotation-underline path { animation-delay: 0.4s; }
+    .annotation-circle path { animation-delay: 0.8s; }
+
+    .handwritten-note {
+      font-family: 'Caveat', cursive;
+      font-size: 1.75rem;
+      line-height: 1;
+      pointer-events: none;
+      mix-blend-mode: multiply;
+      white-space: nowrap;
+      opacity: 0;
+      animation: fadeIn 0.5s ease forwards;
+      animation-delay: 1.2s;
+    }
+
+    @keyframes fadeIn {
+      to { opacity: 1; }
+    }
+
+    .note-inner {
+      display: inline-block;
+      transition: transform 0.3s ease;
+    }
+
+    .handwritten-note:hover .note-inner {
+      transform: scale(1.05) rotate(1deg);
+    }
+
+    /* Index */
+    .index-section {
+      margin-top: 8rem;
+    }
+
+    .index-title {
+      font-family: 'Instrument Serif', serif;
+      font-size: 2.5rem;
+      font-weight: 400;
+      font-style: italic;
+      margin: 0 0 2rem 0;
+      border-bottom: 1px solid var(--hairline);
+      padding-bottom: 1rem;
+    }
+
+    .index-list {
+      list-style: none;
+      padding: 0;
+      margin: 0;
+      display: flex;
+      flex-direction: column;
+    }
+
+    .index-list li {
+      border-bottom: 1px solid var(--hairline);
+    }
+
+    .index-list a {
+      display: flex;
+      justify-content: space-between;
+      align-items: baseline;
+      padding: 1.5rem 0;
+      text-decoration: none;
+      color: var(--text-main);
+      font-family: 'Inter', sans-serif;
+      font-size: 1.1rem;
+    }
+
+    .index-title-text {
+      position: relative;
+      transition: transform 0.3s cubic-bezier(0.2, 1, 0.3, 1), color 0.3s;
+    }
+
+    .index-title-text::before {
+      content: "→";
+      position: absolute;
+      left: -1.5rem;
+      opacity: 0;
+      color: var(--ink-blue);
+      transition: all 0.3s cubic-bezier(0.2, 1, 0.3, 1);
+      font-family: 'Newsreader', serif;
+    }
+
+    .index-list a:hover .index-title-text {
+      transform: translateX(1.5rem);
+      color: var(--ink-blue);
+    }
+
+    .index-list a:hover .index-title-text::before {
+      opacity: 1;
+    }
+
+    .index-meta {
+      font-size: 0.85rem;
+      color: var(--text-muted);
+      font-variant-numeric: tabular-nums;
+      transition: color 0.3s;
+    }
+
+    .index-list a:hover .index-meta {
+      color: var(--text-main);
+    }
+
+    /* Responsive */
+    @media (max-width: 1024px) {
+      .notebook-wrapper { padding: 2rem; }
+      .main-content { grid-column: 5 / 13; }
+    }
+
+    @media (max-width: 768px) {
+      .layout-grid {
+        grid-template-columns: 1fr;
+        gap: 3rem;
+      }
+      .sidebar {
+        grid-column: 1 / -1;
+        flex-direction: row;
+        flex-wrap: wrap;
+        justify-content: space-between;
+        gap: 2rem;
+      }
+      .marginalia {
+        width: 100%;
+        margin-top: 0;
+      }
+      .main-content { grid-column: 1 / -1; }
+      .page-header { margin-bottom: 3rem; }
+      .handwritten-note { display: none; }
+    }
+
+    @media (max-width: 480px) {
+      .sidebar { flex-direction: column; }
+      .index-list a {
+        flex-direction: column;
+        gap: 0.5rem;
+      }
+      .index-list a:hover .index-title-text {
+        transform: translateX(1rem);
+      }
+      .index-title-text::before {
+        left: -1rem;
+      }
+    }
+  </style>
 </head>
 <body>
+  <div class="notebook-wrapper">
+    <header class="page-header">
+      <div class="meta-item">Vol. 2026</div>
+      <div class="meta-item">Oct 17 — San Francisco</div>
+      <div class="meta-item">13°C, Clear</div>
+    </header>
 
-<div class="folio">
-  <span>ERIK NILSSON</span>
-  <span>&mdash;</span>
-  <span>NO. 01</span>
-  <span>&mdash;</span>
-  <span>OCT 2026</span>
-</div>
+    <div class="layout-grid">
+      <div class="header-span">
+        <h1 class="display-name">Erik Nilsson</h1>
+      </div>
 
-<div class="page-container">
-  <header class="grid">
-    <div class="site-title">
-      <h1>Erik<br>Nilsson</h1>
-    </div>
-    <div class="site-meta">
-      <div class="meta-item">
-        <span class="label">Role</span>
-        <span class="value">Product Designer</span>
-      </div>
-      <div class="meta-item">
-        <span class="label">Company</span>
-        <span class="value">Cursor</span>
-      </div>
-      <div class="meta-item">
-        <span class="label">Location</span>
-        <span class="value">San Francisco, CA</span>
-      </div>
-      <div class="meta-item">
-        <span class="label">Status</span>
-        <span class="value status-indicator">Active</span>
-      </div>
-    </div>
-  </header>
+      <aside class="sidebar">
+        <p class="role-subtitle">Product Designer<br>at <a href="https://cursor.com" class="cursor-link">Cursor</a></p>
+        
+        <nav class="nav-group">
+          <h3 class="nav-title">Index</h3>
+          <a href="#writing">Writing</a>
+          <a href="https://github.com/eriknson">GitHub</a>
+        </nav>
 
-  <main class="grid">
-    <div class="hero-bio">
-      <p>I'm a product designer at <a href="https://cursor.com" class="cursor-link">Cursor</a>, working on how people build software with <span class="annotated-text">AI<svg class="sketch-underline" viewBox="0 0 100 20" preserveAspectRatio="none"><path d="M5,10 Q50,15 95,5" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" pathLength="1"/></svg></span>.</p>
-      <p>Off-hours, I'm tinkering with <span class="annotated-text">living-site<svg class="circle-sketch" viewBox="0 0 100 40" preserveAspectRatio="none"><path d="M5,20 C5,5 20,2 50,2 C80,2 95,5 95,20 C95,35 80,38 50,38 C20,38 5,35 5,20" fill="none" stroke="currentColor" stroke-width="2" vector-effect="non-scaling-stroke" pathLength="1"/></svg></span> — agents rebuild this corner of the web from fresh activity data each day.</p>
-      
-      <div class="note-living-site hand">
-        <svg class="note-arrow" viewBox="0 0 50 50">
-          <path d="M45,10 Q25,15 10,40 M10,40 L20,35 M10,40 L12,28" pathLength="1"/>
-        </svg>
-        Rebuilt daily based on my latest commits, tweets, and listening history.
-      </div>
-    </div>
+        <nav class="nav-group">
+          <h3 class="nav-title">Contact</h3>
+          <a href="https://x.com/flowstated">X (Twitter)</a>
+          <a href="https://linkedin.com/in/eriknson">LinkedIn</a>
+          <a href="mailto:contact@eriks.design">Email</a>
+        </nav>
 
-    <div class="lower-content">
-      <section class="index-section">
-        <div class="section-header">
-          <span>Notes & Fragments</span>
-          <span>01</span>
+        <div class="marginalia">
+          <p>Autumn clear night over San Francisco.</p>
+          <p>Thirteen-degree wind drifting off the bay.</p>
         </div>
-        <ul class="index-list">
-          <li>
-            <a href="https://x.com/flowstated/status/2002167999353241901" target="_blank" rel="noopener noreferrer">
-              <span class="title">imagine 2026</span>
-              <span class="meta">
-                <span class="date">Dec 20, 2025</span>
-                <span class="type">Thought</span>
-              </span>
-            </a>
-          </li>
-          <li>
-            <a href="https://x.com/flowstated/status/2000889983562080578" target="_blank" rel="noopener noreferrer">
-              <span class="title">shipping by sunrise</span>
-              <span class="meta">
-                <span class="date">Dec 16, 2025</span>
-                <span class="type">Fragment</span>
-              </span>
-            </a>
-          </li>
-          <li>
-            <a href="https://x.com/flowstated/status/2000691637190861180" target="_blank" rel="noopener noreferrer">
-              <span class="title">exploring ways to spin up agents from my phone</span>
-              <span class="meta">
-                <span class="date">Dec 15, 2025</span>
-                <span class="type">Experiment</span>
-              </span>
-            </a>
-          </li>
-        </ul>
-      </section>
+      </aside>
 
-      <section class="signals-section">
-        <div class="section-header">
-          <span>World Signals <span class="hand" style="color: var(--accent-blue); font-size: 1.25rem; text-transform: none; letter-spacing: normal; margin-left: 0.5rem;">*captured today</span></span>
-          <span>02</span>
+      <main class="main-content">
+        <div class="bio-large">
+          I'm working on how people build software with <span class="annotated-text">AI<svg class="annotation-circle blue-ink" viewBox="0 0 100 100" preserveAspectRatio="none"><path d="M 50, 10 C 85, 5 95, 40 90, 70 C 80, 95 30, 95 15, 75 C 0, 50 15, 15 50, 10 C 60, 8 70, 12 75, 20" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"/></svg></span>.
         </div>
-        <ul class="signals-list">
-          <li>a programming language written entirely in nested folders</li>
-          <li>two chip giants settling a license dispute in court</li>
-          <li>browser engines built in parallel by different hands</li>
-          <li>clear autumn night over the bay at fourteen degrees</li>
-          <li>shipping deadlines measured in sunrise hours</li>
-        </ul>
-      </section>
-    </div>
-  </main>
+        
+        <div class="bio-secondary">
+          Off-hours, I'm tinkering with <span class="annotated-text">living-site<svg class="annotation-underline red-ink" viewBox="0 0 100 20" preserveAspectRatio="none"><path d="M 2 12 Q 30 4 70 10 T 98 8" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg></span> — agents rebuild this corner of the web from fresh activity data each day.
+          
+          <span class="handwritten-note red-ink" style="position: absolute; right: -25%; top: 20%; transform: rotate(-3deg);">
+            <span class="note-inner">*spinning up agents from a pocket screen</span>
+          </span>
+        </div>
 
-  <footer>
-    <div class="footer-info">
-      &copy; 2026 Erik Nilsson
+        <section class="index-section" id="writing">
+          <h2 class="index-title">Notes & Fragments</h2>
+          <ul class="index-list">
+            <li>
+              <a href="https://x.com/flowstated/status/2002167999353241901">
+                <span class="index-title-text">Imagine 2026</span>
+                <span class="index-meta">Dec 20, 2025</span>
+              </a>
+            </li>
+            <li>
+              <a href="https://x.com/flowstated/status/2000889983562080578">
+                <span class="index-title-text">Shipping by sunrise</span>
+                <span class="index-meta">Dec 16, 2025</span>
+              </a>
+            </li>
+            <li>
+              <a href="https://x.com/flowstated/status/2000691637190861180">
+                <span class="index-title-text">Exploring ways to spin up agents from my phone</span>
+                <span class="index-meta">Dec 15, 2025</span>
+              </a>
+            </li>
+          </ul>
+        </section>
+      </main>
     </div>
-    <div class="footer-links">
-      <a href="https://eriks.design">Site</a>
-      <a href="https://x.com/flowstated">X</a>
-      <a href="https://github.com/eriknson">GitHub</a>
-      <a href="https://linkedin.com/in/eriknson">LinkedIn</a>
-      <a href="mailto:contact@eriks.design">Email</a>
-    </div>
-  </footer>
-</div>
-
+  </div>
 </body>
 </html>

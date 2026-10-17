@@ -1,793 +1,712 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Erik Nilsson — eriks.design</title>
-  <meta name="description" content="Product designer at Cursor. Notes, writing, and a living site rebuilt from fresh data each day.">
-  <link rel="preconnect" href="https://fonts.googleapis.com">
-  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=Caveat:wght@400;500&family=Instrument+Serif:ital@0;1&family=Newsreader:ital,opsz,wght@0,6..72,400;0,6..72,500;1,6..72,400&display=swap" rel="stylesheet">
-  <style>
-    @supports (color: color(display-p3 1 1 1)) {
-      :root {
-        --paper: color(display-p3 0.975 0.958 0.928);
-        --ink: color(display-p3 0.11 0.105 0.095);
-        --ink-soft: color(display-p3 0.36 0.34 0.32);
-        --ink-faint: color(display-p3 0.60 0.58 0.54);
-        --rule: color(display-p3 0.82 0.795 0.755);
-        --coral: color(display-p3 0.90 0.34 0.26);
-        --coral-soft: color(display-p3 0.90 0.34 0.26 / 0.12);
-        --bay: color(display-p3 0.20 0.44 0.62);
-        --marigold: color(display-p3 0.94 0.66 0.12);
-        --sage: color(display-p3 0.48 0.64 0.44);
-        --vermillion: color(display-p3 0.82 0.22 0.18);
-      }
-    }
-
-    :root {
-      --paper: #f8f5ef;
-      --ink: #1a1814;
-      --ink-soft: #57534c;
-      --ink-faint: #969088;
-      --rule: #d5cfc4;
-      --coral: #e04a38;
-      --coral-soft: rgba(224, 74, 56, 0.12);
-      --bay: #1e5678;
-      --marigold: #f0a818;
-      --sage: #6d9462;
-      --vermillion: #c83228;
-
-      --serif: "Instrument Serif", "Georgia", serif;
-      --text: "Newsreader", "Georgia", serif;
-      --script: "Caveat", cursive;
-
-      --pad: clamp(1.25rem, 4vw, 2.75rem);
-    }
-
-    @media (prefers-color-scheme: dark) {
-      :root {
-        --paper: #1a1814;
-        --ink: #e8e4dc;
-        --ink-soft: #a8a298;
-        --ink-faint: #787068;
-        --rule: #3a3630;
-        --coral: #f05848;
-        --coral-soft: rgba(240, 88, 72, 0.15);
-        --bay: #5a9ac4;
-        --marigold: #f5b830;
-        --sage: #8ab47a;
-        --vermillion: #e84838;
-      }
-    }
-
-    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
-
-    html {
-      font-size: 18px;
-      -webkit-font-smoothing: antialiased;
-      text-rendering: optimizeLegibility;
-      scroll-behavior: smooth;
-    }
-
-    body {
-      font-family: var(--text);
-      background: var(--paper);
-      color: var(--ink);
-      line-height: 1.55;
-      min-height: 100dvh;
-    }
-
-    /* notebook grid — fades at edges */
-    body::before {
-      content: "";
-      position: fixed;
-      inset: 0;
-      pointer-events: none;
-      z-index: 0;
-      background-image:
-        linear-gradient(var(--rule) 1px, transparent 1px),
-        linear-gradient(90deg, var(--rule) 1px, transparent 1px);
-      background-size: 100% 1.75rem, 1.75rem 100%;
-      opacity: 0.32;
-      mask-image:
-        radial-gradient(ellipse 85% 75% at 42% 25%, black 15%, transparent 80%);
-    }
-
-    body::after {
-      content: "";
-      position: fixed;
-      inset: 0;
-      pointer-events: none;
-      z-index: 0;
-      opacity: 0.035;
-      background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
-    }
-
-    .page {
-      position: relative;
-      z-index: 1;
-      max-width: 74rem;
-      margin: 0 auto;
-      padding: var(--pad);
-      padding-top: clamp(2rem, 6vh, 4.5rem);
-      padding-bottom: clamp(3.5rem, 9vh, 7rem);
-    }
-
-    /* registration marks */
-    .reg {
-      position: fixed;
-      pointer-events: none;
-      z-index: 2;
-      opacity: 0.22;
-    }
-    .reg--tl { top: 1.25rem; left: 1.25rem; }
-    .reg--br { bottom: 1.25rem; right: 1.25rem; transform: rotate(180deg); }
-
-    /* masthead */
-    .masthead {
-      display: grid;
-      grid-template-columns: 1fr auto;
-      align-items: end;
-      gap: 1rem 2rem;
-      padding-bottom: 1.1rem;
-      border-bottom: 2px solid var(--ink);
-      margin-bottom: clamp(2.25rem, 5vh, 3.75rem);
-      animation: rise 0.75s cubic-bezier(0.22, 1, 0.36, 1) both;
-    }
-
-    .masthead__brand {
-      font-family: var(--serif);
-      font-size: clamp(1.15rem, 2.8vw, 1.5rem);
-      letter-spacing: 0.01em;
-    }
-
-    .masthead__issue {
-      font-size: 0.65rem;
-      letter-spacing: 0.18em;
-      text-transform: uppercase;
-      color: var(--ink-soft);
-      line-height: 1.55;
-      text-align: right;
-    }
-
-    .masthead__issue time {
-      font-variant-numeric: tabular-nums;
-    }
-
-    /* three-column spread */
-    .spread {
-      display: grid;
-      grid-template-columns: minmax(0, 10.5rem) minmax(0, 1fr) minmax(0, 11rem);
-      gap: clamp(1.5rem, 3.5vw, 3rem);
-      align-items: start;
-    }
-
-    @media (max-width: 960px) {
-      .spread {
-        grid-template-columns: minmax(0, 9rem) minmax(0, 1fr);
-      }
-      .margin-right { display: none; }
-    }
-
-    @media (max-width: 640px) {
-      .spread { grid-template-columns: 1fr; }
-      .margin-left { order: 2; }
-      .main { order: 1; }
-    }
-
-    /* margin columns */
-    .margin {
-      font-size: 0.8rem;
-      color: var(--ink-soft);
-    }
-
-    .margin-left { animation: rise 0.75s 0.06s cubic-bezier(0.22, 1, 0.36, 1) both; }
-    .margin-right { animation: rise 0.75s 0.18s cubic-bezier(0.22, 1, 0.36, 1) both; }
-
-    .margin__block + .margin__block { margin-top: 2.25rem; }
-
-    .margin__label {
-      font-size: 0.6rem;
-      letter-spacing: 0.17em;
-      text-transform: uppercase;
-      color: var(--ink-faint);
-      margin-bottom: 0.5rem;
-    }
-
-    .margin__script {
-      font-family: var(--script);
-      font-size: 1.4rem;
-      line-height: 1.2;
-      color: var(--bay);
-      margin-top: 0.3rem;
-    }
-
-    .margin__script--warm { color: var(--vermillion); transform: rotate(-2.5deg); display: inline-block; }
-    .margin__script--gold { color: var(--marigold); transform: rotate(1.8deg); display: inline-block; margin-top: 0.6rem; }
-
-    .signal-list {
-      list-style: none;
-      display: flex;
-      flex-direction: column;
-      gap: 0.7rem;
-    }
-
-    .signal-list li {
-      position: relative;
-      padding-left: 0.75rem;
-      line-height: 1.38;
-      font-size: 0.78rem;
-    }
-
-    .signal-list li::before {
-      content: "";
-      position: absolute;
-      left: 0;
-      top: 0.55em;
-      width: 4px;
-      height: 4px;
-      background: var(--coral);
-      border-radius: 50%;
-    }
-
-    /* right margin — floating notes */
-    .float-note {
-      position: relative;
-      padding: 0.85rem 0 0.85rem 0.75rem;
-      border-left: 1.5px solid var(--marigold);
-      margin-bottom: 1.75rem;
-    }
-
-    .float-note__text {
-      font-family: var(--script);
-      font-size: 1.5rem;
-      line-height: 1.22;
-      transform: rotate(-1.2deg);
-    }
-
-    .float-note__meta {
-      font-family: var(--text);
-      font-size: 0.68rem;
-      color: var(--ink-faint);
-      font-style: italic;
-      margin-top: 0.25rem;
-    }
-
-    .float-note__meta a {
-      color: inherit;
-      text-decoration: underline;
-      text-decoration-color: var(--rule);
-      text-underline-offset: 2px;
-    }
-
-    .float-note__meta a:hover { color: var(--coral); text-decoration-color: var(--coral); }
-
-    /* main */
-    .main {
-      animation: rise 0.75s 0.12s cubic-bezier(0.22, 1, 0.36, 1) both;
-      max-width: 40rem;
-    }
-
-    .hero-name {
-      font-family: var(--serif);
-      font-size: clamp(3.4rem, 10vw, 6rem);
-      font-weight: 400;
-      line-height: 0.92;
-      letter-spacing: -0.03em;
-      margin-bottom: 0.65rem;
-    }
-
-    .hero-name em {
-      font-style: italic;
-      color: var(--coral);
-    }
-
-    .hero-role {
-      font-size: 0.68rem;
-      letter-spacing: 0.2em;
-      text-transform: uppercase;
-      color: var(--ink-soft);
-      margin-bottom: clamp(2rem, 4.5vh, 3rem);
-    }
-
-    .lede {
-      font-size: clamp(1.12rem, 2.1vw, 1.32rem);
-      line-height: 1.58;
-      margin-bottom: clamp(2.75rem, 6vh, 4.25rem);
-    }
-
-    .lede::first-letter {
-      font-family: var(--serif);
-      font-size: 3.4em;
-      float: left;
-      line-height: 0.78;
-      margin: 0.04em 0.12em 0 0;
-      color: var(--coral);
-    }
-
-    .lede mark {
-      background: var(--coral-soft);
-      color: inherit;
-      padding: 0 0.12em;
-      border-radius: 1px;
-    }
-
-    /* circled annotation */
-    .circled {
-      position: relative;
-      display: inline;
-      white-space: nowrap;
-    }
-
-    .circled svg {
-      position: absolute;
-      left: -0.35em;
-      top: -0.15em;
-      width: calc(100% + 0.7em);
-      height: calc(100% + 0.35em);
-      pointer-events: none;
-      overflow: visible;
-    }
-
-    .circled path {
-      fill: none;
-      stroke: var(--marigold);
-      stroke-width: 1.5;
-      stroke-linecap: round;
-      opacity: 0.85;
-    }
-
-    /* writing index */
-    .index { margin-top: 0.5rem; }
-
-    .index__head {
-      display: flex;
-      align-items: baseline;
-      gap: 0.85rem;
-      margin-bottom: 1.1rem;
-      padding-bottom: 0.5rem;
-    }
-
-    .index__head h2 {
-      font-family: var(--serif);
-      font-size: clamp(1.55rem, 3.2vw, 2rem);
-      font-weight: 400;
-    }
-
-    .index__aside {
-      font-family: var(--script);
-      font-size: 1.3rem;
-      color: var(--sage);
-      transform: rotate(2.5deg);
-    }
-
-    .index__list { list-style: none; }
-
-    .index__item {
-      border-top: 1px solid var(--rule);
-    }
-
-    .index__item:last-child { border-bottom: 1px solid var(--rule); }
-
-    .index__link {
-      display: grid;
-      grid-template-columns: 3.75rem 1fr 3rem;
-      align-items: baseline;
-      gap: 0.5rem 0.75rem;
-      padding: 0.9rem 0;
-      text-decoration: none;
-      color: inherit;
-      transition: color 0.18s ease;
-    }
-
-    @media (max-width: 480px) {
-      .index__link { grid-template-columns: 3.25rem 1fr; }
-      .index__mins { display: none; }
-    }
-
-    .index__link:hover,
-    .index__link:focus-visible {
-      color: var(--coral);
-      outline: none;
-    }
-
-    .index__year {
-      font-size: 0.68rem;
-      font-variant-numeric: tabular-nums;
-      color: var(--ink-faint);
-      letter-spacing: 0.05em;
-    }
-
-    .index__title-wrap {
-      display: flex;
-      align-items: baseline;
-      gap: 0.5rem;
-      min-width: 0;
-    }
-
-    .index__dots {
-      flex: 1;
-      min-width: 1rem;
-      border-bottom: 1px dotted var(--rule);
-      margin-bottom: 0.22em;
-      opacity: 0.7;
-    }
-
-    .index__title {
-      font-family: var(--serif);
-      font-size: clamp(1.02rem, 2vw, 1.18rem);
-      white-space: nowrap;
-      text-decoration: underline;
-      text-decoration-color: transparent;
-      text-underline-offset: 0.2em;
-      text-decoration-thickness: 1px;
-      transition: text-decoration-color 0.18s ease;
-    }
-
-    .index__link:hover .index__title,
-    .index__link:focus-visible .index__title {
-      text-decoration-color: currentColor;
-    }
-
-    .index__mins {
-      font-size: 0.68rem;
-      color: var(--ink-faint);
-      font-variant-numeric: tabular-nums;
-      text-align: right;
-    }
-
-    .index__link--out .index__title::after {
-      content: "↗";
-      font-size: 0.65em;
-      margin-left: 0.25em;
-      opacity: 0.4;
-      vertical-align: super;
-    }
-
-    /* notes row */
-    .notes {
-      margin-top: clamp(3.25rem, 7vh, 5.5rem);
-      padding-top: 1.35rem;
-      border-top: 2px solid var(--ink);
-      animation: rise 0.75s 0.24s cubic-bezier(0.22, 1, 0.36, 1) both;
-    }
-
-    .notes__label {
-      font-size: 0.6rem;
-      letter-spacing: 0.17em;
-      text-transform: uppercase;
-      color: var(--ink-faint);
-      margin-bottom: 1.25rem;
-    }
-
-    .notes__grid {
-      display: grid;
-      grid-template-columns: repeat(3, 1fr);
-      gap: 1.25rem 2rem;
-    }
-
-    @media (max-width: 720px) {
-      .notes__grid { grid-template-columns: 1fr; }
-    }
-
-    .note__date {
-      font-size: 0.62rem;
-      letter-spacing: 0.12em;
-      text-transform: uppercase;
-      color: var(--ink-faint);
-      margin-bottom: 0.35rem;
-    }
-
-    .note__text {
-      font-size: 0.88rem;
-      line-height: 1.45;
-      color: var(--ink-soft);
-    }
-
-    .note__text a {
-      color: inherit;
-      text-decoration: underline;
-      text-decoration-color: var(--rule);
-      text-underline-offset: 0.14em;
-      transition: color 0.18s, text-decoration-color 0.18s;
-    }
-
-    .note__text a:hover,
-    .note__text a:focus-visible {
-      color: var(--coral);
-      text-decoration-color: var(--coral);
-      outline: none;
-    }
-
-    .note--hand .note__text {
-      font-family: var(--script);
-      font-size: 1.45rem;
-      color: var(--ink);
-      line-height: 1.2;
-    }
-
-    /* footer */
-    .footer {
-      margin-top: clamp(3.5rem, 8vh, 6rem);
-      display: flex;
-      flex-wrap: wrap;
-      align-items: baseline;
-      justify-content: space-between;
-      gap: 1rem 2rem;
-      font-size: 0.76rem;
-      color: var(--ink-faint);
-      animation: rise 0.75s 0.32s cubic-bezier(0.22, 1, 0.36, 1) both;
-    }
-
-    .footer__links {
-      display: flex;
-      flex-wrap: wrap;
-      gap: 0.25rem 1.35rem;
-      list-style: none;
-    }
-
-    .footer__links a {
-      color: var(--ink-soft);
-      text-decoration: none;
-      position: relative;
-    }
-
-    .footer__links a::after {
-      content: "";
-      position: absolute;
-      left: 0;
-      bottom: -2px;
-      width: 100%;
-      height: 1.5px;
-      background: var(--coral);
-      transform: scaleX(0);
-      transform-origin: left;
-      transition: transform 0.22s cubic-bezier(0.22, 1, 0.36, 1);
-    }
-
-    .footer__links a:hover::after,
-    .footer__links a:focus-visible::after { transform: scaleX(1); }
-
-    .footer__links a:focus-visible {
-      outline: 2px solid var(--coral);
-      outline-offset: 3px;
-    }
-
-    .footer__stamp {
-      font-family: var(--script);
-      font-size: 1.2rem;
-      color: var(--bay);
-      transform: rotate(-1.5deg);
-    }
-
-    /* decorative elements */
-    .accent-ring {
-      position: fixed;
-      top: clamp(5rem, 14vh, 10rem);
-      right: clamp(0.5rem, 6vw, 4rem);
-      width: clamp(4.5rem, 12vw, 8rem);
-      height: clamp(4.5rem, 12vw, 8rem);
-      border: 1.5px solid var(--coral);
-      border-radius: 50%;
-      pointer-events: none;
-      z-index: 0;
-      opacity: 0.28;
-      animation: drift 14s ease-in-out infinite alternate;
-    }
-
-    .accent-ring::before {
-      content: "";
-      position: absolute;
-      inset: 20%;
-      border: 1px solid var(--marigold);
-      border-radius: 50%;
-    }
-
-    .accent-line {
-      position: fixed;
-      bottom: 22%;
-      right: 8%;
-      width: 5rem;
-      height: 1px;
-      background: var(--bay);
-      transform: rotate(-28deg);
-      opacity: 0.18;
-      pointer-events: none;
-      z-index: 0;
-    }
-
-    .accent-line::after {
-      content: "";
-      position: absolute;
-      right: -3px;
-      top: -3px;
-      width: 7px;
-      height: 7px;
-      border: 1px solid var(--bay);
-      border-radius: 50%;
-    }
-
-    @keyframes rise {
-      from { opacity: 0; transform: translateY(18px); }
-      to { opacity: 1; transform: translateY(0); }
-    }
-
-    @keyframes drift {
-      from { transform: translate(0, 0) rotate(0deg); }
-      to { transform: translate(-10px, 8px) rotate(5deg); }
-    }
-
-    @media (prefers-reduced-motion: reduce) {
-      *, *::before, *::after {
-        animation: none !important;
-        transition: none !important;
-      }
-    }
-  </style>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Erik Nilsson — eriks.design</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Caveat:wght@500;600&family=Instrument+Serif:ital@0;1&family=Source+Serif+4:ital,opsz,wght@0,8..60,400;0,8..60,500;1,8..60,400&display=swap" rel="stylesheet">
+<style>
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+
+:root{
+  --paper:#f6f2ea;
+  --ink:#1a1714;
+  --ink-soft:#4a4540;
+  --ink-muted:#7a746c;
+  --rule:#d9d0c4;
+  --margin:#c44a3a;
+  --accent:#c44a3a;
+  --accent-soft:#2a6b8a;
+  --highlight:#f0e6d4;
+  --max:40rem;
+  color-scheme:light;
+}
+
+@supports(color:color(display-p3 1 0 0)){
+  :root{
+    --paper:color(display-p3 0.965 0.949 0.922);
+    --ink:color(display-p3 0.098 0.090 0.078);
+    --ink-soft:color(display-p3 0.290 0.271 0.251);
+    --ink-muted:color(display-p3 0.478 0.455 0.424);
+    --rule:color(display-p3 0.851 0.816 0.769);
+    --margin:color(display-p3 0.769 0.294 0.227);
+    --accent:color(display-p3 0.769 0.294 0.227);
+    --accent-soft:color(display-p3 0.165 0.420 0.541);
+    --highlight:color(display-p3 0.941 0.902 0.831);
+  }
+}
+
+@media(prefers-color-scheme:dark){
+  :root{
+    --paper:#12100e;
+    --ink:#ece7df;
+    --ink-soft:#a8a096;
+    --ink-muted:#6e6860;
+    --rule:#2a2622;
+    --margin:#e06a52;
+    --accent:#e06a52;
+    --accent-soft:#5a9ec4;
+    --highlight:#221e1a;
+    color-scheme:dark;
+  }
+  @supports(color:color(display-p3 1 0 0)){
+    :root{
+      --paper:color(display-p3 0.071 0.063 0.055);
+      --ink:color(display-p3 0.925 0.906 0.875);
+      --ink-soft:color(display-p3 0.659 0.627 0.588);
+      --ink-muted:color(display-p3 0.431 0.408 0.376);
+      --rule:color(display-p3 0.165 0.149 0.133);
+      --margin:color(display-p3 0.878 0.416 0.322);
+      --accent:color(display-p3 0.878 0.416 0.322);
+      --accent-soft:color(display-p3 0.353 0.620 0.769);
+      --highlight:color(display-p3 0.133 0.118 0.102);
+    }
+  }
+}
+
+::selection{
+  background:var(--accent);
+  color:var(--paper);
+}
+
+html{
+  font-size:17px;
+  -webkit-font-smoothing:antialiased;
+  text-rendering:optimizeLegibility;
+}
+
+body{
+  font-family:"Source Serif 4",Georgia,"Times New Roman",serif;
+  background:var(--paper);
+  color:var(--ink);
+  line-height:1.62;
+  min-height:100dvh;
+}
+
+body::before{
+  content:"";
+  position:fixed;
+  inset:0;
+  pointer-events:none;
+  z-index:0;
+  opacity:.32;
+  background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='4' height='4'%3E%3Cpath d='M0 0h1v1H0z' fill='%23000' fill-opacity='.035'/%3E%3C/svg%3E");
+}
+
+@media(prefers-color-scheme:dark){
+  body::before{opacity:.15}
+}
+
+.page{
+  position:relative;
+  z-index:1;
+  max-width:var(--max);
+  margin:0 auto;
+  padding:2.5rem 1.5rem 4.5rem;
+  padding-left:calc(1.5rem + 14px);
+}
+
+.page::before{
+  content:"";
+  position:absolute;
+  top:0;
+  bottom:0;
+  left:1.5rem;
+  width:1px;
+  background:var(--margin);
+  opacity:.5;
+}
+
+@media(min-width:520px){
+  .page{padding:3.25rem 2.5rem 5.5rem;padding-left:calc(2.5rem + 18px)}
+  .page::before{left:2.5rem}
+}
+
+/* masthead */
+.masthead{
+  display:flex;
+  justify-content:space-between;
+  align-items:flex-start;
+  gap:1rem;
+  margin-bottom:2.75rem;
+  padding-bottom:1.1rem;
+  border-bottom:1px solid var(--rule);
+  animation:rise .65s ease both;
+}
+
+.masthead-brand{
+  font-family:"Instrument Serif",Georgia,serif;
+  font-size:.92rem;
+  letter-spacing:.015em;
+  color:var(--ink-soft);
+}
+
+.masthead-brand em{
+  font-style:normal;
+  color:var(--accent);
+}
+
+.masthead-meta{
+  text-align:right;
+  font-size:.68rem;
+  letter-spacing:.09em;
+  text-transform:uppercase;
+  color:var(--ink-muted);
+  line-height:1.55;
+}
+
+.masthead-meta time{
+  display:block;
+  font-variant-numeric:tabular-nums;
+}
+
+/* hero grid */
+.hero-wrap{
+  display:grid;
+  gap:2rem;
+  margin-bottom:2.5rem;
+  animation:rise .65s .06s ease both;
+}
+
+@media(min-width:520px){
+  .hero-wrap{
+    grid-template-columns:1fr auto;
+    align-items:start;
+  }
+}
+
+.hero h1{
+  font-family:"Instrument Serif",Georgia,serif;
+  font-size:clamp(2.65rem,8.5vw,3.85rem);
+  font-weight:400;
+  line-height:.98;
+  letter-spacing:-.028em;
+  text-wrap:balance;
+  margin-bottom:.75rem;
+}
+
+.hero-role{
+  font-size:1.04rem;
+  color:var(--ink-soft);
+  max-width:30ch;
+  line-height:1.58;
+}
+
+.hero-role a{
+  color:inherit;
+  text-decoration-thickness:1px;
+  text-underline-offset:3px;
+  transition:color .2s ease;
+}
+
+@media(hover:hover){
+  .hero-role a:hover{color:var(--accent)}
+}
+
+.hero-loc{
+  display:block;
+  margin-top:.55rem;
+  font-size:.78rem;
+  letter-spacing:.05em;
+  text-transform:uppercase;
+  color:var(--ink-muted);
+}
+
+/* weather stamp */
+.stamp{
+  justify-self:end;
+  width:5rem;
+  height:5rem;
+  border:1.5px solid var(--accent);
+  border-radius:50%;
+  display:flex;
+  flex-direction:column;
+  align-items:center;
+  justify-content:center;
+  transform:rotate(11deg);
+  opacity:.72;
+  flex-shrink:0;
+}
+
+.stamp-season{
+  font-size:.52rem;
+  letter-spacing:.13em;
+  text-transform:uppercase;
+  color:var(--accent);
+}
+
+.stamp-temp{
+  font-family:"Instrument Serif",Georgia,serif;
+  font-size:1.25rem;
+  line-height:1;
+  color:var(--accent);
+  margin:.1rem 0;
+}
+
+.stamp-cond{
+  font-size:.48rem;
+  letter-spacing:.07em;
+  text-transform:uppercase;
+  color:var(--accent);
+  opacity:.85;
+}
+
+/* lead */
+.lead-block{
+  position:relative;
+  margin-bottom:2.75rem;
+  padding-left:1.15rem;
+  border-left:3px solid var(--accent);
+  animation:rise .65s .12s ease both;
+}
+
+.lead{
+  font-size:1.1rem;
+  line-height:1.7;
+}
+
+.lead-mark{
+  position:relative;
+  display:inline;
+  white-space:nowrap;
+}
+
+.lead-mark svg{
+  position:absolute;
+  left:-4px;
+  right:-6px;
+  bottom:-5px;
+  width:calc(100% + 10px);
+  height:14px;
+  pointer-events:none;
+}
+
+.lead-mark svg path{
+  stroke:var(--accent-soft);
+  stroke-width:1.5;
+  fill:none;
+  opacity:.65;
+}
+
+.note{
+  display:block;
+  margin-top:.7rem;
+  font-family:"Caveat",cursive;
+  font-size:1.32rem;
+  color:var(--accent-soft);
+  transform:rotate(-1deg);
+  transform-origin:left center;
+}
+
+/* section label */
+.section-label{
+  font-size:.66rem;
+  letter-spacing:.15em;
+  text-transform:uppercase;
+  color:var(--ink-muted);
+  margin-bottom:.95rem;
+  display:flex;
+  align-items:center;
+  gap:.55rem;
+}
+
+.section-label::after{
+  content:"";
+  flex:1;
+  height:1px;
+  background:var(--rule);
+}
+
+/* signals + marginalia layout */
+.notes-grid{
+  display:grid;
+  gap:2.5rem;
+  margin-bottom:3rem;
+  animation:rise .65s .18s ease both;
+}
+
+@media(min-width:560px){
+  .notes-grid{
+    grid-template-columns:1fr 9.5rem;
+    gap:2rem 1.5rem;
+    align-items:start;
+  }
+}
+
+.signals-list{
+  list-style:none;
+  display:flex;
+  flex-direction:column;
+  gap:.5rem;
+}
+
+.signals-list li{
+  position:relative;
+  padding-left:1rem;
+  font-size:.93rem;
+  color:var(--ink-soft);
+  line-height:1.5;
+}
+
+.signals-list li::before{
+  content:"—";
+  position:absolute;
+  left:0;
+  color:var(--accent);
+  font-family:"Caveat",cursive;
+  font-size:1.05rem;
+}
+
+.signals-list li:first-child{
+  color:var(--ink);
+  font-style:italic;
+}
+
+.marginalia{
+  display:none;
+}
+
+@media(min-width:560px){
+  .marginalia{
+    display:block;
+    font-family:"Caveat",cursive;
+    font-size:1.05rem;
+    line-height:1.45;
+    color:var(--ink-muted);
+    transform:rotate(2.5deg);
+    padding-top:.25rem;
+  }
+  .marginalia em{
+    display:block;
+    font-style:normal;
+    color:var(--accent);
+    font-size:1.15rem;
+    margin-bottom:.2rem;
+  }
+}
+
+/* fragments */
+.fragments{
+  margin-bottom:3.25rem;
+  animation:rise .65s .24s ease both;
+}
+
+.fragment{
+  padding:1.05rem 0 1.05rem 1.5rem;
+  border-bottom:1px solid var(--rule);
+  position:relative;
+}
+
+.fragment:first-of-type{border-top:1px solid var(--rule)}
+
+.fragment::before{
+  content:"“";
+  position:absolute;
+  left:0;
+  top:.65rem;
+  font-family:"Instrument Serif",Georgia,serif;
+  font-size:2rem;
+  line-height:1;
+  color:var(--accent);
+  opacity:.45;
+}
+
+.fragment blockquote{
+  font-family:"Instrument Serif",Georgia,serif;
+  font-size:1.22rem;
+  line-height:1.48;
+  font-style:italic;
+  margin-bottom:.4rem;
+}
+
+.fragment blockquote p{white-space:pre-line}
+
+.fragment-meta{
+  display:flex;
+  justify-content:space-between;
+  align-items:baseline;
+  gap:1rem;
+  font-size:.76rem;
+  color:var(--ink-muted);
+}
+
+.fragment-meta a{
+  color:var(--accent-soft);
+  text-decoration:none;
+  font-family:"Caveat",cursive;
+  font-size:.98rem;
+  transition:color .2s ease;
+}
+
+@media(hover:hover){
+  .fragment-meta a:hover{color:var(--accent)}
+}
+
+/* writing index */
+.writing{
+  margin-bottom:3rem;
+  animation:rise .65s .3s ease both;
+}
+
+.writing ol{
+  list-style:none;
+  counter-reset:writings;
+}
+
+.writing li{
+  counter-increment:writings;
+  border-bottom:1px solid var(--rule);
+}
+
+.writing li:first-child{border-top:1px solid var(--rule)}
+
+.writing a{
+  display:grid;
+  grid-template-columns:2rem 1fr auto;
+  align-items:baseline;
+  gap:.65rem .75rem;
+  padding:.82rem 0;
+  color:var(--ink);
+  text-decoration:none;
+  transition:background .2s ease;
+}
+
+.writing a::before{
+  content:counter(writings,"decimal-leading-zero");
+  font-size:.7rem;
+  letter-spacing:.05em;
+  color:var(--ink-muted);
+  font-variant-numeric:tabular-nums;
+}
+
+.writing .title{
+  font-family:"Instrument Serif",Georgia,serif;
+  font-size:1.06rem;
+  line-height:1.38;
+}
+
+.writing .ext{
+  font-family:"Caveat",cursive;
+  font-size:.85rem;
+  color:var(--accent-soft);
+  margin-left:.35rem;
+  opacity:0;
+  transition:opacity .2s ease;
+}
+
+.writing .year{
+  font-size:.7rem;
+  color:var(--ink-muted);
+  font-variant-numeric:tabular-nums;
+}
+
+@media(hover:hover){
+  .writing a:hover{
+    background:var(--highlight);
+    padding-left:.45rem;
+    padding-right:.45rem;
+    margin-left:-.45rem;
+    margin-right:-.45rem;
+  }
+  .writing a:hover .title{color:var(--accent)}
+  .writing a:hover .ext{opacity:1}
+}
+
+/* footer */
+.footer{
+  padding-top:1.35rem;
+  border-top:1px solid var(--rule);
+  animation:rise .65s .36s ease both;
+}
+
+.footer-links{
+  display:flex;
+  flex-wrap:wrap;
+  gap:.3rem 1.2rem;
+  margin-bottom:1.1rem;
+}
+
+.footer-links a{
+  font-size:.86rem;
+  color:var(--ink-soft);
+  text-decoration:none;
+  position:relative;
+  transition:color .2s ease;
+}
+
+.footer-links a::after{
+  content:"";
+  position:absolute;
+  left:0;
+  right:0;
+  bottom:-2px;
+  height:1px;
+  background:var(--accent);
+  transform:scaleX(0);
+  transform-origin:left;
+  transition:transform .22s ease;
+}
+
+@media(hover:hover){
+  .footer-links a:hover{color:var(--ink)}
+  .footer-links a:hover::after{transform:scaleX(1)}
+}
+
+.footer-note{
+  font-family:"Caveat",cursive;
+  font-size:1.12rem;
+  color:var(--ink-muted);
+  transform:rotate(-.4deg);
+  max-width:26ch;
+}
+
+.footer-note span{color:var(--accent-soft)}
+
+@keyframes rise{
+  from{opacity:0;transform:translateY(10px)}
+  to{opacity:1;transform:translateY(0)}
+}
+
+@media(prefers-reduced-motion:reduce){
+  *,*::before,*::after{
+    animation-duration:.01ms!important;
+    animation-iteration-count:1!important;
+    transition-duration:.01ms!important;
+  }
+}
+
+:focus-visible{
+  outline:2px solid var(--accent);
+  outline-offset:3px;
+}
+</style>
 </head>
 <body>
-  <svg class="reg reg--tl" width="18" height="18" aria-hidden="true" viewBox="0 0 18 18">
-    <path d="M0 9h18M9 0v18" stroke="currentColor" stroke-width="0.75" fill="none"/>
-    <circle cx="9" cy="9" r="2.5" stroke="currentColor" stroke-width="0.75" fill="none"/>
-  </svg>
-  <svg class="reg reg--br" width="18" height="18" aria-hidden="true" viewBox="0 0 18 18">
-    <path d="M0 9h18M9 0v18" stroke="currentColor" stroke-width="0.75" fill="none"/>
-    <circle cx="9" cy="9" r="2.5" stroke="currentColor" stroke-width="0.75" fill="none"/>
-  </svg>
+<main class="page">
 
-  <div class="accent-ring" aria-hidden="true"></div>
-  <div class="accent-line" aria-hidden="true"></div>
-
-  <div class="page">
-    <header class="masthead">
-      <div class="masthead__brand">eriks.design</div>
-      <div class="masthead__issue">
-        Field notes · daily edition<br>
-        <time datetime="2026-10-16">Friday, October 16, 2026</time>
-      </div>
-    </header>
-
-    <div class="spread">
-      <aside class="margin margin-left" aria-label="Field conditions">
-        <div class="margin__block">
-          <div class="margin__label">Where</div>
-          <div>San Francisco</div>
-          <div class="margin__script margin__script--warm">14° · clear · autumn</div>
-        </div>
-
-        <div class="margin__block">
-          <div class="margin__label">Signals</div>
-          <ul class="signal-list">
-            <li>a programming language written entirely in nested folders</li>
-            <li>two chip giants settling a license dispute in court</li>
-            <li>browser engines built in parallel by different hands</li>
-            <li>clear autumn night over the bay at fourteen degrees</li>
-            <li>shipping deadlines measured in sunrise hours</li>
-          </ul>
-        </div>
-
-        <div class="margin__block">
-          <div class="margin__label">Site</div>
-          <div>rebuilt today</div>
-          <div class="margin__script margin__script--gold">living-site ↻</div>
-        </div>
-      </aside>
-
-      <main class="main">
-        <h1 class="hero-name">Erik <em>Nilsson</em></h1>
-        <p class="hero-role">Product designer · Cursor</p>
-
-        <p class="lede">
-          Working on how people build software with AI. Off-hours, tinkering with
-          <span class="circled">living-site<svg viewBox="0 0 120 32" preserveAspectRatio="none" aria-hidden="true"><path d="M4,22 C18,6 38,2 60,8 C82,14 98,4 116,12"/></svg></span>
-          — agents rebuild this corner of the web from fresh activity data each day.
-        </p>
-
-        <section class="index" aria-labelledby="writing-heading">
-          <div class="index__head">
-            <h2 id="writing-heading">Writing</h2>
-            <span class="index__aside">five pieces →</span>
-          </div>
-          <ol class="index__list">
-            <li class="index__item">
-              <a class="index__link index__link--out" href="https://cursor.com/blog/design-mode">
-                <span class="index__year">'26</span>
-                <span class="index__title-wrap">
-                  <span class="index__title">Directing agents visually</span>
-                  <span class="index__dots" aria-hidden="true"></span>
-                </span>
-                <span class="index__mins">6′</span>
-              </a>
-            </li>
-            <li class="index__item">
-              <a class="index__link" href="https://eriks.design/posts/a-living-site">
-                <span class="index__year">'25</span>
-                <span class="index__title-wrap">
-                  <span class="index__title">A living site</span>
-                  <span class="index__dots" aria-hidden="true"></span>
-                </span>
-                <span class="index__mins">7′</span>
-              </a>
-            </li>
-            <li class="index__item">
-              <a class="index__link" href="https://eriks.design/posts/surgical-edits">
-                <span class="index__year">'25</span>
-                <span class="index__title-wrap">
-                  <span class="index__title">Surgical edits</span>
-                  <span class="index__dots" aria-hidden="true"></span>
-                </span>
-                <span class="index__mins">4′</span>
-              </a>
-            </li>
-            <li class="index__item">
-              <a class="index__link" href="https://eriks.design/posts/familiar-differentiation">
-                <span class="index__year">'24</span>
-                <span class="index__title-wrap">
-                  <span class="index__title">Familiar differentiation</span>
-                  <span class="index__dots" aria-hidden="true"></span>
-                </span>
-                <span class="index__mins">5′</span>
-              </a>
-            </li>
-            <li class="index__item">
-              <a class="index__link" href="https://eriks.design/posts/hackathon-energy-but-add-users">
-                <span class="index__year">'22</span>
-                <span class="index__title-wrap">
-                  <span class="index__title">Hackathon energy, but add users</span>
-                  <span class="index__dots" aria-hidden="true"></span>
-                </span>
-                <span class="index__mins">4′</span>
-              </a>
-            </li>
-          </ol>
-        </section>
-
-        <section class="notes" aria-label="Scratch notes">
-          <div class="notes__label">Scratch notes</div>
-          <div class="notes__grid">
-            <article class="note note--hand">
-              <div class="note__date">Dec 16</div>
-              <p class="note__text"><a href="https://x.com/flowstated/status/2000889983562080578">shipping by sunrise</a></p>
-            </article>
-            <article class="note">
-              <div class="note__date">Dec 15</div>
-              <p class="note__text"><a href="https://x.com/flowstated/status/2000691637190861180">iOS shortcuts × GitHub Actions × Cursor CLI</a></p>
-            </article>
-            <article class="note">
-              <div class="note__date">Aside</div>
-              <p class="note__text">GitHub repos are side projects — small personal things, not the day job.</p>
-            </article>
-          </div>
-        </section>
-      </main>
-
-      <aside class="margin margin-right" aria-label="Margin annotations">
-        <div class="float-note">
-          <p class="float-note__text">imagine 2026</p>
-          <p class="float-note__meta"><a href="https://x.com/flowstated/status/2002167999353241901">Dec 20 · @flowstated</a></p>
-        </div>
-        <div class="float-note" style="border-left-color: var(--bay);">
-          <p class="float-note__text" style="transform: rotate(1.5deg); color: var(--bay);">agents from my phone</p>
-          <p class="float-note__meta">sketch for later</p>
-        </div>
-        <div class="float-note" style="border-left-color: var(--sage);">
-          <p class="float-note__text" style="transform: rotate(-0.5deg); font-size: 1.25rem; color: var(--sage);">folders as language?</p>
-          <p class="float-note__meta">today's signal</p>
-        </div>
-      </aside>
+  <header class="masthead">
+    <p class="masthead-brand"><em>eriks</em>.design</p>
+    <div class="masthead-meta">
+      <time datetime="2026-10-17">Oct 17, 2026</time>
+      <span>San Francisco</span>
     </div>
+  </header>
 
-    <footer class="footer">
-      <ul class="footer__links">
-        <li><a href="https://cursor.com">Cursor</a></li>
-        <li><a href="https://x.com/flowstated">X</a></li>
-        <li><a href="https://github.com/eriknson">GitHub</a></li>
-        <li><a href="https://linkedin.com/in/eriknson">LinkedIn</a></li>
-        <li><a href="mailto:contact@eriks.design">Email</a></li>
-      </ul>
-      <span class="footer__stamp">compiled · Oct 16</span>
-    </footer>
+  <div class="hero-wrap">
+    <section class="hero">
+      <h1>Erik Nilsson</h1>
+      <p class="hero-role">Product designer at <a href="https://cursor.com">Cursor</a>, working on how people build software with AI.</p>
+      <span class="hero-loc">San Francisco, CA</span>
+    </section>
+    <div class="stamp" aria-label="Weather: 13 degrees, clear, autumn">
+      <span class="stamp-season">Autumn</span>
+      <span class="stamp-temp">13°</span>
+      <span class="stamp-cond">Clear</span>
+    </div>
   </div>
+
+  <div class="lead-block">
+    <p class="lead">
+      Off-hours, I tinker with <span class="lead-mark">living-site<svg viewBox="0 0 120 14" preserveAspectRatio="none" aria-hidden="true"><path d="M2 10 C30 2, 50 12, 80 6 S110 4, 118 8"/></svg></span> — agents rebuild this corner of the web from fresh activity data each day.
+    </p>
+    <span class="note">rebuilt daily · never quite the same</span>
+  </div>
+
+  <div class="notes-grid">
+    <section class="signals" aria-labelledby="signals-label">
+      <h2 class="section-label" id="signals-label">Field notes</h2>
+      <ul class="signals-list">
+        <li>Autumn clear night over San Francisco</li>
+        <li>Thirteen-degree wind drifting off the bay</li>
+        <li>Super intelligence trending among builders</li>
+        <li>Deepseek flash models surfacing overnight</li>
+        <li>Spinning up agents from a pocket screen</li>
+      </ul>
+    </section>
+    <aside class="marginalia" aria-hidden="true">
+      <em>today</em>
+      builders dreaming loud · bay wind · pocket agents
+    </aside>
+  </div>
+
+  <section class="fragments" aria-labelledby="fragments-label">
+    <h2 class="section-label" id="fragments-label">Recent fragments</h2>
+
+    <article class="fragment">
+      <blockquote><p>imagine 2026</p></blockquote>
+      <div class="fragment-meta">
+        <time datetime="2025-12-20">Dec 20</time>
+        <a href="https://x.com/flowstated/status/2002167999353241901">→ x</a>
+      </div>
+    </article>
+
+    <article class="fragment">
+      <blockquote><p>shipping by sunrise</p></blockquote>
+      <div class="fragment-meta">
+        <time datetime="2025-12-16">Dec 16</time>
+        <a href="https://x.com/flowstated/status/2000889983562080578">→ x</a>
+      </div>
+    </article>
+
+    <article class="fragment">
+      <blockquote><p>exploring ways to spin up agents from my phone
+
+iOS shortcuts × github actions × cursor cli</p></blockquote>
+      <div class="fragment-meta">
+        <time datetime="2025-12-15">Dec 15</time>
+        <a href="https://x.com/flowstated/status/2000691637190861180">→ x</a>
+      </div>
+    </article>
+  </section>
+
+  <section class="writing" aria-labelledby="writing-label">
+    <h2 class="section-label" id="writing-label">Writing</h2>
+    <ol>
+      <li>
+        <a href="https://cursor.com/blog/design-mode">
+          <span class="title">Directing agents visually<span class="ext">↗</span></span>
+          <span class="year">2026</span>
+        </a>
+      </li>
+      <li>
+        <a href="https://eriks.design/posts/a-living-site">
+          <span class="title">A living site</span>
+          <span class="year">2025</span>
+        </a>
+      </li>
+      <li>
+        <a href="https://eriks.design/posts/surgical-edits">
+          <span class="title">Surgical edits</span>
+          <span class="year">2025</span>
+        </a>
+      </li>
+      <li>
+        <a href="https://eriks.design/posts/familiar-differentiation">
+          <span class="title">Familiar differentiation</span>
+          <span class="year">2024</span>
+        </a>
+      </li>
+      <li>
+        <a href="https://eriks.design/posts/hackathon-energy-but-add-users">
+          <span class="title">Hackathon energy, but add users</span>
+          <span class="year">2022</span>
+        </a>
+      </li>
+    </ol>
+  </section>
+
+  <footer class="footer">
+    <nav class="footer-links" aria-label="Contact">
+      <a href="https://cursor.com">Cursor</a>
+      <a href="https://x.com/flowstated">X</a>
+      <a href="https://github.com/eriknson">GitHub</a>
+      <a href="https://linkedin.com/in/eriknson">LinkedIn</a>
+      <a href="mailto:contact@eriks.design">Email</a>
+    </nav>
+    <p class="footer-note">Side projects on <span>GitHub</span> — small experiments, not the day job.</p>
+  </footer>
+</main>
 </body>
 </html>

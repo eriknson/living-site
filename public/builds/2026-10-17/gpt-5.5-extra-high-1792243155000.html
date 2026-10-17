@@ -1,0 +1,873 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Erik Nilsson - Editorial Notebook</title>
+  <meta name="description" content="Erik Nilsson, product designer at Cursor. A concise editorial notebook with writing, links, and current field notes.">
+  <style>
+    :root {
+      color-scheme: light dark;
+      --paper: #f5efe5;
+      --paper-deep: #e9dfcf;
+      --ink: #1c1914;
+      --muted: #706657;
+      --hairline: rgb(48 41 30 / 20%);
+      --blue: #0040ff;
+      --red: #df1e12;
+      --ochre: #f28a0f;
+      --green: #167848;
+      --shadow: rgb(32 27 18 / 12%);
+      --paper-glass: rgb(255 249 235 / 74%);
+      --pencil: rgb(31 23 14 / 8%);
+      --pencil-soft: rgb(31 23 14 / 4%);
+      --pencil-faint: rgb(31 23 14 / 3%);
+      --link-line: rgb(25 23 18 / 22%);
+      --red-line: rgb(219 31 19 / 25%);
+      --pill: rgb(255 251 240 / 52%);
+      --serif: "Iowan Old Style", "Palatino Linotype", Palatino, Georgia, serif;
+      --sans: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+      --mono: "SFMono-Regular", "Cascadia Code", "Liberation Mono", Menlo, monospace;
+      --hand: "Bradley Hand", "Segoe Print", "Comic Sans MS", cursive;
+    }
+
+    @supports (color: color(display-p3 1 0 0)) {
+      :root {
+        --paper: color(display-p3 0.965 0.944 0.899);
+        --paper-deep: color(display-p3 0.91 0.882 0.818);
+        --ink: color(display-p3 0.105 0.096 0.079);
+        --muted: color(display-p3 0.43 0.395 0.335);
+        --hairline: color(display-p3 0.195 0.17 0.125 / 0.2);
+        --blue: color(display-p3 0.0 0.235 1);
+        --red: color(display-p3 0.88 0.105 0.05);
+        --ochre: color(display-p3 0.95 0.53 0.06);
+        --green: color(display-p3 0.08 0.48 0.29);
+        --shadow: color(display-p3 0.125 0.105 0.07 / 0.12);
+        --paper-glass: color(display-p3 0.985 0.97 0.925 / 0.74);
+        --pencil: color(display-p3 0.12 0.09 0.055 / 0.08);
+        --pencil-soft: color(display-p3 0.12 0.09 0.055 / 0.035);
+        --pencil-faint: color(display-p3 0.12 0.09 0.055 / 0.025);
+        --link-line: color(display-p3 0.1 0.09 0.07 / 0.22);
+        --red-line: color(display-p3 0.86 0.12 0.08 / 0.25);
+        --pill: color(display-p3 1 0.985 0.94 / 0.52);
+      }
+    }
+
+    @media (prefers-color-scheme: dark) {
+      :root {
+        --paper: #1a1814;
+        --paper-deep: #12100d;
+        --ink: #e8e4dc;
+        --muted: #9a9185;
+        --hairline: rgb(232 228 220 / 18%);
+        --shadow: rgb(0 0 0 / 30%);
+        --paper-glass: rgb(30 27 22 / 74%);
+        --pencil: rgb(232 228 220 / 8%);
+        --pencil-soft: rgb(232 228 220 / 4%);
+        --pencil-faint: rgb(232 228 220 / 3%);
+        --link-line: rgb(232 228 220 / 22%);
+        --pill: rgb(40 36 30 / 52%);
+      }
+    }
+
+    * {
+      box-sizing: border-box;
+    }
+
+    html {
+      background: var(--paper-deep);
+      scroll-behavior: smooth;
+    }
+
+    body {
+      margin: 0;
+      min-height: 100vh;
+      background: var(--paper);
+      color: var(--ink);
+      font-family: var(--sans);
+      text-rendering: optimizeLegibility;
+      -webkit-font-smoothing: antialiased;
+    }
+
+    a {
+      color: inherit;
+      text-decoration: none;
+    }
+
+    a:focus-visible,
+    button:focus-visible {
+      outline: 2px solid var(--blue);
+      outline-offset: 4px;
+    }
+
+    .page {
+      position: relative;
+      max-width: 640px;
+      width: 100%;
+      margin: 0 auto;
+      padding: 28px clamp(18px, 4vw, 64px) 42px;
+      overflow: hidden;
+    }
+
+    .page::before {
+      content: "";
+      position: absolute;
+      inset: 92px clamp(18px, 4vw, 64px) auto;
+      height: 1px;
+      pointer-events: none;
+      background: var(--pencil);
+      box-shadow:
+        0 36px 0 var(--pencil-soft),
+        0 72px 0 var(--pencil-faint);
+    }
+
+    .masthead {
+      display: grid;
+      grid-template-columns: 1fr auto 1fr;
+      align-items: start;
+      gap: 24px;
+      padding: 10px 0 26px;
+      border-bottom: 1px solid var(--hairline);
+      font-size: 12px;
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+    }
+
+    .masthead a {
+      border-bottom: 1px solid var(--link-line);
+      transition: color 180ms ease, border-color 180ms ease;
+    }
+
+    .masthead a:hover {
+      color: var(--blue);
+      border-color: currentColor;
+    }
+
+    .masthead__center {
+      justify-self: center;
+      font-family: var(--serif);
+      font-size: clamp(26px, 5vw, 64px);
+      line-height: 0.88;
+      letter-spacing: -0.075em;
+      text-transform: none;
+    }
+
+    .masthead__right {
+      justify-self: end;
+      text-align: right;
+    }
+
+    .hero {
+      display: grid;
+      grid-template-columns: minmax(0, 1.05fr) minmax(280px, 0.95fr);
+      gap: clamp(30px, 7vw, 96px);
+      align-items: end;
+      min-height: clamp(560px, 82vh, 900px);
+      padding: clamp(48px, 8vw, 96px) 0 58px;
+      border-bottom: 1px solid var(--hairline);
+    }
+
+    .eyebrow {
+      display: inline-flex;
+      align-items: center;
+      gap: 10px;
+      margin-bottom: 18px;
+      color: var(--muted);
+      font-family: var(--mono);
+      font-size: 12px;
+      letter-spacing: 0.06em;
+      text-transform: uppercase;
+    }
+
+    .eyebrow::before {
+      content: "";
+      width: 34px;
+      height: 1px;
+      background: currentColor;
+    }
+
+    h1 {
+      max-width: 11ch;
+      margin: 0;
+      font-family: var(--serif);
+      font-size: clamp(78px, 16vw, 238px);
+      font-weight: 500;
+      letter-spacing: -0.09em;
+      line-height: 0.78;
+    }
+
+    .hero__lead {
+      position: relative;
+      max-width: 690px;
+      margin-top: clamp(28px, 4vw, 52px);
+      font-family: var(--serif);
+      font-size: clamp(25px, 4.6vw, 62px);
+      letter-spacing: -0.045em;
+      line-height: 0.98;
+    }
+
+    .mark {
+      position: relative;
+      display: inline-block;
+    }
+
+    .mark::after {
+      content: "";
+      position: absolute;
+      left: -0.05em;
+      right: -0.05em;
+      bottom: 0.05em;
+      height: 0.18em;
+      border: 2px solid var(--ochre);
+      border-top: 0;
+      transform: rotate(-1.4deg);
+      z-index: -1;
+    }
+
+    .caption {
+      max-width: 520px;
+      color: var(--muted);
+      font-size: clamp(15px, 1.4vw, 18px);
+      line-height: 1.52;
+    }
+
+    .caption strong {
+      color: var(--ink);
+      font-weight: 600;
+    }
+
+    .notebook-card {
+      position: relative;
+      align-self: stretch;
+      min-height: 530px;
+      padding: clamp(24px, 4vw, 48px);
+      border: 1px solid var(--hairline);
+      border-radius: 2px;
+      background: var(--paper-glass);
+      box-shadow: 0 30px 70px var(--shadow);
+    }
+
+    .notebook-card::before {
+      content: "";
+      position: absolute;
+      top: 0;
+      bottom: 0;
+      left: 58px;
+      width: 1px;
+      background: var(--red-line);
+    }
+
+    .notebook-card::after {
+      content: "designing tools for people who build";
+      position: absolute;
+      top: 24px;
+      right: 20px;
+      color: var(--red);
+      font-family: var(--hand);
+      font-size: clamp(18px, 2vw, 26px);
+      line-height: 1;
+      transform: rotate(5deg);
+      transform-origin: center;
+    }
+
+    .today {
+      position: relative;
+      z-index: 1;
+      display: grid;
+      gap: 26px;
+      height: 100%;
+      padding-left: 46px;
+    }
+
+    .today__label {
+      display: flex;
+      justify-content: space-between;
+      gap: 20px;
+      color: var(--muted);
+      font-family: var(--mono);
+      font-size: 12px;
+      text-transform: uppercase;
+      letter-spacing: 0.08em;
+    }
+
+    .today__line {
+      max-width: 11ch;
+      margin: auto 0;
+      font-family: var(--serif);
+      font-size: clamp(48px, 7vw, 96px);
+      line-height: 0.88;
+      letter-spacing: -0.07em;
+    }
+
+    .today__line span {
+      color: var(--blue);
+      font-style: italic;
+    }
+
+    .weather {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      border-top: 1px solid var(--hairline);
+      border-bottom: 1px solid var(--hairline);
+    }
+
+    .weather div {
+      padding: 14px 12px;
+      border-right: 1px solid var(--hairline);
+    }
+
+    .weather div:last-child {
+      border-right: 0;
+    }
+
+    .weather b,
+    .weather span {
+      display: block;
+    }
+
+    .weather b {
+      font-family: var(--mono);
+      font-size: 11px;
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+      color: var(--muted);
+    }
+
+    .weather span {
+      margin-top: 6px;
+      font-family: var(--serif);
+      font-size: 24px;
+      letter-spacing: -0.04em;
+    }
+
+    .annotation {
+      max-width: 340px;
+      margin-left: auto;
+      color: var(--green);
+      font-family: var(--hand);
+      font-size: 22px;
+      line-height: 1.08;
+      transform: rotate(-2deg);
+    }
+
+    .annotation::before {
+      content: "\21B3";
+      margin-right: 8px;
+      color: var(--red);
+    }
+
+    .main-grid {
+      display: grid;
+      grid-template-columns: minmax(0, 0.9fr) minmax(0, 1.35fr) minmax(220px, 0.55fr);
+      gap: clamp(26px, 4vw, 64px);
+      padding: 52px 0 36px;
+      border-bottom: 1px solid var(--hairline);
+    }
+
+    .section-kicker {
+      margin: 0 0 22px;
+      color: var(--muted);
+      font-family: var(--mono);
+      font-size: 12px;
+      letter-spacing: 0.09em;
+      text-transform: uppercase;
+    }
+
+    .profile-note {
+      position: sticky;
+      top: 28px;
+      align-self: start;
+    }
+
+    .profile-note p {
+      margin: 0;
+      font-family: var(--serif);
+      font-size: clamp(24px, 2.5vw, 38px);
+      line-height: 1.03;
+      letter-spacing: -0.045em;
+    }
+
+    .profile-note .mini {
+      margin-top: 22px;
+      color: var(--muted);
+      font-family: var(--sans);
+      font-size: 15px;
+      line-height: 1.5;
+      letter-spacing: 0;
+    }
+
+    .writing {
+      counter-reset: writing;
+    }
+
+    .writing__intro {
+      max-width: 700px;
+      margin: 0 0 24px;
+      font-family: var(--serif);
+      font-size: clamp(30px, 4vw, 58px);
+      line-height: 0.99;
+      letter-spacing: -0.055em;
+    }
+
+    .index {
+      border-top: 1.5px solid var(--ink);
+    }
+
+    .index-row {
+      counter-increment: writing;
+      position: relative;
+      display: grid;
+      grid-template-columns: 72px minmax(0, 1fr) auto;
+      gap: 22px;
+      align-items: baseline;
+      padding: 23px 0 24px;
+      border-bottom: 1px solid var(--hairline);
+      transition: color 180ms ease, padding-left 180ms ease;
+    }
+
+    .index-row::before {
+      content: "0" counter(writing);
+      color: var(--muted);
+      font-family: var(--mono);
+      font-size: 12px;
+      letter-spacing: 0.06em;
+    }
+
+    .index-row::after {
+      content: "";
+      position: absolute;
+      left: 92px;
+      right: 76px;
+      bottom: 20px;
+      height: 2px;
+      background: var(--blue);
+      transform: scaleX(0);
+      transform-origin: left center;
+      transition: transform 220ms ease;
+    }
+
+    .index-row:hover {
+      color: var(--blue);
+      padding-left: 10px;
+    }
+
+    .index-row:hover::after {
+      transform: scaleX(1);
+    }
+
+    .index-row h3 {
+      margin: 0;
+      font-family: var(--serif);
+      font-size: clamp(28px, 4.1vw, 66px);
+      font-weight: 500;
+      line-height: 0.9;
+      letter-spacing: -0.07em;
+    }
+
+    .index-row time,
+    .index-row .read {
+      color: var(--muted);
+      font-family: var(--mono);
+      font-size: 12px;
+      white-space: nowrap;
+    }
+
+    .side-notes {
+      display: grid;
+      gap: 30px;
+      align-self: start;
+    }
+
+    .notelet {
+      border-top: 1px solid var(--ink);
+      padding-top: 16px;
+    }
+
+    .notelet p,
+    .notelet ul {
+      margin: 0;
+    }
+
+    .notelet p {
+      color: var(--muted);
+      font-size: 14px;
+      line-height: 1.5;
+    }
+
+    .notelet ul {
+      display: grid;
+      gap: 13px;
+      padding: 0;
+      list-style: none;
+    }
+
+    .notelet li,
+    .signal {
+      color: var(--ink);
+      font-family: var(--serif);
+      font-size: 21px;
+      line-height: 1.08;
+      letter-spacing: -0.035em;
+    }
+
+    .notelet a {
+      border-bottom: 1px solid var(--link-line);
+      transition: color 180ms ease, border-color 180ms ease;
+    }
+
+    .notelet a:hover {
+      color: var(--blue);
+      border-color: currentColor;
+    }
+
+    .signal {
+      display: block;
+      margin-top: 14px;
+      color: var(--red);
+      font-family: var(--hand);
+      transform: rotate(1.5deg);
+    }
+
+    .links {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 10px;
+      padding: 36px 0 0;
+    }
+
+    .links a {
+      display: inline-flex;
+      align-items: center;
+      min-height: 42px;
+      padding: 0 15px;
+      border: 1px solid var(--hairline);
+      border-radius: 999px;
+      background: var(--pill);
+      color: var(--ink);
+      font-size: 13px;
+      transition: transform 180ms ease, border-color 180ms ease, color 180ms ease;
+    }
+
+    .links a:hover {
+      transform: translateY(-2px);
+      border-color: currentColor;
+      color: var(--blue);
+    }
+
+    .footer {
+      display: grid;
+      grid-template-columns: 1fr auto;
+      gap: 20px;
+      align-items: end;
+      padding-top: 74px;
+      color: var(--muted);
+      font-family: var(--mono);
+      font-size: 12px;
+      line-height: 1.5;
+      text-transform: uppercase;
+      letter-spacing: 0.07em;
+    }
+
+    .footer__scribble {
+      color: var(--green);
+      font-family: var(--hand);
+      font-size: clamp(26px, 4vw, 54px);
+      line-height: 0.9;
+      text-transform: none;
+      letter-spacing: -0.035em;
+      transform: rotate(-3deg);
+    }
+
+    @media (prefers-reduced-motion: no-preference) {
+      .notebook-card {
+        animation: settle 700ms cubic-bezier(.2, .8, .2, 1) both;
+      }
+
+      .hero__copy,
+      .profile-note,
+      .writing,
+      .side-notes {
+        animation: rise 650ms cubic-bezier(.2, .8, .2, 1) both;
+      }
+
+      .writing {
+        animation-delay: 80ms;
+      }
+
+      .side-notes {
+        animation-delay: 130ms;
+      }
+    }
+
+    @keyframes settle {
+      from {
+        opacity: 0;
+        transform: translateY(18px) rotate(0.5deg);
+      }
+      to {
+        opacity: 1;
+        transform: translateY(0) rotate(0);
+      }
+    }
+
+    @keyframes rise {
+      from {
+        opacity: 0;
+        transform: translateY(18px);
+      }
+      to {
+        opacity: 1;
+        transform: translateY(0);
+      }
+    }
+
+    @media (max-width: 980px) {
+      .masthead {
+        grid-template-columns: 1fr 1fr;
+      }
+
+      .masthead__center {
+        grid-column: 1 / -1;
+        grid-row: 1;
+        justify-self: start;
+      }
+
+      .masthead__left {
+        grid-row: 2;
+      }
+
+      .masthead__right {
+        grid-row: 2;
+      }
+
+      .hero,
+      .main-grid,
+      .footer {
+        grid-template-columns: 1fr;
+      }
+
+      .hero {
+        min-height: auto;
+      }
+
+      .profile-note {
+        position: static;
+      }
+
+      .side-notes {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+      }
+    }
+
+    @media (max-width: 680px) {
+      .page {
+        padding-inline: 16px;
+      }
+
+      .masthead {
+        gap: 16px;
+      }
+
+      .hero {
+        padding-top: 36px;
+      }
+
+      .notebook-card {
+        min-height: 460px;
+        padding: 24px 18px 24px 20px;
+      }
+
+      .notebook-card::before {
+        left: 38px;
+      }
+
+      .notebook-card::after {
+        top: 18px;
+        right: 14px;
+        max-width: 160px;
+      }
+
+      .today {
+        padding-left: 34px;
+      }
+
+      .today__label,
+      .weather {
+        grid-template-columns: 1fr;
+      }
+
+      .today__label {
+        display: grid;
+      }
+
+      .weather div,
+      .weather div:last-child {
+        border-right: 0;
+        border-bottom: 1px solid var(--hairline);
+      }
+
+      .weather div:last-child {
+        border-bottom: 0;
+      }
+
+      .index-row {
+        grid-template-columns: 44px minmax(0, 1fr);
+        gap: 14px;
+      }
+
+      .index-row .read {
+        grid-column: 2;
+      }
+
+      .index-row::after {
+        left: 58px;
+        right: 0;
+      }
+
+      .side-notes {
+        grid-template-columns: 1fr;
+      }
+
+      .footer {
+        padding-top: 48px;
+      }
+    }
+  </style>
+
+<style id="__living_site_scroll_guard">
+  /* Scroll guard injected at build time to ensure generated pages remain scrollable in iframes. */
+  html, body {
+    height: auto !important;
+    min-height: 100% !important;
+    max-height: none !important;
+    overflow-y: auto !important;
+    overflow-x: hidden !important;
+    position: static !important;
+    -webkit-overflow-scrolling: touch !important;
+    touch-action: pan-y !important;
+    overscroll-behavior-y: contain !important;
+  }
+  /* Avoid accidental fixed full-screen traps that break scrolling on mobile. */
+  body {
+    inset: auto !important;
+  }
+</style>
+</head>
+<body>
+  <main class="page" aria-label="Erik Nilsson editorial notebook">
+    <header class="masthead">
+      <div class="masthead__left">
+        <a href="https://cursor.com">Product Designer at Cursor</a><br>
+        San Francisco, CA
+      </div>
+      <div class="masthead__center" aria-label="eriks.design">eriks.design</div>
+      <div class="masthead__right">
+        <a href="mailto:contact@eriks.design">contact@eriks.design</a><br>
+        Updated <time datetime="2026-10-17">Oct 17, 2026</time>
+      </div>
+    </header>
+
+    <section class="hero" aria-labelledby="hero-title">
+      <div class="hero__copy">
+        <p class="eyebrow">Editorial notebook</p>
+        <h1 id="hero-title">Erik Nilsson</h1>
+        <p class="hero__lead">Designing <span class="mark">software tools</span> with the patience of a magazine page and the speed of a sketchbook.</p>
+        <p class="caption">
+          <strong>Product designer at Cursor.</strong> Working on how people build software with AI, with a bias for simplicity, flow, and details that feel considered without asking for attention.
+        </p>
+      </div>
+
+      <aside class="notebook-card" aria-label="Today's field note">
+        <div class="today">
+          <div class="today__label">
+            <span>Today / autumn</span>
+            <span>Clear over San Francisco</span>
+          </div>
+          <div class="today__line">A quiet page for a clear <span>bay</span> night.</div>
+          <div class="weather" aria-label="Current conditions">
+            <div>
+              <b>Temp</b>
+              <span>13&deg;C</span>
+            </div>
+            <div>
+              <b>Signal</b>
+              <span>clear</span>
+            </div>
+            <div>
+              <b>Pace</b>
+              <span>dormant</span>
+            </div>
+          </div>
+          <p class="annotation">one clean route through the gap feels like exhaling</p>
+        </div>
+      </aside>
+    </section>
+
+    <section class="main-grid" aria-label="Notebook contents">
+      <aside class="profile-note">
+        <p class="section-kicker">Who</p>
+        <p>I'm building Cursor, the best way to design software with AI.</p>
+        <p class="mini">This corner of the web rebuilds from fresh activity data. GitHub is mostly side projects and experiments, not a scoreboard.</p>
+        <nav class="links" aria-label="External links">
+          <a href="https://x.com/flowstated">X</a>
+          <a href="https://github.com/eriknson">GitHub</a>
+          <a href="https://linkedin.com/in/eriknson">LinkedIn</a>
+          <a href="https://cursor.com">Cursor</a>
+        </nav>
+      </aside>
+
+      <div class="writing">
+        <p class="section-kicker">Writing Index</p>
+        <p class="writing__intro">Notes on taste, agents, iteration, and making software feel less generic.</p>
+        <div class="index">
+          <a class="index-row" href="https://cursor.com/blog/design-mode">
+            <h3>Directing agents visually</h3>
+            <span class="read"><time datetime="2026-06-05">Jun 5, 2026</time> &middot; 6 min</span>
+          </a>
+          <a class="index-row" href="/posts/a-living-site">
+            <h3>A living site</h3>
+            <span class="read"><time datetime="2025-12-26">Dec 26, 2025</time> &middot; 7 min</span>
+          </a>
+          <a class="index-row" href="/posts/surgical-edits">
+            <h3>Surgical edits</h3>
+            <span class="read"><time datetime="2025-11-23">Nov 23, 2025</time> &middot; 4 min</span>
+          </a>
+          <a class="index-row" href="/posts/familiar-differentiation">
+            <h3>Familiar differentiation</h3>
+            <span class="read"><time datetime="2024-11-15">Nov 15, 2024</time> &middot; 5 min</span>
+          </a>
+          <a class="index-row" href="/posts/hackathon-energy-but-add-users">
+            <h3>Hackathon energy, but add users</h3>
+            <span class="read"><time datetime="2022-10-15">Oct 15, 2022</time> &middot; 4 min</span>
+          </a>
+        </div>
+      </div>
+
+      <aside class="side-notes" aria-label="Recent notes and signals">
+        <section class="notelet">
+          <p class="section-kicker">Recent</p>
+          <ul>
+            <li><a href="https://x.com/flowstated/status/2002167999353241901">imagine 2026</a></li>
+            <li><a href="https://x.com/flowstated/status/2000889983562080578">shipping by sunrise</a></li>
+            <li><a href="https://x.com/flowstated/status/2000691637190861180">spinning up agents from a pocket screen</a></li>
+          </ul>
+        </section>
+
+        <section class="notelet">
+          <p class="section-kicker">Margin</p>
+          <p>Super intelligence trending among builders. DeepSeek flash models surfacing overnight. Thirteen-degree wind drifting off the bay.</p>
+          <span class="signal">keep the page quiet; let the links carry weight</span>
+        </section>
+      </aside>
+    </section>
+
+    <footer class="footer">
+      <div>
+        eriks.design / living-site<br>
+        Built from identity, writing, and today's brief.
+      </div>
+      <div class="footer__scribble">polished, not precious</div>
+    </footer>
+  </main>
+</body>
+</html>
