@@ -1,0 +1,957 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="description" content="Erik Nilsson — product designer at Cursor. Notes, fragments, and writing.">
+<title>Erik Nilsson — eriks.design</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Caveat:wght@500;600&family=Instrument+Serif:ital@0;1&family=Source+Serif+4:ital,opsz,wght@0,8..60,400;0,8..60,500;1,8..60,400&display=swap" rel="stylesheet">
+<style>
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+
+:root{
+  --paper:#f4efe6;
+  --ink:#181512;
+  --ink-soft:#454038;
+  --ink-muted:#787066;
+  --rule:#d4cbc0;
+  --margin:#c23d2e;
+  --accent:#c23d2e;
+  --teal:#256a85;
+  --amber:#c87828;
+  --coral:#e05840;
+  --fog:#8aa8c4;
+  --wash:#ebe3d6;
+  --max:44rem;
+  color-scheme:light;
+}
+
+@supports(color:color(display-p3 1 0 0)){
+  :root{
+    --paper:color(display-p3 0.957 0.937 0.902);
+    --ink:color(display-p3 0.094 0.082 0.071);
+    --ink-soft:color(display-p3 0.271 0.251 0.220);
+    --ink-muted:color(display-p3 0.471 0.439 0.400);
+    --rule:color(display-p3 0.831 0.796 0.753);
+    --margin:color(display-p3 0.757 0.239 0.180);
+    --accent:color(display-p3 0.757 0.239 0.180);
+    --teal:color(display-p3 0.145 0.416 0.522);
+    --amber:color(display-p3 0.780 0.471 0.157);
+    --coral:color(display-p3 0.878 0.345 0.251);
+    --fog:color(display-p3 0.545 0.659 0.769);
+    --wash:color(display-p3 0.922 0.890 0.839);
+  }
+}
+
+@media(prefers-color-scheme:dark){
+  :root{
+    --paper:#100e0c;
+    --ink:#ebe5dc;
+    --ink-soft:#a39a90;
+    --ink-muted:#6b645c;
+    --rule:#26221e;
+    --margin:#e8654f;
+    --accent:#e8654f;
+    --teal:#6aafc8;
+    --amber:#e8a050;
+    --coral:#f07058;
+    --fog:#7a9ab8;
+    --wash:#1c1916;
+    color-scheme:dark;
+  }
+  @supports(color:color(display-p3 1 0 0)){
+    :root{
+      --paper:color(display-p3 0.063 0.055 0.047);
+      --ink:color(display-p3 0.922 0.898 0.863);
+      --ink-soft:color(display-p3 0.639 0.604 0.565);
+      --ink-muted:color(display-p3 0.420 0.392 0.361);
+      --rule:color(display-p3 0.149 0.133 0.118);
+      --margin:color(display-p3 0.910 0.396 0.310);
+      --accent:color(display-p3 0.910 0.396 0.310);
+      --teal:color(display-p3 0.416 0.686 0.784);
+      --amber:color(display-p3 0.910 0.631 0.314);
+      --coral:color(display-p3 0.941 0.439 0.345);
+      --fog:color(display-p3 0.478 0.604 0.722);
+      --wash:color(display-p3 0.110 0.098 0.086);
+    }
+  }
+}
+
+::selection{
+  background:var(--accent);
+  color:var(--paper);
+}
+
+html{
+  font-size:17px;
+  -webkit-font-smoothing:antialiased;
+  text-rendering:optimizeLegibility;
+}
+
+body{
+  font-family:"Source Serif 4",Georgia,"Times New Roman",serif;
+  background:var(--paper);
+  color:var(--ink);
+  line-height:1.62;
+  min-height:100dvh;
+  overflow-x:hidden;
+}
+
+body::before{
+  content:"";
+  position:fixed;
+  inset:0;
+  pointer-events:none;
+  z-index:0;
+  opacity:.26;
+  background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='5' height='5'%3E%3Ccircle cx='1' cy='1' r='.55' fill='%23000' fill-opacity='.04'/%3E%3C/svg%3E");
+}
+
+@media(prefers-color-scheme:dark){
+  body::before{opacity:.11}
+}
+
+.page{
+  position:relative;
+  z-index:1;
+  max-width:var(--max);
+  margin:0 auto;
+  padding:2.4rem 1.35rem 5rem;
+  padding-left:calc(1.35rem + 16px);
+}
+
+.page::before{
+  content:"";
+  position:absolute;
+  top:0;
+  bottom:0;
+  left:1.35rem;
+  width:1px;
+  background:var(--margin);
+  opacity:.55;
+}
+
+.page-fold{
+  position:absolute;
+  top:0;
+  right:1.35rem;
+  width:0;
+  height:0;
+  border-style:solid;
+  border-width:0 1.4rem 1.4rem 0;
+  border-color:transparent var(--wash) transparent transparent;
+  opacity:.9;
+}
+
+.page-num{
+  position:absolute;
+  left:.1rem;
+  bottom:4.5rem;
+  font-family:"Caveat",cursive;
+  font-size:1.55rem;
+  color:var(--margin);
+  opacity:.38;
+  transform:rotate(-90deg);
+  transform-origin:left bottom;
+  user-select:none;
+}
+
+@media(min-width:540px){
+  .page{padding:3rem 2.25rem 6rem;padding-left:calc(2.25rem + 20px)}
+  .page::before{left:2.25rem}
+  .page-fold{right:2.25rem}
+}
+
+/* masthead */
+.masthead{
+  display:flex;
+  justify-content:space-between;
+  align-items:flex-end;
+  gap:1.5rem;
+  margin-bottom:1.35rem;
+  animation:enter .75s cubic-bezier(.22,1,.36,1) both;
+}
+
+.masthead-left{
+  display:flex;
+  flex-direction:column;
+  gap:.18rem;
+}
+
+.masthead-brand{
+  font-family:"Instrument Serif",Georgia,serif;
+  font-size:1.02rem;
+  letter-spacing:.01em;
+  color:var(--ink-soft);
+  line-height:1;
+}
+
+.masthead-brand em{
+  font-style:normal;
+  color:var(--accent);
+}
+
+.masthead-vol{
+  font-size:.6rem;
+  letter-spacing:.15em;
+  text-transform:uppercase;
+  color:var(--ink-muted);
+}
+
+.masthead-meta{
+  text-align:right;
+  font-size:.63rem;
+  letter-spacing:.11em;
+  text-transform:uppercase;
+  color:var(--ink-muted);
+  line-height:1.7;
+  font-variant-numeric:tabular-nums;
+}
+
+.masthead-meta time{display:block}
+
+.dateline{
+  display:flex;
+  align-items:center;
+  gap:.75rem;
+  margin-bottom:2.35rem;
+  font-size:.62rem;
+  letter-spacing:.13em;
+  text-transform:uppercase;
+  color:var(--ink-muted);
+  animation:enter .75s .04s cubic-bezier(.22,1,.36,1) both;
+}
+
+.dateline::before,
+.dateline::after{
+  content:"";
+  flex:1;
+  height:1px;
+  background:var(--rule);
+}
+
+.dateline span{
+  white-space:nowrap;
+  font-variant-numeric:tabular-nums;
+}
+
+/* hero spread */
+.spread{
+  display:grid;
+  gap:1.75rem;
+  margin-bottom:2.65rem;
+  animation:enter .75s .08s cubic-bezier(.22,1,.36,1) both;
+}
+
+@media(min-width:540px){
+  .spread{
+    grid-template-columns:1fr auto;
+    align-items:start;
+    gap:2rem;
+  }
+}
+
+.hero h1{
+  font-family:"Instrument Serif",Georgia,serif;
+  font-weight:400;
+  line-height:.9;
+  letter-spacing:-.034em;
+  margin-bottom:.9rem;
+}
+
+.hero h1 .line{display:block}
+
+.hero h1 .line:first-child{
+  font-size:clamp(1.05rem,3.2vw,1.28rem);
+  font-style:italic;
+  letter-spacing:.04em;
+  color:var(--ink-muted);
+  margin-bottom:.1rem;
+}
+
+.hero h1 .line:last-child{
+  font-size:clamp(3rem,11vw,4.5rem);
+  text-wrap:balance;
+}
+
+.hero-role{
+  font-size:1.05rem;
+  color:var(--ink-soft);
+  max-width:32ch;
+  line-height:1.58;
+}
+
+.hero-role a{
+  color:inherit;
+  text-decoration-thickness:1px;
+  text-underline-offset:3px;
+  transition:color .2s ease;
+}
+
+@media(hover:hover){
+  .hero-role a:hover{color:var(--accent)}
+}
+
+.hero-loc{
+  display:inline-block;
+  margin-top:.7rem;
+  font-size:.67rem;
+  letter-spacing:.13em;
+  text-transform:uppercase;
+  color:var(--ink-muted);
+  border-top:1px solid var(--rule);
+  padding-top:.5rem;
+}
+
+/* weather stamp */
+.stamp-wrap{
+  position:relative;
+  justify-self:end;
+}
+
+.stamp{
+  width:5.5rem;
+  height:5.5rem;
+  border:1.5px solid var(--fog);
+  border-radius:50%;
+  display:flex;
+  flex-direction:column;
+  align-items:center;
+  justify-content:center;
+  transform:rotate(7deg);
+  opacity:.82;
+  flex-shrink:0;
+  position:relative;
+}
+
+.stamp::after{
+  content:"";
+  position:absolute;
+  inset:4px;
+  border:1px solid var(--fog);
+  border-radius:50%;
+  opacity:.35;
+}
+
+.stamp-tag{
+  position:absolute;
+  top:-.35rem;
+  right:-.85rem;
+  font-family:"Caveat",cursive;
+  font-size:1.05rem;
+  color:var(--coral);
+  transform:rotate(14deg);
+}
+
+.stamp-season{
+  font-size:.48rem;
+  letter-spacing:.15em;
+  text-transform:uppercase;
+  color:var(--fog);
+}
+
+.stamp-temp{
+  font-family:"Instrument Serif",Georgia,serif;
+  font-size:1.38rem;
+  line-height:1;
+  color:var(--fog);
+  margin:.14rem 0;
+}
+
+.stamp-cond{
+  font-size:.44rem;
+  letter-spacing:.09em;
+  text-transform:uppercase;
+  color:var(--fog);
+  opacity:.85;
+}
+
+/* lead */
+.lead-block{
+  position:relative;
+  margin-bottom:3.1rem;
+  padding:0 0 0 1.2rem;
+  border-left:3px solid var(--accent);
+  animation:enter .75s .13s cubic-bezier(.22,1,.36,1) both;
+}
+
+.lead-block .margin-scribble{
+  display:none;
+}
+
+@media(min-width:620px){
+  .lead-block .margin-scribble{
+    display:block;
+    position:absolute;
+    right:-5.5rem;
+    top:.2rem;
+    width:4.5rem;
+    font-family:"Caveat",cursive;
+    font-size:1.05rem;
+    line-height:1.35;
+    color:var(--amber);
+    transform:rotate(6deg);
+    text-align:center;
+  }
+}
+
+.lead{
+  font-size:1.12rem;
+  line-height:1.72;
+  max-width:38ch;
+}
+
+.lead .drop{
+  float:left;
+  font-family:"Instrument Serif",Georgia,serif;
+  font-size:3.1rem;
+  line-height:.78;
+  padding-right:.12em;
+  margin-top:.06em;
+  color:var(--accent);
+}
+
+.lead-mark{
+  position:relative;
+  display:inline;
+  white-space:nowrap;
+}
+
+.lead-mark svg{
+  position:absolute;
+  left:-5px;
+  right:-7px;
+  bottom:-6px;
+  width:calc(100% + 12px);
+  height:15px;
+  pointer-events:none;
+}
+
+.lead-mark svg path{
+  stroke:var(--teal);
+  stroke-width:1.6;
+  fill:none;
+  opacity:.72;
+}
+
+.note{
+  display:block;
+  margin-top:.8rem;
+  font-family:"Caveat",cursive;
+  font-size:1.3rem;
+  color:var(--teal);
+  transform:rotate(-.7deg);
+  transform-origin:left center;
+}
+
+/* section label */
+.section-label{
+  font-size:.63rem;
+  letter-spacing:.17em;
+  text-transform:uppercase;
+  color:var(--ink-muted);
+  margin-bottom:1rem;
+  display:flex;
+  align-items:center;
+  gap:.6rem;
+}
+
+.section-label::before{
+  content:"";
+  width:6px;
+  height:6px;
+  background:var(--coral);
+  flex-shrink:0;
+}
+
+.section-label::after{
+  content:"";
+  flex:1;
+  height:1px;
+  background:var(--rule);
+}
+
+/* field notes */
+.notes{
+  margin-bottom:3.35rem;
+  animation:enter .75s .19s cubic-bezier(.22,1,.36,1) both;
+}
+
+.notes-inner{
+  position:relative;
+  padding:.5rem 0;
+}
+
+.notes-inner::before{
+  content:"";
+  position:absolute;
+  inset:0;
+  pointer-events:none;
+  opacity:.35;
+  background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='1' height='26'%3E%3Cline x1='0' y1='25' x2='1' y2='25' stroke='%23d4cbc0' stroke-width='1'/%3E%3C/svg%3E");
+  background-size:1px 1.58rem;
+}
+
+.signals{
+  list-style:none;
+  position:relative;
+  z-index:1;
+}
+
+.signals li{
+  display:grid;
+  grid-template-columns:1fr;
+  gap:.15rem;
+  padding:.68rem 0;
+  border-bottom:1px solid transparent;
+  transition:background .25s ease;
+}
+
+@media(min-width:560px){
+  .signals li{
+    grid-template-columns:1fr 9.5rem;
+    align-items:baseline;
+    gap:1.25rem;
+  }
+}
+
+.signal-text{
+  position:relative;
+  padding-left:1.05rem;
+  font-size:.93rem;
+  color:var(--ink-soft);
+  line-height:1.55;
+  transition:color .2s ease;
+}
+
+.signal-text::before{
+  content:"—";
+  position:absolute;
+  left:0;
+  color:var(--accent);
+  font-family:"Caveat",cursive;
+  font-size:1.1rem;
+}
+
+.signals li:first-child .signal-text{
+  color:var(--ink);
+  font-style:italic;
+}
+
+.signals li:first-child .signal-text::before{color:var(--coral)}
+
+.signal-note{
+  font-family:"Caveat",cursive;
+  font-size:.98rem;
+  color:var(--teal);
+  opacity:0;
+  transform:translateX(-5px);
+  transition:opacity .28s ease,transform .28s ease;
+  text-align:right;
+  line-height:1.35;
+}
+
+@media(max-width:559px){
+  .signal-note{display:none}
+}
+
+@media(hover:hover){
+  .signals li:hover{
+    background:var(--wash);
+    margin:0 -.55rem;
+    padding-left:.55rem;
+    padding-right:.55rem;
+  }
+  .signals li:hover .signal-text{color:var(--ink)}
+  .signals li:hover .signal-note{
+    opacity:1;
+    transform:translateX(0);
+  }
+}
+
+/* fragments */
+.fragments{
+  margin-bottom:3.5rem;
+  animation:enter .75s .25s cubic-bezier(.22,1,.36,1) both;
+}
+
+.fragment{
+  padding:1.12rem 0 1.12rem 1.65rem;
+  border-bottom:1px solid var(--rule);
+  position:relative;
+  transition:background .25s ease;
+}
+
+.fragment:first-of-type{border-top:1px solid var(--rule)}
+
+.fragment::before{
+  content:"“";
+  position:absolute;
+  left:0;
+  top:.5rem;
+  font-family:"Instrument Serif",Georgia,serif;
+  font-size:2.15rem;
+  line-height:1;
+  color:var(--accent);
+  opacity:.38;
+}
+
+.fragment:nth-child(odd){padding-left:1.65rem}
+.fragment:nth-child(even){padding-left:2.1rem}
+
+.fragment:nth-child(even)::before{color:var(--teal)}
+
+@media(hover:hover){
+  .fragment:hover{background:var(--wash)}
+}
+
+.fragment blockquote{
+  font-family:"Instrument Serif",Georgia,serif;
+  font-size:1.22rem;
+  line-height:1.44;
+  font-style:italic;
+  margin-bottom:.48rem;
+  max-width:36ch;
+}
+
+.fragment blockquote p{white-space:pre-line}
+
+.fragment-meta{
+  display:flex;
+  justify-content:space-between;
+  align-items:baseline;
+  gap:1rem;
+  font-size:.73rem;
+  color:var(--ink-muted);
+  font-variant-numeric:tabular-nums;
+}
+
+.fragment-meta a{
+  color:var(--teal);
+  text-decoration:none;
+  font-family:"Caveat",cursive;
+  font-size:1.02rem;
+  transition:color .2s ease;
+}
+
+@media(hover:hover){
+  .fragment-meta a:hover{color:var(--accent)}
+}
+
+/* writing index */
+.writing{
+  margin-bottom:3.3rem;
+  animation:enter .75s .31s cubic-bezier(.22,1,.36,1) both;
+}
+
+.writing ol{
+  list-style:none;
+  counter-reset:writings;
+}
+
+.writing li{
+  counter-increment:writings;
+  border-bottom:1px solid var(--rule);
+}
+
+.writing li:first-child{border-top:1px solid var(--rule)}
+
+.writing a{
+  display:grid;
+  grid-template-columns:2.15rem 1fr auto;
+  align-items:baseline;
+  gap:.45rem .9rem;
+  padding:.88rem 0;
+  color:var(--ink);
+  text-decoration:none;
+  transition:background .22s ease,padding .22s ease;
+}
+
+.writing a::before{
+  content:counter(writings,"decimal-leading-zero");
+  font-size:.67rem;
+  letter-spacing:.07em;
+  color:var(--ink-muted);
+  font-variant-numeric:tabular-nums;
+  transition:color .2s ease;
+}
+
+.writing .title{
+  font-family:"Instrument Serif",Georgia,serif;
+  font-size:1.09rem;
+  line-height:1.36;
+  transition:color .2s ease;
+}
+
+.writing .ext{
+  font-family:"Caveat",cursive;
+  font-size:.84rem;
+  color:var(--teal);
+  margin-left:.28rem;
+  opacity:0;
+  transition:opacity .2s ease;
+}
+
+.writing .year{
+  font-size:.67rem;
+  color:var(--ink-muted);
+  font-variant-numeric:tabular-nums;
+}
+
+@media(hover:hover){
+  .writing a:hover{
+    background:var(--wash);
+    padding-left:.55rem;
+    padding-right:.55rem;
+    margin-left:-.55rem;
+    margin-right:-.55rem;
+  }
+  .writing a:hover::before{color:var(--coral)}
+  .writing a:hover .title{color:var(--accent)}
+  .writing a:hover .ext{opacity:1}
+}
+
+/* footer */
+.footer{
+  padding-top:1.45rem;
+  border-top:1px solid var(--rule);
+  animation:enter .75s .37s cubic-bezier(.22,1,.36,1) both;
+}
+
+.footer-links{
+  display:flex;
+  flex-wrap:wrap;
+  gap:.2rem 1.4rem;
+  margin-bottom:1.2rem;
+}
+
+.footer-links a{
+  font-size:.83rem;
+  color:var(--ink-soft);
+  text-decoration:none;
+  position:relative;
+  transition:color .2s ease;
+}
+
+.footer-links a::after{
+  content:"";
+  position:absolute;
+  left:0;
+  right:0;
+  bottom:-2px;
+  height:1px;
+  background:var(--accent);
+  transform:scaleX(0);
+  transform-origin:left;
+  transition:transform .22s ease;
+}
+
+@media(hover:hover){
+  .footer-links a:hover{color:var(--ink)}
+  .footer-links a:hover::after{transform:scaleX(1)}
+}
+
+.footer-note{
+  font-family:"Caveat",cursive;
+  font-size:1.12rem;
+  color:var(--ink-muted);
+  transform:rotate(-.3deg);
+  max-width:28ch;
+  line-height:1.42;
+}
+
+.footer-note span{color:var(--teal)}
+
+@keyframes enter{
+  from{opacity:0;transform:translateY(16px)}
+  to{opacity:1;transform:translateY(0)}
+}
+
+@media(prefers-reduced-motion:reduce){
+  *,*::before,*::after{
+    animation-duration:.01ms!important;
+    animation-iteration-count:1!important;
+    transition-duration:.01ms!important;
+  }
+}
+
+:focus-visible{
+  outline:2px solid var(--accent);
+  outline-offset:3px;
+}
+</style>
+
+<style id="__living_site_scroll_guard">
+  /* Scroll guard injected at build time to ensure generated pages remain scrollable in iframes. */
+  html, body {
+    height: auto !important;
+    min-height: 100% !important;
+    max-height: none !important;
+    overflow-y: auto !important;
+    overflow-x: hidden !important;
+    position: static !important;
+    -webkit-overflow-scrolling: touch !important;
+    touch-action: pan-y !important;
+    overscroll-behavior-y: contain !important;
+  }
+  /* Avoid accidental fixed full-screen traps that break scrolling on mobile. */
+  body {
+    inset: auto !important;
+  }
+</style>
+</head>
+<body>
+<main class="page">
+
+  <span class="page-fold" aria-hidden="true"></span>
+  <span class="page-num" aria-hidden="true">18</span>
+
+  <header class="masthead">
+    <div class="masthead-left">
+      <p class="masthead-brand"><em>eriks</em>.design</p>
+      <span class="masthead-vol">Vol. daily · rebuilt from data</span>
+    </div>
+    <div class="masthead-meta">
+      <time datetime="2026-10-18">Oct 18, 2026</time>
+      <span>San Francisco</span>
+    </div>
+  </header>
+
+  <p class="dateline"><span>Issue 291 · Autumn edition</span></p>
+
+  <div class="spread">
+    <section class="hero">
+      <h1>
+        <span class="line">Erik</span>
+        <span class="line">Nilsson</span>
+      </h1>
+      <p class="hero-role">Product designer at <a href="https://cursor.com">Cursor</a>, working on how people build software with AI.</p>
+      <span class="hero-loc">San Francisco, CA</span>
+    </section>
+    <div class="stamp-wrap">
+      <div class="stamp" aria-label="Weather: 13 degrees Celsius, clear, autumn">
+        <span class="stamp-season">Autumn</span>
+        <span class="stamp-temp">13°</span>
+        <span class="stamp-cond">Clear</span>
+      </div>
+      <span class="stamp-tag" aria-hidden="true">today</span>
+    </div>
+  </div>
+
+  <div class="lead-block">
+    <span class="margin-scribble" aria-hidden="true">the experiment ↗</span>
+    <p class="lead">
+      <span class="drop">O</span>ff-hours, I tinker with <span class="lead-mark">living-site<svg viewBox="0 0 120 14" preserveAspectRatio="none" aria-hidden="true"><path d="M2 10 C28 1, 52 13, 78 5 S108 3, 118 7"/></svg></span> — agents rebuild this corner of the web from fresh activity data each day.
+    </p>
+    <span class="note">rebuilt daily · never quite the same</span>
+  </div>
+
+  <section class="notes" aria-labelledby="notes-label">
+    <h2 class="section-label" id="notes-label">Field notes</h2>
+    <div class="notes-inner">
+      <ul class="signals">
+        <li>
+          <span class="signal-text">Clear autumn night over the bay at thirteen degrees</span>
+          <span class="signal-note">↳ golden gate fog rolling in</span>
+        </li>
+        <li>
+          <span class="signal-text">Sub-micrometer robots threading invisible pathways</span>
+          <span class="signal-note">↳ scale shifts again</span>
+        </li>
+        <li>
+          <span class="signal-text">Parser combinators resurfacing in late-night code threads</span>
+          <span class="signal-note">↳ old ideas, new syntax</span>
+        </li>
+        <li>
+          <span class="signal-text">Sunset closing in on golden gate fog</span>
+          <span class="signal-note">↳ the bay at dusk</span>
+        </li>
+        <li>
+          <span class="signal-text">Agents spinning up from a pocket-sized shortcut</span>
+          <span class="signal-note">↳ ship from anywhere</span>
+        </li>
+      </ul>
+    </div>
+  </section>
+
+  <section class="fragments" aria-labelledby="fragments-label">
+    <h2 class="section-label" id="fragments-label">Recent fragments</h2>
+
+    <article class="fragment">
+      <blockquote><p>imagine 2026</p></blockquote>
+      <div class="fragment-meta">
+        <time datetime="2025-12-20">Dec 20</time>
+        <a href="https://x.com/flowstated/status/2002167999353241901">→ x</a>
+      </div>
+    </article>
+
+    <article class="fragment">
+      <blockquote><p>shipping by sunrise</p></blockquote>
+      <div class="fragment-meta">
+        <time datetime="2025-12-16">Dec 16</time>
+        <a href="https://x.com/flowstated/status/2000889983562080578">→ x</a>
+      </div>
+    </article>
+
+    <article class="fragment">
+      <blockquote><p>exploring ways to spin up agents from my phone
+
+iOS shortcuts × github actions × cursor cli</p></blockquote>
+      <div class="fragment-meta">
+        <time datetime="2025-12-15">Dec 15</time>
+        <a href="https://x.com/flowstated/status/2000691637190861180">→ x</a>
+      </div>
+    </article>
+  </section>
+
+  <section class="writing" aria-labelledby="writing-label">
+    <h2 class="section-label" id="writing-label">Writing</h2>
+    <ol>
+      <li>
+        <a href="https://cursor.com/blog/design-mode">
+          <span class="title">Directing agents visually<span class="ext">↗</span></span>
+          <span class="year">2026</span>
+        </a>
+      </li>
+      <li>
+        <a href="https://eriks.design/posts/a-living-site">
+          <span class="title">A living site</span>
+          <span class="year">2025</span>
+        </a>
+      </li>
+      <li>
+        <a href="https://eriks.design/posts/surgical-edits">
+          <span class="title">Surgical edits</span>
+          <span class="year">2025</span>
+        </a>
+      </li>
+      <li>
+        <a href="https://eriks.design/posts/familiar-differentiation">
+          <span class="title">Familiar differentiation</span>
+          <span class="year">2024</span>
+        </a>
+      </li>
+      <li>
+        <a href="https://eriks.design/posts/hackathon-energy-but-add-users">
+          <span class="title">Hackathon energy, but add users</span>
+          <span class="year">2022</span>
+        </a>
+      </li>
+    </ol>
+  </section>
+
+  <footer class="footer">
+    <nav class="footer-links" aria-label="Contact">
+      <a href="https://cursor.com">Cursor</a>
+      <a href="https://x.com/flowstated">X</a>
+      <a href="https://github.com/eriknson">GitHub</a>
+      <a href="https://linkedin.com/in/eriknson">LinkedIn</a>
+      <a href="mailto:contact@eriks.design">Email</a>
+    </nav>
+    <p class="footer-note">Side projects on <span>GitHub</span> — small experiments, not the day job.</p>
+  </footer>
+</main>
+</body>
+</html>
