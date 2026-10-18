@@ -1,0 +1,1116 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>THUNK — Parse Rush</title>
+<style>
+  :root {
+    --bg: #0a0e0a;
+    --bg2: #111811;
+    --phosphor: #33ff66;
+    --phosphor-dim: #1a9940;
+    --phosphor-glow: rgba(51, 255, 102, 0.35);
+    --amber: #ffb020;
+    --red: #ff3344;
+    --text: #33ff66;
+    --text-dim: #2a8a45;
+    --panel: rgba(10, 14, 10, 0.92);
+    --grid: rgba(51, 255, 102, 0.06);
+    --scanline: rgba(0, 0, 0, 0.12);
+  }
+  @media (prefers-color-scheme: dark) {
+    :root {
+      --bg: #0a0e0a;
+      --bg2: #111811;
+      --phosphor: #33ff66;
+      --phosphor-dim: #1a9940;
+      --phosphor-glow: rgba(51, 255, 102, 0.35);
+      --amber: #ffb020;
+      --red: #ff3344;
+      --text: #33ff66;
+      --text-dim: #2a8a45;
+      --panel: rgba(10, 14, 10, 0.92);
+      --grid: rgba(51, 255, 102, 0.06);
+      --scanline: rgba(0, 0, 0, 0.12);
+    }
+  }
+  @media (prefers-color-scheme: light) {
+    :root {
+      --bg: #f0f2eb;
+      --bg2: #e4e8dc;
+      --phosphor: #0d6b2e;
+      --phosphor-dim: #0a5224;
+      --phosphor-glow: rgba(13, 107, 46, 0.25);
+      --amber: #c47a00;
+      --red: #cc2233;
+      --text: #0d6b2e;
+      --text-dim: #5a8a6a;
+      --panel: rgba(240, 242, 235, 0.94);
+      --grid: rgba(13, 107, 46, 0.08);
+      --scanline: rgba(255, 255, 255, 0.15);
+    }
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  html, body {
+    width: 100dvw;
+    height: 100dvh;
+    overflow: hidden;
+    background: var(--bg);
+    color: var(--text);
+    font-family: ui-monospace, 'SFMono-Regular', Menlo, monospace;
+    user-select: none;
+    -webkit-user-select: none;
+  }
+  #app {
+    position: relative;
+    width: 100dvw;
+    height: 100dvh;
+    display: flex;
+    flex-direction: column;
+  }
+  #hud {
+    flex: 0 0 auto;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 10px 16px;
+    padding-top: max(10px, env(safe-area-inset-top));
+    background: var(--panel);
+    border-bottom: 1px solid var(--phosphor-dim);
+    z-index: 10;
+  }
+  .hud-block { display: flex; flex-direction: column; gap: 2px; }
+  .hud-label {
+    font-size: 10px;
+    letter-spacing: 0.12em;
+    color: var(--text-dim);
+    text-transform: uppercase;
+  }
+  .hud-value { font-size: 18px; font-weight: 600; }
+  #compiler-bar-wrap {
+    flex: 1;
+    margin: 0 16px;
+    max-width: 200px;
+  }
+  #compiler-bar-bg {
+    height: 6px;
+    background: var(--bg2);
+    border: 1px solid var(--phosphor-dim);
+    border-radius: 2px;
+    overflow: hidden;
+  }
+  #compiler-bar {
+    height: 100%;
+    width: 100%;
+    background: var(--phosphor);
+    box-shadow: 0 0 8px var(--phosphor-glow);
+    transition: width 0.15s linear;
+  }
+  #arena-wrap {
+    flex: 1;
+    position: relative;
+    min-height: 0;
+  }
+  #canvas {
+    display: block;
+    width: 100%;
+    height: 100%;
+    touch-action: none;
+    cursor: crosshair;
+  }
+  .overlay {
+    position: absolute;
+    inset: 0;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    background: var(--panel);
+    z-index: 20;
+    pointer-events: none;
+    transition: opacity 0.35s ease;
+  }
+  .overlay.hidden {
+    opacity: 0;
+    visibility: hidden;
+  }
+  .overlay-card {
+    text-align: center;
+    padding: 32px 24px;
+    max-width: 340px;
+    pointer-events: none;
+  }
+  .title-main {
+    font-size: clamp(28px, 8vw, 42px);
+    font-weight: 700;
+    letter-spacing: 0.08em;
+    color: var(--phosphor);
+    text-shadow: 0 0 20px var(--phosphor-glow);
+    margin-bottom: 8px;
+  }
+  .title-sub {
+    font-size: 12px;
+    letter-spacing: 0.15em;
+    color: var(--text-dim);
+    text-transform: uppercase;
+    margin-bottom: 24px;
+  }
+  .title-desc {
+    font-size: 13px;
+    line-height: 1.6;
+    color: var(--text-dim);
+    margin-bottom: 28px;
+  }
+  .overlay button {
+    pointer-events: auto;
+    min-height: 48px;
+    min-width: 180px;
+    padding: 14px 32px;
+    font-family: inherit;
+    font-size: 14px;
+    font-weight: 600;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    border: 2px solid var(--phosphor);
+    background: transparent;
+    color: var(--phosphor);
+    cursor: pointer;
+    border-radius: 2px;
+    transition: background 0.15s, box-shadow 0.15s, transform 0.1s;
+  }
+  .overlay button:hover,
+  .overlay button:focus-visible {
+    background: var(--phosphor);
+    color: var(--bg);
+    box-shadow: 0 0 24px var(--phosphor-glow);
+    outline: none;
+  }
+  .overlay button:active { transform: scale(0.97); }
+  .final-score {
+    font-size: 36px;
+    font-weight: 700;
+    color: var(--phosphor);
+    margin: 12px 0 6px;
+  }
+  .final-detail {
+    font-size: 12px;
+    color: var(--text-dim);
+    margin-bottom: 24px;
+  }
+  #hint {
+    position: absolute;
+    bottom: max(16px, env(safe-area-inset-bottom));
+    left: 50%;
+    transform: translateX(-50%);
+    font-size: 11px;
+    letter-spacing: 0.08em;
+    color: var(--text-dim);
+    pointer-events: none;
+    z-index: 5;
+    opacity: 0.7;
+  }
+</style>
+</head>
+<body>
+<div id="app">
+  <div id="hud">
+    <div class="hud-block">
+      <span class="hud-label">Score</span>
+      <span class="hud-value" id="score">0</span>
+    </div>
+    <div id="compiler-bar-wrap">
+      <span class="hud-label" style="text-align:center;display:block;margin-bottom:4px;">Compiler Window</span>
+      <div id="compiler-bar-bg"><div id="compiler-bar"></div></div>
+    </div>
+    <div class="hud-block" style="text-align:right;">
+      <span class="hud-label">Combo</span>
+      <span class="hud-value" id="combo">×1</span>
+    </div>
+  </div>
+  <div id="arena-wrap">
+    <canvas id="canvas"></canvas>
+    <div id="hint">drag between tokens to link · autumn build 13°C</div>
+    <div class="overlay" id="title-overlay">
+      <div class="overlay-card">
+        <div class="title-main">THUNK</div>
+        <div class="title-sub">parse rush · v0.9</div>
+        <p class="title-desc">Syntax tokens fall through the compiler window. Drag to wire brackets and operators into valid parse trees before the window closes.</p>
+        <button type="button" data-smoke="start" id="btn-start">Compile</button>
+      </div>
+    </div>
+    <div class="overlay hidden" id="gameover-overlay">
+      <div class="overlay-card">
+        <div class="title-sub">Compiler halted</div>
+        <div class="final-score" id="final-score">0</div>
+        <div class="final-detail" id="final-detail">0 trees compiled</div>
+        <button type="button" data-smoke="restart" id="btn-restart">Recompile</button>
+      </div>
+    </div>
+  </div>
+</div>
+<script>
+(function () {
+  'use strict';
+
+  var canvas = document.getElementById('canvas');
+  var ctx = canvas && canvas.getContext ? canvas.getContext('2d') : null;
+  var scoreEl = document.getElementById('score');
+  var comboEl = document.getElementById('combo');
+  var compilerBar = document.getElementById('compiler-bar');
+  var finalScoreEl = document.getElementById('final-score');
+  var finalDetailEl = document.getElementById('final-detail');
+  var titleOverlay = document.getElementById('title-overlay');
+  var gameoverOverlay = document.getElementById('gameover-overlay');
+  var hintEl = document.getElementById('hint');
+  var btnStart = document.getElementById('btn-start');
+  var btnRestart = document.getElementById('btn-restart');
+
+  var W = 300, H = 500, dpr = 1;
+  var state = 'title';
+  var score = 0, combo = 1, maxCombo = 1, compiled = 0;
+  var timeLeft = 50, maxTime = 50;
+  var spawnTimer = 0, spawnInterval = 2.2;
+  var fallSpeed = 55;
+  var tokens = [];
+  var links = [];
+  var particles = [];
+  var compileBursts = [];
+  var nextId = 1;
+  var dragToken = null;
+  var selectedToken = null;
+  var dragX = 0, dragY = 0;
+  var dragStartX = 0, dragStartY = 0;
+  var pointerDown = false;
+  var flashRed = 0;
+  var shakeT = 0;
+  var lastTime = 0;
+  var audioCtx = null;
+
+  var BRACKET_PAIRS = { '(': ')', '[': ']', '{': '}' };
+  var CLOSE_TO_OPEN = { ')': '(', ']': '[', '}': '{' };
+  var OPS = ['+', '-', '*', '/', '=>'];
+  var IDS = ['x', 'y', 'fn', 'let', 'map', 'val'];
+  var NUMS = ['0', '1', '7', '42', '99'];
+
+  var COLORS = {
+    bg: '#0a0e0a',
+    grid: 'rgba(51,255,102,0.06)',
+    phosphor: '#33ff66',
+    phosphorDim: '#1a9940',
+    phosphorGlow: 'rgba(51,255,102,0.15)',
+    amber: '#ffb020',
+    red: '#ff3344',
+    scanline: 'rgba(0,0,0,0.12)'
+  };
+
+  function readTheme() {
+    var dark = !window.matchMedia || window.matchMedia('(prefers-color-scheme: light)').matches === false;
+    if (dark) {
+      COLORS.bg = '#0a0e0a';
+      COLORS.grid = 'rgba(51,255,102,0.06)';
+      COLORS.phosphor = '#33ff66';
+      COLORS.phosphorDim = '#1a9940';
+      COLORS.phosphorGlow = 'rgba(51,255,102,0.15)';
+      COLORS.scanline = 'rgba(0,0,0,0.12)';
+    } else {
+      COLORS.bg = '#f0f2eb';
+      COLORS.grid = 'rgba(13,107,46,0.08)';
+      COLORS.phosphor = '#0d6b2e';
+      COLORS.phosphorDim = '#0a5224';
+      COLORS.phosphorGlow = 'rgba(13,107,46,0.12)';
+      COLORS.scanline = 'rgba(255,255,255,0.15)';
+    }
+  }
+
+  function resize() {
+    if (!canvas) return;
+    var wrap = document.getElementById('arena-wrap');
+    if (!wrap) return;
+    dpr = Math.min(window.devicePixelRatio || 1, 2);
+    W = wrap.clientWidth || 300;
+    H = wrap.clientHeight || 400;
+    canvas.width = Math.floor(W * dpr);
+    canvas.height = Math.floor(H * dpr);
+    canvas.style.width = W + 'px';
+    canvas.style.height = H + 'px';
+    if (ctx) ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+  }
+
+  function rand(arr) { return arr[Math.floor(Math.random() * arr.length)]; }
+  function randRange(a, b) { return a + Math.random() * (b - a); }
+
+  function makeToken(label, kind, x, y, groupId) {
+    return {
+      id: nextId++,
+      label: label,
+      kind: kind,
+      x: x,
+      y: y,
+      vx: randRange(-8, 8),
+      vy: 0,
+      r: 22,
+      groupId: groupId || 0,
+      links: [],
+      compiling: false,
+      compileT: 0,
+      pulse: Math.random() * Math.PI * 2,
+      wobble: randRange(0.8, 1.2)
+    };
+  }
+
+  function spawnFragment(difficulty) {
+    var groupId = nextId++;
+    var cx = randRange(W * 0.15, W * 0.85);
+    var patterns = difficulty > 0.6
+      ? ['nested', 'op_expr', 'bracket', 'bracket', 'array']
+      : ['bracket', 'op_expr', 'bracket', 'simple'];
+    var pattern = rand(patterns);
+    var frag = [];
+    var y = -40;
+
+    if (pattern === 'bracket') {
+      var inner = rand(IDS.concat(NUMS));
+      frag.push(makeToken('(', 'open', cx - 50, y, groupId));
+      frag.push(makeToken(inner, 'lit', cx, y + 8, groupId));
+      frag.push(makeToken(')', 'close', cx + 50, y + 16, groupId));
+    } else if (pattern === 'op_expr') {
+      var a = rand(IDS.concat(NUMS));
+      var b = rand(NUMS);
+      var op = rand(OPS.slice(0, 4));
+      frag.push(makeToken(a, 'lit', cx - 55, y, groupId));
+      frag.push(makeToken(op, 'op', cx, y + 6, groupId));
+      frag.push(makeToken(b, 'lit', cx + 55, y + 12, groupId));
+    } else if (pattern === 'array') {
+      frag.push(makeToken('[', 'open', cx - 45, y, groupId));
+      frag.push(makeToken(rand(NUMS), 'lit', cx, y + 8, groupId));
+      frag.push(makeToken(']', 'close', cx + 45, y + 16, groupId));
+    } else if (pattern === 'nested') {
+      frag.push(makeToken('(', 'open', cx - 60, y, groupId));
+      frag.push(makeToken('[', 'open', cx - 15, y + 10, groupId));
+      frag.push(makeToken(rand(NUMS), 'lit', cx + 20, y + 18, groupId));
+      frag.push(makeToken(']', 'close', cx + 55, y + 26, groupId));
+      frag.push(makeToken(')', 'close', cx + 90, y + 34, groupId));
+    } else {
+      frag.push(makeToken('{', 'open', cx - 30, y, groupId));
+      frag.push(makeToken(rand(IDS), 'lit', cx + 30, y + 10, groupId));
+      frag.push(makeToken('}', 'close', cx + 70, y + 20, groupId));
+    }
+
+    for (var i = 0; i < frag.length; i++) tokens.push(frag[i]);
+  }
+
+  function getTokenAt(px, py) {
+    for (var i = tokens.length - 1; i >= 0; i--) {
+      var t = tokens[i];
+      if (t.compiling) continue;
+      var dx = px - t.x, dy = py - t.y;
+      if (dx * dx + dy * dy <= (t.r + 8) * (t.r + 8)) return t;
+    }
+    return null;
+  }
+
+  function hasLink(a, b) {
+    return a.links.indexOf(b.id) !== -1;
+  }
+
+  function addLink(a, b) {
+    if (hasLink(a, b)) return true;
+    if (a.links.length >= maxLinks(a) || b.links.length >= maxLinks(b)) return false;
+    a.links.push(b.id);
+    b.links.push(a.id);
+    links.push({ a: a.id, b: b.id });
+    return true;
+  }
+
+  function maxLinks(t) {
+    if (t.kind === 'op') return 2;
+    if (t.kind === 'open' || t.kind === 'close') return 1;
+    return 2;
+  }
+
+  function matchingBracket(open, close) {
+    return BRACKET_PAIRS[open.label] === close.label;
+  }
+
+  function isOpen(t) { return t.kind === 'open'; }
+  function isClose(t) { return t.kind === 'close'; }
+
+  function validateConnection(a, b) {
+    if (a.id === b.id) return false;
+    if (hasLink(a, b)) return false;
+
+    var openTok = null, closeTok = null, opTok = null, other = null;
+
+    if (isOpen(a) && isClose(b)) { openTok = a; closeTok = b; }
+    else if (isOpen(b) && isClose(a)) { openTok = b; closeTok = a; }
+    else if (a.kind === 'op' && b.kind !== 'op') { opTok = a; other = b; }
+    else if (b.kind === 'op' && a.kind !== 'op') { opTok = b; other = a; }
+    else if (a.kind === 'lit' && (isOpen(b) || isClose(b))) {
+      return a.groupId === b.groupId;
+    } else if (b.kind === 'lit' && (isOpen(a) || isClose(a))) {
+      return a.groupId === b.groupId;
+    } else return false;
+
+    if (openTok && closeTok) {
+      if (!matchingBracket(openTok, closeTok)) return false;
+      if (openTok.groupId !== closeTok.groupId) return false;
+      if (linksCross(openTok, closeTok)) return false;
+      return true;
+    }
+
+    if (opTok && other) {
+      if (opTok.groupId !== other.groupId) return false;
+      if (other.kind === 'op') return false;
+      return true;
+    }
+
+    return false;
+  }
+
+  function linksCross(openTok, closeTok) {
+    var ox = openTok.x, cx = closeTok.x;
+    var minX = Math.min(ox, cx), maxX = Math.max(ox, cx);
+    for (var i = 0; i < links.length; i++) {
+      var l = links[i];
+      var ta = tokenById(l.a), tb = tokenById(l.b);
+      if (!ta || !tb) continue;
+      if ((ta.id === openTok.id && tb.id === closeTok.id) || (ta.id === closeTok.id && tb.id === openTok.id)) continue;
+      var isBracketLink = (isOpen(ta) && isClose(tb)) || (isOpen(tb) && isClose(ta));
+      if (!isBracketLink) continue;
+      var bx1 = ta.x, bx2 = tb.x;
+      var bmin = Math.min(bx1, bx2), bmax = Math.max(bx1, bx2);
+      if (bmin < maxX && bmax > minX) {
+        if (!(bmax <= minX || bmin >= maxX)) {
+          if (ta.groupId === openTok.groupId) continue;
+          return true;
+        }
+      }
+    }
+    return false;
+  }
+
+  function tokenById(id) {
+    for (var i = 0; i < tokens.length; i++) if (tokens[i].id === id) return tokens[i];
+    return null;
+  }
+
+  function groupTokens(gid) {
+    var out = [];
+    for (var i = 0; i < tokens.length; i++) if (tokens[i].groupId === gid && !tokens[i].compiling) out.push(tokens[i]);
+    return out;
+  }
+
+  function isGroupComplete(gid) {
+    var g = groupTokens(gid);
+    if (g.length === 0) return false;
+
+    var opens = g.filter(isOpen);
+    var closes = g.filter(isClose);
+    var operator = null;
+    for (var i = 0; i < g.length; i++) if (g[i].kind === 'op') operator = g[i];
+
+    for (var o = 0; o < opens.length; o++) {
+      var paired = false;
+      for (var c = 0; c < closes.length; c++) {
+        if (matchingBracket(opens[o], closes[c]) && hasLink(opens[o], closes[c])) paired = true;
+      }
+      if (!paired) return false;
+    }
+    for (var c2 = 0; c2 < closes.length; c2++) {
+      var paired2 = false;
+      for (var o2 = 0; o2 < opens.length; o2++) {
+        if (matchingBracket(opens[o2], closes[c2]) && hasLink(opens[o2], closes[c2])) paired2 = true;
+      }
+      if (!paired2) return false;
+    }
+
+    if (operator) return operator.links.length === 2;
+
+    if (g.length === 5 && opens.length === 2) {
+      var lit = g.find(function (t) { return t.kind === 'lit'; });
+      return !!(lit && lit.links.length > 0);
+    }
+
+    return opens.length > 0 || g.length === 0;
+  }
+
+  function tryConnect(a, b) {
+    if (!validateConnection(a, b)) {
+      flashRed = 0.35;
+      combo = 1;
+      updateHud();
+      playTone(120, 0.08, 'sawtooth', 0.06);
+      if (navigator.vibrate) navigator.vibrate(30);
+      return false;
+    }
+    addLink(a, b);
+    playTone(440, 0.06, 'square', 0.04);
+    checkCompletions();
+    return true;
+  }
+
+  function checkCompletions() {
+    var seen = {};
+    for (var i = 0; i < tokens.length; i++) {
+      var gid = tokens[i].groupId;
+      if (seen[gid] || tokens[i].compiling) continue;
+      seen[gid] = true;
+      if (isGroupComplete(gid)) compileGroup(gid);
+    }
+  }
+
+  function compileGroup(gid) {
+    var g = groupTokens(gid);
+    if (g.length === 0) return;
+
+    var expr = buildExprString(g);
+    var pts = 10 + g.length * 5 + combo * 3;
+    score += pts;
+    compiled++;
+    combo = Math.min(combo + 1, 9);
+    maxCombo = Math.max(maxCombo, combo);
+    timeLeft = Math.min(maxTime, timeLeft + 1.5);
+
+    var cx = 0, cy = 0;
+    for (var i = 0; i < g.length; i++) { cx += g[i].x; cy += g[i].y; }
+    cx /= g.length; cy /= g.length;
+
+    compileBursts.push({ x: cx, y: cy, text: expr, t: 0, life: 0.9 });
+    spawnParticles(cx, cy, 16);
+
+    playThunk();
+    if (navigator.vibrate) navigator.vibrate([20, 30, 40]);
+
+    for (var j = 0; j < g.length; j++) {
+      g[j].compiling = true;
+      g[j].compileT = 0;
+    }
+
+    updateHud();
+  }
+
+  function buildExprString(g) {
+    var opens = g.filter(function (t) { return isOpen(t); }).sort(function (a, b) { return a.x - b.x; });
+    var closes = g.filter(function (t) { return isClose(t); }).sort(function (a, b) { return a.x - b.x; });
+    var op = g.find(function (t) { return t.kind === 'op'; });
+    var lits = g.filter(function (t) { return t.kind === 'lit'; });
+
+    if (opens.length && closes.length && !op) {
+      return opens[0].label + (lits[0] ? lits[0].label : '') + closes[0].label;
+    }
+    if (op && lits.length >= 2) {
+      return lits[0].label + op.label + lits[1].label;
+    }
+    if (opens.length === 2) {
+      return '([' + (lits[0] ? lits[0].label : '') + '])';
+    }
+    return 'ok';
+  }
+
+  function spawnParticles(x, y, n) {
+    for (var i = 0; i < n; i++) {
+      var ang = Math.random() * Math.PI * 2;
+      var spd = randRange(40, 140);
+      particles.push({
+        x: x, y: y,
+        vx: Math.cos(ang) * spd,
+        vy: Math.sin(ang) * spd,
+        life: randRange(0.3, 0.7),
+        t: 0
+      });
+    }
+  }
+
+  function playTone(freq, dur, type, vol) {
+    try {
+      if (!audioCtx) {
+        var AC = window.AudioContext || window.webkitAudioContext;
+        if (!AC) return;
+        audioCtx = new AC();
+      }
+      if (audioCtx.state === 'suspended') audioCtx.resume();
+      var osc = audioCtx.createOscillator();
+      var gain = audioCtx.createGain();
+      osc.type = type || 'square';
+      osc.frequency.value = freq;
+      gain.gain.setValueAtTime(vol || 0.05, audioCtx.currentTime);
+      gain.gain.exponentialRampToValueAtTime(0.001, audioCtx.currentTime + dur);
+      osc.connect(gain);
+      gain.connect(audioCtx.destination);
+      osc.start();
+      osc.stop(audioCtx.currentTime + dur);
+    } catch (e) { /* silent */ }
+  }
+
+  function playThunk() {
+    try {
+      if (!audioCtx) {
+        var AC = window.AudioContext || window.webkitAudioContext;
+        if (!AC) return;
+        audioCtx = new AC();
+      }
+      if (audioCtx.state === 'suspended') audioCtx.resume();
+      var t = audioCtx.currentTime;
+      var osc = audioCtx.createOscillator();
+      var gain = audioCtx.createGain();
+      osc.type = 'square';
+      osc.frequency.setValueAtTime(90, t);
+      osc.frequency.exponentialRampToValueAtTime(35, t + 0.12);
+      gain.gain.setValueAtTime(0.15, t);
+      gain.gain.exponentialRampToValueAtTime(0.001, t + 0.18);
+      osc.connect(gain);
+      gain.connect(audioCtx.destination);
+      osc.start(t);
+      osc.stop(t + 0.2);
+
+      var noise = audioCtx.createOscillator();
+      var ng = audioCtx.createGain();
+      noise.type = 'sawtooth';
+      noise.frequency.value = 55;
+      ng.gain.setValueAtTime(0.04, t);
+      ng.gain.exponentialRampToValueAtTime(0.001, t + 0.1);
+      noise.connect(ng);
+      ng.connect(audioCtx.destination);
+      noise.start(t);
+      noise.stop(t + 0.12);
+    } catch (e) { /* silent */ }
+  }
+
+  function updateHud() {
+    if (scoreEl) scoreEl.textContent = String(score);
+    if (comboEl) comboEl.textContent = '×' + combo;
+    if (compilerBar) compilerBar.style.width = Math.max(0, (timeLeft / maxTime) * 100) + '%';
+  }
+
+  function getPointer(e) {
+    var rect = canvas.getBoundingClientRect();
+    var clientX, clientY;
+    if (e.touches && e.touches.length) {
+      clientX = e.touches[0].clientX;
+      clientY = e.touches[0].clientY;
+    } else if (e.changedTouches && e.changedTouches.length) {
+      clientX = e.changedTouches[0].clientX;
+      clientY = e.changedTouches[0].clientY;
+    } else {
+      clientX = e.clientX;
+      clientY = e.clientY;
+    }
+    return { x: clientX - rect.left, y: clientY - rect.top };
+  }
+
+  function onPointerDown(e) {
+    if (state !== 'playing' || !canvas) return;
+    if (e.cancelable) e.preventDefault();
+    pointerDown = true;
+    var p = getPointer(e);
+    dragX = p.x;
+    dragY = p.y;
+    dragStartX = p.x;
+    dragStartY = p.y;
+    var t = getTokenAt(p.x, p.y);
+    if (t) {
+      if (selectedToken && selectedToken.id !== t.id) {
+        tryConnect(selectedToken, t);
+        selectedToken = t;
+      } else {
+        selectedToken = t;
+      }
+      dragToken = t;
+    } else {
+      selectedToken = null;
+      dragToken = null;
+    }
+  }
+
+  function onPointerMove(e) {
+    if (!pointerDown || state !== 'playing') return;
+    if (e.cancelable) e.preventDefault();
+    var p = getPointer(e);
+    dragX = p.x;
+    dragY = p.y;
+  }
+
+  function onPointerUp(e) {
+    if (!pointerDown) return;
+    if (e.cancelable) e.preventDefault();
+    pointerDown = false;
+    if (state !== 'playing' || !dragToken) { dragToken = null; return; }
+    var p = getPointer(e);
+    var target = getTokenAt(p.x, p.y);
+    var moved = Math.hypot(p.x - dragStartX, p.y - dragStartY);
+    if (target && target.id !== dragToken.id && moved > 14) {
+      tryConnect(dragToken, target);
+      selectedToken = null;
+    }
+    dragToken = null;
+  }
+
+  function pruneLinks() {
+    var ids = {};
+    for (var i = 0; i < tokens.length; i++) ids[tokens[i].id] = true;
+    links = links.filter(function (l) { return ids[l.a] && ids[l.b]; });
+  }
+
+  function removeDeadTokens() {
+    tokens = tokens.filter(function (t) {
+      if (t.compiling) {
+        t.compileT += 0.016;
+        return t.compileT < 0.35;
+      }
+      return t.y < H + 60;
+    });
+    pruneLinks();
+  }
+
+  function checkOverflow() {
+    var floorY = H - 30;
+    var overflow = 0;
+    for (var i = 0; i < tokens.length; i++) {
+      var t = tokens[i];
+      if (!t.compiling && t.y > floorY) overflow++;
+    }
+    if (overflow >= 6) endGame('stack overflow');
+  }
+
+  function endGame(reason) {
+    state = 'gameover';
+    if (hintEl) hintEl.style.opacity = '0';
+    if (finalScoreEl) finalScoreEl.textContent = String(score);
+    if (finalDetailEl) finalDetailEl.textContent = compiled + ' trees compiled · best ×' + maxCombo + (reason ? ' · ' + reason : '');
+    if (gameoverOverlay) {
+      gameoverOverlay.classList.remove('hidden');
+    }
+  }
+
+  function resetGame() {
+    score = 0; combo = 1; maxCombo = 1; compiled = 0;
+    timeLeft = maxTime;
+    spawnTimer = 0;
+    spawnInterval = 2.2;
+    fallSpeed = 55;
+    tokens = []; links = []; particles = []; compileBursts = [];
+    flashRed = 0; shakeT = 0;
+    dragToken = null; selectedToken = null; pointerDown = false;
+    updateHud();
+    if (compilerBar) compilerBar.style.width = '100%';
+    if (hintEl) hintEl.style.opacity = '0.7';
+  }
+
+  function startGame() {
+    resetGame();
+    state = 'playing';
+    if (titleOverlay) titleOverlay.classList.add('hidden');
+    if (gameoverOverlay) gameoverOverlay.classList.add('hidden');
+    lastTime = performance.now();
+    spawnFragment(0);
+  }
+
+  function update(dt) {
+    if (state !== 'playing') return;
+
+    var diff = 1 - timeLeft / maxTime;
+    timeLeft -= dt;
+    if (timeLeft <= 0) { timeLeft = 0; endGame('window closed'); return; }
+
+    spawnTimer += dt;
+    var interval = Math.max(0.65, spawnInterval - diff * 1.2);
+    if (spawnTimer >= interval) {
+      spawnTimer = 0;
+      spawnFragment(diff);
+    }
+    fallSpeed = 55 + diff * 70;
+
+    for (var i = 0; i < tokens.length; i++) {
+      var t = tokens[i];
+      if (t.compiling) continue;
+      t.vy += 12 * dt;
+      t.vy = Math.min(t.vy, fallSpeed);
+      t.x += t.vx * dt;
+      t.y += t.vy * dt;
+      t.pulse += dt * 3;
+      if (t.x < t.r + 8) { t.x = t.r + 8; t.vx = Math.abs(t.vx); }
+      if (t.x > W - t.r - 8) { t.x = W - t.r - 8; t.vx = -Math.abs(t.vx); }
+    }
+
+    removeDeadTokens();
+    checkOverflow();
+
+    for (var p = particles.length - 1; p >= 0; p--) {
+      var pt = particles[p];
+      pt.t += dt;
+      pt.x += pt.vx * dt;
+      pt.y += pt.vy * dt;
+      pt.vy += 80 * dt;
+      if (pt.t > pt.life) particles.splice(p, 1);
+    }
+
+    for (var b = compileBursts.length - 1; b >= 0; b--) {
+      compileBursts[b].t += dt;
+      if (compileBursts[b].t > compileBursts[b].life) compileBursts.splice(b, 1);
+    }
+
+    if (flashRed > 0) flashRed -= dt;
+    updateHud();
+  }
+
+  function drawToken(t) {
+    var scale = t.compiling ? 1 - t.compileT / 0.35 : 1;
+    var r = t.r * scale;
+    var glow = 0.5 + Math.sin(t.pulse) * 0.15;
+
+    ctx.beginPath();
+    ctx.arc(t.x, t.y, r + 4, 0, Math.PI * 2);
+    ctx.fillStyle = t.compiling ? COLORS.phosphorGlow : COLORS.grid;
+    ctx.fill();
+
+    ctx.beginPath();
+    ctx.arc(t.x, t.y, r, 0, Math.PI * 2);
+    ctx.fillStyle = COLORS.bg;
+    ctx.fill();
+    ctx.strokeStyle = t.kind === 'op' ? COLORS.amber : COLORS.phosphor;
+    ctx.lineWidth = t.compiling ? 3 : 2;
+    ctx.globalAlpha = t.compiling ? 1 - t.compileT / 0.35 : 1;
+    ctx.stroke();
+
+    ctx.fillStyle = t.kind === 'op' ? COLORS.amber : COLORS.phosphor;
+    ctx.font = '600 ' + (t.label.length > 2 ? 13 : 16) + 'px ui-monospace, Menlo, monospace';
+    ctx.textAlign = 'center';
+    ctx.textBaseline = 'middle';
+    ctx.globalAlpha = t.compiling ? 1 - t.compileT / 0.35 : 1;
+    ctx.fillText(t.label, t.x, t.y);
+    ctx.globalAlpha = 1;
+
+    if ((dragToken && dragToken.id === t.id) || (selectedToken && selectedToken.id === t.id)) {
+      ctx.beginPath();
+      ctx.arc(t.x, t.y, r + 8, 0, Math.PI * 2);
+      ctx.strokeStyle = COLORS.phosphor;
+      ctx.lineWidth = 2;
+      ctx.globalAlpha = glow;
+      ctx.stroke();
+      ctx.globalAlpha = 1;
+    }
+  }
+
+  function drawHints() {
+    var seen = {};
+    for (var i = 0; i < tokens.length; i++) {
+      var t = tokens[i];
+      if (t.compiling || seen[t.groupId]) continue;
+      seen[t.groupId] = true;
+      var g = groupTokens(t.groupId);
+      if (g.length < 2) continue;
+      for (var a = 0; a < g.length - 1; a++) {
+        ctx.beginPath();
+        ctx.moveTo(g[a].x, g[a].y);
+        ctx.lineTo(g[a + 1].x, g[a + 1].y);
+        ctx.strokeStyle = COLORS.phosphorDim;
+        ctx.lineWidth = 1;
+        ctx.globalAlpha = 0.18;
+        ctx.setLineDash([4, 6]);
+        ctx.stroke();
+        ctx.setLineDash([]);
+        ctx.globalAlpha = 1;
+      }
+    }
+  }
+
+  function drawLinks() {
+    for (var i = 0; i < links.length; i++) {
+      var l = links[i];
+      var a = tokenById(l.a), b = tokenById(l.b);
+      if (!a || !b) continue;
+      ctx.beginPath();
+      ctx.moveTo(a.x, a.y);
+      ctx.lineTo(b.x, b.y);
+      ctx.strokeStyle = COLORS.phosphorDim;
+      ctx.lineWidth = 2;
+      ctx.globalAlpha = 0.7;
+      ctx.stroke();
+      ctx.globalAlpha = 1;
+    }
+
+    if (dragToken && pointerDown) {
+      ctx.beginPath();
+      ctx.moveTo(dragToken.x, dragToken.y);
+      ctx.lineTo(dragX, dragY);
+      ctx.strokeStyle = COLORS.phosphor;
+      ctx.lineWidth = 2;
+      ctx.setLineDash([6, 4]);
+      ctx.stroke();
+      ctx.setLineDash([]);
+    }
+  }
+
+  function draw() {
+    if (!ctx) return;
+    readTheme();
+
+    var sx = shakeT > 0 ? (Math.random() - 0.5) * 4 : 0;
+    var sy = shakeT > 0 ? (Math.random() - 0.5) * 4 : 0;
+    if (shakeT > 0) shakeT -= 0.016;
+
+    ctx.save();
+    ctx.translate(sx, sy);
+    ctx.fillStyle = COLORS.bg;
+    ctx.fillRect(0, 0, W, H);
+
+    ctx.strokeStyle = COLORS.grid;
+    ctx.lineWidth = 1;
+    var gridStep = 32;
+    for (var gx = 0; gx < W; gx += gridStep) {
+      ctx.beginPath(); ctx.moveTo(gx, 0); ctx.lineTo(gx, H); ctx.stroke();
+    }
+    for (var gy = 0; gy < H; gy += gridStep) {
+      ctx.beginPath(); ctx.moveTo(0, gy); ctx.lineTo(W, gy); ctx.stroke();
+    }
+
+    var floorY = H - 30;
+    ctx.fillStyle = flashRed > 0 ? 'rgba(255,51,68,0.12)' : COLORS.phosphorGlow;
+    ctx.fillRect(0, floorY, W, H - floorY);
+    ctx.strokeStyle = COLORS.phosphorDim;
+    ctx.beginPath();
+    ctx.moveTo(0, floorY);
+    ctx.lineTo(W, floorY);
+    ctx.stroke();
+
+    ctx.fillStyle = COLORS.phosphorDim;
+    ctx.font = '10px ui-monospace, Menlo, monospace';
+    ctx.textAlign = 'left';
+    ctx.fillText('// parse heap', 10, floorY + 18);
+
+    drawHints();
+    drawLinks();
+
+    for (var i = 0; i < tokens.length; i++) drawToken(tokens[i]);
+
+    for (var p = 0; p < particles.length; p++) {
+      var pt = particles[p];
+      var alpha = 1 - pt.t / pt.life;
+      ctx.fillStyle = COLORS.phosphor;
+      ctx.globalAlpha = alpha;
+      ctx.fillRect(pt.x - 2, pt.y - 2, 4, 4);
+      ctx.globalAlpha = 1;
+    }
+
+    for (var b = 0; b < compileBursts.length; b++) {
+      var burst = compileBursts[b];
+      var bt = burst.t / burst.life;
+      ctx.font = '600 ' + (14 + bt * 8) + 'px ui-monospace, Menlo, monospace';
+      ctx.textAlign = 'center';
+      ctx.fillStyle = COLORS.phosphor;
+      ctx.globalAlpha = 1 - bt;
+      ctx.fillText('THUNK: ' + burst.text, burst.x, burst.y - bt * 40);
+      ctx.globalAlpha = 1;
+    }
+
+    if (flashRed > 0) {
+      ctx.fillStyle = 'rgba(255,51,68,' + (flashRed * 0.25) + ')';
+      ctx.fillRect(0, 0, W, H);
+    }
+
+    ctx.fillStyle = COLORS.scanline;
+    for (var sy2 = 0; sy2 < H; sy2 += 3) {
+      ctx.fillRect(0, sy2, W, 1);
+    }
+
+    ctx.restore();
+  }
+
+  function loop(now) {
+    if (!lastTime) lastTime = now;
+    var dt = Math.min(0.05, (now - lastTime) / 1000);
+    lastTime = now;
+    update(dt);
+    draw();
+    requestAnimationFrame(loop);
+  }
+
+  function init() {
+    readTheme();
+    resize();
+    draw();
+
+    window.addEventListener('resize', resize);
+    if (window.matchMedia) {
+      window.matchMedia('(prefers-color-scheme: light)').addEventListener('change', function () {
+        readTheme();
+      });
+    }
+
+    if (canvas) {
+      canvas.addEventListener('mousedown', onPointerDown);
+      canvas.addEventListener('mousemove', onPointerMove);
+      window.addEventListener('mouseup', onPointerUp);
+      canvas.addEventListener('touchstart', onPointerDown, { passive: false });
+      canvas.addEventListener('touchmove', onPointerMove, { passive: false });
+      canvas.addEventListener('touchend', onPointerUp, { passive: false });
+      canvas.addEventListener('touchcancel', onPointerUp, { passive: false });
+    }
+
+    if (btnStart) btnStart.addEventListener('click', startGame);
+    if (btnRestart) btnRestart.addEventListener('click', startGame);
+
+    window.addEventListener('keydown', onKeyDown);
+
+    requestAnimationFrame(loop);
+  }
+
+  function onKeyDown(e) {
+    if (!e || !e.key) return;
+    var key = e.key;
+
+    if (state === 'title' && (key === 'Enter' || key === ' ')) {
+      e.preventDefault();
+      startGame();
+      return;
+    }
+    if (state === 'gameover' && (key === 'Enter' || key === 'r' || key === 'R')) {
+      e.preventDefault();
+      startGame();
+      return;
+    }
+    if (state !== 'playing') return;
+
+    if (key === 'ArrowLeft' || key === 'ArrowRight') {
+      e.preventDefault();
+      var playable = tokens.filter(function (t) { return !t.compiling; });
+      if (playable.length === 0) return;
+      var idx = 0;
+      if (selectedToken) {
+        for (var i = 0; i < playable.length; i++) {
+          if (playable[i].id === selectedToken.id) { idx = i; break; }
+        }
+        idx = key === 'ArrowRight' ? (idx + 1) % playable.length : (idx - 1 + playable.length) % playable.length;
+      }
+      selectedToken = playable[idx];
+      return;
+    }
+
+    if (key === 'Enter' || key === ' ') {
+      e.preventDefault();
+      if (!selectedToken) {
+        var first = tokens.find(function (t) { return !t.compiling; });
+        if (first) selectedToken = first;
+        return;
+      }
+      var nearest = null, best = Infinity;
+      for (var j = 0; j < tokens.length; j++) {
+        var t = tokens[j];
+        if (t.compiling || t.id === selectedToken.id) continue;
+        var d = Math.hypot(t.x - selectedToken.x, t.y - selectedToken.y);
+        if (d < best) { best = d; nearest = t; }
+      }
+      if (nearest) tryConnect(selectedToken, nearest);
+    }
+  }
+
+  if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', init);
+  } else {
+    init();
+  }
+})();
+</script>
+</body>
+</html>

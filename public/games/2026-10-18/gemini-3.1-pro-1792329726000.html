@@ -1,0 +1,843 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+    <title>Blueprint Dispatch</title>
+    <style>
+        :root {
+            --bg-color: #0a1017;
+            --ink-color: #00e5ff;
+            --text-color: #e2e8f0;
+            --ui-bg: rgba(10, 16, 23, 0.85);
+        }
+        html, body {
+            margin: 0;
+            padding: 0;
+            width: 100%;
+            height: 100%;
+            position: fixed;
+            overflow: hidden;
+            background-color: var(--bg-color);
+            font-family: ui-monospace, 'SFMono-Regular', Menlo, Monaco, Consolas, monospace;
+            touch-action: none;
+            user-select: none;
+            -webkit-user-select: none;
+            -webkit-touch-callout: none;
+        }
+        canvas {
+            display: block;
+            width: 100dvw;
+            height: 100dvh;
+            z-index: 1;
+        }
+        #ui-layer {
+            position: absolute;
+            top: 0; left: 0; right: 0; bottom: 0;
+            pointer-events: none;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            z-index: 10;
+        }
+        .screen {
+            background: var(--ui-bg);
+            backdrop-filter: blur(4px);
+            -webkit-backdrop-filter: blur(4px);
+            padding: 30px;
+            border: 1px solid var(--ink-color);
+            border-radius: 8px;
+            text-align: center;
+            color: var(--text-color);
+            max-width: 80%;
+            pointer-events: none;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.5);
+        }
+        .screen h1 {
+            margin-top: 0;
+            font-size: 1.8rem;
+            letter-spacing: 2px;
+            color: var(--ink-color);
+            pointer-events: none;
+        }
+        .screen p {
+            line-height: 1.6;
+            margin-bottom: 20px;
+            pointer-events: none;
+        }
+        .desktop-hint {
+            font-size: 0.8rem;
+            opacity: 0.7;
+            margin-top: -10px;
+            pointer-events: none;
+        }
+        button {
+            pointer-events: auto;
+            font-family: inherit;
+            background: transparent;
+            color: var(--ink-color);
+            border: 2px solid var(--ink-color);
+            padding: 14px 28px;
+            font-size: 1.1rem;
+            font-weight: bold;
+            cursor: pointer;
+            border-radius: 4px;
+            margin-top: 10px;
+            text-transform: uppercase;
+            transition: all 0.2s;
+            outline: none;
+        }
+        button:active {
+            background: var(--ink-color);
+            color: var(--bg-color);
+            transform: scale(0.95);
+        }
+        @media (hover: hover) {
+            button:hover {
+                background: rgba(0, 229, 255, 0.1);
+            }
+        }
+    </style>
+</head>
+<body>
+    <div id="ui-layer">
+        <div id="menu-screen" class="screen">
+            <h1>BLUEPRINT</h1>
+            <p>Swipe to deploy agents.<br>Tap an agent to recall it.<br>Avoid collisions.</p>
+            <p class="desktop-hint">Desktop: Drag to deploy, Space to auto-fire, R to recall all</p>
+            <button data-smoke="start">BEGIN DEPLOYMENT</button>
+        </div>
+        <div id="gameover-screen" class="screen" style="display: none;">
+            <h1>SHIFT COMPLETE</h1>
+            <p>Tasks Completed: <strong style="font-size: 1.5rem; color: var(--ink-color);" id="final-score">0</strong></p>
+            <button data-smoke="restart">RESTART SHIFT</button>
+        </div>
+    </div>
+    
+    <canvas id="game-canvas"></canvas>
+
+    <script>
+        // Constants & Config
+        const AGENT_SPEED = 350;
+        const RETURN_SPEED = 450;
+        const RECALL_SPEED = 650;
+        const WORK_TIME = 1.2;
+        const MAX_TIME = 60;
+
+        // Globals
+        const canvas = document.getElementById('game-canvas');
+        const ctx = canvas.getContext('2d');
+        let width = 0, height = 0, dpr = 1;
+        let base = {x: 0, y: 0};
+        let theme = {};
+
+        // Game State
+        let state = 'MENU';
+        let score = 0;
+        let timeRemaining = MAX_TIME;
+        let agents = [];
+        let tasks = [];
+        let particles = [];
+        let floaters = [];
+        let dragging = false;
+        let dragStart = {x: 0, y: 0};
+        let dragCurrent = {x: 0, y: 0};
+        let lastTime = performance.now();
+        let taskSpawnTimer = 0;
+        let shakeAmount = 0;
+        let audioCtx = null;
+
+        // Theme Handling
+        function updateTheme() {
+            const isDark = window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches;
+            if (isDark) {
+                theme.bg = '#0a1017';
+                theme.grid = '#1c2838';
+                theme.ink = '#00e5ff';
+                theme.inkDim = 'rgba(0, 229, 255, 0.3)';
+                theme.danger = '#ff2a5f';
+                theme.text = '#e2e8f0';
+                theme.uiBg = 'rgba(10, 16, 23, 0.85)';
+            } else {
+                theme.bg = '#f0f4f8';
+                theme.grid = '#d9e2ec';
+                theme.ink = '#006680';
+                theme.inkDim = 'rgba(0, 102, 128, 0.3)';
+                theme.danger = '#d92650';
+                theme.text = '#102a43';
+                theme.uiBg = 'rgba(240, 244, 248, 0.85)';
+            }
+            document.documentElement.style.setProperty('--bg-color', theme.bg);
+            document.documentElement.style.setProperty('--ink-color', theme.ink);
+            document.documentElement.style.setProperty('--text-color', theme.text);
+            document.documentElement.style.setProperty('--ui-bg', theme.uiBg);
+            if (state !== 'PLAYING') draw();
+        }
+
+        if (window.matchMedia) {
+            window.matchMedia('(prefers-color-scheme: dark)').addEventListener('change', updateTheme);
+        }
+        updateTheme();
+
+        // Audio & Haptics
+        function initAudio() {
+            try {
+                if (!audioCtx) {
+                    const AC = window.AudioContext || window.webkitAudioContext;
+                    if (AC) audioCtx = new AC();
+                }
+                if (audioCtx && audioCtx.state === 'suspended') {
+                    audioCtx.resume();
+                }
+            } catch (e) {}
+        }
+
+        function playSound(name) {
+            if (!audioCtx) return;
+            try {
+                const t = audioCtx.currentTime;
+                const osc = audioCtx.createOscillator();
+                const gain = audioCtx.createGain();
+                osc.connect(gain);
+                gain.connect(audioCtx.destination);
+
+                if (name === 'launch') {
+                    osc.type = 'sine';
+                    osc.frequency.setValueAtTime(400, t);
+                    osc.frequency.exponentialRampToValueAtTime(100, t + 0.2);
+                    gain.gain.setValueAtTime(0.1, t);
+                    gain.gain.exponentialRampToValueAtTime(0.01, t + 0.2);
+                    osc.start(t); osc.stop(t + 0.2);
+                } else if (name === 'lock') {
+                    osc.type = 'square';
+                    osc.frequency.setValueAtTime(800, t);
+                    gain.gain.setValueAtTime(0.05, t);
+                    gain.gain.exponentialRampToValueAtTime(0.01, t + 0.05);
+                    osc.start(t); osc.stop(t + 0.05);
+                } else if (name === 'complete') {
+                    osc.type = 'triangle';
+                    osc.frequency.setValueAtTime(523.25, t);
+                    gain.gain.setValueAtTime(0.2, t);
+                    gain.gain.exponentialRampToValueAtTime(0.01, t + 0.3);
+                    osc.start(t); osc.stop(t + 0.3);
+                    
+                    const osc2 = audioCtx.createOscillator();
+                    const gain2 = audioCtx.createGain();
+                    osc2.type = 'triangle';
+                    osc2.connect(gain2); gain2.connect(audioCtx.destination);
+                    osc2.frequency.setValueAtTime(659.25, t + 0.1);
+                    gain2.gain.setValueAtTime(0.2, t + 0.1);
+                    gain2.gain.exponentialRampToValueAtTime(0.01, t + 0.4);
+                    osc2.start(t + 0.1); osc2.stop(t + 0.4);
+                } else if (name === 'collide') {
+                    osc.type = 'sawtooth';
+                    osc.frequency.setValueAtTime(100, t);
+                    osc.frequency.linearRampToValueAtTime(50, t + 0.3);
+                    gain.gain.setValueAtTime(0.3, t);
+                    gain.gain.exponentialRampToValueAtTime(0.01, t + 0.3);
+                    osc.start(t); osc.stop(t + 0.3);
+
+                    const bufferSize = audioCtx.sampleRate * 0.3;
+                    const buffer = audioCtx.createBuffer(1, bufferSize, audioCtx.sampleRate);
+                    const data = buffer.getChannelData(0);
+                    for (let i = 0; i < bufferSize; i++) data[i] = Math.random() * 2 - 1;
+                    const noise = audioCtx.createBufferSource();
+                    noise.buffer = buffer;
+                    const nGain = audioCtx.createGain();
+                    nGain.gain.setValueAtTime(0.2, t);
+                    nGain.gain.exponentialRampToValueAtTime(0.01, t + 0.3);
+                    noise.connect(nGain); nGain.connect(audioCtx.destination);
+                    noise.start(t);
+                } else if (name === 'recall') {
+                    osc.type = 'triangle';
+                    osc.frequency.setValueAtTime(300, t);
+                    osc.frequency.exponentialRampToValueAtTime(600, t + 0.15);
+                    gain.gain.setValueAtTime(0.1, t);
+                    gain.gain.exponentialRampToValueAtTime(0.01, t + 0.15);
+                    osc.start(t); osc.stop(t + 0.15);
+                }
+            } catch (e) {}
+        }
+
+        function vibrate(pattern) {
+            try {
+                if (navigator.vibrate) navigator.vibrate(pattern);
+            } catch (e) {}
+        }
+
+        // Classes
+        class Agent {
+            constructor() {
+                this.reset();
+            }
+            reset() {
+                this.state = 'IDLE';
+                this.x = base.x || 0;
+                this.y = base.y || 0;
+                this.vx = 0; this.vy = 0;
+                this.targetTask = null;
+                this.workTimer = 0;
+                this.trail = [];
+                this.brokenTimer = 0;
+            }
+            update(dt, now) {
+                if (this.state === 'IDLE') {
+                    const idx = agents.indexOf(this);
+                    const hoverX = base.x + (idx - 2) * 20;
+                    const hoverY = base.y + Math.sin(now/200 + idx) * 3;
+                    this.x += (hoverX - this.x) * 10 * dt;
+                    this.y += (hoverY - this.y) * 10 * dt;
+                    return;
+                }
+
+                if (this.state === 'BROKEN') {
+                    this.brokenTimer -= dt;
+                    this.vy += 500 * dt; // gravity
+                    this.x += this.vx * dt;
+                    this.y += this.vy * dt;
+                    if (this.trail.length > 0) this.trail.shift();
+                    if (this.brokenTimer <= 0 || this.y > height + 50) this.reset();
+                    return;
+                }
+
+                this.x += this.vx * dt;
+                this.y += this.vy * dt;
+
+                this.trail.push({x: this.x, y: this.y});
+                if (this.trail.length > 15) this.trail.shift();
+
+                if (this.state === 'OUTBOUND') {
+                    if (this.x < 0 || this.x > width || this.y < 0 || this.y > height) {
+                        this.returnToBase();
+                    }
+                    if (this.targetTask && this.targetTask.state === 'WAITING') {
+                        if (Math.hypot(this.x - this.targetTask.x, this.y - this.targetTask.y) < this.targetTask.radius) {
+                            this.startWorking(this.targetTask);
+                        }
+                    } else if (!this.targetTask) {
+                        for (let t of tasks) {
+                            if (t.state === 'WAITING' && Math.hypot(this.x - t.x, this.y - t.y) < t.radius) {
+                                this.startWorking(t);
+                                break;
+                            }
+                        }
+                    }
+                } else if (this.state === 'RETURNING' || this.state === 'RECALLING') {
+                    if (Math.hypot(this.x - base.x, this.y - base.y) < 20) {
+                        this.state = 'IDLE';
+                        this.vx = 0; this.vy = 0;
+                    } else {
+                        const speed = this.state === 'RECALLING' ? RECALL_SPEED : RETURN_SPEED;
+                        const angle = Math.atan2(base.y - this.y, base.x - this.x);
+                        this.vx = Math.cos(angle) * speed;
+                        this.vy = Math.sin(angle) * speed;
+                    }
+                } else if (this.state === 'WORKING') {
+                    this.workTimer -= dt;
+                    const angle = (WORK_TIME - this.workTimer) * Math.PI * 4;
+                    this.x = this.targetTask.x + Math.cos(angle) * (this.targetTask.radius + 5);
+                    this.y = this.targetTask.y + Math.sin(angle) * (this.targetTask.radius + 5);
+
+                    if (this.workTimer <= 0) {
+                        this.targetTask.complete();
+                        this.returnToBase();
+                    }
+                }
+            }
+            startWorking(t) {
+                this.state = 'WORKING';
+                t.state = 'IN_PROGRESS';
+                t.assignedAgent = this;
+                this.targetTask = t;
+                this.workTimer = WORK_TIME;
+                playSound('lock');
+                vibrate(10);
+            }
+            returnToBase() {
+                this.state = 'RETURNING';
+                this.targetTask = null;
+                const angle = Math.atan2(base.y - this.y, base.x - this.x);
+                this.vx = Math.cos(angle) * RETURN_SPEED;
+                this.vy = Math.sin(angle) * RETURN_SPEED;
+            }
+            recall() {
+                if (this.state === 'IDLE' || this.state === 'BROKEN') return;
+                this.state = 'RECALLING';
+                if (this.targetTask && this.targetTask.state === 'IN_PROGRESS') {
+                    this.targetTask.state = 'WAITING';
+                    this.targetTask.assignedAgent = null;
+                }
+                this.targetTask = null;
+                const angle = Math.atan2(base.y - this.y, base.x - this.x);
+                this.vx = Math.cos(angle) * RECALL_SPEED;
+                this.vy = Math.sin(angle) * RECALL_SPEED;
+                playSound('recall');
+                vibrate(10);
+            }
+            break() {
+                this.state = 'BROKEN';
+                if (this.targetTask && this.targetTask.state === 'IN_PROGRESS') {
+                    this.targetTask.state = 'WAITING';
+                    this.targetTask.assignedAgent = null;
+                }
+                this.targetTask = null;
+                this.brokenTimer = 2.0;
+                this.vx = (Math.random() - 0.5) * 400;
+                this.vy = -Math.random() * 300 - 100;
+            }
+        }
+
+        class Task {
+            constructor(x, y) {
+                this.x = x; this.y = y;
+                this.radius = 25;
+                this.maxLifespan = 15;
+                this.lifespan = this.maxLifespan;
+                this.state = 'WAITING';
+                this.assignedAgent = null;
+                this.symbolType = Math.floor(Math.random() * 3);
+            }
+            update(dt) {
+                if (this.state === 'WAITING') {
+                    this.lifespan -= dt;
+                    if (this.lifespan <= 0) this.state = 'EXPIRED';
+                }
+            }
+            complete() {
+                this.state = 'COMPLETED';
+                score += 1;
+                playSound('complete');
+                vibrate([15, 30, 15]);
+                spawnParticles(this.x, this.y, theme.ink);
+                spawnFloater(this.x, this.y - 20, '+1', theme.ink);
+            }
+        }
+
+        function spawnParticles(x, y, color) {
+            for(let i=0; i<12; i++) {
+                const a = Math.random() * Math.PI * 2;
+                const v = 50 + Math.random() * 100;
+                particles.push({
+                    x, y,
+                    vx: Math.cos(a) * v, vy: Math.sin(a) * v,
+                    life: 0.5 + Math.random() * 0.5,
+                    maxLife: 1.0, color
+                });
+            }
+        }
+
+        function spawnFloater(x, y, text, color) {
+            floaters.push({x, y, text, color, life: 1.0, maxLife: 1.0});
+        }
+
+        // Logic & Input
+        function getAimVector() {
+            const dx = dragCurrent.x - dragStart.x;
+            const dy = dragCurrent.y - dragStart.y;
+            if (Math.hypot(dx, dy) < 10) return null;
+            let angle = Math.atan2(dy, dx);
+            
+            let bestTask = null, minAimDist = 40;
+            const vx = Math.cos(angle), vy = Math.sin(angle);
+
+            for (let t of tasks) {
+                if (t.state !== 'WAITING') continue;
+                const tx = t.x - base.x, ty = t.y - base.y;
+                const dot = tx * vx + ty * vy;
+                if (dot > 0) {
+                    const px = base.x + dot * vx, py = base.y + dot * vy;
+                    const dist = Math.hypot(t.x - px, t.y - py);
+                    if (dist < minAimDist) {
+                        minAimDist = dist;
+                        bestTask = t;
+                    }
+                }
+            }
+            if (bestTask) angle = Math.atan2(bestTask.y - base.y, bestTask.x - base.x);
+            return { angle, target: bestTask };
+        }
+
+        function launchAgent() {
+            const aim = getAimVector();
+            if (!aim) return;
+            let idleAgent = agents.find(a => a.state === 'IDLE');
+            if (!idleAgent) return;
+            idleAgent.state = 'OUTBOUND';
+            idleAgent.x = base.x; idleAgent.y = base.y;
+            idleAgent.vx = Math.cos(aim.angle) * AGENT_SPEED;
+            idleAgent.vy = Math.sin(aim.angle) * AGENT_SPEED;
+            idleAgent.targetTask = aim.target;
+            playSound('launch');
+            vibrate(10);
+        }
+
+        let pointerIsDown = false;
+        function handlePointerDown(x, y) {
+            if (state !== 'PLAYING') return;
+            pointerIsDown = true;
+            dragStart = {x, y}; dragCurrent = {x, y};
+
+            for (let a of agents) {
+                if (a.state === 'OUTBOUND' || a.state === 'RETURNING' || a.state === 'WORKING') {
+                    if (Math.hypot(x - a.x, y - a.y) < 30) {
+                        a.recall();
+                        pointerIsDown = false;
+                        return;
+                    }
+                }
+            }
+            dragging = true;
+        }
+
+        function handlePointerMove(x, y) {
+            if (dragging) dragCurrent = {x, y};
+        }
+
+        function handlePointerUp() {
+            if (!pointerIsDown) return;
+            pointerIsDown = false;
+            if (dragging) {
+                dragging = false;
+                launchAgent();
+            }
+        }
+
+        canvas.addEventListener('touchstart', e => { e.preventDefault(); handlePointerDown(e.touches[0].clientX, e.touches[0].clientY); }, {passive: false});
+        canvas.addEventListener('touchmove', e => { e.preventDefault(); handlePointerMove(e.touches[0].clientX, e.touches[0].clientY); }, {passive: false});
+        canvas.addEventListener('touchend', e => { e.preventDefault(); handlePointerUp(); }, {passive: false});
+        canvas.addEventListener('mousedown', e => handlePointerDown(e.clientX, e.clientY));
+        window.addEventListener('mousemove', e => handlePointerMove(e.clientX, e.clientY));
+        window.addEventListener('mouseup', e => handlePointerUp());
+
+        window.addEventListener('keydown', e => {
+            if (state !== 'PLAYING') return;
+            if (e.code === 'Space') {
+                let best = null, bestDist = Infinity;
+                for (let t of tasks) {
+                    if (t.state === 'WAITING') {
+                        let d = Math.hypot(t.x - base.x, t.y - base.y);
+                        if (d < bestDist) { bestDist = d; best = t; }
+                    }
+                }
+                if (best) {
+                    let idleAgent = agents.find(a => a.state === 'IDLE');
+                    if (idleAgent) {
+                        let angle = Math.atan2(best.y - base.y, best.x - base.x);
+                        idleAgent.state = 'OUTBOUND';
+                        idleAgent.x = base.x; idleAgent.y = base.y;
+                        idleAgent.vx = Math.cos(angle) * AGENT_SPEED;
+                        idleAgent.vy = Math.sin(angle) * AGENT_SPEED;
+                        idleAgent.targetTask = best;
+                        playSound('launch'); vibrate(10);
+                    }
+                }
+            } else if (e.code === 'KeyR' || e.key === 'Shift') {
+                for (let a of agents) {
+                    if (a.state === 'OUTBOUND' || a.state === 'RETURNING' || a.state === 'WORKING') a.recall();
+                }
+            }
+        });
+
+        // Rendering
+        function drawSketchyRect(ctx, x, y, w, h) {
+            const o = 4;
+            ctx.beginPath();
+            ctx.moveTo(x - o, y); ctx.lineTo(x + w + o, y);
+            ctx.moveTo(x - o, y + h); ctx.lineTo(x + w + o, y + h);
+            ctx.moveTo(x, y - o); ctx.lineTo(x, y + h + o);
+            ctx.moveTo(x + w, y - o); ctx.lineTo(x + w, y + h + o);
+            ctx.stroke();
+        }
+
+        function drawGrid() {
+            ctx.save();
+            ctx.strokeStyle = theme.grid;
+            ctx.lineWidth = 1;
+            const size = 40;
+            for (let x = 0; x < width; x += size) {
+                ctx.beginPath(); ctx.moveTo(x, 0); ctx.lineTo(x, height); ctx.stroke();
+            }
+            for (let y = 0; y < height; y += size) {
+                ctx.beginPath(); ctx.moveTo(0, y); ctx.lineTo(width, y); ctx.stroke();
+            }
+            ctx.fillStyle = theme.grid;
+            ctx.font = '10px ui-monospace, monospace';
+            ctx.fillText('SYS-REQ: ACTIVE', 10, 20);
+            ctx.fillText('SECTOR 7G', width - 70, 20);
+            ctx.restore();
+        }
+
+        function drawBase(now) {
+            ctx.save();
+            const w = 120, h = 40;
+            ctx.translate(base.x, base.y);
+            ctx.translate(Math.sin(now/150)*1, Math.cos(now/170)*1); // boiling
+
+            ctx.strokeStyle = theme.ink;
+            ctx.lineWidth = 2;
+            drawSketchyRect(ctx, -w/2, -h/2, w, h);
+
+            const available = agents.filter(a => a.state === 'IDLE').length;
+            ctx.fillStyle = theme.ink;
+            ctx.font = 'bold 14px ui-monospace, monospace';
+            ctx.textAlign = 'center';
+            ctx.textBaseline = 'middle';
+            ctx.fillText(`${available}/${agents.length} AGENTS`, 0, 0);
+            ctx.restore();
+        }
+
+        function drawTask(t, now) {
+            ctx.save();
+            ctx.translate(t.x, t.y);
+            ctx.translate(Math.sin(now/100 + t.x)*1.5, Math.cos(now/120 + t.y)*1.5); // boiling
+
+            const isWorking = t.state === 'IN_PROGRESS';
+            const color = isWorking ? theme.ink : (t.lifespan < 3 ? theme.danger : theme.ink);
+            ctx.strokeStyle = color;
+            ctx.lineWidth = 2;
+            ctx.lineCap = 'round'; ctx.lineJoin = 'round';
+
+            const s = t.radius;
+            drawSketchyRect(ctx, -s, -s, s * 2, s * 2);
+
+            ctx.beginPath();
+            if (t.symbolType === 0) {
+                ctx.moveTo(0, -s/2); ctx.lineTo(s/2, 0); ctx.lineTo(0, s/2); ctx.lineTo(-s/2, 0); ctx.closePath();
+            } else if (t.symbolType === 1) {
+                ctx.moveTo(-s/2, -s/2); ctx.lineTo(s/2, s/2);
+                ctx.moveTo(s/2, -s/2); ctx.lineTo(-s/2, s/2);
+            } else {
+                ctx.moveTo(0, -s/2); ctx.lineTo(s/2, s/2); ctx.lineTo(-s/2, s/2); ctx.closePath();
+            }
+            ctx.stroke();
+
+            if (t.state === 'WAITING') {
+                const p = t.lifespan / t.maxLifespan;
+                ctx.beginPath();
+                ctx.arc(0, 0, s + 8, -Math.PI/2, -Math.PI/2 + p * Math.PI * 2);
+                ctx.strokeStyle = t.lifespan < 3 ? theme.danger : theme.inkDim;
+                ctx.stroke();
+            } else if (isWorking && t.assignedAgent) {
+                const p = 1 - (t.assignedAgent.workTimer / WORK_TIME);
+                ctx.beginPath();
+                ctx.arc(0, 0, s + 8, -Math.PI/2, -Math.PI/2 + p * Math.PI * 2);
+                ctx.strokeStyle = theme.ink;
+                ctx.lineWidth = 4;
+                ctx.stroke();
+            }
+            ctx.restore();
+        }
+
+        function drawAimLine() {
+            const aim = getAimVector();
+            if (!aim) return;
+            ctx.save();
+            ctx.beginPath();
+            ctx.moveTo(base.x, base.y);
+            const len = 1500;
+            ctx.lineTo(base.x + Math.cos(aim.angle) * len, base.y + Math.sin(aim.angle) * len);
+            ctx.strokeStyle = theme.inkDim;
+            ctx.lineWidth = 2;
+            ctx.setLineDash([10, 10]);
+            ctx.stroke();
+            ctx.restore();
+
+            if (aim.target) {
+                ctx.save();
+                ctx.translate(aim.target.x, aim.target.y);
+                ctx.beginPath();
+                ctx.arc(0, 0, aim.target.radius + 15, 0, Math.PI*2);
+                ctx.strokeStyle = theme.ink;
+                ctx.setLineDash([5, 5]);
+                ctx.stroke();
+                ctx.restore();
+            }
+        }
+
+        function drawAgent(a, now) {
+            ctx.save();
+            if (a.trail.length > 1) {
+                ctx.beginPath();
+                ctx.moveTo(a.trail[0].x, a.trail[0].y);
+                for (let i = 1; i < a.trail.length; i++) ctx.lineTo(a.trail[i].x, a.trail[i].y);
+                ctx.strokeStyle = a.state === 'BROKEN' ? theme.danger : theme.inkDim;
+                ctx.lineWidth = 3;
+                ctx.lineCap = 'round'; ctx.lineJoin = 'round';
+                ctx.stroke();
+            }
+            ctx.beginPath();
+            let r = 6;
+            if (a.state === 'WORKING') r = 6 + Math.sin(now/50)*1.5;
+            ctx.arc(a.x, a.y, r, 0, Math.PI * 2);
+            ctx.fillStyle = a.state === 'BROKEN' ? theme.danger : theme.ink;
+            ctx.shadowBlur = 8;
+            ctx.shadowColor = ctx.fillStyle;
+            ctx.fill();
+            ctx.restore();
+        }
+
+        function drawHUD() {
+            ctx.save();
+            ctx.fillStyle = theme.text;
+            ctx.font = 'bold 20px ui-monospace, monospace';
+            ctx.textAlign = 'left'; ctx.textBaseline = 'top';
+            ctx.fillText(`COMPLETED: ${score}`, 20, 20);
+
+            ctx.textAlign = 'right';
+            let t = Math.ceil(timeRemaining);
+            if (t < 10 && t % 2 === 0) ctx.fillStyle = theme.danger;
+            ctx.fillText(`SUNRISE: ${t}s`, width - 20, 20);
+            ctx.restore();
+        }
+
+        function draw() {
+            const now = performance.now();
+            ctx.fillStyle = theme.bg;
+            ctx.fillRect(0, 0, width, height);
+
+            ctx.save();
+            if (shakeAmount > 0) {
+                const dx = (Math.random() - 0.5) * shakeAmount;
+                const dy = (Math.random() - 0.5) * shakeAmount;
+                ctx.translate(dx, dy);
+                shakeAmount *= 0.9;
+                if (shakeAmount < 0.5) shakeAmount = 0;
+            }
+
+            drawGrid();
+            tasks.forEach(t => drawTask(t, now));
+            drawBase(now);
+            if (dragging && state === 'PLAYING') drawAimLine();
+            agents.forEach(a => drawAgent(a, now));
+
+            ctx.globalCompositeOperation = 'lighter';
+            particles.forEach(p => {
+                ctx.globalAlpha = Math.max(0, p.life / p.maxLife);
+                ctx.fillStyle = p.color;
+                ctx.shadowBlur = 5; ctx.shadowColor = p.color;
+                ctx.fillRect(p.x - 2, p.y - 2, 4, 4);
+            });
+            ctx.globalCompositeOperation = 'source-over';
+            ctx.globalAlpha = 1;
+
+            floaters.forEach(f => {
+                ctx.globalAlpha = Math.max(0, f.life / f.maxLife);
+                ctx.fillStyle = f.color;
+                ctx.font = 'bold 18px ui-monospace, monospace';
+                ctx.textAlign = 'center';
+                ctx.fillText(f.text, f.x, f.y);
+            });
+            ctx.globalAlpha = 1;
+
+            if (state === 'PLAYING') drawHUD();
+
+            ctx.restore();
+        }
+
+        // Game Flow
+        function startGame() {
+            initAudio();
+            document.getElementById('menu-screen').style.display = 'none';
+            document.getElementById('gameover-screen').style.display = 'none';
+            score = 0;
+            timeRemaining = MAX_TIME;
+            tasks = []; particles = []; floaters = [];
+            taskSpawnTimer = 1.0;
+            dragging = false; pointerIsDown = false;
+            agents.forEach(a => a.reset());
+            state = 'PLAYING';
+        }
+
+        function endGame() {
+            state = 'GAMEOVER';
+            document.getElementById('gameover-screen').style.display = 'block';
+            document.getElementById('final-score').innerText = score;
+            playSound('collide');
+        }
+
+        function gameLoop(now) {
+            let dt = (now - lastTime) / 1000;
+            if (dt > 0.1) dt = 0.1;
+            lastTime = now;
+
+            if (state === 'PLAYING') {
+                timeRemaining -= dt;
+                if (timeRemaining <= 0) endGame();
+
+                taskSpawnTimer -= dt;
+                if (taskSpawnTimer <= 0) {
+                    const margin = 50;
+                    let tx, ty, valid = false;
+                    for (let attempt=0; attempt<10; attempt++) {
+                        tx = margin + Math.random() * (width - margin * 2);
+                        ty = margin + Math.random() * (height - 200 - margin);
+                        valid = true;
+                        for (let t of tasks) if (Math.hypot(t.x - tx, t.y - ty) < 60) { valid = false; break; }
+                        if (valid) break;
+                    }
+                    tasks.push(new Task(tx, ty));
+                    const progress = 1 - (timeRemaining / MAX_TIME);
+                    taskSpawnTimer = 2.5 - (progress * 1.5) + (Math.random() * 0.5 - 0.25);
+                }
+
+                for (let i = 0; i < agents.length; i++) {
+                    for (let j = i + 1; j < agents.length; j++) {
+                        let a1 = agents[i], a2 = agents[j];
+                        if ((a1.state === 'OUTBOUND' || a1.state === 'RETURNING' || a1.state === 'RECALLING') &&
+                            (a2.state === 'OUTBOUND' || a2.state === 'RETURNING' || a2.state === 'RECALLING')) {
+                            if (Math.hypot(a1.x - a2.x, a1.y - a2.y) < 12) {
+                                a1.break(); a2.break();
+                                playSound('collide'); vibrate([50, 50, 50]);
+                                spawnParticles((a1.x+a2.x)/2, (a1.y+a2.y)/2, theme.danger);
+                                shakeAmount = 10;
+                            }
+                        }
+                    }
+                }
+            }
+
+            agents.forEach(a => a.update(dt, now));
+            tasks.forEach(t => t.update(dt));
+
+            for (let i = tasks.length - 1; i >= 0; i--) {
+                if (tasks[i].state === 'COMPLETED' || tasks[i].state === 'EXPIRED') tasks.splice(i, 1);
+            }
+            for (let i = particles.length - 1; i >= 0; i--) {
+                let p = particles[i];
+                p.x += p.vx * dt; p.y += p.vy * dt; p.life -= dt;
+                if (p.life <= 0) particles.splice(i, 1);
+            }
+            for (let i = floaters.length - 1; i >= 0; i--) {
+                let f = floaters[i];
+                f.y -= 40 * dt; f.life -= dt;
+                if (f.life <= 0) floaters.splice(i, 1);
+            }
+
+            draw();
+            requestAnimationFrame(gameLoop);
+        }
+
+        // Init
+        function resize() {
+            width = window.innerWidth;
+            height = window.innerHeight;
+            canvas.width = width * dpr;
+            canvas.height = height * dpr;
+            ctx.scale(dpr, dpr);
+            base.x = width / 2;
+            base.y = height - 80;
+        }
+        window.addEventListener('resize', resize);
+        resize();
+
+        for(let i=0; i<5; i++) agents.push(new Agent());
+        
+        document.querySelector('[data-smoke="start"]').addEventListener('click', startGame);
+        document.querySelector('[data-smoke="restart"]').addEventListener('click', startGame);
+
+        requestAnimationFrame(gameLoop);
+
+    </script>
+</body>
+</html>
