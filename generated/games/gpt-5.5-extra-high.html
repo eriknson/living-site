@@ -1,651 +1,107 @@
 <!doctype html>
 <html lang="en">
 <head>
-  <meta charset="utf-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
-  <title>Microthread Route</title>
-  <style>
-    :root{
-      --bg:#edf0ea;--panel:rgba(247,248,242,.86);--ink:#111614;--muted:#61706a;
-      --line:rgba(17,22,20,.15);--accent:#d66f1c;--accent2:#0c9f9a;--good:#7da334;--danger:#c44332;
-      --glass:rgba(255,255,255,.34);--shadow:rgba(29,35,32,.18);
-    }
-    @media (prefers-color-scheme: dark){
-      :root{
-        --bg:#080a09;--panel:rgba(13,17,16,.82);--ink:#edf1ea;--muted:#9baaa4;
-        --line:rgba(237,241,234,.14);--accent:#f0a23a;--accent2:#20c7bd;--good:#b7d66c;--danger:#ff725f;
-        --glass:rgba(255,255,255,.08);--shadow:rgba(0,0,0,.55);
-      }
-    }
-    *{box-sizing:border-box}
-    html,body{margin:0;width:100%;height:100%;overflow:hidden;background:var(--bg);color:var(--ink)}
-    body{font-family:Inter,system-ui,-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif}
-    #game{position:fixed;inset:0;width:100dvw;height:100dvh;overflow:hidden;touch-action:none;user-select:none;background:var(--bg)}
-    canvas{display:block;width:100%;height:100%;touch-action:none;background:var(--bg)}
-    .ui{position:absolute;inset:0;z-index:4;pointer-events:none}
-    .hud{position:absolute;left:16px;right:16px;top:calc(12px + env(safe-area-inset-top));display:flex;align-items:flex-start;justify-content:space-between;gap:10px;font-family:ui-monospace,"SFMono-Regular",Menlo,monospace;font-size:12px;letter-spacing:.08em;text-transform:uppercase;color:var(--muted)}
-    .stack{display:grid;gap:6px}
-    .readout{min-width:112px;padding:9px 10px;border:1px solid var(--line);border-radius:14px;background:var(--panel);box-shadow:0 14px 35px var(--shadow);backdrop-filter:blur(16px)}
-    .readout b{display:block;margin-top:2px;color:var(--ink);font-size:17px;letter-spacing:.02em}
-    .bar{width:124px;height:7px;border-radius:999px;background:var(--line);overflow:hidden;margin-top:7px}
-    .bar i{display:block;width:100%;height:100%;border-radius:inherit;background:linear-gradient(90deg,var(--danger),var(--accent),var(--good));transform-origin:left center}
-    .panel{position:absolute;left:50%;top:50%;width:min(88vw,430px);transform:translate(-50%,-50%);padding:26px;border:1px solid var(--line);border-radius:28px;background:var(--panel);box-shadow:0 28px 70px var(--shadow);backdrop-filter:blur(20px);text-align:left;transition:opacity .32s ease,transform .32s ease,visibility .32s ease;pointer-events:none}
-    .panel.hidden{opacity:0;visibility:hidden;transform:translate(-50%,-46%) scale(.97)}
-    .eyebrow{font-family:ui-monospace,"SFMono-Regular",Menlo,monospace;font-size:12px;letter-spacing:.16em;text-transform:uppercase;color:var(--accent2);margin-bottom:12px}
-    h1{margin:0 0 10px;font-size:clamp(34px,10vw,58px);line-height:.9;letter-spacing:-.08em}
-    p{margin:0;color:var(--muted);line-height:1.45;font-size:15px}
-    .tips{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin:20px 0}
-    .tip{border:1px solid var(--line);border-radius:17px;padding:11px 12px;background:var(--glass);font-family:ui-monospace,"SFMono-Regular",Menlo,monospace;font-size:11px;text-transform:uppercase;letter-spacing:.07em;color:var(--muted)}
-    .tip strong{display:block;color:var(--ink);font-size:14px;letter-spacing:0;text-transform:none;margin-top:4px}
-    button{min-height:48px;border:0;border-radius:999px;padding:0 22px;background:var(--ink);color:var(--bg);font-weight:800;font-size:15px;letter-spacing:.02em;box-shadow:0 12px 28px var(--shadow);cursor:pointer;pointer-events:auto}
-    button:focus-visible{outline:3px solid var(--accent2);outline-offset:4px}
-    .microcopy{margin-top:12px;font-family:ui-monospace,"SFMono-Regular",Menlo,monospace;font-size:11px;text-transform:uppercase;letter-spacing:.11em;color:var(--muted)}
-    .toast{position:absolute;left:50%;bottom:calc(22px + env(safe-area-inset-bottom));transform:translateX(-50%);padding:10px 14px;border:1px solid var(--line);border-radius:999px;background:var(--panel);box-shadow:0 16px 36px var(--shadow);font-family:ui-monospace,"SFMono-Regular",Menlo,monospace;font-size:12px;letter-spacing:.08em;text-transform:uppercase;color:var(--accent2);opacity:0;transition:opacity .22s ease;white-space:nowrap}
-    .toast.show{opacity:1}
-    .scan{position:absolute;inset:0;z-index:2;pointer-events:none;mix-blend-mode:soft-light;background:repeating-linear-gradient(180deg,rgba(255,255,255,.05) 0 1px,transparent 1px 5px);opacity:.36}
-    @media (max-width:420px){.hud{left:10px;right:10px}.readout{min-width:96px;padding:8px}.tips{grid-template-columns:1fr}.panel{padding:22px}}
-  </style>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="color-scheme" content="light dark">
+<title>Harness Panic</title>
+<style>
+:root{--bg:#eef7f4;--ink:#102028;--muted:#58717a;--panel:rgba(250,255,252,.82);--line:rgba(16,42,51,.17);--hot:#ff8b2d;--bad:#e84c2a;--ok:#00a873;--wire:#04a8c4;--wire2:#f3b23a;--shadow:rgba(9,27,32,.18);--mono:ui-monospace,"SFMono-Regular",Menlo,Consolas,monospace;--sans:Inter,ui-sans-serif,system-ui,-apple-system,"Segoe UI",sans-serif}
+@media (prefers-color-scheme:dark){:root{--bg:#061018;--ink:#eaf9f7;--muted:#88aab1;--panel:rgba(5,17,24,.74);--line:rgba(128,232,233,.16);--hot:#ffb84d;--bad:#ff6548;--ok:#38e69f;--wire:#20d6e8;--wire2:#ffc857;--shadow:rgba(0,0,0,.5)}}
+*{box-sizing:border-box}html,body{margin:0;width:100dvw;height:100dvh;overflow:hidden;background:var(--bg);color:var(--ink);font-family:var(--sans);user-select:none;-webkit-user-select:none;overscroll-behavior:none}body{min-height:100dvh}
+#game{position:fixed;inset:0;width:100dvw;height:100dvh;overflow:hidden;background:linear-gradient(160deg,rgba(238,247,244,1),rgba(216,238,234,1) 48%,rgba(247,234,207,1));touch-action:none}
+@media (prefers-color-scheme:dark){#game{background:linear-gradient(160deg,rgba(3,11,18,1),rgba(2,30,38,1) 54%,rgba(28,23,9,1))}}
+canvas{position:absolute;inset:0;width:100%;height:100%;touch-action:none;display:block}
+#hud{position:absolute;left:max(14px,env(safe-area-inset-left));right:max(14px,env(safe-area-inset-right));top:max(12px,env(safe-area-inset-top));z-index:3;display:flex;gap:8px;align-items:stretch;pointer-events:none;font-family:var(--mono);font-size:12px;letter-spacing:.03em}
+.chip{min-width:0;flex:1;padding:10px 11px;border:1px solid var(--line);border-radius:15px;background:var(--panel);box-shadow:0 12px 38px var(--shadow);backdrop-filter:blur(14px)}
+.chip b{display:block;font-size:10px;color:var(--muted);font-weight:700;text-transform:uppercase}.chip span{display:block;margin-top:3px;font-size:18px;color:var(--ink)}
+#hint{position:absolute;left:50%;bottom:calc(18px + env(safe-area-inset-bottom));transform:translateX(-50%);z-index:3;width:min(92dvw,520px);padding:10px 14px;border:1px solid var(--line);border-radius:16px;background:var(--panel);font:12px/1.35 var(--mono);color:var(--muted);text-align:center;box-shadow:0 12px 38px var(--shadow);pointer-events:none}
+.overlay{position:absolute;inset:0;z-index:5;display:grid;place-items:center;padding:22px;pointer-events:none;transition:opacity .28s ease,transform .28s ease}.overlay.hidden{opacity:0;transform:scale(.985);visibility:hidden}
+.card{width:min(560px,94dvw);border:1px solid var(--line);border-radius:28px;background:var(--panel);box-shadow:0 28px 80px var(--shadow);backdrop-filter:blur(18px);padding:26px;text-align:left}.eyebrow{font:700 12px/1 var(--mono);letter-spacing:.14em;color:var(--hot);text-transform:uppercase}.card h1{margin:12px 0 10px;font-size:clamp(36px,11vw,70px);line-height:.87;letter-spacing:-.07em}.card p{margin:0;color:var(--muted);font-size:15px;line-height:1.5;max-width:45ch}.rules{display:grid;gap:8px;margin:18px 0 22px;font:12px/1.35 var(--mono);color:var(--muted)}.rules div{padding:10px 12px;border:1px solid var(--line);border-radius:14px;background:rgba(255,255,255,.08)}
+button{appearance:none;border:0;border-radius:999px;min-height:48px;padding:0 22px;background:var(--ink);color:var(--bg);font:800 13px var(--mono);letter-spacing:.08em;text-transform:uppercase;box-shadow:0 12px 35px var(--shadow);cursor:pointer;pointer-events:auto}button:active{transform:translateY(1px)}#restartBtn{position:absolute;right:max(14px,env(safe-area-inset-right));top:calc(max(12px,env(safe-area-inset-top)) + 78px);z-index:8;min-height:44px;padding:0 16px;font-size:11px}#restartBtn.hidden{display:none}#resultLine{font:700 14px/1.4 var(--mono);color:var(--ink);margin:4px 0 14px}.fine{margin-top:14px!important;font:12px/1.4 var(--mono)!important;color:var(--muted)!important}
+@media (max-width:520px){#hud{font-size:10px}.chip{padding:8px 9px;border-radius:13px}.chip span{font-size:15px}.card{padding:22px}.card p{font-size:14px}}
+</style>
 </head>
 <body>
-  <main id="game" aria-label="Microthread Route game">
-    <canvas id="field" aria-hidden="true"></canvas>
-    <div class="scan"></div>
-    <section class="ui" aria-live="polite">
-      <div class="hud">
-        <div class="stack">
-          <div class="readout">Integrity<div class="bar"><i id="integrityBar"></i></div></div>
-          <div class="readout">Samples<b id="sampleText">0</b></div>
-        </div>
-        <div class="readout">Snapshots<b id="snapText">0/8</b></div>
+<main id="game" aria-label="Harness Panic game area">
+  <canvas id="stage"></canvas>
+  <section id="hud" aria-hidden="true">
+    <div class="chip"><b>Score</b><span id="score">0000</span></div>
+    <div class="chip"><b>Signal</b><span id="signal">100%</span></div>
+    <div class="chip"><b>Deadline</b><span id="time">55.0</span></div>
+  </section>
+  <div id="hint">Drag from the LLM core to a glowing socket. Route around live wires.</div>
+  <section id="title" class="overlay">
+    <div class="card">
+      <div class="eyebrow">clear autumn build window</div>
+      <h1>Harness Panic</h1>
+      <p>A brilliant disembodied model is minutes from demo. Wire API hooks, file writers, and terminal runners into its missing body before the signal fades.</p>
+      <div class="rules">
+        <div>Drag one cable from the central brain to each pulsing limb.</div>
+        <div>Crossing live cables causes a short and knocks a limb offline.</div>
+        <div>Complete every socket to run the one-shot build sequence.</div>
       </div>
-      <div id="titlePanel" class="panel">
-        <div class="eyebrow">Electron path / clear autumn run</div>
-        <h1>Microthread Route</h1>
-        <p>Guide a micron probe through living circuit pathways. Drag left and right, stay inside the etched channel, and collect precision samples at each fork.</p>
-        <div class="tips">
-          <div class="tip">Touch<strong>Hold + slide</strong></div>
-          <div class="tip">Keys<strong>← → or A D</strong></div>
-        </div>
-        <button data-smoke="start" id="startBtn" type="button">Begin Thread</button>
-        <div class="microcopy">8 junction snapshots completes the route</div>
-      </div>
-      <div id="overPanel" class="panel hidden">
-        <div class="eyebrow" id="overKind">Route archived</div>
-        <h1 id="overTitle">Clean Capture</h1>
-        <p id="overCopy">The probe returned with a complete microscope strip.</p>
-        <div class="tips">
-          <div class="tip">Samples<strong id="finalSamples">0</strong></div>
-          <div class="tip">Route score<strong id="finalScore">0</strong></div>
-        </div>
-        <button data-smoke="restart" id="restartBtn" type="button">Thread Again</button>
-      </div>
-      <div id="toast" class="toast">Snapshot unlocked</div>
-    </section>
-  </main>
-  <script>
-  (() => {
-    "use strict";
-    const doc = document;
-    const game = doc.getElementById("game");
-    const canvas = doc.getElementById("field");
-    const ctx = canvas && canvas.getContext ? canvas.getContext("2d", { alpha:false }) : null;
-    const startBtn = doc.getElementById("startBtn");
-    const restartBtn = doc.getElementById("restartBtn");
-    const titlePanel = doc.getElementById("titlePanel");
-    const overPanel = doc.getElementById("overPanel");
-    const integrityBar = doc.getElementById("integrityBar");
-    const sampleText = doc.getElementById("sampleText");
-    const snapText = doc.getElementById("snapText");
-    const toast = doc.getElementById("toast");
-    const overKind = doc.getElementById("overKind");
-    const overTitle = doc.getElementById("overTitle");
-    const overCopy = doc.getElementById("overCopy");
-    const finalSamples = doc.getElementById("finalSamples");
-    const finalScore = doc.getElementById("finalScore");
-    const reduceMotion = typeof matchMedia === "function" && matchMedia("(prefers-reduced-motion: reduce)").matches;
-    const palette = () => getComputedStyle(doc.documentElement);
-    let W = 1, H = 1, dpr = 1, last = 0, state = "title", audio = null, toastTimer = 0;
-    let keys = { left:false, right:false }, pointer = { active:false, x:0 };
-    let segments = [], samples = [], grains = [], sparks = [];
-    let run = null;
-
-    function safe(fn){ try { fn(); } catch (err) { console.warn("Microthread recovered", err && err.message ? err.message : err); } }
-    window.addEventListener("error", e => { e.preventDefault(); });
-    window.addEventListener("unhandledrejection", e => { e.preventDefault(); });
-
-    function rnd(a,b){ return a + Math.random() * (b - a); }
-    function clamp(v,a,b){ return Math.max(a, Math.min(b, v)); }
-    function lerp(a,b,t){ return a + (b - a) * t; }
-    function smooth(t){ return t * t * (3 - 2 * t); }
-
-    function resize(){
-      const r = game ? game.getBoundingClientRect() : { width:innerWidth || 320, height:innerHeight || 568 };
-      W = Math.max(1, Math.floor(r.width || innerWidth || 320));
-      H = Math.max(1, Math.floor(r.height || innerHeight || 568));
-      dpr = Math.min(2, Math.max(1, window.devicePixelRatio || 1));
-      if(ctx){
-        canvas.width = Math.floor(W * dpr);
-        canvas.height = Math.floor(H * dpr);
-        ctx.setTransform(dpr,0,0,dpr,0,0);
-      }
-      if(run && !pointer.active) run.targetX = run.playerX = clamp(run.playerX || W * .5, 20, W - 20);
-      buildGrains();
-    }
-
-    function buildGrains(){
-      grains = [];
-      for(let i=0;i<190;i++){
-        grains.push({x:Math.random(),y:Math.random(),s:rnd(.5,2.8),a:rnd(.03,.15),v:rnd(.025,.12)});
-      }
-    }
-
-    function initRun(){
-      const lanes = [.17,.31,.45,.59,.73,.86];
-      run = {
-        lanes, lane:2, scroll:0, speed:118, time:0, integrity:100, samples:0, snapshots:0,
-        score:0, combo:1, playerX:W*.5, playerV:0, targetX:W*.5, playerY:H*.68,
-        shake:0, flash:0, finish:false, lastSeg:-1, seed:Math.random()*9999
-      };
-      pointer.x = W*.5;
-      segments = [];
-      samples = [];
-      sparks = [];
-      let cursor = { y:-500, lane:2 };
-      for(let i=0;i<18;i++) cursor = appendSegment(cursor.y, cursor.lane, i);
-      syncHud();
-    }
-
-    function appendSegment(start, fromLane, index){
-      const diff = Math.max(0, index - 2);
-      const len = clamp(600 - diff * 18 + rnd(-90,80), 360, 650);
-      let next = fromLane;
-      if(index > 0){
-        const step = Math.random() < .22 ? 0 : (Math.random() < .5 ? -1 : 1);
-        next = clamp(fromLane + step, 0, 5);
-        if(next === fromLane && Math.random() < .48) next = clamp(fromLane + (Math.random() < .5 ? -1 : 1), 0, 5);
-      }
-      const seg = {
-        start, end:start + len, from:fromLane, to:next, index,
-        width:clamp(122 - diff * 5.8, 48, 122),
-        jitter:.006 + Math.min(.028, diff * .0019),
-        seed:rnd(0,9000),
-        hue:index % 3
-      };
-      segments.push(seg);
-      const count = index < 2 ? 1 : (Math.random() < .7 ? 2 : 1);
-      for(let j=0;j<count;j++){
-        const sy = start + len * rnd(.24,.82);
-        samples.push({ y:sy, offset:rnd(-.34,.34), got:false, r:rnd(0,6.28), id:index + "-" + j });
-      }
-      return { y:start + len, lane:next };
-    }
-
-    function ensureTrack(){
-      if(!segments.length) return;
-      let lastSeg = segments[segments.length - 1];
-      while(lastSeg.end < run.scroll + H * 2.8){
-        const res = appendSegment(lastSeg.end, lastSeg.to, segments.length);
-        lastSeg = segments[segments.length - 1];
-      }
-      while(segments.length > 24 && segments[3].end < run.scroll - H) segments.shift();
-      while(samples.length > 80 && samples[0].y < run.scroll - H) samples.shift();
-    }
-
-    function findSeg(y){
-      for(let i=0;i<segments.length;i++){
-        if(y >= segments[i].start && y <= segments[i].end) return { seg:segments[i], idx:i };
-      }
-      return { seg:segments[segments.length - 1] || null, idx:segments.length - 1 };
-    }
-
-    function centerAt(y){
-      const found = findSeg(y), s = found.seg;
-      if(!s || !run) return W * .5;
-      const t = clamp((y - s.start) / Math.max(1, s.end - s.start), 0, 1);
-      const bend = smooth(t);
-      const base = lerp(run.lanes[s.from], run.lanes[s.to], bend);
-      const micro = (Math.sin((y + s.seed) * .017) + .45 * Math.sin((y + s.seed) * .043)) * s.jitter;
-      return clamp(base + micro, .1, .9) * W;
-    }
-
-    function widthAt(y){
-      const f = findSeg(y), s = f.seg;
-      if(!s) return 90;
-      const pulse = 1 - .05 * Math.sin((y + s.seed) * .031);
-      return clamp(s.width * pulse * Math.min(1, W / 390), 38, 140);
-    }
-
-    function worldToScreen(y){ return H - (y - run.scroll); }
-    function screenToWorld(sy){ return run.scroll + (H - sy); }
-
-    function unlockAudio(){
-      if(audio || !window.AudioContext && !window.webkitAudioContext) return;
-      const AC = window.AudioContext || window.webkitAudioContext;
-      try { audio = new AC(); } catch(e) { audio = null; }
-    }
-
-    function blip(type){
-      if(!audio || audio.state === "closed") return;
-      if(audio.state === "suspended") audio.resume().catch(()=>{});
-      const now = audio.currentTime;
-      const osc = audio.createOscillator();
-      const gain = audio.createGain();
-      osc.type = type === "bad" ? "sawtooth" : "sine";
-      const f = type === "sample" ? 740 : type === "snap" ? 430 : 120;
-      osc.frequency.setValueAtTime(f, now);
-      osc.frequency.exponentialRampToValueAtTime(type === "bad" ? 60 : f * 1.45, now + .12);
-      gain.gain.setValueAtTime(.0001, now);
-      gain.gain.exponentialRampToValueAtTime(type === "bad" ? .08 : .055, now + .015);
-      gain.gain.exponentialRampToValueAtTime(.0001, now + .16);
-      osc.connect(gain); gain.connect(audio.destination);
-      osc.start(now); osc.stop(now + .18);
-    }
-
-    function vibrate(ms){ if(navigator && typeof navigator.vibrate === "function") navigator.vibrate(ms); }
-
-    function startGame(){
-      safe(() => {
-        unlockAudio();
-        initRun();
-        state = "playing";
-        titlePanel.classList.add("hidden");
-        overPanel.classList.add("hidden");
-        showToast("Trace the bright channel");
-      });
-    }
-
-    function endGame(won){
-      if(state !== "playing" || !run) return;
-      state = "over";
-      run.finish = !!won;
-      overKind.textContent = won ? "Route archived" : "Probe signal lost";
-      overTitle.textContent = won ? "Clean Capture" : "Thread Broken";
-      overCopy.textContent = won ? "Eight electron-microscope snapshots stitched into one clean route." : "The pathway narrowed faster than the probe could correct. The next route is already etched.";
-      finalSamples.textContent = String(run.samples);
-      finalScore.textContent = String(Math.round(run.score + run.snapshots * 180 + run.integrity * 4));
-      overPanel.classList.remove("hidden");
-      vibrate(won ? [18,30,18] : 35);
-      blip(won ? "snap" : "bad");
-    }
-
-    function showToast(text){
-      toast.textContent = text;
-      toast.classList.add("show");
-      toastTimer = 1.2;
-    }
-
-    function syncHud(){
-      if(!run) return;
-      integrityBar.style.transform = "scaleX(" + clamp(run.integrity / 100, 0, 1).toFixed(3) + ")";
-      sampleText.textContent = String(run.samples);
-      snapText.textContent = run.snapshots + "/8";
-    }
-
-    function addSparks(x,y,n,color){
-      for(let i=0;i<n;i++){
-        sparks.push({x,y,vx:rnd(-80,80),vy:rnd(-120,60),life:rnd(.28,.58),max:.58,c:color});
-      }
-    }
-
-    function update(dt){
-      if(state !== "playing" || !run) return;
-      dt = Math.min(dt, .034);
-      run.time += dt;
-      ensureTrack();
-      const diff = Math.max(0, run.snapshots + run.time * .035);
-      run.speed = clamp(118 + diff * 13 + run.time * .75, 118, 248);
-      run.scroll += run.speed * dt;
-      run.playerY = H * .68;
-      if(pointer.active) run.targetX = pointer.x;
-      if(keys.left) run.targetX -= 360 * dt;
-      if(keys.right) run.targetX += 360 * dt;
-      run.targetX = clamp(run.targetX, 18, W - 18);
-      const pull = (run.targetX - run.playerX) * 18;
-      run.playerV += pull * dt;
-      run.playerV *= Math.pow(.00075, dt);
-      run.playerX = clamp(run.playerX + run.playerV * dt, 15, W - 15);
-      if(run.playerX <= 16 || run.playerX >= W - 16) run.playerV *= -.22;
-
-      const pyWorld = screenToWorld(run.playerY);
-      const c = centerAt(pyWorld);
-      const half = widthAt(pyWorld) * .5;
-      const radius = 11;
-      const miss = Math.abs(run.playerX - c) - (half - radius);
-      if(miss > 0){
-        run.integrity -= (26 + miss * .82) * dt;
-        run.shake = Math.min(12, run.shake + miss * .035);
-        run.combo = 1;
-        if(Math.random() < .45) addSparks(run.playerX, run.playerY, 1, getCss("--danger"));
-      } else {
-        run.integrity = Math.min(100, run.integrity + (4 + run.combo * .5) * dt);
-      }
-      run.score += dt * (10 + run.combo * 2) + Math.max(0, -miss) * .003;
-      run.shake *= Math.pow(.035, dt);
-      run.flash = Math.max(0, run.flash - dt * 1.9);
-
-      samples.forEach(s => {
-        if(s.got) return;
-        const sy = worldToScreen(s.y);
-        if(sy < -50 || sy > H + 50) return;
-        const cx = centerAt(s.y) + s.offset * widthAt(s.y);
-        const hit = Math.hypot(run.playerX - cx, run.playerY - sy);
-        if(hit < 27){
-          s.got = true;
-          run.samples++;
-          run.combo = Math.min(9, run.combo + .55);
-          run.score += 60 * run.combo;
-          addSparks(cx, sy, 16, getCss("--accent2"));
-          blip("sample");
-          vibrate(8);
-          showToast("Precision sample +" + Math.round(60 * run.combo));
-        }
-      });
-
-      const segInfo = findSeg(pyWorld);
-      if(segInfo.idx !== run.lastSeg && segInfo.seg){
-        if(run.lastSeg >= 0 && segInfo.seg.from !== segInfo.seg.to){
-          run.snapshots++;
-          run.flash = 1;
-          run.score += 160 + run.samples * 3;
-          addSparks(run.playerX, run.playerY, 28, getCss("--accent"));
-          blip("snap");
-          vibrate([10,18,10]);
-          showToast("Snapshot " + run.snapshots + " unlocked");
-          if(run.snapshots >= 8) endGame(true);
-        }
-        run.lastSeg = segInfo.idx;
-      }
-      if(run.integrity <= 0) endGame(false);
-      sparks = sparks.filter(p => {
-        p.life -= dt; p.x += p.vx * dt; p.y += p.vy * dt; p.vy += 190 * dt;
-        return p.life > 0;
-      });
-      syncHud();
-      if(toastTimer > 0){
-        toastTimer -= dt;
-        if(toastTimer <= 0) toast.classList.remove("show");
-      }
-    }
-
-    function getCss(name){ return palette().getPropertyValue(name).trim() || "#fff"; }
-
-    function draw(){
-      if(!ctx) return;
-      const css = palette();
-      const bg = css.getPropertyValue("--bg").trim() || "#0a0d0c";
-      const ink = css.getPropertyValue("--ink").trim() || "#eef2eb";
-      const line = css.getPropertyValue("--line").trim() || "rgba(255,255,255,.14)";
-      const accent = css.getPropertyValue("--accent").trim() || "#f0a23a";
-      const accent2 = css.getPropertyValue("--accent2").trim() || "#20c7bd";
-      const good = css.getPropertyValue("--good").trim() || "#b7d66c";
-      ctx.save();
-      let sx = 0, sy = 0;
-      if(run && state === "playing" && !reduceMotion && run.shake > .1){
-        sx = rnd(-run.shake, run.shake); sy = rnd(-run.shake, run.shake);
-      }
-      ctx.translate(sx, sy);
-      ctx.fillStyle = bg;
-      ctx.fillRect(-20,-20,W+40,H+40);
-      drawSemBackground(line, ink);
-      if(run) drawTrack(line, accent, accent2, good);
-      drawSamples(accent2, good);
-      if(run) drawProbe(ink, accent, accent2);
-      drawParticles();
-      if(run && run.flash > 0){
-        ctx.globalAlpha = run.flash * .18;
-        ctx.fillStyle = accent2;
-        ctx.fillRect(0,0,W,H);
-        ctx.globalAlpha = 1;
-      }
-      if(state === "title") drawTitleGhost(accent, accent2);
-      ctx.restore();
-    }
-
-    function drawSemBackground(line, ink){
-      ctx.save();
-      ctx.strokeStyle = line;
-      ctx.lineWidth = 1;
-      const drift = run ? run.scroll * .055 : performance.now() * .003;
-      for(let i=0;i<grains.length;i++){
-        const g = grains[i];
-        const y = (g.y * H + drift * g.v * H) % (H + 20) - 10;
-        ctx.globalAlpha = g.a;
-        ctx.fillStyle = ink;
-        ctx.fillRect(g.x * W, y, g.s, g.s);
-      }
-      ctx.globalAlpha = .16;
-      for(let y=-40;y<H+40;y+=54){
-        ctx.beginPath();
-        const yy = y + (drift % 54);
-        ctx.moveTo(0, yy);
-        for(let x=0;x<W+20;x+=40) ctx.lineTo(x, yy + Math.sin(x*.02 + y) * 6);
-        ctx.stroke();
-      }
-      ctx.restore();
-    }
-
-    function drawTrack(line, accent, accent2, good){
-      const left = [], right = [], centers = [];
-      for(let sy=-60; sy<=H+70; sy+=12){
-        const wy = screenToWorld(sy);
-        const c = centerAt(wy), w = widthAt(wy);
-        left.push([c - w*.5, sy]); right.push([c + w*.5, sy]); centers.push([c, sy, wy, w]);
-      }
-      ctx.save();
-      ctx.beginPath();
-      left.forEach((p,i)=> i ? ctx.lineTo(p[0],p[1]) : ctx.moveTo(p[0],p[1]));
-      for(let i=right.length-1;i>=0;i--) ctx.lineTo(right[i][0], right[i][1]);
-      ctx.closePath();
-      const trench = ctx.createLinearGradient(0,0,W,H);
-      trench.addColorStop(0,"rgba(255,255,255,.20)");
-      trench.addColorStop(.45,"rgba(120,132,128,.24)");
-      trench.addColorStop(1,"rgba(0,0,0,.28)");
-      ctx.fillStyle = trench;
-      ctx.fill();
-      ctx.clip();
-      ctx.globalAlpha = .24;
-      ctx.strokeStyle = line;
-      for(let i=0;i<centers.length;i+=3){
-        const p = centers[i];
-        ctx.beginPath();
-        ctx.moveTo(p[0]-p[3]*.38, p[1]);
-        ctx.lineTo(p[0]+p[3]*.38, p[1] + Math.sin(p[2]*.05)*2);
-        ctx.stroke();
-      }
-      ctx.restore();
-      ctx.save();
-      ctx.lineCap = "round";
-      ctx.lineJoin = "round";
-      ctx.strokeStyle = "rgba(0,0,0,.18)";
-      ctx.lineWidth = 10;
-      strokeSide(left); strokeSide(right);
-      ctx.strokeStyle = line;
-      ctx.lineWidth = 2;
-      strokeSide(left); strokeSide(right);
-      ctx.setLineDash([8,18]);
-      ctx.lineWidth = 1.2;
-      ctx.strokeStyle = accent2;
-      strokeCenter(centers);
-      ctx.setLineDash([]);
-      ctx.restore();
-      segments.forEach(s => {
-        const y = worldToScreen(s.start);
-        if(y < -90 || y > H + 90 || s.from === s.to) return;
-        const c = centerAt(s.start + 8);
-        const col = s.hue === 0 ? accent : s.hue === 1 ? accent2 : good;
-        ctx.save();
-        ctx.globalAlpha = .78;
-        ctx.strokeStyle = col;
-        ctx.lineWidth = 2;
-        ctx.beginPath();
-        ctx.ellipse(c, y, widthAt(s.start)*.66, 16, 0, 0, Math.PI*2);
-        ctx.stroke();
-        ctx.globalAlpha = .18;
-        ctx.fillStyle = col;
-        ctx.beginPath();
-        ctx.ellipse(c, y, widthAt(s.start)*.8, 24, 0, 0, Math.PI*2);
-        ctx.fill();
-        ctx.restore();
-      });
-    }
-
-    function strokeSide(points){
-      ctx.beginPath();
-      points.forEach((p,i)=> i ? ctx.lineTo(p[0],p[1]) : ctx.moveTo(p[0],p[1]));
-      ctx.stroke();
-    }
-
-    function strokeCenter(points){
-      ctx.beginPath();
-      points.forEach((p,i)=> i ? ctx.lineTo(p[0],p[1]) : ctx.moveTo(p[0],p[1]));
-      ctx.stroke();
-    }
-
-    function drawSamples(accent2, good){
-      if(!run) return;
-      samples.forEach(s => {
-        if(s.got) return;
-        const y = worldToScreen(s.y);
-        if(y < -35 || y > H + 35) return;
-        const x = centerAt(s.y) + s.offset * widthAt(s.y);
-        const pulse = 1 + Math.sin(performance.now()*.006 + s.r) * .16;
-        ctx.save();
-        ctx.translate(x,y);
-        ctx.rotate(s.r + performance.now()*.0015);
-        ctx.globalAlpha = .94;
-        ctx.strokeStyle = accent2;
-        ctx.lineWidth = 2;
-        ctx.beginPath();
-        ctx.arc(0,0,10*pulse,0,Math.PI*2);
-        ctx.stroke();
-        ctx.fillStyle = good;
-        ctx.globalAlpha = .82;
-        ctx.fillRect(-4*pulse,-4*pulse,8*pulse,8*pulse);
-        ctx.restore();
-      });
-    }
-
-    function drawProbe(ink, accent, accent2){
-      const x = run.playerX, y = run.playerY;
-      const angle = clamp(run.playerV * .0035, -.75, .75);
-      ctx.save();
-      ctx.translate(x,y);
-      ctx.rotate(angle);
-      ctx.shadowColor = accent2;
-      ctx.shadowBlur = 16;
-      ctx.fillStyle = accent;
-      ctx.beginPath();
-      ctx.moveTo(18,0);
-      ctx.lineTo(-12,-8);
-      ctx.quadraticCurveTo(-19,0,-12,8);
-      ctx.closePath();
-      ctx.fill();
-      ctx.shadowBlur = 0;
-      ctx.strokeStyle = ink;
-      ctx.globalAlpha = .75;
-      ctx.lineWidth = 1.4;
-      ctx.stroke();
-      ctx.fillStyle = accent2;
-      ctx.globalAlpha = .95;
-      ctx.beginPath();
-      ctx.arc(3,0,4.5,0,Math.PI*2);
-      ctx.fill();
-      ctx.restore();
-      const pyWorld = screenToWorld(y);
-      const c = centerAt(pyWorld), half = widthAt(pyWorld)*.5;
-      ctx.save();
-      ctx.globalAlpha = .12;
-      ctx.strokeStyle = Math.abs(x-c) > half-13 ? getCss("--danger") : accent2;
-      ctx.lineWidth = 1;
-      ctx.beginPath();
-      ctx.arc(x,y,27,0,Math.PI*2);
-      ctx.stroke();
-      ctx.restore();
-    }
-
-    function drawParticles(){
-      sparks.forEach(p => {
-        const a = clamp(p.life / p.max, 0, 1);
-        ctx.globalAlpha = a;
-        ctx.fillStyle = p.c;
-        ctx.fillRect(p.x, p.y, 3, 3);
-      });
-      ctx.globalAlpha = 1;
-    }
-
-    function drawTitleGhost(accent, accent2){
-      const t = performance.now()*.001;
-      ctx.save();
-      ctx.globalAlpha = .22;
-      ctx.strokeStyle = accent2;
-      ctx.lineWidth = 2;
-      ctx.beginPath();
-      for(let y=-20;y<H+30;y+=18){
-        const x = W*.5 + Math.sin(y*.018 + t) * W*.18;
-        if(y === -20) ctx.moveTo(x,y); else ctx.lineTo(x,y);
-      }
-      ctx.stroke();
-      ctx.globalAlpha = .16;
-      ctx.fillStyle = accent;
-      ctx.beginPath();
-      ctx.arc(W*.5 + Math.sin(t)*W*.18, H*.66, 16, 0, Math.PI*2);
-      ctx.fill();
-      ctx.restore();
-    }
-
-    function loop(ts){
-      const now = ts || performance.now();
-      const dt = last ? (now - last) / 1000 : 0;
-      last = now;
-      safe(() => { update(dt); draw(); });
-      requestAnimationFrame(loop);
-    }
-
-    function setPointer(e){
-      const r = canvas.getBoundingClientRect();
-      pointer.x = clamp((e.clientX || 0) - r.left, 0, W);
-    }
-
-    if(canvas){
-      canvas.addEventListener("pointerdown", e => {
-        e.preventDefault();
-        pointer.active = true;
-        setPointer(e);
-        if(run) run.targetX = pointer.x;
-        unlockAudio();
-        if(canvas.setPointerCapture && e.pointerId != null) {
-          try { canvas.setPointerCapture(e.pointerId); } catch(_) {}
-        }
-      }, { passive:false });
-      canvas.addEventListener("pointermove", e => {
-        e.preventDefault();
-        if(pointer.active) setPointer(e);
-      }, { passive:false });
-      const up = e => {
-        e.preventDefault();
-        pointer.active = false;
-      };
-      canvas.addEventListener("pointerup", up, { passive:false });
-      canvas.addEventListener("pointercancel", up, { passive:false });
-    }
-
-    window.addEventListener("keydown", e => {
-      if(e.key === "ArrowLeft" || e.key.toLowerCase() === "a"){ keys.left = true; e.preventDefault(); }
-      if(e.key === "ArrowRight" || e.key.toLowerCase() === "d"){ keys.right = true; e.preventDefault(); }
-      if((e.key === "Enter" || e.key === " ") && state === "title"){ e.preventDefault(); startGame(); }
-    });
-    window.addEventListener("keyup", e => {
-      if(e.key === "ArrowLeft" || e.key.toLowerCase() === "a") keys.left = false;
-      if(e.key === "ArrowRight" || e.key.toLowerCase() === "d") keys.right = false;
-    });
-    window.addEventListener("resize", () => safe(resize));
-    if(startBtn) startBtn.addEventListener("click", e => { e.preventDefault(); startGame(); });
-    if(restartBtn) restartBtn.addEventListener("click", e => { e.preventDefault(); startGame(); });
-    resize();
-    initRun();
-    state = "title";
-    requestAnimationFrame(loop);
-  })();
-  </script>
+      <button data-smoke="start" id="startBtn" type="button">Launch Harness</button>
+    </div>
+  </section>
+  <section id="over" class="overlay hidden" aria-live="polite">
+    <div class="card">
+      <div class="eyebrow" id="overEyebrow">demo report</div>
+      <h1 id="overTitle">Build shipped</h1>
+      <div id="resultLine">Score 0000</div>
+      <p id="overCopy">The harness held long enough for the model to grow useful hands.</p>
+      <p class="fine" id="overStats">Stable links: 0 / 9</p>
+    </div>
+  </section>
+  <button data-smoke="restart" id="restartBtn" class="hidden" type="button">Restart Demo</button>
+</main>
+<script>
+(()=>{"use strict";
+const doc=document,win=window,canvas=doc.getElementById("stage"),ctx=canvas&&canvas.getContext?canvas.getContext("2d"):null;
+const $=id=>doc.getElementById(id),ui={title:$("title"),over:$("over"),start:$("startBtn"),restart:$("restartBtn"),score:$("score"),signal:$("signal"),time:$("time"),hint:$("hint"),overTitle:$("overTitle"),overCopy:$("overCopy"),overStats:$("overStats"),overEyebrow:$("overEyebrow"),result:$("resultLine")};
+const labels=["API HOOK","FILE WRITER","TERMINAL RUNNER","TEST WATCHER","PATCHER","CI LATCH","SHORTCUT BRIDGE","DEPLOY BEACON","REVIEW EYE"];
+const S={mode:"title",w:1,h:1,dpr:1,last:0,elapsed:0,time:55,signal:100,score:0,combo:0,active:5,max:9,brain:{x:0,y:0,r:44},nodes:[],wires:[],parts:[],sparks:[],drag:null,msg:"Drag from the LLM core to a glowing socket.",msgT:0,buildT:0,focus:0,audio:null};
+function safe(fn){try{fn()}catch(e){}}
+function pal(){const d=win.matchMedia&&win.matchMedia("(prefers-color-scheme: dark)").matches;return d?{bg:"#061018",grid:"rgba(117,231,232,.13)",grid2:"rgba(255,200,87,.09)",ink:"#eaf9f7",muted:"#88aab1",wire:"#20d6e8",wire2:"#ffc857",ok:"#38e69f",bad:"#ff6548",hot:"#ffb84d",node:"rgba(6,24,32,.74)",panel:"rgba(4,18,25,.8)"}:{bg:"#eef7f4",grid:"rgba(18,83,92,.13)",grid2:"rgba(227,144,36,.12)",ink:"#102028",muted:"#58717a",wire:"#04a8c4",wire2:"#f3b23a",ok:"#00a873",bad:"#e84c2a",hot:"#ff8b2d",node:"rgba(250,255,252,.82)",panel:"rgba(250,255,252,.86)"}}
+function resize(){S.dpr=Math.min(2,win.devicePixelRatio||1);S.w=Math.max(1,win.innerWidth||doc.documentElement.clientWidth||390);S.h=Math.max(1,win.innerHeight||doc.documentElement.clientHeight||760);if(canvas){canvas.width=Math.floor(S.w*S.dpr);canvas.height=Math.floor(S.h*S.dpr);canvas.style.width=S.w+"px";canvas.style.height=S.h+"px"}if(ctx)ctx.setTransform(S.dpr,0,0,S.dpr,0,0);layout()}
+function layout(){S.brain.x=S.w/2;S.brain.y=S.h*.52;S.brain.r=Math.max(34,Math.min(52,S.w*.105));const rx=Math.min(S.w*.42,245),ry=Math.min(S.h*.34,285),top=S.h*.18,bottom=S.h*.84,angles=[-90,-18,54,126,198,-54,18,162,234];for(let i=0;i<S.nodes.length;i++){const n=S.nodes[i],a=angles[i%angles.length]*Math.PI/180;n.x=clamp(S.brain.x+Math.cos(a)*rx,48,S.w-48);n.y=clamp(S.brain.y+Math.sin(a)*ry,top,bottom);n.r=Math.max(25,Math.min(34,S.w*.075))}for(const w of S.wires){if(w.path.length){w.path[0]={x:S.brain.x,y:S.brain.y};w.path[w.path.length-1]={x:w.node.x,y:w.node.y}}}}
+function clamp(v,a,b){return Math.max(a,Math.min(b,v))}
+function dist(a,b,c,d){return Math.hypot(a-c,b-d)}
+function reset(){S.mode="playing";S.elapsed=0;S.time=55;S.signal=100;S.score=0;S.combo=0;S.active=5;S.wires=[];S.parts=[];S.sparks=[];S.drag=null;S.buildT=0;S.focus=0;S.msg="Drag from the LLM core to a glowing socket.";S.msgT=2.2;S.nodes=labels.map((label,i)=>({id:i,label,x:0,y:0,r:30,connected:false,spawn:i<5?0:999,urgent:i>=3,deadline:i<5?12+i*1.4:0,pop:1}));layout();ui.title.classList.add("hidden");ui.over.classList.add("hidden");ui.restart.classList.remove("hidden");beep(180,.06,"sine",.035);updateUI()}
+function end(winGame){S.mode="over";ui.over.classList.remove("hidden");ui.overEyebrow.textContent=winGame?"demo accepted":"demo missed";ui.overTitle.textContent=winGame?"Build shipped":"Signal lost";ui.result.textContent="Score "+pad(S.score);const links=S.wires.length+" / "+S.max;ui.overStats.textContent="Stable links: "+links+" - Combo x"+Math.max(1,S.combo);ui.overCopy.textContent=winGame?"The harness held. The model grew hands, wrote files, ran terminals, and the build light went green.":"A shorted harness left the brain brilliant but bodiless. Reroute faster and keep wires apart.";vibe(winGame?35:70);beep(winGame?640:120,.18,winGame?"triangle":"sawtooth",.045)}
+function allDone(){return S.active>=S.max&&S.nodes.slice(0,S.active).every(n=>n.connected)}
+function spawnNode(){if(S.active>=S.max)return;const n=S.nodes[S.active];n.spawn=S.elapsed;n.deadline=9-Math.min(3,S.elapsed/18);n.urgent=true;n.pop=1.8;S.active++;S.msg="New limb appeared: "+n.label+". Route it before it overheats.";S.msgT=2.4;layout();burst(n.x,n.y,18,"hot");beep(420,.07,"square",.03)}
+function update(dt){if(S.mode==="playing"){S.elapsed+=dt;S.time=Math.max(0,55-S.elapsed);const open=S.nodes.slice(0,S.active).filter(n=>!n.connected).length;S.signal=clamp(S.signal-dt*(.42+open*.055+S.elapsed*.003),0,100);for(const n of S.nodes.slice(0,S.active)){if(n.pop>1)n.pop=Math.max(1,n.pop-dt*2.2);if(!n.connected&&n.urgent){n.deadline-=dt;if(n.deadline<=0){n.deadline=7;S.signal=clamp(S.signal-7,0,100);S.combo=0;S.msg=n.label+" overheated. Signal clipped.";S.msgT=1.8;burst(n.x,n.y,14,"bad");vibe(25);beep(105,.08,"sawtooth",.035)}}}if((S.elapsed>10&&S.active<6)||(S.elapsed>20&&S.active<7)||(S.elapsed>31&&S.active<8)||(S.elapsed>41&&S.active<9))spawnNode();if(allDone()){S.mode="build";S.buildT=0;S.msg="Harness locked. Running build...";S.msgT=3;beep(520,.08,"triangle",.04)}if(S.signal<=0||S.time<=0)end(false)}else if(S.mode==="build"){S.buildT+=dt;for(const w of S.wires){if(Math.random()<dt*8){const p=pointOn(w.path,(S.buildT*.45+w.node.id*.13)%1);burst(p.x,p.y,2,"ok")}}if(S.buildT>3.4){S.score+=Math.round(S.signal*10+S.time*15);end(true)}}for(let i=S.parts.length-1;i>=0;i--){const p=S.parts[i];p.t+=dt;p.x+=p.vx*dt;p.y+=p.vy*dt;p.vy+=p.g*dt;p.life-=dt;if(p.life<=0)S.parts.splice(i,1)}if(S.msgT>0)S.msgT-=dt;updateUI()}
+function updateUI(){ui.score.textContent=pad(S.score);ui.signal.textContent=Math.ceil(S.signal)+"%";ui.time.textContent=(S.mode==="build"?"RUN":Math.max(0,S.time).toFixed(1));ui.hint.textContent=S.msgT>0?S.msg:(S.mode==="playing"?"Drag from core to sockets. Crossing wires causes shorts.":"Keyboard: arrows choose, space links a socket.")}function pad(n){return String(Math.max(0,Math.floor(n))).padStart(4,"0")}
+function render(ts){if(!ctx)return;const p=pal(),t=ts*.001;ctx.clearRect(0,0,S.w,S.h);drawGrid(p,t);drawBuildBackdrop(p);for(const w of S.wires)drawWire(w.path,p,w.node.id,t);if(S.drag)drawDrag(p,t);for(const n of S.nodes.slice(0,S.active))drawNode(n,p,t);drawBrain(p,t);drawParticles(p);if(S.mode==="title")drawAttract(p,t)}
+function drawGrid(p,t){ctx.fillStyle=p.bg;ctx.fillRect(0,0,S.w,S.h);const step=34,ox=(t*8)%step,oy=(t*5)%step;ctx.lineWidth=1;ctx.strokeStyle=p.grid;ctx.beginPath();for(let x=-step+ox;x<S.w+step;x+=step){ctx.moveTo(x,0);ctx.lineTo(x,S.h)}for(let y=-step+oy;y<S.h+step;y+=step){ctx.moveTo(0,y);ctx.lineTo(S.w,y)}ctx.stroke();ctx.strokeStyle=p.grid2;ctx.beginPath();for(let x=-step*2+ox*.4;x<S.w+step*2;x+=step*3){ctx.moveTo(x,0);ctx.lineTo(x+S.h*.25,S.h)}ctx.stroke();ctx.globalAlpha=.11;ctx.fillStyle=p.wire;for(let i=0;i<30;i++){const x=(i*97+t*18)%S.w,y=(i*53+t*9)%S.h;ctx.fillRect(x,y,2,2)}ctx.globalAlpha=1}
+function drawBuildBackdrop(p){if(S.mode!=="build")return;const a=clamp(S.buildT/3.2,0,1);ctx.save();ctx.globalAlpha=.82*a;ctx.fillStyle=p.panel;round(S.w*.09,S.h*.68,S.w*.82,Math.min(130,S.h*.2),18);ctx.fill();ctx.font="12px ui-monospace,monospace";ctx.fillStyle=p.ok;const lines=["$ cursor build --one-shot","link: api hooks ok","link: file writer ok","link: terminal runner ok","result: shipped"];for(let i=0;i<lines.length;i++){if(S.buildT>.35+i*.45)ctx.fillText(lines[i],S.w*.13,S.h*.72+i*21)}ctx.restore()}
+function drawBrain(p,t){const b=S.brain;ctx.save();for(let i=0;i<3;i++){ctx.globalAlpha=.2-i*.04;ctx.strokeStyle=i%2?p.wire2:p.wire;ctx.lineWidth=2;ctx.beginPath();ctx.arc(b.x,b.y,b.r+10+i*14+Math.sin(t*2+i)*3,0,Math.PI*2);ctx.stroke()}ctx.globalAlpha=1;ctx.shadowColor=p.wire;ctx.shadowBlur=24;ctx.fillStyle=p.node;ctx.strokeStyle=p.wire;ctx.lineWidth=2;ctx.beginPath();for(let i=0;i<10;i++){const a=-Math.PI/2+i*Math.PI*2/10,r=b.r*(i%2?.92:1.08);const x=b.x+Math.cos(a+t*.08)*r,y=b.y+Math.sin(a+t*.08)*r;i?ctx.lineTo(x,y):ctx.moveTo(x,y)}ctx.closePath();ctx.fill();ctx.stroke();ctx.shadowBlur=0;ctx.fillStyle=p.ink;ctx.font="700 11px ui-monospace,monospace";ctx.textAlign="center";ctx.fillText("LLM",b.x,b.y-4);ctx.fillText("CORE",b.x,b.y+11);ctx.restore()}
+function drawNode(n,p,t){const hot=!n.connected&&n.urgent&&n.deadline<5,scale=n.pop||1,r=n.r*scale;ctx.save();ctx.translate(n.x,n.y);ctx.shadowColor=n.connected?p.ok:(hot?p.bad:p.wire2);ctx.shadowBlur=n.connected?20:14;ctx.fillStyle=p.node;ctx.strokeStyle=n.connected?p.ok:(hot?p.bad:p.wire2);ctx.lineWidth=2;round(-r,-r,r*2,r*2,13);ctx.fill();ctx.stroke();ctx.shadowBlur=0;ctx.fillStyle=n.connected?p.ok:(hot?p.bad:p.wire2);ctx.beginPath();ctx.arc(0,0,r*.38,0,Math.PI*2);ctx.fill();ctx.fillStyle=p.bg;ctx.font="800 15px ui-monospace,monospace";ctx.textAlign="center";ctx.textBaseline="middle";ctx.fillText(n.connected?"OK":"+",0,1);if(!n.connected&&n.urgent){ctx.strokeStyle=hot?p.bad:p.wire2;ctx.lineWidth=3;ctx.beginPath();ctx.arc(0,0,r+7,-Math.PI/2,-Math.PI/2+Math.PI*2*clamp(n.deadline/10,0,1));ctx.stroke()}ctx.restore();ctx.font="700 10px ui-monospace,monospace";ctx.textAlign="center";ctx.fillStyle=p.muted;ctx.fillText(n.label,n.x, n.y+n.r+18);if(S.mode==="playing"&&S.focus===n.id&&!n.connected){ctx.strokeStyle=p.hot;ctx.lineWidth=1.5;ctx.setLineDash([4,5]);ctx.beginPath();ctx.arc(n.x,n.y,n.r+14+Math.sin(t*5)*2,0,Math.PI*2);ctx.stroke();ctx.setLineDash([])}}
+function drawWire(path,p,id,t){ctx.save();ctx.lineCap="round";ctx.lineJoin="round";ctx.shadowColor=p.wire;ctx.shadowBlur=14;ctx.strokeStyle=id%2?p.wire2:p.wire;ctx.lineWidth=7;ctx.globalAlpha=.2;trace(path);ctx.stroke();ctx.globalAlpha=.92;ctx.shadowBlur=0;ctx.lineWidth=3;trace(path);ctx.stroke();const q=pointOn(path,(t*.55+id*.18)%1);ctx.fillStyle=p.ink;ctx.globalAlpha=.9;ctx.beginPath();ctx.arc(q.x,q.y,3.4,0,Math.PI*2);ctx.fill();ctx.restore()}
+function drawDrag(p,t){const path=S.drag.path,cross=checkCross(path);ctx.save();ctx.lineCap="round";ctx.lineJoin="round";ctx.strokeStyle=cross?p.bad:p.wire;ctx.shadowColor=cross?p.bad:p.wire;ctx.shadowBlur=18;ctx.lineWidth=4;trace(path);ctx.stroke();const q=path[path.length-1];ctx.fillStyle=cross?p.bad:p.wire;ctx.beginPath();ctx.arc(q.x,q.y,7+Math.sin(t*10)*2,0,Math.PI*2);ctx.fill();ctx.restore()}
+function drawParticles(p){for(const a of S.parts){ctx.globalAlpha=clamp(a.life/a.max,0,1);ctx.fillStyle=a.kind==="bad"?p.bad:a.kind==="hot"?p.hot:p.ok;ctx.beginPath();ctx.arc(a.x,a.y,a.r,0,Math.PI*2);ctx.fill()}ctx.globalAlpha=1}
+function drawAttract(p,t){if(S.mode!=="title")return;ctx.save();ctx.globalAlpha=.55;ctx.strokeStyle=p.wire;ctx.lineWidth=2;for(let i=0;i<5;i++){const a=t*.5+i*Math.PI*2/5,r=Math.min(S.w,S.h)*(.18+i*.018);ctx.beginPath();ctx.arc(S.w/2,S.h*.52,r,a,a+Math.PI*.8);ctx.stroke()}ctx.restore()}
+function round(x,y,w,h,r){ctx.beginPath();ctx.moveTo(x+r,y);ctx.arcTo(x+w,y,x+w,y+h,r);ctx.arcTo(x+w,y+h,x,y+h,r);ctx.arcTo(x,y+h,x,y,r);ctx.arcTo(x,y,x+w,y,r);ctx.closePath()}
+function trace(path){ctx.beginPath();for(let i=0;i<path.length;i++){const q=path[i];i?ctx.lineTo(q.x,q.y):ctx.moveTo(q.x,q.y)}}
+function pointOn(path,u){if(!path.length)return{x:S.brain.x,y:S.brain.y};let total=0,segs=[];for(let i=1;i<path.length;i++){const a=path[i-1],b=path[i],l=dist(a.x,a.y,b.x,b.y);segs.push([a,b,l]);total+=l}let d=u*total;for(const s of segs){if(d<=s[2]){const k=s[2]?d/s[2]:0;return{x:s[0].x+(s[1].x-s[0].x)*k,y:s[0].y+(s[1].y-s[0].y)*k}}d-=s[2]}return path[path.length-1]}
+function pos(e){const r=canvas.getBoundingClientRect();return{x:(e.clientX||0)-r.left,y:(e.clientY||0)-r.top}}
+function down(e){if(S.mode!=="playing"||!canvas)return;if(e.cancelable)e.preventDefault();const p=pos(e);if(dist(p.x,p.y,S.brain.x,S.brain.y)<=S.brain.r+28){S.drag={path:[{x:S.brain.x,y:S.brain.y},p]};safe(()=>canvas.setPointerCapture(e.pointerId))}}
+function move(e){if(!S.drag)return;if(e.cancelable)e.preventDefault();const p=pos(e),path=S.drag.path,last=path[path.length-1];if(dist(p.x,p.y,last.x,last.y)>5)path.push(p)}
+function up(e){if(!S.drag)return;if(e.cancelable)e.preventDefault();const p=pos(e),path=S.drag.path;path.push(p);let target=null;for(const n of S.nodes.slice(0,S.active)){if(!n.connected&&dist(p.x,p.y,n.x,n.y)<=n.r+34)target=n}if(target){path[path.length-1]={x:target.x,y:target.y};const hit=checkCross(path);if(hit){short(hit)}else{lock(target,path)}}else{S.msg="Cable dropped. Release on a glowing socket.";S.msgT=1.3}S.drag=null;safe(()=>canvas.releasePointerCapture(e.pointerId))}
+function lock(n,path){n.connected=true;n.urgent=false;S.wires.push({node:n,path:simplify(path)});S.combo++;S.score+=100+S.combo*28+Math.round(S.signal);S.msg=n.label+" linked. Combo x"+S.combo+".";S.msgT=1.5;burst(n.x,n.y,22,"ok");beep(300+S.combo*36,.07,"triangle",.035);vibe(12);if(S.active<S.max&&S.wires.length>=S.active-1)spawnNode()}
+function short(w){w.node.connected=false;S.wires=S.wires.filter(x=>x!==w);S.signal=clamp(S.signal-13,0,100);S.combo=0;S.msg="Short circuit. "+w.node.label+" dropped offline.";S.msgT=1.8;burst(S.brain.x,S.brain.y,8,"bad");burst(w.node.x,w.node.y,20,"bad");beep(90,.12,"sawtooth",.05);vibe(30)}
+function simplify(path){const out=[];for(const p of path){const l=out[out.length-1];if(!l||dist(p.x,p.y,l.x,l.y)>8)out.push({x:p.x,y:p.y})}return out}
+function checkCross(path){for(const w of S.wires){for(let i=1;i<path.length;i++){const a=path[i-1],b=path[i];if(dist(a.x,a.y,S.brain.x,S.brain.y)<S.brain.r+18&&dist(b.x,b.y,S.brain.x,S.brain.y)<S.brain.r+18)continue;for(let j=2;j<w.path.length;j++){const c=w.path[j-1],d=w.path[j];if(dist(c.x,c.y,S.brain.x,S.brain.y)<S.brain.r+18||dist(d.x,d.y,S.brain.x,S.brain.y)<S.brain.r+18)continue;if(inter(a,b,c,d))return w}}}return null}
+function inter(a,b,c,d){const den=(d.y-c.y)*(b.x-a.x)-(d.x-c.x)*(b.y-a.y);if(Math.abs(den)<.001)return false;const ua=((d.x-c.x)*(a.y-c.y)-(d.y-c.y)*(a.x-c.x))/den,ub=((b.x-a.x)*(a.y-c.y)-(b.y-a.y)*(a.x-c.x))/den;return ua>.04&&ua<.96&&ub>.04&&ub<.96}
+function burst(x,y,n,kind){for(let i=0;i<n;i++){const a=Math.random()*Math.PI*2,s=35+Math.random()*95;S.parts.push({x,y,vx:Math.cos(a)*s,vy:Math.sin(a)*s,g:20,life:.45+Math.random()*.45,max:.9,r:1.5+Math.random()*3,kind})}}
+function vibe(ms){safe(()=>navigator.vibrate&&navigator.vibrate(ms))}
+function audio(){if(S.audio)return S.audio;const C=win.AudioContext||win.webkitAudioContext;if(!C)return null;S.audio=new C;return S.audio}
+function beep(freq,dur,type,gain){safe(()=>{const ac=audio();if(!ac)return;if(ac.state==="suspended")ac.resume();const o=ac.createOscillator(),g=ac.createGain();o.type=type;o.frequency.value=freq;g.gain.value=0;g.gain.linearRampToValueAtTime(gain,ac.currentTime+.01);g.gain.exponentialRampToValueAtTime(.0001,ac.currentTime+dur);o.connect(g);g.connect(ac.destination);o.start();o.stop(ac.currentTime+dur+.02)})}
+function key(e){if(S.mode!=="playing")return;const open=S.nodes.slice(0,S.active).filter(n=>!n.connected);if(!open.length)return;if(e.key==="ArrowRight"||e.key==="ArrowDown"){S.focus=(S.focus+1)%S.active;e.preventDefault()}else if(e.key==="ArrowLeft"||e.key==="ArrowUp"){S.focus=(S.focus+S.active-1)%S.active;e.preventDefault()}else if(e.key===" "||e.key==="Enter"){e.preventDefault();let n=S.nodes[S.focus];if(!n||n.connected)n=open[0];const mid={x:clamp((S.brain.x+n.x)/2+(n.x<S.brain.x?70:-70),30,S.w-30),y:clamp((S.brain.y+n.y)/2-70,100,S.h-60)},path=[{x:S.brain.x,y:S.brain.y},mid,{x:n.x,y:n.y}];const hit=checkCross(path);hit?short(hit):lock(n,path)}}
+function loop(ts){const dt=Math.min(.033,((ts||0)-S.last)/1000||0);S.last=ts||0;update(dt);render(ts||0);requestAnimationFrame(loop)}
+safe(()=>{resize();win.addEventListener("resize",resize,{passive:true});if(canvas){canvas.addEventListener("pointerdown",down,{passive:false});canvas.addEventListener("pointermove",move,{passive:false});canvas.addEventListener("pointerup",up,{passive:false});canvas.addEventListener("pointercancel",up,{passive:false})}doc.addEventListener("keydown",key);ui.start.addEventListener("click",reset);ui.restart.addEventListener("click",reset);requestAnimationFrame(loop)});
+})();
+</script>
 </body>
 </html>
