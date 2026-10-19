@@ -1,505 +1,526 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Erik Nilsson — Product Designer</title>
-    <link rel="preconnect" href="https://fonts.googleapis.com">
-    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Caveat:wght@400;500&family=Instrument+Serif:ital@0;1&family=Inter:wght@300;400;500&family=Newsreader:ital,opsz,wght@0,6..72,200..800;1,6..72,200..800&display=swap" rel="stylesheet">
-    <style>
-        :root {
-            --bg: #F4F2EE;
-            --ink: #1A1A1A;
-            --ink-light: #737373;
-            --ink-lighter: #A3A3A3;
-            --accent-red: #FF331A;
-            --accent-blue: #1A4DFF;
-        }
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Erik Nilsson — Product Designer</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Caveat:wght@500;600&family=Inter:wght@400;500;600&family=Newsreader:ital,opsz,wght@0,6..72,300..400;1,6..72,300..400&display=swap" rel="stylesheet">
+  <style>
+    :root {
+      --bg: #F8F7F3;
+      --text: #171615;
+      --text-muted: #736F68;
+      --accent: #E14425;
+      --grid-color: rgba(0,0,0,0.035);
+      
+      --font-serif: 'Newsreader', serif;
+      --font-sans: 'Inter', sans-serif;
+      --font-hand: 'Caveat', cursive;
+    }
+    
+    @supports (color: color(display-p3 1 1 1)) {
+      :root {
+        --accent: color(display-p3 0.95 0.2 0.1);
+      }
+    }
 
-        @supports (color: color(display-p3 1 1 1)) {
-            :root {
-                --accent-red: color(display-p3 0.95 0.15 0.05);
-                --accent-blue: color(display-p3 0.05 0.3 0.95);
-            }
-        }
+    @media (prefers-color-scheme: dark) {
+      :root {
+        --bg: #1a1a1a;
+        --text: #e0e0e0;
+        --text-muted: #a0a0a0;
+        --grid-color: rgba(255,255,255,0.035);
+      }
 
-        ::selection {
-            background: var(--accent-red);
-            color: #fff;
-        }
+      .experiment-card {
+        background-color: rgba(255,255,255,0.05);
+      }
+    }
 
-        body {
-            background-color: var(--bg);
-            background-image: 
-                linear-gradient(to right, rgba(0,0,0,0.03) 1px, transparent 1px),
-                linear-gradient(to bottom, rgba(0,0,0,0.03) 1px, transparent 1px);
-            background-size: 24px 24px;
-            background-position: center top;
-            color: var(--ink);
-            font-family: 'Newsreader', serif;
-            margin: 0;
-            padding: 0;
-            min-height: 100vh;
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            -webkit-font-smoothing: antialiased;
-            -moz-osx-font-smoothing: grayscale;
-        }
+    * { margin: 0; padding: 0; box-sizing: border-box; }
 
-        .notebook {
-            width: 100%;
-            max-width: 40rem;
-            margin: 0 auto;
-            padding: 4rem;
-            display: grid;
-            grid-template-columns: 1fr 1fr;
-            gap: 6rem;
-            position: relative;
-            box-sizing: border-box;
-        }
+    body {
+      background-color: var(--bg);
+      color: var(--text);
+      font-family: var(--font-sans);
+      -webkit-font-smoothing: antialiased;
+      -moz-osx-font-smoothing: grayscale;
+      background-image: radial-gradient(var(--grid-color) 1.5px, transparent 1.5px);
+      background-size: 24px 24px;
+      line-height: 1.6;
+      overflow-x: hidden;
+    }
 
-        .notebook::after {
-            content: '';
-            position: absolute;
-            left: 50%;
-            top: 4rem;
-            bottom: 4rem;
-            width: 1px;
-            background: var(--ink);
-            opacity: 0.1;
-        }
+    /* Notebook Margin */
+    .margin-line {
+      position: fixed;
+      top: 0;
+      bottom: 0;
+      left: clamp(2rem, 8vw, 6rem);
+      width: 1px;
+      background-color: rgba(225, 68, 37, 0.2);
+      z-index: -1;
+    }
+    .margin-line::after {
+      content: '';
+      position: absolute;
+      top: 0; bottom: 0; left: 4px;
+      width: 1px;
+      background-color: rgba(225, 68, 37, 0.08);
+    }
 
-        .header-meta {
-            font-family: 'Inter', sans-serif;
-            font-size: 0.75rem;
-            text-transform: uppercase;
-            letter-spacing: 0.05em;
-            color: var(--ink-light);
-            display: flex;
-            justify-content: space-between;
-            margin-bottom: 4rem;
-            border-bottom: 1px solid rgba(0,0,0,0.1);
-            padding-bottom: 0.5rem;
-        }
+    main {
+      max-width: 640px;
+      margin: 0 auto;
+      padding: 5rem 2rem 6rem clamp(4rem, 12vw, 10rem);
+    }
 
-        h1 {
-            font-family: 'Instrument Serif', serif;
-            font-size: clamp(4rem, 8vw, 7rem);
-            font-weight: 400;
-            line-height: 0.9;
-            margin: 0 0 2rem 0;
-            letter-spacing: -0.02em;
-        }
+    /* Header */
+    header {
+      display: flex;
+      justify-content: space-between;
+      align-items: flex-end;
+      margin-bottom: 8rem;
+    }
+    .brand-lockup {
+      display: flex;
+      flex-direction: column;
+      gap: 0.2rem;
+    }
+    .brand {
+      font-family: var(--font-sans);
+      font-size: 1.15rem;
+      font-weight: 600;
+      letter-spacing: -0.02em;
+      color: var(--text);
+      text-decoration: none;
+    }
+    .role {
+      font-size: 0.85rem;
+      color: var(--text-muted);
+    }
+    .log-field {
+      text-align: right;
+    }
+    .log-field .label {
+      font-size: 0.65rem;
+      text-transform: uppercase;
+      letter-spacing: 0.1em;
+      color: var(--text-muted);
+      margin-bottom: 0.2rem;
+    }
+    .log-field .hand-value {
+      font-family: var(--font-hand);
+      font-size: 1.4rem;
+      color: var(--text);
+      transform: rotate(-1.5deg);
+      line-height: 1.1;
+    }
+    .log-field .hand-value .highlight {
+      color: var(--accent);
+    }
 
-        h1 em {
-            font-style: italic;
-            color: var(--ink);
-        }
+    /* Layout */
+    .content-grid {
+      display: grid;
+      grid-template-columns: 1fr;
+      gap: 5rem;
+    }
+    @media (min-width: 900px) {
+      .content-grid {
+        grid-template-columns: 1.1fr 0.9fr;
+        gap: 8rem;
+      }
+    }
 
-        .lead {
-            font-family: 'Newsreader', serif;
-            font-size: clamp(1.75rem, 3vw, 2.25rem);
-            line-height: 1.25;
-            font-weight: 400;
-            margin-bottom: 2rem;
-            letter-spacing: -0.02em;
-            color: var(--ink);
-        }
+    /* Bio Section */
+    .lead {
+      font-family: var(--font-serif);
+      font-size: clamp(2.5rem, 4.5vw, 4rem);
+      font-weight: 300;
+      line-height: 1.1;
+      letter-spacing: -0.015em;
+      color: var(--text);
+      margin-bottom: 3rem;
+      max-width: 18ch;
+    }
+    .lead em {
+      font-style: normal;
+    }
+    .secondary {
+      font-size: 1.1rem;
+      color: var(--text-muted);
+      max-width: 36ch;
+      position: relative;
+    }
 
-        .bio-secondary {
-            font-family: 'Inter', sans-serif;
-            font-size: 1.05rem;
-            line-height: 1.6;
-            color: var(--ink-light);
-            max-width: 85%;
-            margin-bottom: 4rem;
-            font-weight: 300;
-        }
+    /* Annotations */
+    .circled {
+      position: relative;
+      display: inline-block;
+      z-index: 1;
+      color: var(--text);
+    }
+    .hand-drawn-circle {
+      position: absolute;
+      top: -20%;
+      left: -10%;
+      width: 120%;
+      height: 140%;
+      color: var(--accent);
+      pointer-events: none;
+      z-index: -1;
+      overflow: visible;
+    }
+    .underlined {
+      position: relative;
+      display: inline-block;
+      color: var(--text);
+    }
+    .hand-drawn-underline {
+      position: absolute;
+      bottom: -6px;
+      left: -2px;
+      width: 104%;
+      height: 12px;
+      color: var(--accent);
+      pointer-events: none;
+      z-index: -1;
+      overflow: visible;
+    }
+    .relative-anchor {
+      position: relative;
+      display: inline-block;
+      color: var(--text);
+    }
+    .static-annotation {
+      position: absolute;
+      top: -2.5rem;
+      left: 10%;
+      transform: rotate(-4deg);
+      font-family: var(--font-hand);
+      color: var(--accent);
+      font-size: 1.15rem;
+      white-space: nowrap;
+      pointer-events: none;
+    }
+    .small-arrow {
+      position: absolute;
+      width: 24px;
+      height: 24px;
+      bottom: -16px;
+      left: 10px;
+      color: var(--accent);
+      transform: rotate(-10deg);
+    }
 
-        .marginalia {
-            display: flex;
-            gap: 3rem;
-            font-family: 'Inter', sans-serif;
-            border-top: 1px solid rgba(0,0,0,0.1);
-            padding-top: 1.5rem;
-        }
+    /* Shared Section Styles */
+    .section-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: baseline;
+      margin-bottom: 2rem;
+      border-bottom: 1px solid var(--grid-color);
+      padding-bottom: 0.75rem;
+    }
+    .section-title {
+      font-size: 0.75rem;
+      font-weight: 600;
+      text-transform: uppercase;
+      letter-spacing: 0.1em;
+      color: var(--text-muted);
+    }
+    .status-badge {
+      font-family: var(--font-hand);
+      font-size: 1.25rem;
+      color: var(--text-muted);
+      transform: rotate(2deg);
+    }
 
-        .stamp {
-            display: flex;
-            flex-direction: column;
-            gap: 0.25rem;
-        }
+    /* Index Section */
+    .index-list {
+      list-style: none;
+      display: flex;
+      flex-direction: column;
+      gap: 1.25rem;
+    }
+    .index-list a {
+      display: flex;
+      align-items: baseline;
+      text-decoration: none;
+      color: var(--text);
+    }
+    .index-title {
+      font-family: var(--font-serif);
+      font-size: 1.3rem;
+      font-weight: 300;
+      font-style: italic;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      max-width: 75%;
+      transition: color 0.2s ease, transform 0.2s ease;
+    }
+    .index-leader {
+      flex-grow: 1;
+      border-bottom: 1px dotted var(--text-muted);
+      margin: 0 1rem;
+      opacity: 0.3;
+      transition: border-color 0.2s ease;
+    }
+    .index-date {
+      font-size: 0.85rem;
+      color: var(--text-muted);
+      transition: color 0.2s ease;
+    }
+    .index-list a:hover .index-title {
+      color: var(--accent);
+      transform: translateX(4px);
+    }
+    .index-list a:hover .index-leader {
+      border-bottom-color: var(--accent);
+      opacity: 0.5;
+    }
+    .index-list a:hover .index-date {
+      color: var(--accent);
+    }
 
-        .stamp .label {
-            font-size: 0.65rem;
-            text-transform: uppercase;
-            letter-spacing: 0.05em;
-            color: var(--ink-lighter);
-        }
+    /* Signals Section */
+    .signals-section {
+      margin-top: 4rem;
+    }
+    .signals-list {
+      list-style: none;
+      display: flex;
+      flex-direction: column;
+      gap: 1.25rem;
+    }
+    .signals-list li {
+      font-size: 0.95rem;
+      color: var(--text-muted);
+      position: relative;
+      padding-left: 1.25rem;
+      line-height: 1.5;
+    }
+    .signals-list li::before {
+      content: '';
+      position: absolute;
+      left: 0;
+      top: 0.55rem;
+      width: 4px;
+      height: 4px;
+      background-color: var(--accent);
+      border-radius: 50%;
+      opacity: 0.4;
+    }
 
-        .stamp .value {
-            font-size: 0.85rem;
-            color: var(--ink);
-            font-weight: 400;
-        }
+    /* Experiment Section */
+    .experiment-section {
+      margin-top: 5rem;
+    }
+    .experiment-card {
+      padding: 1.75rem;
+      border: 1px solid var(--grid-color);
+      background-color: rgba(255,255,255,0.3);
+      position: relative;
+    }
+    .experiment-card::before {
+      content: ''; position: absolute; top: -1px; left: -1px; width: 8px; height: 8px; border-top: 1px solid var(--text-muted); border-left: 1px solid var(--text-muted);
+    }
+    .experiment-card::after {
+      content: ''; position: absolute; bottom: -1px; right: -1px; width: 8px; height: 8px; border-bottom: 1px solid var(--text-muted); border-right: 1px solid var(--text-muted);
+    }
+    .experiment-text {
+      font-family: var(--font-serif);
+      font-size: 1.15rem;
+      font-style: italic;
+      color: var(--text);
+      margin-bottom: 1.5rem;
+    }
+    .experiment-meta {
+      display: flex;
+      gap: 1rem;
+      align-items: baseline;
+    }
+    .experiment-meta .label {
+      font-size: 0.65rem;
+      text-transform: uppercase;
+      letter-spacing: 0.1em;
+      color: var(--text-muted);
+    }
+    .experiment-meta .hand-value {
+      font-family: var(--font-hand);
+      font-size: 1.3rem;
+      color: var(--accent);
+      transform: rotate(-1deg);
+    }
 
-        .right-col {
-            padding-top: 6rem;
-            display: flex;
-            flex-direction: column;
-            gap: 4rem;
-        }
+    /* Footer */
+    .elsewhere {
+      margin-top: 6rem;
+      padding-top: 2.5rem;
+      border-top: 1px solid var(--grid-color);
+    }
+    .links-grid {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 1.5rem 3rem;
+    }
+    .link-item {
+      font-size: 0.95rem;
+      color: var(--text);
+      text-decoration: none;
+      position: relative;
+      transition: color 0.2s ease;
+    }
+    .link-item:hover {
+      color: var(--accent);
+    }
+    .link-annotation {
+      position: absolute;
+      top: -2.5rem;
+      left: 50%;
+      transform: translateX(-50%) rotate(2deg);
+      white-space: nowrap;
+      font-family: var(--font-hand);
+      color: var(--accent);
+      font-size: 1.2rem;
+      pointer-events: none;
+      opacity: 0;
+      transition: opacity 0.2s ease, transform 0.2s ease;
+    }
+    .link-item:hover .link-annotation {
+      opacity: 1;
+      transform: translateX(-50%) rotate(-1deg);
+    }
+    .mini-arrow {
+      position: absolute;
+      width: 20px;
+      height: 20px;
+      bottom: -12px;
+      left: 40%;
+      color: var(--accent);
+    }
 
-        .section-title {
-            font-family: 'Inter', sans-serif;
-            font-size: 0.75rem;
-            text-transform: uppercase;
-            letter-spacing: 0.05em;
-            color: var(--ink-light);
-            margin: 0 0 1.5rem 0;
-            border-bottom: 1px solid rgba(0,0,0,0.1);
-            padding-bottom: 0.5rem;
-        }
-
-        .writing-list {
-            list-style: none;
-            padding: 0;
-            margin: 0;
-            display: flex;
-            flex-direction: column;
-            gap: 1.5rem;
-        }
-
-        .writing-list li {
-            position: relative;
-            padding-left: 1.25rem;
-            display: flex;
-            flex-direction: column;
-            gap: 0.25rem;
-        }
-
-        .writing-list li::before {
-            content: '';
-            position: absolute;
-            left: 0;
-            top: 0.6rem;
-            width: 4px;
-            height: 4px;
-            border-radius: 50%;
-            background-color: var(--ink-lighter);
-            transition: background-color 0.2s ease, transform 0.2s ease;
-        }
-
-        .writing-list li:hover::before {
-            background-color: var(--accent-red);
-            transform: scale(1.5);
-        }
-
-        .writing-list a {
-            font-family: 'Newsreader', serif;
-            font-size: 1.5rem;
-            color: var(--ink);
-            text-decoration: none;
-            line-height: 1.2;
-            transition: color 0.2s ease;
-        }
-
-        .writing-list a:hover {
-            color: var(--accent-red);
-        }
-
-        .writing-list .meta {
-            font-family: 'Inter', sans-serif;
-            font-size: 0.8rem;
-            color: var(--ink-lighter);
-            font-weight: 300;
-        }
-
-        .link-grid {
-            display: grid;
-            grid-template-columns: repeat(2, 1fr);
-            gap: 1.5rem 1rem;
-        }
-
-        .link-grid a {
-            font-family: 'Inter', sans-serif;
-            font-size: 0.95rem;
-            color: var(--ink);
-            text-decoration: none;
-            font-weight: 400;
-            transition: color 0.2s ease;
-            display: inline-flex;
-            align-items: center;
-            gap: 0.5rem;
-            border-bottom: 1px solid transparent;
-            padding-bottom: 2px;
-        }
-
-        .link-grid a::before {
-            content: '↗';
-            font-size: 0.8em;
-            color: var(--ink-lighter);
-            transition: color 0.2s ease;
-        }
-
-        .link-grid a:hover {
-            color: var(--accent-blue);
-            border-bottom-color: var(--accent-blue);
-        }
-
-        .link-grid a:hover::before {
-            color: var(--accent-blue);
-        }
-
-        .annotated-text {
-            position: relative;
-            display: inline-block;
-            white-space: nowrap;
-            z-index: 1;
-        }
-
-        .annotated-text .circle {
-            position: absolute;
-            top: 50%;
-            left: 50%;
-            width: 120%;
-            height: 150%;
-            transform: translate(-50%, -50%);
-            fill: none;
-            stroke: var(--accent-red);
-            stroke-width: 2;
-            stroke-linecap: round;
-            pointer-events: none;
-            z-index: -1;
-        }
-
-        .annotated-text .underline {
-            position: absolute;
-            bottom: -0.2rem;
-            left: -5%;
-            width: 110%;
-            height: 20px;
-            fill: none;
-            stroke: var(--accent-blue);
-            stroke-width: 2;
-            stroke-linecap: round;
-            pointer-events: none;
-            z-index: -1;
-        }
-
-        .annotation-note {
-            position: absolute;
-            top: -2.5rem;
-            left: 70%;
-            font-family: 'Caveat', cursive;
-            font-size: 1.25rem;
-            color: var(--accent-red);
-            white-space: nowrap;
-            transform: rotate(-3deg);
-            pointer-events: none;
-        }
-
-        .note-bottom {
-            top: auto;
-            bottom: -2.5rem;
-            left: 10%;
-            color: var(--accent-blue);
-            transform: rotate(2deg);
-        }
-
-        .decorative-note {
-            margin-top: auto;
-            display: flex;
-            align-items: flex-start;
-            gap: 1rem;
-            color: var(--ink-lighter);
-        }
-
-        .decorative-note .handwritten {
-            font-family: 'Caveat', cursive;
-            font-size: 1.4rem;
-            color: var(--ink-light);
-            transform: rotate(-3deg);
-            max-width: 200px;
-            line-height: 1.1;
-            margin-top: 1rem;
-        }
-
-        @keyframes draw {
-            to { stroke-dashoffset: 0; }
-        }
-
-        @keyframes fadeIn {
-            to { opacity: 1; }
-        }
-
-        .annotated-text .circle path,
-        .annotated-text .underline path,
-        .decorative-note svg path {
-            stroke-dasharray: 1;
-            stroke-dashoffset: 1;
-            animation: draw 1s cubic-bezier(0.4, 0, 0.2, 1) forwards;
-        }
-
-        .annotated-text .circle path { animation-delay: 0.5s; }
-        .annotated-text .underline path { animation-delay: 0.8s; }
-        .decorative-note svg path { animation-delay: 1.1s; }
-
-        .annotation-note {
-            opacity: 0;
-            animation: fadeIn 0.5s ease forwards;
-        }
-        
-        .annotated-text:first-of-type .annotation-note { animation-delay: 1s; }
-        .annotated-text:last-of-type .annotation-note { animation-delay: 1.3s; }
-        
-        .decorative-note .handwritten {
-            opacity: 0;
-            animation: fadeIn 0.5s ease forwards;
-            animation-delay: 1.6s;
-        }
-
-        @media (prefers-color-scheme: dark) {
-            :root {
-                --bg: #1a1a1a;
-                --ink: #e0e0e0;
-                --ink-light: #a3a3a3;
-                --ink-lighter: #737373;
-            }
-
-            body {
-                background-image:
-                    linear-gradient(to right, rgba(255,255,255,0.03) 1px, transparent 1px),
-                    linear-gradient(to bottom, rgba(255,255,255,0.03) 1px, transparent 1px);
-            }
-        }
-
-        @media (max-width: 900px) {
-            .notebook {
-                grid-template-columns: 1fr;
-                gap: 4rem;
-                padding: 2rem;
-            }
-            .notebook::after {
-                display: none;
-            }
-            .right-col {
-                padding-top: 0;
-            }
-            h1 {
-                font-size: 4rem;
-            }
-            .marginalia {
-                flex-wrap: wrap;
-                gap: 2rem;
-            }
-        }
-
-        @media (max-width: 640px) {
-            .notebook {
-                padding: 1.5rem;
-                gap: 3rem;
-            }
-            h1 {
-                font-size: 3rem;
-            }
-            .lead {
-                font-size: 1.5rem;
-            }
-            .bio-secondary {
-                max-width: 100%;
-            }
-        }
-    </style>
+    /* Responsive adjustments */
+    @media (max-width: 900px) {
+      .margin-line { left: 1.5rem; }
+      main { padding: 4rem 1.5rem 5rem 3.5rem; }
+      header { margin-bottom: 5rem; flex-direction: column; align-items: flex-start; gap: 2rem; }
+      .log-field { text-align: left; }
+      .static-annotation, .link-annotation { display: none; }
+    }
+  </style>
 </head>
 <body>
-    <main class="notebook">
-        <div class="column left-col">
-            <div class="header-meta">
-                <span>Folio 01</span>
-                <span>Oct 18, 2026</span>
+  <div class="margin-line"></div>
+  
+  <main>
+    <header>
+      <div class="brand-lockup">
+        <a href="https://eriks.design" class="brand">Erik Nilsson</a>
+        <span class="role">Product Designer @ Cursor</span>
+      </div>
+      <div class="log-field">
+        <div class="label">Log Entry</div>
+        <div class="hand-value">Oct 19, '26 — SF <span class="highlight">(12°C)</span></div>
+      </div>
+    </header>
+
+    <div class="content-grid">
+      <div class="left-col">
+        <section class="bio-section">
+          <h1 class="lead">
+            I'm a product designer at <span class="circled">Cursor<svg class="hand-drawn-circle" preserveAspectRatio="none" viewBox="0 0 100 40" xmlns="http://www.w3.org/2000/svg"><path d="M5,20 C10,0 95,0 95,20 C95,40 10,40 5,25 C0,10 40,5 60,10" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/></svg></span>, working on how people build software with AI.
+          </h1>
+          <p class="secondary">
+            Off-hours, I'm tinkering with <span class="underlined">living-site<svg class="hand-drawn-underline" preserveAspectRatio="none" viewBox="0 0 100 20" xmlns="http://www.w3.org/2000/svg"><path d="M5,10 Q50,15 95,5" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg></span> — <span class="relative-anchor">agents<span class="static-annotation">
+              <svg class="small-arrow" viewBox="0 0 30 30" xmlns="http://www.w3.org/2000/svg"><path d="M5,25 Q15,10 25,5 M15,5 L25,5 L25,15" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>
+              background sync
+            </span></span> rebuild this corner of the web from fresh activity data each day.
+          </p>
+        </section>
+
+        <section class="experiment-section">
+          <div class="section-header">
+            <h2 class="section-title">Current Experiment</h2>
+          </div>
+          <div class="experiment-card">
+            <p class="experiment-text">Deploy micro-agents from your phone before sunrise — hit deploy beats as GitHub Actions wake across time zones and chain into a shipping run.</p>
+            <div class="experiment-meta">
+              <span class="label">Status</span>
+              <span class="hand-value">Testing via iOS Shortcuts</span>
             </div>
-            
-            <h1>Erik <br><em>Nilsson</em></h1>
-            
-            <p class="lead">
-                I'm a product designer at Cursor, working on how people build software 
-                <span class="annotated-text">
-                    with AI
-                    <svg class="circle" viewBox="0 0 100 40" preserveAspectRatio="none">
-                        <path d="M 15,35 C 5,35 5,5 15,5 C 85,5 95,5 95,20 C 95,35 85,35 15,35 C 10,35 12,25 20,20" pathLength="1" />
-                    </svg>
-                    <span class="annotation-note">invisible pathways</span>
-                </span>.
-            </p>
+          </div>
+        </section>
+      </div>
 
-            <p class="bio-secondary">
-                Off-hours, I'm tinkering with 
-                <span class="annotated-text">
-                    living-site
-                    <svg class="underline" viewBox="0 0 100 20" preserveAspectRatio="none">
-                        <path d="M 2,15 Q 30,5 98,12" pathLength="1" />
-                    </svg>
-                    <span class="annotation-note note-bottom">shipping by sunrise</span>
-                </span>
-                — agents rebuild this corner of the web from fresh activity data each day.
-            </p>
+      <div class="right-col">
+        <section class="index-section">
+          <div class="section-header">
+            <h2 class="section-title">Notes & Fragments</h2>
+            <div class="status-badge">Activity: Dormant</div>
+          </div>
+          <ul class="index-list">
+            <li>
+              <a href="https://x.com/flowstated/status/2002167999353241901" target="_blank" rel="noopener">
+                <span class="index-title">imagine 2026</span>
+                <span class="index-leader"></span>
+                <span class="index-date">Dec 20</span>
+              </a>
+            </li>
+            <li>
+              <a href="https://x.com/flowstated/status/2000889983562080578" target="_blank" rel="noopener">
+                <span class="index-title">shipping by sunrise</span>
+                <span class="index-leader"></span>
+                <span class="index-date">Dec 16</span>
+              </a>
+            </li>
+            <li>
+              <a href="https://x.com/flowstated/status/2000691637190861180" target="_blank" rel="noopener">
+                <span class="index-title">exploring ways to spin up agents from my phone...</span>
+                <span class="index-leader"></span>
+                <span class="index-date">Dec 15</span>
+              </a>
+            </li>
+          </ul>
+        </section>
 
-            <div class="marginalia">
-                <div class="stamp">
-                    <span class="label">Location</span>
-                    <span class="value">San Francisco, CA</span>
-                </div>
-                <div class="stamp">
-                    <span class="label">Conditions</span>
-                    <span class="value">13°C, clear</span>
-                </div>
-                <div class="stamp">
-                    <span class="label">Activity</span>
-                    <span class="value">dormant</span>
-                </div>
-            </div>
-        </div>
+        <section class="signals-section">
+          <div class="section-header">
+            <h2 class="section-title">World Signals</h2>
+          </div>
+          <ul class="signals-list">
+            <li>AI models growing bodies — harness engineering as the missing limbs</li>
+            <li>Deep-space probe photographing the crater left by humanity's asteroid punch</li>
+            <li>Cruelty-free lab trials finally leaving the shadow of animal testing</li>
+          </ul>
+        </section>
+      </div>
+    </div>
 
-        <div class="column right-col">
-            <section class="index-section">
-                <h2 class="section-title">Index</h2>
-                <ul class="writing-list">
-                    <li>
-                        <a href="https://x.com/flowstated/status/2002167999353241901">imagine 2026</a>
-                        <span class="meta">Dec 20, 2025</span>
-                    </li>
-                    <li>
-                        <a href="https://x.com/flowstated/status/2000889983562080578">shipping by sunrise</a>
-                        <span class="meta">Dec 16, 2025</span>
-                    </li>
-                    <li>
-                        <a href="https://x.com/flowstated/status/2000691637190861180">exploring ways to spin up agents from my phone</a>
-                        <span class="meta">Dec 15, 2025</span>
-                    </li>
-                </ul>
-            </section>
-
-            <section class="links-section">
-                <h2 class="section-title">Connections</h2>
-                <div class="link-grid">
-                    <a href="https://cursor.com">Cursor</a>
-                    <a href="https://x.com/flowstated">X (Twitter)</a>
-                    <a href="https://github.com/eriknson">GitHub</a>
-                    <a href="https://linkedin.com/in/eriknson">LinkedIn</a>
-                    <a href="mailto:contact@eriks.design">Email</a>
-                </div>
-            </section>
-            
-            <div class="decorative-note">
-                <svg class="arrow" width="40" height="40" viewBox="0 0 40 40">
-                    <path d="M 10,10 Q 30,20 20,35 M 20,35 L 12,30 M 20,35 L 28,32" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" pathLength="1"/>
-                </svg>
-                <span class="handwritten">sunset closing in on golden gate fog</span>
-            </div>
-        </div>
-    </main>
+    <footer class="elsewhere">
+      <div class="section-header" style="margin-bottom: 1.5rem; border: none; padding: 0;">
+        <h2 class="section-title">Elsewhere</h2>
+      </div>
+      <div class="links-grid">
+        <a href="https://cursor.com" class="link-item" target="_blank" rel="noopener">Cursor</a>
+        <a href="https://x.com/flowstated" class="link-item" target="_blank" rel="noopener">X (Twitter)</a>
+        <a href="https://github.com/eriknson" class="link-item" target="_blank" rel="noopener">
+          GitHub
+          <div class="link-annotation">
+            0 commits this week
+            <svg viewBox="0 0 30 30" class="mini-arrow" xmlns="http://www.w3.org/2000/svg">
+              <path d="M15,25 Q15,15 5,15 M15,25 L10,20 M15,25 L20,20" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+            </svg>
+          </div>
+        </a>
+        <a href="https://linkedin.com/in/eriknson" class="link-item" target="_blank" rel="noopener">LinkedIn</a>
+        <a href="mailto:contact@eriks.design" class="link-item">Email</a>
+      </div>
+    </footer>
+  </main>
 </body>
 </html>

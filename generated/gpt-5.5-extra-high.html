@@ -1,52 +1,34 @@
-<!doctype html>
+<!DOCTYPE html>
 <html lang="en">
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <meta name="color-scheme" content="light dark">
-  <title>Erik Nilsson - editorial notebook</title>
-  <meta name="description" content="A compact editorial notebook for Erik Nilsson, product designer at Cursor.">
+  <title>Erik Nilsson | Editorial Notebook</title>
+  <meta name="description" content="A minimal editorial notebook for Erik Nilsson, product designer at Cursor.">
   <style>
     :root {
-      --paper: #f7f1e7;
-      --paper-deep: #efe3d2;
-      --ink: #17130f;
-      --muted: #6f675e;
-      --quiet: #9d9183;
-      --line: rgba(23, 19, 15, 0.16);
-      --line-strong: rgba(23, 19, 15, 0.32);
-      --accent: #fa3f28;
-      --accent-2: #0f6bff;
-      --accent-3: #00a873;
-      --shadow: rgba(23, 19, 15, 0.09);
-      --serif: "Iowan Old Style", "New York", "Cochin", Georgia, serif;
-      --sans: ui-sans-serif, -apple-system, BlinkMacSystemFont, "SF Pro Text", "Segoe UI", sans-serif;
-      --mono: "SF Mono", "Cascadia Mono", "Roboto Mono", ui-monospace, monospace;
+      --paper: #fbfaf4;
+      --paper-2: #f5f1e7;
+      --ink: #171511;
+      --muted: #69645b;
+      --faint: #d8d0bf;
+      --rule: #26231d;
+      --accent: #ff4b2f;
+      --blue: #2257ff;
+      --green: #008d70;
+      --shadow: rgba(46, 36, 20, .13);
+      --serif: "Iowan Old Style", "Palatino Linotype", Palatino, Georgia, serif;
+      --sans: -apple-system, BlinkMacSystemFont, "SF Pro Text", "Helvetica Neue", Arial, sans-serif;
+      --mono: "SF Mono", "Berkeley Mono", ui-monospace, Menlo, Monaco, monospace;
+      --hand: "Bradley Hand", "Segoe Print", "Comic Sans MS", cursive;
     }
 
     @supports (color: color(display-p3 1 0 0)) {
       :root {
-        --paper: color(display-p3 0.965 0.936 0.888);
-        --paper-deep: color(display-p3 0.925 0.875 0.795);
-        --ink: color(display-p3 0.085 0.068 0.052);
-        --muted: color(display-p3 0.42 0.38 0.335);
-        --quiet: color(display-p3 0.61 0.55 0.49);
-        --accent: color(display-p3 1 0.19 0.09);
-        --accent-2: color(display-p3 0.02 0.34 1);
-        --accent-3: color(display-p3 0 0.68 0.42);
-      }
-    }
-
-    @media (prefers-color-scheme: dark) {
-      :root {
-        --paper: #1a1714;
-        --paper-deep: #12100d;
-        --ink: #e8e2d8;
-        --muted: #a59d92;
-        --quiet: #7a7268;
-        --line: rgba(232, 226, 216, 0.14);
-        --line-strong: rgba(232, 226, 216, 0.28);
-        --shadow: rgba(0, 0, 0, 0.45);
+        --accent: color(display-p3 .98 .19 .10);
+        --blue: color(display-p3 .08 .27 1);
+        --green: color(display-p3 0 .55 .38);
       }
     }
 
@@ -55,41 +37,22 @@
     }
 
     html {
+      background: #e8e0d1;
       scroll-behavior: smooth;
     }
 
     body {
       margin: 0;
       min-height: 100vh;
-      background: var(--paper);
       color: var(--ink);
       font-family: var(--sans);
-      text-rendering: optimizeLegibility;
       -webkit-font-smoothing: antialiased;
-    }
-
-    body::before {
-      content: "";
-      position: fixed;
-      inset: 18px;
-      border: 1px solid var(--line);
-      border-radius: 28px;
-      pointer-events: none;
-    }
-
-    body::after {
-      content: "";
-      position: fixed;
-      top: 0;
-      bottom: 0;
-      left: clamp(18px, 7vw, 112px);
-      border-left: 1px solid var(--line);
-      pointer-events: none;
+      text-rendering: optimizeLegibility;
     }
 
     ::selection {
-      color: var(--paper);
       background: var(--accent);
+      color: #fffaf0;
     }
 
     a {
@@ -99,812 +62,791 @@
 
     a:focus-visible,
     button:focus-visible {
-      outline: 2px solid var(--accent-2);
+      outline: 2px solid var(--blue);
       outline-offset: 4px;
     }
 
     .page {
-      max-width: 640px;
-      width: calc(100% - 34px);
-      margin: 0 auto;
-      padding: clamp(28px, 5vw, 72px) 0 clamp(40px, 7vw, 96px);
-    }
-
-    .sheet {
-      position: relative;
-      min-height: calc(100vh - clamp(56px, 10vw, 144px));
-      border: 1px solid var(--line);
-      border-radius: 34px;
+      width: min(1180px, calc(100% - 28px));
+      margin-block: 18px;
+      margin-inline: auto;
       background: var(--paper);
-      box-shadow: 0 32px 90px var(--shadow);
+      border: 1px solid rgba(23, 21, 17, .18);
+      box-shadow: 0 28px 90px var(--shadow);
+      position: relative;
       overflow: hidden;
     }
 
-    .sheet::before,
-    .sheet::after {
+    .page::before,
+    .page::after {
       content: "";
       position: absolute;
+      top: 0;
+      bottom: 0;
+      width: 1px;
+      background: rgba(255, 75, 47, .34);
       pointer-events: none;
     }
 
-    .sheet::before {
-      top: 0;
-      bottom: 0;
-      left: min(22vw, 248px);
-      border-left: 1px solid var(--line);
-    }
-
-    .sheet::after {
-      right: clamp(24px, 5vw, 72px);
-      bottom: clamp(24px, 5vw, 70px);
-      width: 170px;
-      height: 170px;
-      border: 1px solid rgba(250, 63, 40, 0.36);
-      border-radius: 45% 55% 51% 49%;
-      transform: rotate(-7deg);
-    }
+    .page::before { left: clamp(18px, 4vw, 58px); }
+    .page::after { right: clamp(18px, 4vw, 58px); opacity: .35; }
 
     .masthead {
       display: grid;
-      grid-template-columns: minmax(150px, 0.55fr) minmax(0, 1.45fr) auto;
-      gap: clamp(18px, 3vw, 44px);
-      align-items: start;
-      padding: clamp(24px, 4vw, 48px) clamp(22px, 4.8vw, 64px) 0;
+      grid-template-columns: 1fr auto 1fr;
+      align-items: center;
+      gap: 16px;
+      min-height: 88px;
+      padding: 18px clamp(24px, 6vw, 76px);
+      border-bottom: 2px solid var(--rule);
+      position: relative;
     }
 
-    .edition {
-      color: var(--muted);
+    .masthead::after {
+      content: "";
+      position: absolute;
+      left: clamp(24px, 6vw, 76px);
+      right: clamp(24px, 6vw, 76px);
+      bottom: 5px;
+      border-bottom: 1px solid rgba(23, 21, 17, .42);
+    }
+
+    .kicker,
+    .folio,
+    .eyebrow,
+    .index-label,
+    .note-label,
+    .tiny {
       font-family: var(--mono);
-      font-size: 11px;
-      letter-spacing: 0.12em;
-      line-height: 1.7;
       text-transform: uppercase;
+      letter-spacing: .12em;
+      font-size: 11px;
+      line-height: 1.2;
     }
 
-    .edition strong {
-      display: block;
-      color: var(--ink);
-      font-family: var(--serif);
-      font-size: clamp(23px, 3vw, 34px);
-      font-weight: 500;
-      letter-spacing: -0.04em;
-      line-height: 0.95;
-      text-transform: none;
-    }
-
-    .nav {
-      display: flex;
-      flex-wrap: wrap;
-      justify-content: flex-end;
-      gap: 8px;
-      font-size: 12px;
-      letter-spacing: 0.02em;
-    }
-
-    .nav a {
-      border: 1px solid var(--line);
-      border-radius: 999px;
-      padding: 8px 11px;
+    .kicker {
       color: var(--muted);
-      transition: border-color 180ms ease, color 180ms ease, transform 180ms ease;
     }
 
-    .nav a:hover {
-      border-color: var(--ink);
-      color: var(--ink);
+    .mark {
+      justify-self: center;
+      font-family: var(--serif);
+      font-size: clamp(31px, 4.6vw, 58px);
+      letter-spacing: -.07em;
+      line-height: .9;
+      font-weight: 500;
       transform: translateY(-1px);
     }
 
+    .folio {
+      justify-self: end;
+      color: var(--muted);
+      text-align: right;
+    }
+
     .hero {
-      position: relative;
       display: grid;
-      grid-template-columns: minmax(150px, 0.55fr) minmax(0, 1.45fr);
-      gap: clamp(18px, 3vw, 44px);
-      padding: clamp(48px, 8vw, 112px) clamp(22px, 4.8vw, 64px) clamp(34px, 5vw, 62px);
+      grid-template-columns: minmax(0, 1.18fr) minmax(280px, .82fr);
+      min-height: 640px;
+      border-bottom: 1px solid var(--rule);
     }
 
-    .hero-kicker {
-      align-self: end;
-      color: var(--muted);
-      font-family: var(--mono);
-      font-size: 12px;
-      line-height: 1.65;
-      text-transform: uppercase;
+    .hero-copy {
+      padding: clamp(34px, 7vw, 92px) clamp(24px, 6vw, 76px) 56px;
+      border-right: 1px solid rgba(23, 21, 17, .22);
+      position: relative;
     }
 
-    .hero-kicker span {
-      display: inline-block;
-      margin-top: 14px;
-      padding-top: 13px;
-      border-top: 1px solid var(--line-strong);
-      color: var(--ink);
-      font-family: var(--serif);
-      font-size: 18px;
-      font-style: italic;
-      text-transform: none;
-    }
-
-    h1 {
-      max-width: 830px;
+    .headline {
       margin: 0;
+      max-width: 800px;
       font-family: var(--serif);
-      font-size: clamp(58px, 12vw, 164px);
-      font-weight: 440;
-      letter-spacing: -0.085em;
-      line-height: 0.78;
+      font-weight: 400;
+      font-size: clamp(54px, 10vw, 142px);
+      line-height: .86;
+      letter-spacing: -.075em;
     }
 
-    h1 .line {
-      display: block;
+    .headline span {
+      display: inline-block;
     }
 
-    h1 .soft {
-      color: var(--muted);
-      font-style: italic;
-      letter-spacing: -0.09em;
+    .headline .underline {
+      position: relative;
+      letter-spacing: -.09em;
     }
 
-    .annotation {
+    .headline .underline::after {
+      content: "";
       position: absolute;
-      z-index: 2;
-      max-width: 185px;
-      color: var(--accent);
-      font-family: var(--serif);
-      font-size: clamp(15px, 1.5vw, 18px);
-      font-style: italic;
-      line-height: 1.12;
-      transform: rotate(-8deg);
+      left: .04em;
+      right: .01em;
+      bottom: .045em;
+      border-bottom: .075em solid var(--accent);
+      transform: rotate(-1.1deg);
+      z-index: -1;
     }
 
-    .annotation::before {
+    .dek {
+      width: min(530px, 100%);
+      margin: 32px 0 0;
+      font-family: var(--serif);
+      font-size: clamp(22px, 2.8vw, 33px);
+      line-height: 1.12;
+      letter-spacing: -.025em;
+    }
+
+    .bio-line {
+      width: min(470px, 100%);
+      margin: 20px 0 0;
+      color: var(--muted);
+      font-size: 15px;
+      line-height: 1.65;
+    }
+
+    .annotations {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 10px;
+      margin: 38px 0 0;
+    }
+
+    .chip {
+      display: inline-flex;
+      align-items: center;
+      min-height: 34px;
+      padding: 8px 11px;
+      border: 1px solid rgba(23, 21, 17, .2);
+      border-radius: 999px;
+      background: rgba(255, 255, 255, .28);
+      font-family: var(--mono);
+      font-size: 11px;
+      letter-spacing: .03em;
+      transition: transform .2s ease, background .2s ease, border-color .2s ease;
+    }
+
+    .chip:hover {
+      transform: translateY(-2px) rotate(-.5deg);
+      border-color: rgba(23, 21, 17, .45);
+      background: #fffdf6;
+    }
+
+    .scribble {
+      position: absolute;
+      right: clamp(22px, 5vw, 80px);
+      bottom: 34px;
+      width: min(210px, 30vw);
+      color: var(--accent);
+      font-family: var(--hand);
+      font-size: clamp(17px, 2vw, 24px);
+      line-height: 1.04;
+      transform: rotate(-5deg);
+    }
+
+    .scribble::before {
       content: "";
       display: block;
-      width: 72px;
-      height: 34px;
-      margin: 0 0 7px 18px;
-      border-top: 1.5px solid currentColor;
-      border-left: 1.5px solid currentColor;
-      border-radius: 60% 0 0 0;
-      transform: skewX(-18deg);
+      width: 55px;
+      height: 29px;
+      margin: 0 0 5px 15px;
+      border: solid var(--accent);
+      border-width: 0 0 2px 2px;
+      border-radius: 0 0 0 42px;
+      transform: rotate(12deg);
     }
 
-    .annotation.one {
-      top: clamp(52px, 9vw, 118px);
-      right: clamp(22px, 7vw, 96px);
+    .side {
+      padding: clamp(26px, 5vw, 58px) clamp(22px, 4.8vw, 48px);
+      background: var(--paper-2);
+      display: flex;
+      flex-direction: column;
+      justify-content: space-between;
+      gap: 34px;
+      position: relative;
     }
 
-    .main-grid {
+    .side::before {
+      content: "";
+      position: absolute;
+      inset: 14px;
+      border: 1px solid rgba(23, 21, 17, .09);
+      pointer-events: none;
+    }
+
+    .field-note {
+      padding: 0 0 28px;
+      border-bottom: 1px solid rgba(23, 21, 17, .22);
+    }
+
+    .field-note p {
+      margin: 13px 0 0;
+      font-family: var(--serif);
+      font-size: clamp(24px, 3vw, 38px);
+      line-height: 1;
+      letter-spacing: -.04em;
+    }
+
+    .weather {
       display: grid;
-      grid-template-columns: minmax(150px, 0.55fr) minmax(0, 1.45fr);
-      gap: clamp(18px, 3vw, 44px);
-      padding: 0 clamp(22px, 4.8vw, 64px) clamp(28px, 5vw, 64px);
+      grid-template-columns: auto 1fr;
+      gap: 22px;
+      align-items: end;
+      padding: 22px 0;
+      border-bottom: 1px solid rgba(23, 21, 17, .22);
     }
 
-    .margin-stack {
+    .temp {
+      font-family: var(--serif);
+      font-size: clamp(64px, 8vw, 96px);
+      line-height: .82;
+      letter-spacing: -.08em;
+    }
+
+    .weather p {
+      margin: 0;
+      color: var(--muted);
+      font-size: 14px;
+      line-height: 1.45;
+    }
+
+    .signals {
+      margin: 0;
+      padding: 0;
+      list-style: none;
       display: grid;
-      align-content: start;
+      gap: 14px;
+    }
+
+    .signals li {
+      position: relative;
+      padding-left: 24px;
+      font-family: var(--serif);
+      font-size: clamp(18px, 2vw, 24px);
+      line-height: 1.12;
+      letter-spacing: -.02em;
+    }
+
+    .signals li::before {
+      content: "*";
+      position: absolute;
+      left: 0;
+      top: .03em;
+      color: var(--green);
+      font-family: var(--hand);
+      font-size: 18px;
+    }
+
+    .section-grid {
+      display: grid;
+      grid-template-columns: minmax(0, .92fr) minmax(0, 1.08fr);
+      border-bottom: 1px solid var(--rule);
+    }
+
+    .column {
+      padding: clamp(28px, 5vw, 62px) clamp(24px, 6vw, 76px);
+    }
+
+    .column + .column {
+      border-left: 1px solid rgba(23, 21, 17, .22);
+    }
+
+    .section-title {
+      margin: 0;
+      font-family: var(--serif);
+      font-size: clamp(35px, 5vw, 66px);
+      line-height: .92;
+      letter-spacing: -.06em;
+      font-weight: 400;
+    }
+
+    .section-intro {
+      max-width: 480px;
+      margin: 17px 0 0;
+      color: var(--muted);
+      line-height: 1.65;
+    }
+
+    .index {
+      margin-top: 34px;
+      border-top: 2px solid var(--rule);
+    }
+
+    .index a {
+      display: grid;
+      grid-template-columns: 74px 1fr auto;
+      gap: 14px;
+      align-items: baseline;
+      padding: 17px 0;
+      border-bottom: 1px solid rgba(23, 21, 17, .18);
+      transition: color .18s ease, transform .18s ease;
+    }
+
+    .index a:hover {
+      color: var(--blue);
+      transform: translateX(5px);
+    }
+
+    .index .date,
+    .index .minutes {
+      color: var(--muted);
+      font-family: var(--mono);
+      font-size: 11px;
+      letter-spacing: .06em;
+      text-transform: uppercase;
+      white-space: nowrap;
+    }
+
+    .index .title {
+      font-family: var(--serif);
+      font-size: clamp(24px, 3vw, 34px);
+      line-height: .96;
+      letter-spacing: -.035em;
+    }
+
+    .notes {
+      display: grid;
       gap: 16px;
+      margin-top: 34px;
     }
 
     .note {
       position: relative;
-      padding: 16px;
-      border: 1px solid var(--line);
-      border-radius: 22px;
-      color: var(--muted);
-      font-size: 13px;
-      line-height: 1.45;
+      padding: 18px 18px 16px;
+      border: 1px solid rgba(23, 21, 17, .2);
+      background: rgba(255, 255, 255, .35);
+      min-height: 116px;
+      transition: transform .22s ease, background .22s ease, border-color .22s ease;
     }
 
-    .note::before {
-      content: attr(data-label);
-      display: block;
-      margin-bottom: 10px;
-      color: var(--ink);
-      font-family: var(--mono);
-      font-size: 10px;
-      letter-spacing: 0.13em;
-      text-transform: uppercase;
+    .note:hover {
+      transform: rotate(.45deg) translateY(-2px);
+      background: #fffdf7;
+      border-color: rgba(23, 21, 17, .42);
     }
 
-    .note strong {
-      color: var(--ink);
-      font-weight: 560;
+    .note:nth-child(2):hover {
+      transform: rotate(-.45deg) translateY(-2px);
     }
 
-    .note.loose {
-      border-color: rgba(15, 107, 255, 0.3);
-      transform: rotate(-1.5deg);
-    }
-
-    .note.pin {
-      background: var(--paper-deep);
-      transform: rotate(1.2deg);
-    }
-
-    .note.pin::after {
-      content: "";
-      position: absolute;
-      top: 11px;
-      right: 17px;
-      width: 8px;
-      height: 8px;
-      border-radius: 999px;
-      background: var(--accent);
-      box-shadow: 0 0 0 5px rgba(250, 63, 40, 0.1);
-    }
-
-    .copy {
-      display: grid;
-      gap: clamp(34px, 5vw, 56px);
-    }
-
-    .intro {
-      display: grid;
-      grid-template-columns: minmax(0, 1.15fr) minmax(220px, 0.85fr);
-      gap: clamp(24px, 5vw, 64px);
-      align-items: end;
-      padding-bottom: clamp(28px, 4vw, 44px);
-      border-bottom: 1px solid var(--line);
-    }
-
-    .dek {
-      margin: 0;
-      max-width: 680px;
+    .note p {
+      margin: 15px 0 0;
       font-family: var(--serif);
-      font-size: clamp(29px, 4.6vw, 58px);
-      font-weight: 450;
-      letter-spacing: -0.047em;
-      line-height: 0.99;
+      font-size: clamp(26px, 3.4vw, 46px);
+      line-height: .98;
+      letter-spacing: -.055em;
     }
 
-    .dek em {
-      color: var(--accent-2);
-      font-style: italic;
-    }
-
-    .brief {
-      margin: 0;
-      color: var(--muted);
-      font-size: clamp(15px, 1.4vw, 17px);
-      line-height: 1.65;
-    }
-
-    .brief a {
-      color: var(--ink);
-      border-bottom: 1px solid var(--line-strong);
-      transition: color 180ms ease, border-color 180ms ease;
-    }
-
-    .brief a:hover {
+    .note a::after {
+      content: "↗";
+      margin-left: .35em;
       color: var(--accent);
-      border-color: var(--accent);
-    }
-
-    .section-title {
-      display: flex;
-      align-items: center;
-      gap: 12px;
-      margin: 0 0 18px;
-      color: var(--muted);
-      font-family: var(--mono);
-      font-size: 12px;
-      font-weight: 500;
-      letter-spacing: 0.12em;
-      text-transform: uppercase;
-    }
-
-    .section-title::after {
-      content: "";
-      flex: 1;
-      border-top: 1px solid var(--line);
-    }
-
-    .writing {
-      position: relative;
-    }
-
-    .writing::before {
-      content: "small index, not a portfolio";
-      position: absolute;
-      top: -26px;
-      right: 8px;
-      color: var(--accent-3);
-      font-family: var(--serif);
-      font-size: 17px;
-      font-style: italic;
-      transform: rotate(4deg);
-    }
-
-    .index-list {
-      display: grid;
-      margin: 0;
-      padding: 0;
-      list-style: none;
-      border-top: 1px solid var(--ink);
-    }
-
-    .index-list li {
-      border-bottom: 1px solid var(--line);
-    }
-
-    .index-list a {
-      display: grid;
-      grid-template-columns: 72px minmax(0, 1fr) auto;
-      gap: clamp(14px, 3vw, 30px);
-      align-items: baseline;
-      padding: 22px 0;
-      transition: color 180ms ease, transform 180ms ease;
-    }
-
-    .index-list a:hover {
-      color: var(--accent);
-      transform: translateX(6px);
-    }
-
-    .year {
-      color: var(--quiet);
-      font-family: var(--mono);
-      font-size: 11px;
-      letter-spacing: 0.11em;
-    }
-
-    .entry-title {
-      font-family: var(--serif);
-      font-size: clamp(26px, 4.5vw, 56px);
-      font-weight: 430;
-      letter-spacing: -0.055em;
-      line-height: 0.95;
-    }
-
-    .entry-meta {
-      color: var(--muted);
-      font-family: var(--mono);
-      font-size: 11px;
-      letter-spacing: 0.08em;
-      white-space: nowrap;
-      text-transform: uppercase;
-    }
-
-    .entry-desc {
-      display: block;
-      max-width: 540px;
-      margin-top: 9px;
-      color: var(--muted);
       font-family: var(--sans);
-      font-size: 14px;
-      font-weight: 400;
-      letter-spacing: 0;
-      line-height: 1.45;
+      font-size: .62em;
+      vertical-align: .22em;
     }
 
-    .signal-board {
+    .notebook-strip {
       display: grid;
-      grid-template-columns: 0.85fr 1.15fr;
-      gap: clamp(20px, 4vw, 52px);
-      align-items: start;
-      padding: clamp(24px, 4vw, 42px);
-      border: 1px solid var(--line);
-      border-radius: 30px;
+      grid-template-columns: repeat(3, 1fr);
+      border-bottom: 1px solid var(--rule);
     }
 
-    .signal-board p {
-      margin: 0;
-      color: var(--muted);
-      font-size: 15px;
-      line-height: 1.6;
-    }
-
-    .signal-board .quote {
-      color: var(--ink);
-      font-family: var(--serif);
-      font-size: clamp(26px, 4vw, 47px);
-      font-style: italic;
-      letter-spacing: -0.045em;
-      line-height: 1;
-    }
-
-    .signal-list {
-      display: grid;
-      gap: 12px;
-      margin: 0;
-      padding: 0;
-      list-style: none;
-    }
-
-    .signal-list li {
+    .strip-item {
+      min-height: 190px;
+      padding: 24px clamp(20px, 4vw, 42px);
+      border-right: 1px solid rgba(23, 21, 17, .22);
       position: relative;
-      padding-left: 22px;
-      color: var(--muted);
-      font-size: 14px;
-      line-height: 1.45;
     }
 
-    .signal-list li::before {
-      content: "";
+    .strip-item:last-child {
+      border-right: 0;
+    }
+
+    .strip-item strong {
+      display: block;
+      margin-top: 18px;
+      font-family: var(--serif);
+      font-size: clamp(24px, 3vw, 38px);
+      font-weight: 400;
+      line-height: 1;
+      letter-spacing: -.04em;
+    }
+
+    .strip-item p {
+      margin: 12px 0 0;
+      color: var(--muted);
+      font-size: 14px;
+      line-height: 1.55;
+    }
+
+    .pin {
       position: absolute;
-      top: 0.68em;
-      left: 0;
-      width: 10px;
-      border-top: 1.5px solid var(--accent);
-      transform: rotate(-12deg);
+      right: 22px;
+      top: 20px;
+      width: 13px;
+      height: 13px;
+      border-radius: 50%;
+      border: 1px solid rgba(23, 21, 17, .35);
+      background: var(--accent);
+      box-shadow: 0 1px 0 rgba(255, 255, 255, .8) inset;
     }
 
-    .contact-strip {
-      display: flex;
-      flex-wrap: wrap;
-      gap: 10px;
-      align-items: center;
-      justify-content: space-between;
-      padding-top: clamp(6px, 2vw, 16px);
+    .footer {
+      display: grid;
+      grid-template-columns: 1fr auto;
+      gap: 24px;
+      align-items: end;
+      padding: 26px clamp(24px, 6vw, 76px);
     }
 
-    .contact-strip p {
-      margin: 0;
-      color: var(--muted);
-      font-size: 14px;
-      line-height: 1.5;
-    }
-
-    .contact-links {
+    .links {
       display: flex;
       flex-wrap: wrap;
       gap: 8px;
+      margin-top: 14px;
     }
 
-    .contact-links a {
-      border: 1px solid var(--line);
+    .links a,
+    .toggle {
+      display: inline-flex;
+      align-items: center;
+      min-height: 34px;
+      border: 1px solid rgba(23, 21, 17, .23);
       border-radius: 999px;
-      padding: 9px 12px;
-      color: var(--muted);
-      font-size: 13px;
-      transition: color 180ms ease, border-color 180ms ease, background 180ms ease;
+      padding: 7px 11px;
+      background: transparent;
+      color: var(--ink);
+      font: 12px/1 var(--mono);
+      letter-spacing: .03em;
+      cursor: pointer;
+      transition: background .18s ease, border-color .18s ease, transform .18s ease;
     }
 
-    .contact-links a:hover {
-      border-color: var(--ink);
-      background: var(--ink);
-      color: var(--paper);
+    .links a:hover,
+    .toggle:hover {
+      background: #fffdf7;
+      border-color: rgba(23, 21, 17, .48);
+      transform: translateY(-1px);
     }
 
-    .scratch {
-      position: absolute;
-      right: clamp(32px, 7vw, 112px);
-      bottom: clamp(92px, 9vw, 128px);
-      z-index: 0;
-      width: 92px;
-      height: 52px;
-      border-top: 1px solid var(--accent-2);
-      border-bottom: 1px solid var(--accent-2);
-      opacity: 0.55;
-      transform: rotate(13deg);
-      pointer-events: none;
-    }
-
-    .scratch::before,
-    .scratch::after {
-      content: "";
-      position: absolute;
-      left: 12px;
-      right: 10px;
-      border-top: 1px solid var(--accent-2);
-    }
-
-    .scratch::before {
-      top: 17px;
-      transform: rotate(-5deg);
-    }
-
-    .scratch::after {
-      top: 35px;
-      transform: rotate(4deg);
-    }
-
-    .floating-mark {
-      position: fixed;
-      left: var(--mx, 50vw);
-      top: var(--my, 50vh);
-      z-index: 3;
-      width: 13px;
-      height: 13px;
-      border: 1px solid var(--accent);
+    .seal {
+      width: 98px;
+      height: 98px;
+      border: 1px solid rgba(23, 21, 17, .35);
       border-radius: 50%;
-      opacity: 0;
-      transform: translate(-50%, -50%);
-      pointer-events: none;
-      transition: opacity 180ms ease;
+      display: grid;
+      place-items: center;
+      color: var(--accent);
+      font-family: var(--hand);
+      font-size: 19px;
+      line-height: .95;
+      text-align: center;
+      transform: rotate(-8deg);
     }
 
-    body.is-pointing .floating-mark {
-      opacity: 0.75;
-    }
-
-    @media (prefers-reduced-motion: no-preference) {
-      .annotation {
-        animation: breathe 7s ease-in-out infinite;
+    @media (prefers-color-scheme: dark) {
+      :root {
+        --paper: #10100e;
+        --paper-2: #15140f;
+        --ink: #f3eee2;
+        --muted: #aaa394;
+        --faint: #3a372d;
+        --rule: #f3eee2;
+        --shadow: rgba(0, 0, 0, .34);
       }
 
-      .note.pin {
-        animation: settle 900ms cubic-bezier(0.2, 0.8, 0.2, 1) both;
-      }
-
-      @keyframes breathe {
-        0%, 100% {
-          transform: rotate(-8deg) translateY(0);
-        }
-        50% {
-          transform: rotate(-6deg) translateY(-4px);
-        }
-      }
-
-      @keyframes settle {
-        from {
-          transform: rotate(4deg) translateY(12px);
-        }
-        to {
-          transform: rotate(1.2deg) translateY(0);
-        }
-      }
-    }
-
-    @media (max-width: 880px) {
-      body::before,
-      body::after,
-      .sheet::before,
-      .annotation.one,
-      .writing::before,
-      .scratch,
-      .floating-mark {
-        display: none;
+      html {
+        background: #0b0b0a;
       }
 
       .page {
-        width: calc(100% - 20px);
-        padding-top: 10px;
-        padding-bottom: 10px;
+        border-color: rgba(243, 238, 226, .18);
       }
 
-      .sheet {
-        border-radius: 26px;
+      .chip,
+      .note,
+      .links a,
+      .toggle {
+        background: rgba(255, 255, 255, .04);
+        border-color: rgba(243, 238, 226, .18);
       }
 
+      .chip:hover,
+      .note:hover,
+      .links a:hover,
+      .toggle:hover {
+        background: rgba(255, 255, 255, .08);
+        border-color: rgba(243, 238, 226, .4);
+      }
+    }
+
+    .ink-mode .page {
+      background: #10100e;
+      color: #f3eee2;
+      border-color: rgba(243, 238, 226, .18);
+      box-shadow: 0 28px 90px rgba(0, 0, 0, .34);
+    }
+
+    .ink-mode {
+      --paper: #10100e;
+      --paper-2: #15140f;
+      --ink: #f3eee2;
+      --muted: #aaa394;
+      --faint: #3a372d;
+      --rule: #f3eee2;
+      background: #0b0b0a;
+    }
+
+    .ink-mode .chip,
+    .ink-mode .note,
+    .ink-mode .links a,
+    .ink-mode .toggle {
+      background: rgba(255, 255, 255, .04);
+      border-color: rgba(243, 238, 226, .18);
+    }
+
+    .ink-mode .chip:hover,
+    .ink-mode .note:hover,
+    .ink-mode .links a:hover,
+    .ink-mode .toggle:hover {
+      background: rgba(255, 255, 255, .08);
+      border-color: rgba(243, 238, 226, .4);
+    }
+
+    .ink-mode .side {
+      background: var(--paper-2);
+    }
+
+    @media (max-width: 860px) {
       .masthead,
       .hero,
-      .main-grid,
-      .intro,
-      .signal-board {
+      .section-grid,
+      .notebook-strip,
+      .footer {
         grid-template-columns: 1fr;
       }
 
       .masthead {
-        gap: 18px;
+        justify-items: start;
+        min-height: 0;
       }
 
-      .nav {
-        justify-content: flex-start;
+      .mark,
+      .folio {
+        justify-self: start;
+        text-align: left;
       }
 
-      .hero {
-        padding-top: 54px;
+      .hero-copy,
+      .column + .column,
+      .strip-item {
+        border-right: 0;
+        border-left: 0;
       }
 
-      h1 {
-        font-size: clamp(62px, 20vw, 104px);
+      .column + .column,
+      .strip-item + .strip-item {
+        border-top: 1px solid rgba(23, 21, 17, .22);
       }
 
-      .hero-kicker {
-        align-self: start;
+      .scribble {
+        position: static;
+        width: min(320px, 100%);
+        margin-top: 38px;
       }
 
-      .main-grid {
-        padding-bottom: 32px;
+      .index a {
+        grid-template-columns: 56px 1fr;
       }
 
-      .margin-stack {
-        grid-template-columns: 1fr 1fr;
-        order: 2;
+      .index .minutes {
+        grid-column: 2;
       }
 
-      .index-list a {
-        grid-template-columns: 1fr;
-        gap: 8px;
-      }
-
-      .entry-meta {
-        white-space: normal;
+      .seal {
+        display: none;
       }
     }
 
-    @media (max-width: 560px) {
-      .sheet {
-        border-radius: 22px;
+    @media (max-width: 520px) {
+      .page {
+        width: 100%;
+        margin: 0;
+        border-left: 0;
+        border-right: 0;
       }
 
-      .masthead,
-      .hero,
-      .main-grid {
-        padding-left: 18px;
-        padding-right: 18px;
+      .hero {
+        min-height: auto;
       }
 
-      .margin-stack {
+      .headline {
+        font-size: clamp(50px, 17vw, 84px);
+      }
+
+      .weather {
         grid-template-columns: 1fr;
       }
+    }
 
-      .dek {
-        font-size: clamp(30px, 10vw, 44px);
-      }
-
-      .signal-board {
-        padding: 18px;
-        border-radius: 22px;
+    @media (prefers-reduced-motion: reduce) {
+      *,
+      *::before,
+      *::after {
+        scroll-behavior: auto !important;
+        transition-duration: .001ms !important;
+        animation-duration: .001ms !important;
       }
     }
   </style>
 </head>
 <body>
-  <div class="floating-mark" aria-hidden="true"></div>
-  <main class="page">
-    <article class="sheet" aria-labelledby="page-title">
-      <header class="masthead">
-        <div class="edition">
-          <strong>Erik Nilsson</strong>
-          Product Designer<br>
-          San Francisco, CA
-        </div>
-        <div class="edition" aria-label="Today">
-          Sunday notebook<br>
-          Oct 18, 2026 / clear autumn / 13 C
-        </div>
-        <nav class="nav" aria-label="Primary">
-          <a href="#writing">Writing</a>
-          <a href="https://cursor.com">Cursor</a>
-          <a href="https://x.com/flowstated">X</a>
-          <a href="mailto:contact@eriks.design">Email</a>
-        </nav>
-      </header>
+  <main class="page" aria-labelledby="title">
+    <header class="masthead">
+      <div class="kicker">Erik Nilsson / Product Designer at Cursor</div>
+      <div class="mark" aria-label="eriks.design">eriks.design</div>
+      <div class="folio">San Francisco<br>Oct. 19, 2026</div>
+    </header>
 
-      <section class="hero" aria-label="Introduction">
-        <div class="hero-kicker">
-          eriks.design<br>
-          part magazine page<br>
-          part designer notebook
-          <span>keep the page breathing</span>
-        </div>
-        <h1 id="page-title">
-          <span class="line">Software</span>
-          <span class="line soft">with a human</span>
-          <span class="line">edge.</span>
+    <section class="hero">
+      <div class="hero-copy">
+        <p class="eyebrow">Editorial notebook, rebuilt from today</p>
+        <h1 class="headline" id="title">
+          <span>Designing</span>
+          <span>software</span>
+          <span class="underline">with AI</span>
         </h1>
-        <p class="annotation one">quiet tools, sharp edges, warm details</p>
-      </section>
+        <p class="dek">A quiet page for working notes, sharper tools, and the small public traces around building Cursor.</p>
+        <p class="bio-line">Erik Nilsson is a product designer at Cursor in San Francisco, working on how people build software with AI.</p>
+        <div class="annotations" aria-label="Notebook annotations">
+          <span class="chip">agents as collaborators</span>
+          <span class="chip">surgical iterations</span>
+          <span class="chip">stay in context</span>
+          <span class="chip">living-site experiments</span>
+        </div>
+        <div class="scribble" aria-hidden="true">less chrome, more feeling in the tool</div>
+      </div>
 
-      <div class="main-grid">
-        <aside class="margin-stack" aria-label="Margin notes">
-          <p class="note pin" data-label="Current line">
-            Building <strong>Cursor</strong>, the best way to design software with AI.
-          </p>
-          <p class="note loose" data-label="Today">
-            Clear autumn night over the bay. Sunset closing in on Golden Gate fog.
-          </p>
-          <p class="note" data-label="Side note">
-            Living-site is rebuilt from fresh activity data, like a small daily field report.
-          </p>
-        </aside>
+      <aside class="side" aria-label="Today">
+        <div>
+          <div class="field-note">
+            <span class="note-label">Today</span>
+            <p>Clear autumn air after sunset; the notebook stays open.</p>
+          </div>
+          <div class="weather">
+            <div class="temp">12°</div>
+            <p>San Francisco, clear. October twilight stretching toward 6:26.</p>
+          </div>
+        </div>
+        <div>
+          <span class="note-label">Signals in the margin</span>
+          <ul class="signals">
+            <li>deep-space probe photographing the crater left by humanity's asteroid punch</li>
+            <li>AI models growing bodies, with harness engineering as the missing limbs</li>
+            <li>cruelty-free lab trials leaving the shadow of animal testing</li>
+          </ul>
+        </div>
+      </aside>
+    </section>
 
-        <div class="copy">
-          <section class="intro" aria-label="About Erik">
-            <p class="dek">
-              Erik is a product designer at <a href="https://cursor.com"><em>Cursor</em></a>, working on how people build software with AI.
-            </p>
-            <p class="brief">
-              This page keeps the biography short on purpose: a name, a location, a present tense, and a few open tabs. Off-hours, Erik tinkers with a living corner of the web where agents rebuild the site from fresh context.
-            </p>
-          </section>
+    <section class="section-grid" aria-labelledby="writing">
+      <div class="column">
+        <span class="index-label">Writing index</span>
+        <h2 class="section-title" id="writing">Five pieces, kept close.</h2>
+        <p class="section-intro">A small shelf of essays about visual direction, living systems, and building with sharper feedback loops.</p>
+        <nav class="index" aria-label="Writing">
+          <a href="https://cursor.com/blog/design-mode">
+            <span class="date">2026</span>
+            <span class="title">Directing agents visually</span>
+            <span class="minutes">6 min</span>
+          </a>
+          <a href="/posts/a-living-site">
+            <span class="date">2025</span>
+            <span class="title">A living site</span>
+            <span class="minutes">7 min</span>
+          </a>
+          <a href="/posts/surgical-edits">
+            <span class="date">2025</span>
+            <span class="title">Surgical edits</span>
+            <span class="minutes">4 min</span>
+          </a>
+          <a href="/posts/familiar-differentiation">
+            <span class="date">2024</span>
+            <span class="title">Familiar differentiation</span>
+            <span class="minutes">5 min</span>
+          </a>
+          <a href="/posts/hackathon-energy-but-add-users">
+            <span class="date">2022</span>
+            <span class="title">Hackathon energy, but add users</span>
+            <span class="minutes">4 min</span>
+          </a>
+        </nav>
+      </div>
 
-          <section class="writing" id="writing" aria-labelledby="writing-title">
-            <h2 class="section-title" id="writing-title">Writing Index</h2>
-            <ol class="index-list">
-              <li>
-                <a href="https://cursor.com/blog/design-mode">
-                  <span class="year">2026</span>
-                  <span>
-                    <span class="entry-title">Directing agents visually</span>
-                    <span class="entry-desc">A Cursor note on shaping agents through visual direction.</span>
-                  </span>
-                  <span class="entry-meta">Cursor blog / 6 min</span>
-                </a>
-              </li>
-              <li>
-                <a href="/posts/a-living-site">
-                  <span class="year">2025</span>
-                  <span>
-                    <span class="entry-title">A living site</span>
-                    <span class="entry-desc">How a website can rebuild itself before breakfast.</span>
-                  </span>
-                  <span class="entry-meta">Essay / 7 min</span>
-                </a>
-              </li>
-              <li>
-                <a href="/posts/surgical-edits">
-                  <span class="year">2025</span>
-                  <span>
-                    <span class="entry-title">Surgical edits</span>
-                    <span class="entry-desc">Point at an interface, describe the change, stay in flow.</span>
-                  </span>
-                  <span class="entry-meta">Essay / 4 min</span>
-                </a>
-              </li>
-              <li>
-                <a href="/posts/familiar-differentiation">
-                  <span class="year">2024</span>
-                  <span>
-                    <span class="entry-title">Familiar differentiation</span>
-                    <span class="entry-desc">Brand moments inside familiar product flows.</span>
-                  </span>
-                  <span class="entry-meta">Essay / 5 min</span>
-                </a>
-              </li>
-              <li>
-                <a href="/posts/hackathon-energy-but-add-users">
-                  <span class="year">2022</span>
-                  <span>
-                    <span class="entry-title">Hackathon energy, but add users</span>
-                    <span class="entry-desc">Draft quickly, scope smaller, and learn with users in the room.</span>
-                  </span>
-                  <span class="entry-meta">Essay / 4 min</span>
-                </a>
-              </li>
-            </ol>
-          </section>
-
-          <section class="signal-board" aria-labelledby="signals-title">
-            <div>
-              <h2 class="section-title" id="signals-title">Desk Signals</h2>
-              <p class="quote">"shipping by sunrise"</p>
-            </div>
-            <div>
-              <p>
-                A few fragments from today sit in the margin: tiny robots, parser combinators, pocket-launched agents, and the particular stillness of a clear San Francisco night.
-              </p>
-              <ul class="signal-list" aria-label="Signals from today's brief">
-                <li>sub-micrometer robots threading invisible pathways</li>
-                <li>parser combinators resurfacing in late-night code threads</li>
-                <li>agents spinning up from a pocket-sized shortcut</li>
-              </ul>
-            </div>
-          </section>
-
-          <footer class="contact-strip">
-            <p>Minimal by default. Annotated at the edges.</p>
-            <div class="contact-links" aria-label="Links">
-              <a href="https://github.com/eriknson">GitHub</a>
-              <a href="https://linkedin.com/in/eriknson">LinkedIn</a>
-              <a href="mailto:contact@eriks.design">contact@eriks.design</a>
-            </div>
-          </footer>
+      <div class="column">
+        <span class="index-label">Recent notes</span>
+        <h2 class="section-title">Small transmissions.</h2>
+        <p class="section-intro">Brief public fragments, left intact. Not a feed, not a performance dashboard, just three notes with the right amount of air.</p>
+        <div class="notes">
+          <article class="note">
+            <span class="tiny">Dec. 20, 2025</span>
+            <p><a href="https://x.com/flowstated/status/2002167999353241901">imagine 2026</a></p>
+          </article>
+          <article class="note">
+            <span class="tiny">Dec. 16, 2025</span>
+            <p><a href="https://x.com/flowstated/status/2000889983562080578">shipping by sunrise</a></p>
+          </article>
+          <article class="note">
+            <span class="tiny">Dec. 15, 2025</span>
+            <p><a href="https://x.com/flowstated/status/2000691637190861180">exploring ways to spin up agents from my phone</a></p>
+          </article>
         </div>
       </div>
-      <div class="scratch" aria-hidden="true"></div>
-    </article>
+    </section>
+
+    <section class="notebook-strip" aria-label="Notebook principles">
+      <div class="strip-item">
+        <span class="pin" aria-hidden="true"></span>
+        <span class="note-label">01 / posture</span>
+        <strong>Minimal, but not blank.</strong>
+        <p>Every mark should earn its place: type, rule, note, link.</p>
+      </div>
+      <div class="strip-item">
+        <span class="pin" aria-hidden="true"></span>
+        <span class="note-label">02 / method</span>
+        <strong>Shape the system in context.</strong>
+        <p>The best edits happen close to the thing being changed.</p>
+      </div>
+      <div class="strip-item">
+        <span class="pin" aria-hidden="true"></span>
+        <span class="note-label">03 / mood</span>
+        <strong>Warm confidence, low noise.</strong>
+        <p>A designer notebook that can sit beside a magazine page.</p>
+      </div>
+    </section>
+
+    <footer class="footer">
+      <div>
+        <span class="index-label">Elsewhere</span>
+        <div class="links" aria-label="Links">
+          <a href="https://cursor.com">Cursor</a>
+          <a href="https://x.com/flowstated">X / flowstated</a>
+          <a href="https://github.com/eriknson">GitHub</a>
+          <a href="https://linkedin.com/in/eriknson">LinkedIn</a>
+          <a href="mailto:contact@eriks.design">Email</a>
+          <button class="toggle" type="button" aria-pressed="false">Ink mode</button>
+        </div>
+      </div>
+      <div class="seal" aria-hidden="true">built<br>from<br>today</div>
+    </footer>
   </main>
 
   <script>
-    const root = document.documentElement;
-    let frame = 0;
-
-    window.addEventListener("pointermove", (event) => {
-      if (window.matchMedia("(max-width: 880px)").matches) return;
-      document.body.classList.add("is-pointing");
-      cancelAnimationFrame(frame);
-      frame = requestAnimationFrame(() => {
-        root.style.setProperty("--mx", `${event.clientX}px`);
-        root.style.setProperty("--my", `${event.clientY}px`);
-      });
-    }, { passive: true });
-
-    window.addEventListener("pointerleave", () => {
-      document.body.classList.remove("is-pointing");
+    const toggle = document.querySelector(".toggle");
+    toggle.addEventListener("click", () => {
+      const enabled = document.body.classList.toggle("ink-mode");
+      toggle.setAttribute("aria-pressed", String(enabled));
+      toggle.textContent = enabled ? "Paper mode" : "Ink mode";
     });
   </script>
 </body>
