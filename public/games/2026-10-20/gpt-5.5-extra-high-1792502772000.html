@@ -1,0 +1,827 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <meta name="color-scheme" content="light dark">
+  <title>Fogline Deadline</title>
+  <style>
+    :root {
+      --bg: #f6f1e6;
+      --bg2: #dfe8e6;
+      --ink: #132026;
+      --muted: #5e6b6d;
+      --panel: rgba(252, 248, 238, .72);
+      --line: rgba(19, 32, 38, .16);
+      --gold: #f2b84b;
+      --good: #1e9b78;
+      --bad: #d65339;
+      --button: #132026;
+      --buttonText: #fff9e9;
+      --shadow: rgba(18, 29, 33, .18);
+    }
+
+    @media (prefers-color-scheme: dark) {
+      :root {
+        --bg: #10181d;
+        --bg2: #263136;
+        --ink: #edf3ed;
+        --muted: #9faeab;
+        --panel: rgba(13, 21, 25, .66);
+        --line: rgba(237, 243, 237, .17);
+        --gold: #f5c55f;
+        --good: #4cc39c;
+        --bad: #ff785f;
+        --button: #f4ead4;
+        --buttonText: #172126;
+        --shadow: rgba(0, 0, 0, .36);
+      }
+    }
+
+    * { box-sizing: border-box; }
+    html, body {
+      margin: 0;
+      width: 100%;
+      min-height: 100%;
+      overflow: hidden;
+      background: var(--bg);
+      color: var(--ink);
+      font-family: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+    }
+
+    body {
+      width: 100dvw;
+      height: 100dvh;
+      overscroll-behavior: none;
+    }
+
+    #game {
+      position: fixed;
+      inset: 0;
+      width: 100dvw;
+      height: 100dvh;
+      overflow: hidden;
+      user-select: none;
+      -webkit-user-select: none;
+      touch-action: none;
+      background:
+        radial-gradient(circle at 50% 20%, rgba(242, 184, 75, .16), transparent 30%),
+        linear-gradient(180deg, var(--bg2), var(--bg) 58%, color-mix(in srgb, var(--bg), #000 7%));
+    }
+
+    canvas {
+      position: absolute;
+      inset: 0;
+      width: 100%;
+      height: 100%;
+      display: block;
+      touch-action: none;
+    }
+
+    .hud {
+      position: absolute;
+      z-index: 3;
+      inset: max(12px, env(safe-area-inset-top)) max(14px, env(safe-area-inset-right)) auto max(14px, env(safe-area-inset-left));
+      display: grid;
+      grid-template-columns: 1fr auto;
+      gap: 10px;
+      align-items: start;
+      pointer-events: none;
+      font-family: ui-monospace, "SFMono-Regular", Menlo, monospace;
+      letter-spacing: .02em;
+    }
+
+    .meters {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
+      min-width: 0;
+    }
+
+    .pill {
+      min-height: 34px;
+      padding: 8px 10px;
+      border: 1px solid var(--line);
+      border-radius: 999px;
+      background: var(--panel);
+      box-shadow: 0 12px 28px var(--shadow);
+      backdrop-filter: blur(12px);
+      white-space: nowrap;
+      font-size: 12px;
+      line-height: 1.25;
+    }
+
+    .pill b {
+      font-weight: 800;
+      color: var(--gold);
+    }
+
+    button {
+      min-height: 44px;
+      min-width: 44px;
+      border: 0;
+      border-radius: 999px;
+      padding: 12px 18px;
+      color: var(--buttonText);
+      background: var(--button);
+      font: 800 13px/1 ui-monospace, "SFMono-Regular", Menlo, monospace;
+      letter-spacing: .06em;
+      text-transform: uppercase;
+      box-shadow: 0 16px 40px var(--shadow);
+      cursor: pointer;
+      transition: transform .18s ease, opacity .18s ease, filter .18s ease;
+      pointer-events: auto;
+    }
+
+    button:active { transform: translateY(1px) scale(.98); }
+    button:focus-visible { outline: 3px solid var(--gold); outline-offset: 3px; }
+
+    #restartBtn {
+      opacity: 0;
+      transform: translateY(-8px);
+      pointer-events: none;
+    }
+
+    #restartBtn.ready {
+      opacity: 1;
+      transform: translateY(0);
+      pointer-events: auto;
+    }
+
+    .overlay {
+      position: absolute;
+      z-index: 5;
+      inset: 0;
+      display: grid;
+      place-items: center;
+      padding: 28px;
+      pointer-events: none;
+      transition: opacity .35s ease, transform .35s ease;
+    }
+
+    .overlay.hidden {
+      opacity: 0;
+      transform: translateY(12px);
+    }
+
+    .card {
+      width: min(520px, calc(100dvw - 34px));
+      border: 1px solid var(--line);
+      border-radius: 34px;
+      background: var(--panel);
+      box-shadow: 0 28px 90px var(--shadow);
+      backdrop-filter: blur(18px);
+      padding: clamp(22px, 6dvw, 38px);
+      text-align: center;
+    }
+
+    .eyebrow {
+      margin: 0 0 12px;
+      font: 800 12px/1 ui-monospace, "SFMono-Regular", Menlo, monospace;
+      letter-spacing: .14em;
+      text-transform: uppercase;
+      color: var(--muted);
+    }
+
+    h1 {
+      margin: 0;
+      font-size: clamp(42px, 13dvw, 76px);
+      line-height: .9;
+      letter-spacing: -.08em;
+    }
+
+    .subtitle {
+      margin: 16px auto 22px;
+      max-width: 32rem;
+      color: var(--muted);
+      font-size: 16px;
+      line-height: 1.45;
+    }
+
+    .how {
+      display: grid;
+      gap: 8px;
+      margin: 0 auto 24px;
+      max-width: 28rem;
+      color: var(--ink);
+      font: 700 13px/1.35 ui-monospace, "SFMono-Regular", Menlo, monospace;
+    }
+
+    #startBtn {
+      pointer-events: auto;
+      padding-inline: 24px;
+    }
+
+    .result {
+      display: none;
+      margin-top: 14px;
+      color: var(--muted);
+      font: 700 13px/1.45 ui-monospace, "SFMono-Regular", Menlo, monospace;
+    }
+
+    .gameover .result { display: block; }
+    .gameover #startBtn { display: none; }
+
+    .tapFlash {
+      position: absolute;
+      z-index: 2;
+      inset: auto 0 calc(16px + env(safe-area-inset-bottom));
+      text-align: center;
+      pointer-events: none;
+      font: 900 16px/1 ui-monospace, "SFMono-Regular", Menlo, monospace;
+      color: var(--gold);
+      opacity: 0;
+      transform: translateY(10px);
+      transition: opacity .16s ease, transform .16s ease;
+      text-shadow: 0 2px 20px var(--shadow);
+    }
+
+    .tapFlash.show {
+      opacity: 1;
+      transform: translateY(0);
+    }
+  </style>
+</head>
+<body>
+  <main id="game" aria-label="Fogline Deadline rhythm game">
+    <canvas id="stage"></canvas>
+    <div class="hud" aria-live="polite">
+      <div class="meters">
+        <div class="pill">ETA <b id="eta">05:47</b></div>
+        <div class="pill">SCORE <b id="score">0</b></div>
+        <div class="pill">STREAK <b id="streak">0</b></div>
+        <div class="pill">PRESSURE <b id="pressure">0%</b></div>
+      </div>
+      <button id="restartBtn" data-smoke="restart" type="button" aria-label="Restart run">Restart</button>
+    </div>
+    <div id="flash" class="tapFlash">PERFECT</div>
+    <section id="overlay" class="overlay" aria-live="polite">
+      <div id="card" class="card">
+        <p class="eyebrow">Autumn fog rhythm</p>
+        <h1>Fogline<br>Deadline</h1>
+        <p id="message" class="subtitle">Tap as each fog pulse kisses the gold timing halo. Keep the bridge awake until the 05:47 ship window.</p>
+        <div class="how">
+          <span>Tap / Space on the beat</span>
+          <span>Perfect streaks trigger golden hour</span>
+          <span>Misses thicken the fog</span>
+        </div>
+        <button id="startBtn" data-smoke="start" type="button">Start Run</button>
+        <p id="result" class="result"></p>
+      </div>
+    </section>
+  </main>
+
+  <script>
+  (() => {
+    "use strict";
+
+    const $ = (id) => document.getElementById(id);
+    const canvas = $("stage");
+    const game = $("game");
+    const overlay = $("overlay");
+    const card = $("card");
+    const startBtn = $("startBtn");
+    const restartBtn = $("restartBtn");
+    const msg = $("message");
+    const result = $("result");
+    const flash = $("flash");
+    const etaEl = $("eta");
+    const scoreEl = $("score");
+    const streakEl = $("streak");
+    const pressureEl = $("pressure");
+    const ctx = canvas && canvas.getContext ? canvas.getContext("2d", { alpha: true }) : null;
+
+    if (!canvas || !game || !ctx) return;
+
+    const TAU = Math.PI * 2;
+    let W = 1, H = 1, DPR = 1, last = 0, raf = 0;
+    let audio = null, audioOk = true;
+    let state = "title";
+    let beats = [];
+    let particles = [];
+    let fog = [];
+    let ripples = [];
+    let score = 0;
+    let streak = 0;
+    let bestStreak = 0;
+    let pressure = 0;
+    let startTime = 0;
+    let elapsed = 0;
+    let shake = 0;
+    let golden = 0;
+    let slowMo = 0;
+    let nextIndex = 0;
+    let playedIntro = false;
+    const roundLength = 48;
+    const hitWindow = .19;
+    const goodWindow = .34;
+
+    function resize() {
+      DPR = Math.max(1, Math.min(2, window.devicePixelRatio || 1));
+      W = Math.max(1, Math.floor(window.innerWidth || document.documentElement.clientWidth || 390));
+      H = Math.max(1, Math.floor(window.innerHeight || document.documentElement.clientHeight || 700));
+      canvas.width = Math.floor(W * DPR);
+      canvas.height = Math.floor(H * DPR);
+      canvas.style.width = W + "px";
+      canvas.style.height = H + "px";
+      ctx.setTransform(DPR, 0, 0, DPR, 0, 0);
+      seedFog();
+    }
+
+    function seedFog() {
+      fog = [];
+      const count = Math.max(18, Math.round(W * H / 26000));
+      for (let i = 0; i < count; i++) {
+        fog.push({
+          x: Math.random() * W,
+          y: H * (.12 + Math.random() * .58),
+          r: 48 + Math.random() * 150,
+          a: .025 + Math.random() * .08,
+          s: .08 + Math.random() * .24,
+          p: Math.random() * TAU
+        });
+      }
+    }
+
+    function scheduleBeats() {
+      beats = [];
+      let t = 1.25;
+      let lane = 0;
+      while (t < roundLength + 1.8) {
+        const progress = Math.min(1, t / roundLength);
+        const interval = .98 - progress * .34 + (Math.random() - .5) * .09;
+        lane = (lane + (Math.random() < .56 ? 1 : -1)) % 3;
+        const xSlot = lane === -1 ? .31 : lane === 0 ? .5 : .69;
+        beats.push({ t, x: xSlot, hit: false, missed: false, double: false });
+        if (progress > .36 && Math.random() < .11 + progress * .15) {
+          beats.push({ t: t + .29 - progress * .08, x: xSlot + (xSlot < .5 ? .16 : -.16), hit: false, missed: false, double: true });
+        }
+        t += Math.max(.48, interval);
+      }
+      beats.sort((a, b) => a.t - b.t);
+    }
+
+    function makeAudio() {
+      if (!audioOk || audio) return;
+      const AC = window.AudioContext || window.webkitAudioContext;
+      if (!AC) { audioOk = false; return; }
+      try {
+        audio = new AC();
+      } catch (_) {
+        audioOk = false;
+      }
+    }
+
+    function tone(freq, dur, type, gain) {
+      if (!audioOk || !audio) return;
+      try {
+        if (audio.state === "suspended") audio.resume().catch(() => {});
+        const now = audio.currentTime;
+        const osc = audio.createOscillator();
+        const g = audio.createGain();
+        osc.type = type || "sine";
+        osc.frequency.setValueAtTime(freq, now);
+        g.gain.setValueAtTime(0, now);
+        g.gain.linearRampToValueAtTime(gain || .035, now + .008);
+        g.gain.exponentialRampToValueAtTime(.0001, now + dur);
+        osc.connect(g).connect(audio.destination);
+        osc.start(now);
+        osc.stop(now + dur + .02);
+      } catch (_) {
+        audioOk = false;
+      }
+    }
+
+    function vibrate(ms) {
+      try {
+        if (navigator.vibrate) navigator.vibrate(ms);
+      } catch (_) {}
+    }
+
+    function showFlash(text, kind) {
+      flash.textContent = text;
+      flash.style.color = kind === "bad" ? "var(--bad)" : kind === "good" ? "var(--good)" : "var(--gold)";
+      flash.classList.add("show");
+      window.clearTimeout(showFlash.t);
+      showFlash.t = window.setTimeout(() => flash.classList.remove("show"), 220);
+    }
+
+    function startGame() {
+      makeAudio();
+      scheduleBeats();
+      state = "playing";
+      score = 0;
+      streak = 0;
+      bestStreak = 0;
+      pressure = 0;
+      elapsed = 0;
+      golden = 0;
+      slowMo = 0;
+      shake = 0;
+      nextIndex = 0;
+      particles = [];
+      ripples = [];
+      startTime = performance.now() / 1000;
+      overlay.classList.add("hidden");
+      card.classList.remove("gameover");
+      restartBtn.classList.add("ready");
+      updateHud();
+      if (!playedIntro) {
+        playedIntro = true;
+        tone(294, .12, "sine", .025);
+        setTimeout(() => tone(370, .16, "triangle", .03), 90);
+      }
+    }
+
+    function gameOver(won) {
+      state = "over";
+      overlay.classList.remove("hidden");
+      card.classList.add("gameover");
+      restartBtn.classList.add("ready");
+      msg.textContent = won ? "The fog breaks. The bridge clock turns gold and the build ships before sunrise." : "The fog ate the clock. One more run can still make the ship window.";
+      result.textContent = "Score " + score + " · best streak " + bestStreak + " · pressure " + Math.round(pressure) + "%";
+      showFlash(won ? "SHIPPED" : "FOGBOUND", won ? "perfect" : "bad");
+      tone(won ? 523 : 180, .22, won ? "triangle" : "sawtooth", .04);
+      vibrate(won ? 24 : [20, 30, 20]);
+    }
+
+    function restartGame() {
+      startGame();
+    }
+
+    function nearestBeat() {
+      let best = null;
+      let bestAbs = 999;
+      for (let i = nextIndex; i < Math.min(beats.length, nextIndex + 7); i++) {
+        const b = beats[i];
+        if (b.hit || b.missed) continue;
+        const d = elapsed - b.t;
+        const ad = Math.abs(d);
+        if (ad < bestAbs) {
+          bestAbs = ad;
+          best = b;
+        }
+      }
+      return { beat: best, diff: best ? elapsed - best.t : 999, abs: bestAbs };
+    }
+
+    function tap(x, y) {
+      if (state === "title") return;
+      if (state === "over") return;
+      makeAudio();
+      const n = nearestBeat();
+      const bonusWindow = golden > 0 ? .09 : 0;
+      if (n.beat && n.abs <= goodWindow + bonusWindow) {
+        const perfect = golden > 0 || n.abs <= hitWindow + bonusWindow;
+        n.beat.hit = true;
+        score += perfect ? 140 + streak * 7 : 80;
+        streak += 1;
+        bestStreak = Math.max(bestStreak, streak);
+        pressure = Math.max(0, pressure - (perfect ? 4.5 : 2.4));
+        slowMo = perfect ? .075 : .03;
+        shake = perfect ? .8 : .3;
+        spawnBurst(n.beat.x * W, ringY(), perfect);
+        ripples.push({ x: n.beat.x * W, y: ringY(), r: 0, a: perfect ? .62 : .38, gold: perfect });
+        showFlash(perfect ? "PERFECT" : "GOOD", perfect ? "perfect" : "good");
+        tone(perfect ? 660 : 440, perfect ? .09 : .07, perfect ? "triangle" : "sine", perfect ? .035 : .025);
+        if (perfect && streak > 0 && streak % 8 === 0) {
+          golden = 5.2;
+          pressure = Math.max(0, pressure - 7);
+          showFlash("GOLDEN HOUR", "perfect");
+          tone(880, .18, "triangle", .045);
+          vibrate(18);
+        }
+      } else {
+        streak = 0;
+        pressure = Math.min(100, pressure + 9);
+        shake = 4.8;
+        showFlash("EARLY / LATE", "bad");
+        tone(132, .13, "sawtooth", .03);
+        spawnMiss(x || W / 2, y || H / 2);
+        vibrate(10);
+      }
+      updateHud();
+      if (pressure >= 100) gameOver(false);
+    }
+
+    function ringY() {
+      return H * (H < 720 ? .52 : .56);
+    }
+
+    function spawnBurst(x, y, perfect) {
+      const n = perfect ? 24 : 13;
+      for (let i = 0; i < n; i++) {
+        const a = Math.random() * TAU;
+        const sp = (perfect ? 120 : 80) + Math.random() * 170;
+        particles.push({ x, y, vx: Math.cos(a) * sp, vy: Math.sin(a) * sp - 30, life: .45 + Math.random() * .35, age: 0, gold: perfect });
+      }
+    }
+
+    function spawnMiss(x, y) {
+      for (let i = 0; i < 12; i++) {
+        particles.push({ x, y, vx: (Math.random() - .5) * 160, vy: (Math.random() - .5) * 90, life: .35 + Math.random() * .3, age: 0, bad: true });
+      }
+    }
+
+    function updateHud() {
+      const left = Math.max(0, Math.ceil(roundLength - elapsed));
+      const minute = 5;
+      const sec = Math.max(0, 47 - (roundLength - left));
+      etaEl.textContent = "0" + minute + ":" + String(Math.round(sec)).padStart(2, "0");
+      scoreEl.textContent = String(score);
+      streakEl.textContent = String(streak);
+      pressureEl.textContent = Math.round(pressure) + "%";
+    }
+
+    function missOverdue() {
+      while (nextIndex < beats.length) {
+        const b = beats[nextIndex];
+        if (b.hit || b.missed) { nextIndex++; continue; }
+        if (elapsed - b.t > goodWindow + .06) {
+          b.missed = true;
+          streak = 0;
+          pressure = Math.min(100, pressure + 7.5);
+          shake = 2.6;
+          showFlash("MISSED", "bad");
+          tone(165, .09, "sawtooth", .022);
+          updateHud();
+          if (pressure >= 100) gameOver(false);
+          nextIndex++;
+          continue;
+        }
+        break;
+      }
+    }
+
+    function drawBackground(t) {
+      const dark = typeof window.matchMedia === "function" && window.matchMedia("(prefers-color-scheme: dark)").matches;
+      const skyTop = dark ? "#16232a" : "#d6e5e1";
+      const skyMid = dark ? "#243139" : "#ecdfcc";
+      const water = dark ? "#10191e" : "#ccd7d1";
+      const g = ctx.createLinearGradient(0, 0, 0, H);
+      if (golden > 0) {
+        g.addColorStop(0, dark ? "#29372f" : "#f2d99c");
+        g.addColorStop(.5, dark ? "#21323a" : "#dfebe2");
+        g.addColorStop(1, water);
+      } else {
+        g.addColorStop(0, skyTop);
+        g.addColorStop(.62, skyMid);
+        g.addColorStop(1, water);
+      }
+      ctx.fillStyle = g;
+      ctx.fillRect(0, 0, W, H);
+
+      ctx.save();
+      ctx.globalAlpha = dark ? .16 : .22;
+      ctx.fillStyle = golden > 0 ? "#f2b84b" : "#e7ece8";
+      ctx.beginPath();
+      ctx.ellipse(W * .82, H * .17, W * .18, W * .18, 0, 0, TAU);
+      ctx.fill();
+      ctx.restore();
+
+      for (const f of fog) {
+        const drift = Math.sin(t * f.s + f.p) * 34 + t * 6 * f.s;
+        let x = (f.x + drift) % (W + f.r * 2) - f.r;
+        const y = f.y + Math.sin(t * f.s * .7 + f.p) * 10;
+        const grd = ctx.createRadialGradient(x, y, 0, x, y, f.r);
+        const a = f.a + pressure / 1600 + (golden > 0 ? -.012 : 0);
+        grd.addColorStop(0, "rgba(245,248,238," + Math.max(.01, a) + ")");
+        grd.addColorStop(1, "rgba(245,248,238,0)");
+        ctx.fillStyle = grd;
+        ctx.beginPath();
+        ctx.arc(x, y, f.r, 0, TAU);
+        ctx.fill();
+      }
+    }
+
+    function drawBridge(t) {
+      const y = H * .7;
+      const towerH = Math.min(230, H * .28);
+      const left = W * .22, right = W * .78;
+      ctx.save();
+      ctx.strokeStyle = "rgba(12,20,24,.62)";
+      ctx.fillStyle = "rgba(12,20,24,.78)";
+      if (typeof window.matchMedia === "function" && window.matchMedia("(prefers-color-scheme: dark)").matches) {
+        ctx.strokeStyle = "rgba(235,241,234,.36)";
+        ctx.fillStyle = "rgba(5,10,12,.82)";
+      }
+      ctx.lineWidth = Math.max(2, W * .006);
+      ctx.beginPath();
+      ctx.moveTo(0, y);
+      ctx.bezierCurveTo(W * .18, y - 64, W * .34, y - 72, W * .5, y - 50);
+      ctx.bezierCurveTo(W * .66, y - 72, W * .82, y - 64, W, y);
+      ctx.stroke();
+
+      ctx.lineWidth = Math.max(1, W * .003);
+      for (let i = 0; i <= 18; i++) {
+        const x = i / 18 * W;
+        const sag = Math.sin(i / 18 * Math.PI) * 70;
+        ctx.beginPath();
+        ctx.moveTo(x, y - sag);
+        ctx.lineTo(x, y + 22);
+        ctx.stroke();
+      }
+
+      function tower(x) {
+        ctx.fillRect(x - 16, y - towerH, 11, towerH + 44);
+        ctx.fillRect(x + 5, y - towerH, 11, towerH + 44);
+        ctx.fillRect(x - 24, y - towerH + 35, 48, 9);
+        ctx.fillRect(x - 22, y - towerH + 88, 44, 8);
+        ctx.beginPath();
+        ctx.moveTo(x - 18, y - towerH);
+        ctx.lineTo(x, y - towerH - 32);
+        ctx.lineTo(x + 18, y - towerH);
+        ctx.fill();
+      }
+      tower(left);
+      tower(right);
+      ctx.fillRect(0, y + 20, W, Math.max(80, H - y));
+
+      ctx.globalAlpha = .24;
+      ctx.fillStyle = golden > 0 ? "#f2b84b" : "#ffffff";
+      for (let i = 0; i < 28; i++) {
+        const x = (i / 27) * W;
+        const flicker = .55 + .45 * Math.sin(t * 4 + i);
+        ctx.globalAlpha = .1 + flicker * .22;
+        ctx.beginPath();
+        ctx.arc(x, y + 15 + Math.sin(i) * 4, 2.3, 0, TAU);
+        ctx.fill();
+      }
+      ctx.restore();
+    }
+
+    function drawBeats(t) {
+      const cy = ringY();
+      const targetR = Math.min(80, Math.max(54, W * .17));
+      ctx.save();
+      ctx.translate(W / 2, cy);
+      ctx.strokeStyle = golden > 0 ? "rgba(242,184,75,.92)" : "rgba(242,184,75,.76)";
+      ctx.lineWidth = 3;
+      ctx.beginPath();
+      ctx.arc(0, 0, targetR, 0, TAU);
+      ctx.stroke();
+      ctx.lineWidth = 1;
+      ctx.globalAlpha = .52;
+      ctx.beginPath();
+      ctx.arc(0, 0, targetR + 13 + Math.sin(t * 4) * 3, 0, TAU);
+      ctx.stroke();
+      ctx.restore();
+
+      for (const b of beats) {
+        if (b.hit || b.missed) continue;
+        const dt = b.t - elapsed;
+        if (dt < -.4 || dt > 2.2) continue;
+        const p = 1 - dt / 2.2;
+        const x = b.x * W;
+        const y = cy + Math.sin((b.t + t) * 3) * 4;
+        const r = targetR + (1 - p) * Math.max(W, H) * .42;
+        const a = Math.max(0, Math.min(.72, p * .9));
+        ctx.save();
+        ctx.globalAlpha = a;
+        ctx.strokeStyle = b.double ? "rgba(76,195,156,.82)" : "rgba(246,248,238,.82)";
+        ctx.lineWidth = b.double ? 4 : 3;
+        ctx.beginPath();
+        ctx.arc(x, y, r, 0, TAU);
+        ctx.stroke();
+        ctx.globalAlpha = Math.min(1, a + .18);
+        ctx.fillStyle = b.double ? "rgba(76,195,156,.62)" : "rgba(242,184,75,.72)";
+        ctx.beginPath();
+        ctx.arc(x, y, 5 + p * 9, 0, TAU);
+        ctx.fill();
+        ctx.restore();
+      }
+    }
+
+    function drawFX(dt) {
+      for (let i = ripples.length - 1; i >= 0; i--) {
+        const r = ripples[i];
+        r.r += dt * 320;
+        r.a -= dt * .9;
+        if (r.a <= 0) { ripples.splice(i, 1); continue; }
+        ctx.save();
+        ctx.globalAlpha = r.a;
+        ctx.strokeStyle = r.gold ? "#f2b84b" : "#4cc39c";
+        ctx.lineWidth = 3;
+        ctx.beginPath();
+        ctx.arc(r.x, r.y, r.r, 0, TAU);
+        ctx.stroke();
+        ctx.restore();
+      }
+
+      for (let i = particles.length - 1; i >= 0; i--) {
+        const p = particles[i];
+        p.age += dt;
+        if (p.age >= p.life) { particles.splice(i, 1); continue; }
+        p.vy += 180 * dt;
+        p.x += p.vx * dt;
+        p.y += p.vy * dt;
+        const a = 1 - p.age / p.life;
+        ctx.save();
+        ctx.globalAlpha = a;
+        ctx.fillStyle = p.bad ? "#d65339" : p.gold ? "#f2b84b" : "#f7f4e8";
+        ctx.beginPath();
+        ctx.arc(p.x, p.y, p.bad ? 3 : 2.6, 0, TAU);
+        ctx.fill();
+        ctx.restore();
+      }
+    }
+
+    function drawMistVeil(t) {
+      if (state !== "playing") return;
+      const intensity = Math.min(.48, pressure / 170 + Math.max(0, elapsed - 24) / 150);
+      if (intensity <= .01 && golden <= 0) return;
+      ctx.save();
+      ctx.globalAlpha = golden > 0 ? .08 : intensity;
+      for (let i = 0; i < 6; i++) {
+        const y = H * (.25 + i * .085) + Math.sin(t * .7 + i) * 18;
+        const grad = ctx.createLinearGradient(0, y - 40, 0, y + 40);
+        grad.addColorStop(0, "rgba(245,248,238,0)");
+        grad.addColorStop(.5, "rgba(245,248,238,.7)");
+        grad.addColorStop(1, "rgba(245,248,238,0)");
+        ctx.fillStyle = grad;
+        ctx.fillRect(0, y - 44, W, 88);
+      }
+      ctx.restore();
+    }
+
+    function drawTitlePulse(t) {
+      if (state === "playing") return;
+      const cy = ringY();
+      ctx.save();
+      ctx.globalAlpha = .18 + Math.sin(t * 2.2) * .05;
+      ctx.strokeStyle = "#f2b84b";
+      ctx.lineWidth = 3;
+      ctx.beginPath();
+      ctx.arc(W / 2, cy, 70 + Math.sin(t * 2.2) * 12, 0, TAU);
+      ctx.stroke();
+      ctx.restore();
+    }
+
+    function loop(nowMs) {
+      const now = nowMs / 1000;
+      let dt = last ? Math.min(.05, now - last) : .016;
+      last = now;
+      if (slowMo > 0) {
+        slowMo -= dt;
+        dt *= .55;
+      }
+      if (state === "playing") {
+        elapsed = Math.max(0, now - startTime);
+        golden = Math.max(0, golden - dt);
+        pressure = Math.min(100, pressure + dt * (elapsed > 28 ? 1.35 : .58));
+        missOverdue();
+        if (elapsed >= roundLength && state === "playing") gameOver(pressure < 100);
+        updateHud();
+      }
+
+      ctx.save();
+      if (shake > .05) {
+        shake *= Math.pow(.08, dt);
+        ctx.translate((Math.random() - .5) * shake, (Math.random() - .5) * shake);
+      }
+      drawBackground(now);
+      drawBridge(now);
+      drawTitlePulse(now);
+      drawBeats(now);
+      drawFX(dt);
+      drawMistVeil(now);
+      ctx.restore();
+      raf = requestAnimationFrame(loop);
+    }
+
+    function onPointer(e) {
+      if (e && e.cancelable) e.preventDefault();
+      const x = e && typeof e.clientX === "number" ? e.clientX : W / 2;
+      const y = e && typeof e.clientY === "number" ? e.clientY : H / 2;
+      if (state === "playing") tap(x, y);
+    }
+
+    function onKey(e) {
+      if (!e) return;
+      if (e.code === "Space" || e.code === "Enter" || e.key === " ") {
+        e.preventDefault();
+        if (state === "title") startGame();
+        else if (state === "playing") tap(W / 2, ringY());
+        else restartGame();
+      }
+      if (e.key === "r" || e.key === "R") {
+        e.preventDefault();
+        restartGame();
+      }
+    }
+
+    startBtn.addEventListener("click", (e) => { e.preventDefault(); startGame(); });
+    restartBtn.addEventListener("click", (e) => { e.preventDefault(); restartGame(); });
+    canvas.addEventListener("pointerdown", onPointer, { passive: false });
+    window.addEventListener("keydown", onKey);
+    window.addEventListener("resize", resize);
+    window.addEventListener("orientationchange", resize);
+    document.addEventListener("visibilitychange", () => { last = 0; });
+
+    resize();
+    updateHud();
+    raf = requestAnimationFrame(loop);
+  })();
+  </script>
+</body>
+</html>

@@ -1,0 +1,880 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Grid Route</title>
+<style>
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+  html, body {
+    width: 100dvw;
+    height: 100dvh;
+    overflow: hidden;
+    font-family: ui-monospace, 'SFMono-Regular', Menlo, monospace;
+    touch-action: none;
+    user-select: none;
+    -webkit-user-select: none;
+  }
+  :root {
+    --bg: #e8ecf0;
+    --fg: #1a2332;
+    --muted: #6b7a8f;
+    --panel: rgba(255,255,255,0.92);
+    --border: rgba(26,35,50,0.12);
+    --accent: #d4880a;
+    --lane: rgba(26,35,50,0.06);
+    --wire: rgba(26,35,50,0.18);
+  }
+  @media (prefers-color-scheme: dark) {
+    :root {
+      --bg: #0d1219;
+      --fg: #c8d4e0;
+      --muted: #6b8099;
+      --panel: rgba(13,18,25,0.94);
+      --border: rgba(200,212,224,0.1);
+      --accent: #f0a820;
+      --lane: rgba(200,212,224,0.04);
+      --wire: rgba(200,212,224,0.12);
+    }
+  }
+  body {
+    background: var(--bg);
+    color: var(--fg);
+    display: flex;
+    flex-direction: column;
+  }
+  #wrap {
+    position: relative;
+    width: 100dvw;
+    height: 100dvh;
+    display: flex;
+    flex-direction: column;
+  }
+  #hud {
+    flex: 0 0 auto;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 10px 16px;
+    font-size: 11px;
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+    border-bottom: 1px solid var(--border);
+    z-index: 2;
+  }
+  #hud span { color: var(--muted); }
+  #hud strong { color: var(--fg); font-weight: 600; }
+  #latency-bar {
+    flex: 0 0 auto;
+    height: 3px;
+    background: var(--wire);
+    position: relative;
+  }
+  #latency-fill {
+    height: 100%;
+    width: 0%;
+    background: var(--accent);
+    transition: width 0.3s ease;
+    box-shadow: 0 0 8px var(--accent);
+  }
+  #game-area {
+    flex: 1 1 auto;
+    position: relative;
+    min-height: 0;
+  }
+  canvas {
+    display: block;
+    width: 100%;
+    height: 100%;
+    touch-action: none;
+  }
+  .overlay {
+    position: absolute;
+    inset: 0;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    pointer-events: none;
+    z-index: 10;
+    padding: 24px;
+    text-align: center;
+    transition: opacity 0.35s ease;
+  }
+  .overlay.hidden {
+    opacity: 0;
+    visibility: hidden;
+  }
+  .overlay-panel {
+    background: var(--panel);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    padding: 28px 24px;
+    max-width: 340px;
+    width: 100%;
+    backdrop-filter: blur(12px);
+    -webkit-backdrop-filter: blur(12px);
+  }
+  .overlay h1 {
+    font-size: 22px;
+    font-weight: 600;
+    letter-spacing: 0.04em;
+    margin-bottom: 8px;
+    line-height: 1.2;
+  }
+  .overlay p {
+    font-size: 12px;
+    color: var(--muted);
+    line-height: 1.55;
+    margin-bottom: 20px;
+  }
+  .overlay .score-line {
+    font-size: 13px;
+    margin-bottom: 16px;
+    color: var(--fg);
+  }
+  .overlay .score-line em {
+    font-style: normal;
+    color: var(--accent);
+    font-weight: 600;
+  }
+  .btn {
+    pointer-events: auto;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    min-height: 48px;
+    min-width: 160px;
+    padding: 12px 28px;
+    font-family: inherit;
+    font-size: 13px;
+    font-weight: 600;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    border: 1px solid var(--accent);
+    border-radius: 8px;
+    background: transparent;
+    color: var(--accent);
+    cursor: pointer;
+    transition: background 0.15s, color 0.15s, transform 0.1s;
+  }
+  .btn:active { transform: scale(0.97); }
+  @media (hover: hover) {
+    .btn:hover {
+      background: var(--accent);
+      color: var(--bg);
+    }
+  }
+  .hint {
+    margin-top: 16px;
+    font-size: 10px;
+    color: var(--muted);
+    letter-spacing: 0.04em;
+  }
+</style>
+</head>
+<body>
+<div id="wrap">
+  <div id="hud">
+    <div><span>Score </span><strong id="score-val">0</strong></div>
+    <div id="combo-wrap" style="opacity:0"><span>Combo </span><strong id="combo-val">0</strong></div>
+    <div><span>Wave </span><strong id="wave-val">1</strong></div>
+    <div><span>Latency </span><strong id="lat-val">0%</strong></div>
+  </div>
+  <div id="latency-bar"><div id="latency-fill"></div></div>
+  <div id="game-area">
+    <canvas id="c"></canvas>
+    <div id="title-overlay" class="overlay">
+      <div class="overlay-panel">
+        <h1>Grid Route</h1>
+        <p>Cloud fragments are falling through the payment grid. Swipe to the lane where each packet belongs — match PAY, SYNC, or CACHE to its terminal. Misroutes and misses spike latency until the city goes dark.</p>
+        <button class="btn" data-smoke="start" id="btn-start">Bring Grid Online</button>
+        <p class="hint">Swipe ← → &nbsp;·&nbsp; Arrow keys &nbsp;·&nbsp; Tap glitches</p>
+      </div>
+    </div>
+    <div id="over-overlay" class="overlay hidden">
+      <div class="overlay-panel">
+        <h1 id="over-title">Grid Dark</h1>
+        <p id="over-msg">The payment rails stalled. Route faster next wave.</p>
+        <p class="score-line">Score <em id="final-score">0</em> · Best combo <em id="final-combo">0</em></p>
+        <button class="btn" data-smoke="restart" id="btn-restart">Retry Wave</button>
+      </div>
+    </div>
+  </div>
+</div>
+<script>
+(function () {
+  'use strict';
+
+  var canvas = document.getElementById('c');
+  var ctx = canvas && canvas.getContext ? canvas.getContext('2d') : null;
+  var scoreEl = document.getElementById('score-val');
+  var comboEl = document.getElementById('combo-val');
+  var comboWrap = document.getElementById('combo-wrap');
+  var waveEl = document.getElementById('wave-val');
+  var latEl = document.getElementById('lat-val');
+  var latFill = document.getElementById('latency-fill');
+  var titleOverlay = document.getElementById('title-overlay');
+  var overOverlay = document.getElementById('over-overlay');
+  var finalScore = document.getElementById('final-score');
+  var finalCombo = document.getElementById('final-combo');
+  var overTitle = document.getElementById('over-title');
+  var overMsg = document.getElementById('over-msg');
+  var btnStart = document.getElementById('btn-start');
+  var btnRestart = document.getElementById('btn-restart');
+  var gameArea = document.getElementById('game-area');
+
+  var TYPES = ['PAY', 'SYNC', 'CACHE'];
+  var TYPE_COLORS = { PAY: '#3a8fb5', SYNC: '#4a9e6a', CACHE: '#c47820' };
+  var STATE = 'title';
+  var W = 360, H = 640;
+  var dpr = 1;
+  var laneCount = 2;
+  var playerLane = 0;
+  var targetLane = 0;
+  var laneAnim = 0;
+  var score = 0;
+  var combo = 0;
+  var maxCombo = 0;
+  var latency = 0;
+  var wave = 1;
+  var elapsed = 0;
+  var spawnTimer = 0;
+  var spawnInterval = 1.4;
+  var fallSpeed = 90;
+  var fragments = [];
+  var particles = [];
+  var glitches = [];
+  var gridPulse = 0;
+  var shakeT = 0;
+  var hitPause = 0;
+  var audioCtx = null;
+  var flashMsg = '';
+  var flashT = 0;
+
+  var darkMode = false;
+  try {
+    darkMode = window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches;
+  } catch (e) {}
+
+  function initAudio() {
+    if (audioCtx) return;
+    try {
+      var AC = window.AudioContext || window.webkitAudioContext;
+      if (AC) audioCtx = new AC();
+    } catch (e) {}
+  }
+
+  function tone(freq, dur, vol, type) {
+    if (!audioCtx) return;
+    try {
+      if (audioCtx.state === 'suspended') audioCtx.resume();
+      var o = audioCtx.createOscillator();
+      var g = audioCtx.createGain();
+      o.type = type || 'sine';
+      o.frequency.value = freq;
+      g.gain.setValueAtTime(vol || 0.08, audioCtx.currentTime);
+      g.gain.exponentialRampToValueAtTime(0.001, audioCtx.currentTime + dur);
+      o.connect(g);
+      g.connect(audioCtx.destination);
+      o.start();
+      o.stop(audioCtx.currentTime + dur);
+    } catch (e) {}
+  }
+
+  function resize() {
+    if (!canvas || !gameArea) return;
+    var rect = gameArea.getBoundingClientRect();
+    dpr = Math.min(window.devicePixelRatio || 1, 2);
+    W = Math.max(1, Math.floor(rect.width));
+    H = Math.max(1, Math.floor(rect.height));
+    canvas.width = Math.floor(W * dpr);
+    canvas.height = Math.floor(H * dpr);
+    canvas.style.width = W + 'px';
+    canvas.style.height = H + 'px';
+    if (ctx) ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+  }
+
+  function laneX(lane) {
+    var pad = W * 0.06;
+    var usable = W - pad * 2;
+    if (laneCount <= 1) return W / 2;
+    return pad + (usable / (laneCount - 1)) * lane;
+  }
+
+  function playerX() {
+    var from = laneX(Math.floor(laneAnim));
+    var to = laneX(Math.ceil(laneAnim));
+    var t = laneAnim - Math.floor(laneAnim);
+    return from + (to - from) * easeOutCubic(t);
+  }
+
+  function easeOutCubic(t) { return 1 - Math.pow(1 - t, 3); }
+
+  function resetGame(full) {
+    score = 0;
+    combo = 0;
+    maxCombo = 0;
+    latency = 0;
+    wave = 1;
+    elapsed = 0;
+    spawnTimer = 0;
+    spawnInterval = 1.35;
+    fallSpeed = 95;
+    laneCount = 2;
+    playerLane = 0;
+    targetLane = 0;
+    laneAnim = 0;
+    fragments = [];
+    particles = [];
+    glitches = [];
+    gridPulse = 0;
+    shakeT = 0;
+    hitPause = 0;
+    flashMsg = '';
+    flashT = 0;
+    updateHUD();
+  }
+
+  function startGame() {
+    initAudio();
+    resetGame(true);
+    STATE = 'playing';
+    if (titleOverlay) titleOverlay.classList.add('hidden');
+    if (overOverlay) overOverlay.classList.add('hidden');
+    tone(440, 0.12, 0.06, 'triangle');
+  }
+
+  function endGame(won) {
+    STATE = 'over';
+    if (finalScore) finalScore.textContent = String(score);
+    if (finalCombo) finalCombo.textContent = String(maxCombo);
+    if (overTitle) overTitle.textContent = won ? 'City Online' : 'Grid Dark';
+    if (overMsg) {
+      overMsg.textContent = won
+        ? 'You cleared the outage wave in ' + Math.floor(elapsed) + 's. The rails hum again.'
+        : 'Latency maxed out. The payment grid went dark.';
+    }
+    if (overOverlay) overOverlay.classList.remove('hidden');
+    tone(won ? 660 : 180, 0.25, 0.07, won ? 'sine' : 'sawtooth');
+  }
+
+  function updateHUD() {
+    if (scoreEl) scoreEl.textContent = String(score);
+    if (comboEl) comboEl.textContent = String(combo);
+    if (comboWrap) comboWrap.style.opacity = combo > 1 ? '1' : '0';
+    if (waveEl) waveEl.textContent = String(wave);
+    if (latEl) latEl.textContent = Math.floor(latency) + '%';
+    if (latFill) latFill.style.width = Math.min(100, latency) + '%';
+  }
+
+  function flash(text) {
+    flashMsg = text;
+    flashT = 2.2;
+  }
+
+  function addLatency(amt) {
+    latency = Math.min(100, latency + amt);
+    shakeT = 0.18;
+    combo = 0;
+    tone(120, 0.15, 0.05, 'square');
+    if (navigator.vibrate) try { navigator.vibrate(40); } catch (e) {}
+    if (latency >= 100) endGame(false);
+    updateHUD();
+  }
+
+  function addScore(pts) {
+    score += pts;
+    combo++;
+    if (combo > maxCombo) maxCombo = combo;
+    gridPulse = 1;
+    tone(520 + combo * 20, 0.08, 0.06, 'triangle');
+    if (navigator.vibrate) try { navigator.vibrate(12); } catch (e) {}
+    spawnParticles(playerX(), H * 0.78, TYPE_COLORS.PAY);
+    updateHUD();
+  }
+
+  function spawnParticles(x, y, col) {
+    for (var i = 0; i < 10; i++) {
+      var a = Math.random() * Math.PI * 2;
+      var sp = 40 + Math.random() * 120;
+      particles.push({
+        x: x, y: y,
+        vx: Math.cos(a) * sp,
+        vy: Math.sin(a) * sp - 30,
+        life: 0.4 + Math.random() * 0.3,
+        col: col || '#f0a820'
+      });
+    }
+  }
+
+  function spawnFragment() {
+    var typeIdx = Math.floor(Math.random() * laneCount);
+    var lane = typeIdx;
+    fragments.push({
+      lane: lane,
+      type: TYPES[typeIdx],
+      y: -24,
+      w: Math.min(52, W / laneCount * 0.55),
+      routed: false,
+      missed: false
+    });
+  }
+
+  function spawnGlitch() {
+    var lane = Math.floor(Math.random() * laneCount);
+    glitches.push({
+      lane: lane,
+      y: 30 + Math.random() * (H * 0.35),
+      life: 2.8,
+      pulse: Math.random() * Math.PI * 2,
+      w: 36
+    });
+  }
+
+  function moveLane(dir) {
+    if (STATE !== 'playing') return;
+    var next = targetLane + dir;
+    if (next < 0 || next >= laneCount) return;
+    targetLane = next;
+    playerLane = next;
+    tone(280 + next * 60, 0.05, 0.04, 'sine');
+  }
+
+  function catchY() { return H * 0.78; }
+
+  function update(dt) {
+    if (STATE !== 'playing') return;
+    if (hitPause > 0) { hitPause -= dt; return; }
+
+    elapsed += dt;
+    spawnTimer += dt;
+
+    if (elapsed > 12) spawnInterval = Math.max(0.55, 1.35 - elapsed * 0.018);
+    if (elapsed > 8) fallSpeed = 95 + elapsed * 4.5;
+    if (elapsed > 18 && laneCount < 3) {
+      laneCount = 3;
+      wave = 2;
+      gridPulse = 1;
+      flash('Lane 3 online');
+      tone(330, 0.2, 0.06, 'sine');
+    }
+    if (elapsed > 28 && wave < 3) {
+      wave = 3;
+      flash('Glitches detected — tap to purge');
+      tone(220, 0.15, 0.05, 'sawtooth');
+    }
+    if (elapsed > 30 && Math.random() < dt * 0.35) spawnGlitch();
+
+    while (spawnTimer >= spawnInterval) {
+      spawnTimer -= spawnInterval;
+      spawnFragment();
+      if (wave >= 3 && Math.random() < 0.25) spawnFragment();
+    }
+
+    if (targetLane !== laneAnim) {
+      laneAnim += (targetLane - laneAnim) * Math.min(1, dt * 14);
+      if (Math.abs(targetLane - laneAnim) < 0.01) laneAnim = targetLane;
+    }
+
+    var px = playerX();
+    var cy = catchY();
+    var catchR = Math.min(W / laneCount * 0.35, 42);
+
+    for (var i = fragments.length - 1; i >= 0; i--) {
+      var f = fragments[i];
+      f.y += fallSpeed * dt;
+      var fx = laneX(f.lane);
+      var dist = Math.abs(fx - px);
+      if (!f.routed && !f.missed && f.y >= cy - 8 && f.y <= cy + 18) {
+        if (dist < catchR) {
+          f.routed = true;
+          addScore(10 + combo * 2);
+          hitPause = 0.04;
+          spawnParticles(fx, f.y, TYPE_COLORS[f.type]);
+          fragments.splice(i, 1);
+          continue;
+        }
+      }
+      if (f.y > H + 30 && !f.routed && !f.missed) {
+        f.missed = true;
+        addLatency(12);
+        fragments.splice(i, 1);
+      }
+    }
+
+    for (var g = glitches.length - 1; g >= 0; g--) {
+      glitches[g].life -= dt;
+      glitches[g].pulse += dt * 8;
+      if (glitches[g].life <= 0) {
+        addLatency(6);
+        glitches.splice(g, 1);
+      }
+    }
+
+    for (var p = particles.length - 1; p >= 0; p--) {
+      var pt = particles[p];
+      pt.life -= dt;
+      pt.x += pt.vx * dt;
+      pt.y += pt.vy * dt;
+      pt.vy += 180 * dt;
+      if (pt.life <= 0) particles.splice(p, 1);
+    }
+
+    if (gridPulse > 0) gridPulse = Math.max(0, gridPulse - dt * 2.5);
+    if (shakeT > 0) shakeT = Math.max(0, shakeT - dt);
+    if (flashT > 0) flashT = Math.max(0, flashT - dt);
+
+    if (latency > 0) {
+      latency = Math.max(0, latency - dt * 1.8);
+      updateHUD();
+    }
+
+    if (elapsed >= 45 && latency < 100) {
+      endGame(true);
+    }
+  }
+
+  function tapGlitch(sx, sy) {
+    if (STATE !== 'playing') return;
+    for (var i = glitches.length - 1; i >= 0; i--) {
+      var g = glitches[i];
+      var gx = laneX(g.lane);
+      var dx = sx - gx;
+      var dy = sy - g.y;
+      if (dx * dx + dy * dy < 900) {
+        glitches.splice(i, 1);
+        addScore(5);
+        spawnParticles(gx, g.y, '#f0a820');
+        tone(780, 0.06, 0.05, 'square');
+        return;
+      }
+    }
+  }
+
+  function drawGrid(alpha) {
+    if (!ctx) return;
+    var wire = darkMode ? 'rgba(200,212,224,' + (0.08 * alpha) + ')' : 'rgba(26,35,50,' + (0.1 * alpha) + ')';
+    ctx.strokeStyle = wire;
+    ctx.lineWidth = 1;
+    var step = 28;
+    for (var x = 0; x < W; x += step) {
+      ctx.beginPath();
+      ctx.moveTo(x, 0);
+      ctx.lineTo(x, H);
+      ctx.stroke();
+    }
+    for (var y = 0; y < H; y += step) {
+      ctx.beginPath();
+      ctx.moveTo(0, y);
+      ctx.lineTo(W, y);
+      ctx.stroke();
+    }
+  }
+
+  function drawFog() {
+    if (!ctx) return;
+    var g = ctx.createLinearGradient(0, 0, 0, H * 0.35);
+    if (darkMode) {
+      g.addColorStop(0, 'rgba(100,120,140,0.25)');
+      g.addColorStop(1, 'rgba(13,18,25,0)');
+    } else {
+      g.addColorStop(0, 'rgba(180,190,200,0.45)');
+      g.addColorStop(1, 'rgba(232,236,240,0)');
+    }
+    ctx.fillStyle = g;
+    ctx.fillRect(0, 0, W, H * 0.35);
+  }
+
+  function drawLanes() {
+    if (!ctx) return;
+    for (var l = 0; l < laneCount; l++) {
+      var x = laneX(l);
+      var lw = W / laneCount * 0.82;
+      ctx.fillStyle = darkMode ? 'rgba(200,212,224,0.03)' : 'rgba(26,35,50,0.04)';
+      ctx.fillRect(x - lw / 2, H * 0.08, lw, H * 0.88);
+      ctx.strokeStyle = darkMode ? 'rgba(200,212,224,0.1)' : 'rgba(26,35,50,0.12)';
+      ctx.lineWidth = 1;
+      ctx.strokeRect(x - lw / 2 + 0.5, H * 0.08 + 0.5, lw - 1, H * 0.88 - 1);
+    }
+  }
+
+  function drawTerminal(lane) {
+    if (!ctx) return;
+    var x = laneX(lane);
+    var y = H * 0.88;
+    var tw = Math.min(64, W / laneCount * 0.62);
+    var th = 36;
+    var type = TYPES[lane % 3];
+    var col = TYPE_COLORS[type];
+    ctx.fillStyle = darkMode ? 'rgba(13,18,25,0.8)' : 'rgba(255,255,255,0.85)';
+    ctx.strokeStyle = col;
+    ctx.lineWidth = 1.5;
+    roundRect(x - tw / 2, y - th / 2, tw, th, 4);
+    ctx.fill();
+    ctx.stroke();
+    ctx.fillStyle = col;
+    ctx.font = '600 10px ui-monospace, Menlo, monospace';
+    ctx.textAlign = 'center';
+    ctx.textBaseline = 'middle';
+    ctx.fillText(type, x, y);
+  }
+
+  function roundRect(x, y, w, h, r) {
+    ctx.beginPath();
+    ctx.moveTo(x + r, y);
+    ctx.lineTo(x + w - r, y);
+    ctx.quadraticCurveTo(x + w, y, x + w, y + r);
+    ctx.lineTo(x + w, y + h - r);
+    ctx.quadraticCurveTo(x + w, y + h, x + w - r, y + h);
+    ctx.lineTo(x + r, y + h);
+    ctx.quadraticCurveTo(x, y + h, x, y + h - r);
+    ctx.lineTo(x, y + r);
+    ctx.quadraticCurveTo(x, y, x + r, y);
+    ctx.closePath();
+  }
+
+  function drawFragment(f) {
+    if (!ctx) return;
+    var x = laneX(f.lane);
+    var col = TYPE_COLORS[f.type] || '#888';
+    ctx.fillStyle = darkMode ? 'rgba(13,18,25,0.85)' : 'rgba(255,255,255,0.9)';
+    ctx.strokeStyle = col;
+    ctx.lineWidth = 1.5;
+    roundRect(x - f.w / 2, f.y - 12, f.w, 24, 3);
+    ctx.fill();
+    ctx.stroke();
+    ctx.fillStyle = col;
+    ctx.font = '600 9px ui-monospace, Menlo, monospace';
+    ctx.textAlign = 'center';
+    ctx.textBaseline = 'middle';
+    ctx.fillText(f.type, x, f.y);
+    ctx.strokeStyle = col;
+    ctx.globalAlpha = 0.35;
+    ctx.beginPath();
+    ctx.moveTo(x, f.y - 14);
+    ctx.lineTo(x, f.y - 28);
+    ctx.stroke();
+    ctx.globalAlpha = 1;
+  }
+
+  function drawRouter() {
+    if (!ctx) return;
+    var x = playerX();
+    var y = catchY();
+    var r = Math.min(W / laneCount * 0.28, 34);
+    ctx.save();
+    ctx.strokeStyle = '#f0a820';
+    ctx.lineWidth = 2;
+    ctx.shadowColor = '#f0a820';
+    ctx.shadowBlur = 12 + gridPulse * 16;
+    ctx.beginPath();
+    ctx.arc(x, y, r, 0, Math.PI * 2);
+    ctx.stroke();
+    ctx.fillStyle = darkMode ? 'rgba(240,168,32,0.15)' : 'rgba(240,168,32,0.2)';
+    ctx.fill();
+    ctx.shadowBlur = 0;
+    ctx.strokeStyle = darkMode ? '#c8d4e0' : '#1a2332';
+    ctx.lineWidth = 1.5;
+    ctx.beginPath();
+    ctx.moveTo(x, y - r * 0.4);
+    ctx.lineTo(x, y + r * 0.4);
+    ctx.moveTo(x - r * 0.4, y);
+    ctx.lineTo(x + r * 0.4, y);
+    ctx.stroke();
+    ctx.restore();
+  }
+
+  function drawGlitch(g) {
+    if (!ctx) return;
+    var x = laneX(g.lane);
+    var pulse = 0.7 + Math.sin(g.pulse) * 0.3;
+    ctx.save();
+    ctx.translate(x, g.y);
+    ctx.rotate(Math.sin(g.pulse * 0.7) * 0.15);
+    ctx.strokeStyle = '#e04040';
+    ctx.lineWidth = 1.5;
+    ctx.globalAlpha = pulse * Math.min(1, g.life);
+    var s = g.w;
+    ctx.beginPath();
+    ctx.moveTo(-s / 2, -s / 2);
+    ctx.lineTo(s / 2, s / 2);
+    ctx.moveTo(s / 2, -s / 2);
+    ctx.lineTo(-s / 2, s / 2);
+    ctx.stroke();
+    ctx.fillStyle = 'rgba(224,64,64,0.2)';
+    ctx.fillRect(-s / 2, -s / 2, s, s);
+    ctx.globalAlpha = 1;
+    ctx.restore();
+  }
+
+  function drawParticles() {
+    if (!ctx) return;
+    for (var i = 0; i < particles.length; i++) {
+      var p = particles[i];
+      ctx.globalAlpha = Math.max(0, p.life * 2);
+      ctx.fillStyle = p.col;
+      ctx.fillRect(p.x - 2, p.y - 2, 4, 4);
+    }
+    ctx.globalAlpha = 1;
+  }
+
+  function drawFlash() {
+    if (!ctx || flashT <= 0) return;
+    ctx.save();
+    ctx.globalAlpha = Math.min(1, flashT);
+    ctx.fillStyle = darkMode ? '#f0a820' : '#c47820';
+    ctx.font = '600 11px ui-monospace, Menlo, monospace';
+    ctx.textAlign = 'center';
+    ctx.textBaseline = 'top';
+    ctx.fillText(flashMsg, W / 2, H * 0.12);
+    ctx.restore();
+  }
+
+  function drawCatchLine() {
+    if (!ctx) return;
+    ctx.strokeStyle = darkMode ? 'rgba(240,168,32,0.35)' : 'rgba(212,136,10,0.4)';
+    ctx.lineWidth = 1;
+    ctx.setLineDash([6, 6]);
+    ctx.beginPath();
+    ctx.moveTo(W * 0.04, catchY());
+    ctx.lineTo(W * 0.96, catchY());
+    ctx.stroke();
+    ctx.setLineDash([]);
+  }
+
+  function render() {
+    if (!ctx) return;
+    var darkAmt = latency / 100;
+    var bgCol = darkMode ? '#0d1219' : '#e8ecf0';
+    ctx.fillStyle = bgCol;
+    ctx.fillRect(0, 0, W, H);
+
+    var gridAlpha = 1 - darkAmt * 0.85;
+    ctx.save();
+    if (shakeT > 0) {
+      var sh = shakeT * 6;
+      ctx.translate((Math.random() - 0.5) * sh, (Math.random() - 0.5) * sh);
+    }
+    drawFog();
+    drawGrid(gridAlpha);
+    drawLanes();
+
+    for (var t = 0; t < laneCount; t++) drawTerminal(t);
+    drawCatchLine();
+    drawFlash();
+
+    for (var i = 0; i < fragments.length; i++) drawFragment(fragments[i]);
+    for (var j = 0; j < glitches.length; j++) drawGlitch(glitches[j]);
+    drawRouter();
+    drawParticles();
+    ctx.restore();
+
+    if (darkAmt > 0.05) {
+      ctx.fillStyle = 'rgba(0,0,0,' + (darkAmt * 0.55) + ')';
+      ctx.fillRect(0, 0, W, H);
+    }
+
+    if (STATE === 'title') {
+      ctx.fillStyle = darkMode ? 'rgba(13,18,25,0.3)' : 'rgba(232,236,240,0.3)';
+      ctx.fillRect(0, 0, W, H);
+    }
+  }
+
+  var lastT = 0;
+  function loop(ts) {
+    if (!lastT) lastT = ts;
+    var dt = Math.min(0.05, (ts - lastT) / 1000);
+    lastT = ts;
+    update(dt);
+    render();
+    requestAnimationFrame(loop);
+  }
+
+  var touchStartX = 0;
+  var touchStartY = 0;
+  var touchStartT = 0;
+
+  function clientToGame(cx, cy) {
+    if (!canvas) return { x: 0, y: 0 };
+    var rect = canvas.getBoundingClientRect();
+    return {
+      x: (cx - rect.left) * (W / rect.width),
+      y: (cy - rect.top) * (H / rect.height)
+    };
+  }
+
+  function onTouchStart(e) {
+    if (e.cancelable) e.preventDefault();
+    if (!e.changedTouches || !e.changedTouches[0]) return;
+    var t = e.changedTouches[0];
+    touchStartX = t.clientX;
+    touchStartY = t.clientY;
+    touchStartT = Date.now();
+  }
+
+  function onTouchEnd(e) {
+    if (e.cancelable) e.preventDefault();
+    if (!e.changedTouches || !e.changedTouches[0]) return;
+    var t = e.changedTouches[0];
+    var dx = t.clientX - touchStartX;
+    var dy = t.clientY - touchStartY;
+    var dt = Date.now() - touchStartT;
+    if (Math.abs(dx) > 28 && Math.abs(dx) > Math.abs(dy)) {
+      moveLane(dx > 0 ? 1 : -1);
+    } else if (Math.abs(dx) < 20 && Math.abs(dy) < 20 && dt < 350) {
+      var p = clientToGame(t.clientX, t.clientY);
+      tapGlitch(p.x, p.y);
+    }
+  }
+
+  function onKeyDown(e) {
+    if (e.key === 'ArrowLeft') { moveLane(-1); if (e.preventDefault) e.preventDefault(); }
+    if (e.key === 'ArrowRight') { moveLane(1); if (e.preventDefault) e.preventDefault(); }
+  }
+
+  if (btnStart) btnStart.addEventListener('click', startGame);
+  if (btnRestart) btnRestart.addEventListener('click', startGame);
+
+  if (canvas) {
+    canvas.addEventListener('touchstart', onTouchStart, { passive: false });
+    canvas.addEventListener('touchend', onTouchEnd, { passive: false });
+    canvas.addEventListener('mousedown', function (e) {
+      touchStartX = e.clientX;
+      touchStartY = e.clientY;
+      touchStartT = Date.now();
+    });
+    canvas.addEventListener('mouseup', function (e) {
+      var dx = e.clientX - touchStartX;
+      var dy = e.clientY - touchStartY;
+      var dt = Date.now() - touchStartT;
+      if (Math.abs(dx) > 28 && Math.abs(dx) > Math.abs(dy)) {
+        moveLane(dx > 0 ? 1 : -1);
+      } else if (Math.abs(dx) < 12 && Math.abs(dy) < 12 && dt < 350) {
+        var p = clientToGame(e.clientX, e.clientY);
+        tapGlitch(p.x, p.y);
+      }
+    });
+  }
+
+  document.addEventListener('keydown', onKeyDown);
+  window.addEventListener('resize', resize);
+
+  try {
+    if (window.matchMedia) {
+      var mq = window.matchMedia('(prefers-color-scheme: dark)');
+      if (mq.addEventListener) {
+        mq.addEventListener('change', function (ev) { darkMode = ev.matches; });
+      } else if (mq.addListener) {
+        mq.addListener(function (ev) { darkMode = ev.matches; });
+      }
+    }
+  } catch (e) {}
+
+  resize();
+  render();
+  requestAnimationFrame(loop);
+})();
+</script>
+</body>
+</html>

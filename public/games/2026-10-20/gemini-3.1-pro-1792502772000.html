@@ -1,0 +1,668 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Autumn Forecast</title>
+<style>
+  :root {
+    --bg: #F4F1EB;
+    --text: #2C2A28;
+    --track: #E3DFD5;
+    --shadow: rgba(0,0,0,0.15);
+    --ui-bg: rgba(244, 241, 235, 0.9);
+  }
+  @media (prefers-color-scheme: dark) {
+    :root {
+      --bg: #1E1C1A;
+      --text: #E8E6E1;
+      --track: #33302D;
+      --shadow: rgba(0,0,0,0.6);
+      --ui-bg: rgba(30, 28, 26, 0.9);
+    }
+  }
+  body, html {
+    margin: 0;
+    padding: 0;
+    width: 100%;
+    height: 100%;
+    overflow: hidden;
+    background-color: var(--bg);
+    color: var(--text);
+    font-family: ui-monospace, 'SFMono-Regular', Menlo, monospace;
+    touch-action: none;
+    user-select: none;
+    -webkit-user-select: none;
+  }
+  canvas {
+    display: block;
+    width: 100%;
+    height: 100%;
+  }
+  #ui-layer {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    pointer-events: none;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+    z-index: 10;
+  }
+  .screen {
+    background: var(--ui-bg);
+    padding: 2rem;
+    border-radius: 1rem;
+    text-align: center;
+    box-shadow: 0 10px 30px var(--shadow);
+    pointer-events: none;
+    max-width: 80%;
+    backdrop-filter: blur(5px);
+    -webkit-backdrop-filter: blur(5px);
+  }
+  .screen > * {
+    pointer-events: none;
+  }
+  h1 {
+    font-size: 1.5rem;
+    margin-top: 0;
+    margin-bottom: 0.5rem;
+  }
+  p {
+    font-size: 0.9rem;
+    opacity: 0.8;
+    margin-bottom: 1.5rem;
+  }
+  button {
+    background: var(--text);
+    color: var(--bg);
+    border: none;
+    padding: 1rem 2rem;
+    font-size: 1.1rem;
+    font-family: inherit;
+    border-radius: 2rem;
+    cursor: pointer;
+    font-weight: bold;
+    transition: transform 0.1s;
+    pointer-events: auto !important;
+  }
+  button:active {
+    transform: scale(0.95);
+  }
+  #hud {
+    position: absolute;
+    top: env(safe-area-inset-top, 20px);
+    left: 20px;
+    right: 20px;
+    display: flex;
+    justify-content: space-between;
+    font-size: 1.5rem;
+    font-weight: bold;
+    pointer-events: none;
+    text-shadow: 0 2px 4px var(--shadow);
+  }
+</style>
+</head>
+<body>
+  <div id="hud" style="display: none;">
+    <div id="score-display">0</div>
+    <div id="wind-display">Wind: -</div>
+  </div>
+
+  <div id="ui-layer">
+    <div id="title-screen" class="screen">
+      <h1>Autumn Forecast</h1>
+      <p>Drag back to aim. Flick leaves into the shrinking demographic arcs to balance the forecast.</p>
+      <button data-smoke="start" id="btn-start">Start Game</button>
+    </div>
+
+    <div id="game-over-screen" class="screen" style="display: none;">
+      <h2>Forecast Collapsed</h2>
+      <p>Final Score: <span id="final-score">0</span></p>
+      <button data-smoke="restart" id="btn-restart">Play Again</button>
+    </div>
+  </div>
+
+  <canvas id="game-canvas"></canvas>
+
+  <script>
+    const canvas = document.getElementById('game-canvas');
+    const ctx = canvas.getContext('2d', { alpha: false });
+    const titleScreen = document.getElementById('title-screen');
+    const gameOverScreen = document.getElementById('game-over-screen');
+    const btnStart = document.getElementById('btn-start');
+    const btnRestart = document.getElementById('btn-restart');
+    const scoreDisplay = document.getElementById('score-display');
+    const windDisplay = document.getElementById('wind-display');
+    const hud = document.getElementById('hud');
+
+    let width, height, dpr, scale;
+    let cx, cy, base_R, var_R;
+
+    let state = 'TITLE'; // TITLE, PLAYING, GAMEOVER
+    let score = 0;
+    let lastTime = 0;
+
+    let segments = [];
+    const colors = ['#D95C14', '#C72C1E', '#E3A72F', '#7A8B43', '#A86F45'];
+
+    let activeLeaf = null;
+    let particles = [];
+    let bgLeaves = [];
+
+    let wind = 0;
+    let targetWind = 0;
+    let windTimer = 0;
+
+    let isDragging = false;
+    let dragStartX = 0;
+    let dragStartY = 0;
+    let dragCurrentX = 0;
+    let dragCurrentY = 0;
+
+    let baseShrinkRate = 0.08;
+    let maxWindForce = 0.1;
+
+    let audioCtx = null;
+    function playSound(type) {
+      if (!audioCtx) {
+        try {
+          audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+        } catch (e) { return; }
+      }
+      if (audioCtx.state === 'suspended') audioCtx.resume();
+      
+      const osc = audioCtx.createOscillator();
+      const gain = audioCtx.createGain();
+      osc.connect(gain);
+      gain.connect(audioCtx.destination);
+      
+      const now = audioCtx.currentTime;
+      if (type === 'flick') {
+        osc.type = 'sine';
+        osc.frequency.setValueAtTime(300, now);
+        osc.frequency.exponentialRampToValueAtTime(100, now + 0.1);
+        gain.gain.setValueAtTime(0.3, now);
+        gain.gain.exponentialRampToValueAtTime(0.01, now + 0.1);
+        osc.start(now);
+        osc.stop(now + 0.1);
+      } else if (type === 'hit') {
+        osc.type = 'triangle';
+        osc.frequency.setValueAtTime(400, now);
+        osc.frequency.exponentialRampToValueAtTime(800, now + 0.1);
+        gain.gain.setValueAtTime(0.3, now);
+        gain.gain.exponentialRampToValueAtTime(0.01, now + 0.2);
+        osc.start(now);
+        osc.stop(now + 0.2);
+      } else if (type === 'miss') {
+        osc.type = 'sawtooth';
+        osc.frequency.setValueAtTime(150, now);
+        osc.frequency.exponentialRampToValueAtTime(50, now + 0.2);
+        gain.gain.setValueAtTime(0.3, now);
+        gain.gain.exponentialRampToValueAtTime(0.01, now + 0.2);
+        osc.start(now);
+        osc.stop(now + 0.2);
+      }
+    }
+
+    function vibrate(ms) {
+      if (navigator.vibrate) {
+        try { navigator.vibrate(ms); } catch (e) {}
+      }
+    }
+
+    function resize() {
+      width = window.innerWidth;
+      height = window.innerHeight;
+      dpr = window.devicePixelRatio || 1;
+      canvas.width = width * dpr;
+      canvas.height = height * dpr;
+      ctx.scale(dpr, dpr);
+      
+      scale = height / 1000;
+      cx = width / 2;
+      cy = height * 0.35;
+      base_R = Math.min(width, height) * 0.15;
+      var_R = Math.min(width, height) * 0.3;
+    }
+    window.addEventListener('resize', resize);
+
+    function createBgLeaf() {
+      return {
+        x: Math.random() * width,
+        y: Math.random() * height,
+        vx: (Math.random() - 0.5) * 2,
+        vy: Math.random() * 2 + 1,
+        angle: Math.random() * Math.PI * 2,
+        angularVel: (Math.random() - 0.5) * 0.1,
+        size: Math.random() * 0.5 + 0.5,
+        color: colors[Math.floor(Math.random() * colors.length)]
+      };
+    }
+
+    function spawnLeaf() {
+      let isDoomsday = Math.random() < 0.15 && score > 5;
+      let isDark = window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches;
+      let leafColor = colors[Math.floor(Math.random() * colors.length)];
+      if (isDoomsday) {
+        leafColor = isDark ? '#E8E6E1' : '#2C2A28';
+      }
+      
+      activeLeaf = {
+        x: width / 2,
+        y: height * 0.85,
+        vx: 0,
+        vy: 0,
+        isFlying: false,
+        angle: 0,
+        angularVel: 0,
+        color: leafColor,
+        isDoomsday: isDoomsday,
+        gravityMult: isDoomsday ? 0.6 : 1.0
+      };
+    }
+
+    function updateHUD() {
+      scoreDisplay.innerText = score;
+      let windDir = wind > 0.02 ? '→' : (wind < -0.02 ? '←' : '·');
+      let windStr = Math.abs(wind) * 100;
+      windDisplay.innerText = `${windDir} ${windStr.toFixed(0)}`;
+    }
+
+    function initGame() {
+      score = 0;
+      baseShrinkRate = 0.08;
+      maxWindForce = 0.1;
+      wind = 0;
+      targetWind = 0;
+      windTimer = 0;
+      
+      segments = [];
+      for (let i = 0; i < 5; i++) {
+        segments.push({
+          value: 1.0,
+          color: colors[i],
+          rateMult: 0.8 + Math.random() * 0.4
+        });
+      }
+      
+      particles = [];
+      if (bgLeaves.length === 0) {
+        for (let i = 0; i < 20; i++) {
+          bgLeaves.push(createBgLeaf());
+        }
+      }
+      
+      spawnLeaf();
+      updateHUD();
+      
+      state = 'PLAYING';
+      titleScreen.style.display = 'none';
+      gameOverScreen.style.display = 'none';
+      hud.style.display = 'flex';
+      
+      if (audioCtx && audioCtx.state === 'suspended') {
+        audioCtx.resume();
+      }
+    }
+
+    // Input handling
+    canvas.addEventListener('pointerdown', (e) => {
+      if (state !== 'PLAYING') return;
+      if (activeLeaf && activeLeaf.isFlying) return;
+      
+      isDragging = true;
+      dragStartX = e.clientX;
+      dragStartY = e.clientY;
+      dragCurrentX = e.clientX;
+      dragCurrentY = e.clientY;
+    });
+
+    canvas.addEventListener('pointermove', (e) => {
+      if (!isDragging) return;
+      dragCurrentX = e.clientX;
+      dragCurrentY = e.clientY;
+    });
+
+    canvas.addEventListener('pointerup', (e) => {
+      if (!isDragging) return;
+      isDragging = false;
+      
+      if (state !== 'PLAYING') return;
+      if (activeLeaf && !activeLeaf.isFlying) {
+        let dx = dragStartX - dragCurrentX;
+        let dy = dragStartY - dragCurrentY;
+        let dist = Math.hypot(dx, dy);
+        
+        if (dist > 20) {
+          if (dist > 300) {
+            dx = (dx / dist) * 300;
+            dy = (dy / dist) * 300;
+          }
+          let power = 0.08 * scale;
+          activeLeaf.vx = dx * power;
+          activeLeaf.vy = dy * power;
+          activeLeaf.isFlying = true;
+          activeLeaf.angularVel = (Math.random() - 0.5) * 0.2;
+          playSound('flick');
+        }
+      }
+    });
+
+    document.addEventListener('touchmove', (e) => { e.preventDefault(); }, { passive: false });
+
+    btnStart.addEventListener('click', initGame);
+    btnRestart.addEventListener('click', initGame);
+
+    function gameOver() {
+      state = 'GAMEOVER';
+      document.getElementById('final-score').innerText = score;
+      hud.style.display = 'none';
+      gameOverScreen.style.display = 'block';
+      vibrate([50, 50, 50]);
+    }
+
+    function update(dt) {
+      // Background particles
+      for (let i = particles.length - 1; i >= 0; i--) {
+        let p = particles[i];
+        p.x += p.vx;
+        p.y += p.vy;
+        p.life -= dt * 2;
+        if (p.life <= 0) particles.splice(i, 1);
+      }
+      
+      for (let l of bgLeaves) {
+        l.x += l.vx + wind * 2;
+        l.y += l.vy;
+        l.angle += l.angularVel;
+        if (l.y > height + 50) {
+          l.y = -50;
+          l.x = Math.random() * width;
+        }
+        if (l.x > width + 50) l.x = -50;
+        if (l.x < -50) l.x = width + 50;
+      }
+
+      if (state === 'GAMEOVER') {
+        if (activeLeaf) {
+          activeLeaf.vy += 0.4 * scale * activeLeaf.gravityMult;
+          activeLeaf.y += activeLeaf.vy;
+          activeLeaf.angle += activeLeaf.angularVel;
+        }
+        return;
+      }
+      
+      if (state !== 'PLAYING') return;
+
+      // Wind
+      windTimer -= dt;
+      if (windTimer <= 0) {
+        targetWind = (Math.random() * 2 - 1) * maxWindForce * scale;
+        windTimer = 2 + Math.random() * 3;
+      }
+      wind += (targetWind - wind) * dt * 0.5;
+      
+      // Segments
+      let currentShrinkRate = baseShrinkRate + (score * 0.002);
+      for (let i = 0; i < 5; i++) {
+        segments[i].value -= currentShrinkRate * segments[i].rateMult * dt;
+        if (segments[i].value <= 0) {
+          segments[i].value = 0;
+          gameOver();
+          return;
+        }
+      }
+      
+      // Active leaf
+      if (activeLeaf) {
+        if (activeLeaf.isFlying) {
+          activeLeaf.vy += 0.4 * scale * activeLeaf.gravityMult;
+          activeLeaf.vx += wind;
+          activeLeaf.x += activeLeaf.vx;
+          activeLeaf.y += activeLeaf.vy;
+          activeLeaf.angle += activeLeaf.angularVel;
+          
+          let dist = Math.hypot(activeLeaf.x - cx, activeLeaf.y - cy);
+          if (dist < base_R + var_R && activeLeaf.y < cy + base_R + var_R) {
+            let angle = Math.atan2(activeLeaf.y - cy, activeLeaf.x - cx);
+            if (angle < 0) angle += Math.PI * 2;
+            
+            if (angle >= Math.PI && angle <= Math.PI * 2) {
+              let segmentIndex = Math.floor((angle - Math.PI) / (Math.PI / 5));
+              if (segmentIndex >= 0 && segmentIndex < 5) {
+                let seg = segments[segmentIndex];
+                let segOuterR = base_R + seg.value * var_R;
+                
+                if (dist < segOuterR && dist > base_R) {
+                  // HIT
+                  seg.value = Math.min(1.0, seg.value + 0.35);
+                  score++;
+                  baseShrinkRate += 0.002;
+                  maxWindForce += 0.005;
+                  updateHUD();
+                  playSound('hit');
+                  vibrate(30);
+                  
+                  for(let p=0; p<15; p++) {
+                    particles.push({
+                      x: activeLeaf.x,
+                      y: activeLeaf.y,
+                      vx: (Math.random() - 0.5) * 10 * scale,
+                      vy: (Math.random() - 0.5) * 10 * scale,
+                      life: 1.0,
+                      color: activeLeaf.color
+                    });
+                  }
+                  
+                  activeLeaf = null;
+                  setTimeout(() => { if (state === 'PLAYING' && !activeLeaf) spawnLeaf(); }, 300);
+                }
+              }
+            }
+          }
+          
+          if (activeLeaf && (activeLeaf.y > height + 100 || activeLeaf.x < -100 || activeLeaf.x > width + 100)) {
+            playSound('miss');
+            activeLeaf = null;
+            setTimeout(() => { if (state === 'PLAYING' && !activeLeaf) spawnLeaf(); }, 300);
+          }
+        }
+      }
+      
+      updateHUD();
+    }
+
+    function drawLeafShape(x, y, angle, color, s) {
+      ctx.save();
+      ctx.translate(x, y);
+      ctx.rotate(angle);
+      ctx.scale(s, s);
+      
+      ctx.beginPath();
+      ctx.moveTo(0, 15);
+      ctx.lineTo(0, 5);
+      ctx.bezierCurveTo(15, 5, 20, -10, 0, -20);
+      ctx.bezierCurveTo(-20, -10, -15, 5, 0, 5);
+      ctx.closePath();
+      
+      ctx.fillStyle = color;
+      ctx.fill();
+      
+      ctx.lineWidth = 2;
+      ctx.strokeStyle = 'rgba(0,0,0,0.3)';
+      ctx.stroke();
+      
+      ctx.beginPath();
+      ctx.moveTo(0, 5);
+      ctx.lineTo(0, 15);
+      ctx.stroke();
+      
+      ctx.beginPath();
+      ctx.moveTo(0, 5);
+      ctx.lineTo(0, -15);
+      ctx.moveTo(0, -2);
+      ctx.lineTo(6, -8);
+      ctx.moveTo(0, -2);
+      ctx.lineTo(-6, -8);
+      ctx.moveTo(0, 4);
+      ctx.lineTo(8, -2);
+      ctx.moveTo(0, 4);
+      ctx.lineTo(-8, -2);
+      ctx.strokeStyle = 'rgba(0,0,0,0.15)';
+      ctx.lineWidth = 1;
+      ctx.stroke();
+      
+      ctx.restore();
+    }
+
+    function draw() {
+      let isDark = window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches;
+      ctx.fillStyle = isDark ? '#1E1C1A' : '#F4F1EB';
+      ctx.fillRect(0, 0, width, height);
+      
+      for (let l of bgLeaves) {
+        ctx.globalAlpha = 0.2;
+        drawLeafShape(l.x, l.y, l.angle, l.color, l.size * scale);
+        ctx.globalAlpha = 1.0;
+      }
+      
+      ctx.strokeStyle = isDark ? 'rgba(255,255,255,0.1)' : 'rgba(0,0,0,0.1)';
+      ctx.lineWidth = 2;
+      for (let i = 0; i < 10; i++) {
+        let y = (i * height / 10);
+        let x = (performance.now() * wind * 5 + i * 100) % (width + 100) - 50;
+        ctx.beginPath();
+        ctx.moveTo(x, y);
+        ctx.lineTo(x + 40 * Math.sign(wind || 1), y);
+        ctx.stroke();
+      }
+      
+      ctx.shadowColor = isDark ? 'rgba(0,0,0,0.6)' : 'rgba(0,0,0,0.15)';
+      ctx.shadowBlur = 10;
+      ctx.shadowOffsetX = 0;
+      ctx.shadowOffsetY = 4;
+      
+      for (let i = 0; i < 5; i++) {
+        let seg = segments[i];
+        let startAngle = Math.PI + i * (Math.PI / 5) + 0.02;
+        let endAngle = Math.PI + (i + 1) * (Math.PI / 5) - 0.02;
+        
+        ctx.beginPath();
+        ctx.arc(cx, cy, base_R + var_R, startAngle, endAngle);
+        ctx.arc(cx, cy, base_R, endAngle, startAngle, true);
+        ctx.closePath();
+        ctx.fillStyle = isDark ? '#33302D' : '#E3DFD5';
+        ctx.fill();
+        
+        if (seg.value > 0) {
+          let r = base_R + seg.value * var_R;
+          ctx.beginPath();
+          ctx.arc(cx, cy, r, startAngle, endAngle);
+          ctx.arc(cx, cy, base_R, endAngle, startAngle, true);
+          ctx.closePath();
+          
+          if (seg.value < 0.2 && Math.floor(performance.now() / 200) % 2 === 0) {
+            ctx.fillStyle = isDark ? '#FFF' : '#000';
+          } else {
+            ctx.fillStyle = seg.color;
+          }
+          ctx.fill();
+        }
+      }
+      
+      ctx.shadowColor = 'transparent';
+      
+      if (isDragging && activeLeaf && !activeLeaf.isFlying) {
+        let dx = dragStartX - dragCurrentX;
+        let dy = dragStartY - dragCurrentY;
+        let dist = Math.hypot(dx, dy);
+        if (dist > 300) {
+          dx = (dx / dist) * 300;
+          dy = (dy / dist) * 300;
+        }
+        let power = 0.08 * scale;
+        let vx = dx * power;
+        let vy = dy * power;
+        
+        let simX = activeLeaf.x;
+        let simY = activeLeaf.y;
+        
+        ctx.beginPath();
+        ctx.moveTo(simX, simY);
+        for (let i = 0; i < 40; i++) {
+          vy += 0.4 * scale * activeLeaf.gravityMult;
+          vx += wind;
+          simX += vx;
+          simY += vy;
+          if (i % 2 === 0) {
+            ctx.lineTo(simX, simY);
+          }
+        }
+        ctx.strokeStyle = isDark ? 'rgba(255,255,255,0.4)' : 'rgba(0,0,0,0.4)';
+        ctx.lineWidth = 2;
+        ctx.setLineDash([5, 5]);
+        ctx.stroke();
+        ctx.setLineDash([]);
+        
+        ctx.beginPath();
+        ctx.moveTo(activeLeaf.x, activeLeaf.y);
+        ctx.lineTo(activeLeaf.x - dx, activeLeaf.y - dy);
+        ctx.strokeStyle = isDark ? 'rgba(255,255,255,0.2)' : 'rgba(0,0,0,0.2)';
+        ctx.lineWidth = 4;
+        ctx.lineCap = 'round';
+        ctx.stroke();
+      }
+      
+      if (activeLeaf) {
+        ctx.shadowColor = isDark ? 'rgba(0,0,0,0.6)' : 'rgba(0,0,0,0.2)';
+        ctx.shadowBlur = activeLeaf.isFlying ? 15 : 5;
+        ctx.shadowOffsetY = activeLeaf.isFlying ? 10 : 2;
+        let idleAngle = activeLeaf.isFlying ? activeLeaf.angle : Math.sin(performance.now() / 500) * 0.1;
+        drawLeafShape(activeLeaf.x, activeLeaf.y, idleAngle, activeLeaf.color, 1.5 * scale);
+        ctx.shadowColor = 'transparent';
+      }
+      
+      for (let p of particles) {
+        ctx.globalAlpha = p.life;
+        ctx.fillStyle = p.color;
+        ctx.beginPath();
+        ctx.arc(p.x, p.y, 4 * scale, 0, Math.PI * 2);
+        ctx.fill();
+      }
+      ctx.globalAlpha = 1.0;
+    }
+
+    function loop(timestamp) {
+      let dt = (timestamp - lastTime) / 1000;
+      if (dt > 0.1) dt = 0.1;
+      lastTime = timestamp;
+      
+      update(dt);
+      draw();
+      
+      requestAnimationFrame(loop);
+    }
+
+    // Initial setup for title screen
+    resize();
+    for (let i = 0; i < 5; i++) {
+      segments.push({
+        value: 0.5 + Math.random() * 0.5,
+        color: colors[i],
+        rateMult: 0
+      });
+    }
+    for (let i = 0; i < 20; i++) {
+      bgLeaves.push(createBgLeaf());
+    }
+    spawnLeaf();
+    
+    lastTime = performance.now();
+    requestAnimationFrame(loop);
+  </script>
+</body>
+</html>
