@@ -1,0 +1,944 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="color-scheme" content="light dark">
+  <title>Erik Nilsson — eriks.design</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Caveat:wght@400;600&family=Cormorant+Garamond:ital,wght@0,400;0,500;0,600;1,400;1,500&family=Source+Serif+4:ital,opsz,wght@0,8..60,400;0,8..60,500;1,8..60,400&display=swap" rel="stylesheet">
+  <style>
+    @supports (color: color(display-p3 1 1 1)) {
+      :root {
+        --paper: color(display-p3 0.972 0.958 0.932);
+        --ink: color(display-p3 0.122 0.112 0.108);
+        --ink-soft: color(display-p3 0.448 0.422 0.408);
+        --rule: color(display-p3 0.848 0.828 0.798);
+        --margin: color(display-p3 0.912 0.318 0.278);
+        --coral: color(display-p3 0.912 0.318 0.278);
+        --coral-soft: color(display-p3 0.912 0.318 0.278 / 0.12);
+        --sage: color(display-p3 0.528 0.668 0.488);
+        --sage-soft: color(display-p3 0.528 0.668 0.488 / 0.18);
+        --slate: color(display-p3 0.468 0.548 0.688);
+        --slate-soft: color(display-p3 0.468 0.548 0.688 / 0.14);
+        --amber: color(display-p3 0.928 0.688 0.288);
+      }
+    }
+
+    :root {
+      --paper: #f8f4ec;
+      --ink: #1f1c1a;
+      --ink-soft: #736c66;
+      --rule: #d9d2c8;
+      --margin: #e85246;
+      --coral: #e85246;
+      --coral-soft: rgba(232, 82, 70, 0.12);
+      --sage: #86aa7c;
+      --sage-soft: rgba(134, 170, 124, 0.18);
+      --slate: #7788af;
+      --slate-soft: rgba(119, 136, 175, 0.14);
+      --amber: #edb049;
+      --display: "Cormorant Garamond", "Georgia", serif;
+      --body: "Source Serif 4", "Georgia", serif;
+      --script: "Caveat", cursive;
+      --ease: cubic-bezier(0.22, 1, 0.36, 1);
+    }
+
+    @media (prefers-color-scheme: dark) {
+      @supports (color: color(display-p3 1 1 1)) {
+        :root {
+          --paper: color(display-p3 0.112 0.108 0.118);
+          --ink: color(display-p3 0.928 0.918 0.898);
+          --ink-soft: color(display-p3 0.608 0.588 0.578);
+          --rule: color(display-p3 0.228 0.218 0.238);
+          --margin: color(display-p3 0.968 0.448 0.368);
+          --coral: color(display-p3 0.968 0.448 0.368);
+          --coral-soft: color(display-p3 0.968 0.448 0.368 / 0.14);
+          --sage: color(display-p3 0.628 0.788 0.568);
+          --sage-soft: color(display-p3 0.628 0.788 0.568 / 0.12);
+          --slate: color(display-p3 0.588 0.668 0.848);
+          --slate-soft: color(display-p3 0.588 0.668 0.848 / 0.12);
+          --amber: color(display-p3 0.968 0.748 0.388);
+        }
+      }
+      :root {
+        --paper: #1a181e;
+        --ink: #ece8e2;
+        --ink-soft: #9a9390;
+        --rule: #2e2a32;
+        --margin: #f07050;
+        --coral: #f07050;
+        --coral-soft: rgba(240, 112, 80, 0.14);
+        --sage: #9ec490;
+        --sage-soft: rgba(158, 196, 144, 0.12);
+        --slate: #96a8d0;
+        --slate-soft: rgba(150, 168, 208, 0.12);
+        --amber: #f7c060;
+      }
+    }
+
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    html {
+      font-size: 18px;
+      color-scheme: light dark;
+      -webkit-font-smoothing: antialiased;
+      text-rendering: optimizeLegibility;
+    }
+
+    ::selection {
+      background: var(--sage-soft);
+      color: var(--ink);
+    }
+
+    body {
+      background: var(--paper);
+      color: var(--ink);
+      font-family: var(--body);
+      line-height: 1.58;
+      min-height: 100dvh;
+      overflow-x: hidden;
+    }
+
+    body::before {
+      content: "";
+      position: fixed;
+      inset: 0;
+      pointer-events: none;
+      opacity: 0.028;
+      background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 512 512' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.75' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
+      z-index: 0;
+    }
+
+    .sheet {
+      position: relative;
+      z-index: 1;
+      max-width: 640px;
+      margin: 0 auto;
+      padding: 2.5rem 1.5rem 4.5rem;
+    }
+
+    .sheet::before {
+      content: "";
+      position: absolute;
+      top: 0;
+      bottom: 0;
+      left: 1.1rem;
+      width: 1.5px;
+      background: var(--margin);
+      opacity: 0.35;
+      pointer-events: none;
+    }
+
+    /* ── Masthead ── */
+    .masthead {
+      display: grid;
+      grid-template-columns: 1fr auto;
+      align-items: end;
+      gap: 1rem;
+      padding-bottom: 1.1rem;
+      border-bottom: 2px solid var(--ink);
+      margin-bottom: 2.25rem;
+    }
+
+    .masthead-kicker {
+      grid-column: 1 / -1;
+      font-size: 0.62rem;
+      letter-spacing: 0.22em;
+      text-transform: uppercase;
+      color: var(--ink-soft);
+      margin-bottom: -0.35rem;
+    }
+
+    .masthead-title {
+      position: relative;
+      font-family: var(--display);
+      font-size: 1.15rem;
+      font-weight: 500;
+      letter-spacing: 0.04em;
+      color: var(--ink);
+      display: inline-block;
+    }
+
+    .masthead-title svg {
+      position: absolute;
+      left: -0.1rem;
+      bottom: -0.3rem;
+      width: calc(100% + 0.2rem);
+      height: 0.5rem;
+      overflow: visible;
+    }
+
+    .masthead-title path {
+      fill: none;
+      stroke: var(--coral);
+      stroke-width: 1.2;
+      stroke-linecap: round;
+      stroke-dasharray: 100;
+      stroke-dashoffset: 100;
+      animation: draw 1s var(--ease) 0.3s forwards;
+    }
+
+    .masthead-meta {
+      text-align: right;
+      font-size: 0.68rem;
+      letter-spacing: 0.1em;
+      text-transform: uppercase;
+      color: var(--ink-soft);
+      line-height: 1.5;
+    }
+
+    .masthead-meta time {
+      display: block;
+      color: var(--ink);
+      font-variant-numeric: tabular-nums;
+    }
+
+    .masthead-issue {
+      font-family: var(--script);
+      font-size: 0.95rem;
+      letter-spacing: 0;
+      text-transform: none;
+      color: var(--slate);
+      transform: rotate(-4deg);
+      display: inline-block;
+      margin-top: 0.1rem;
+    }
+
+    /* ── Hero ── */
+    .hero {
+      margin-bottom: 1.75rem;
+    }
+
+    .hero-name {
+      font-family: var(--display);
+      font-size: clamp(3rem, 10vw, 4.2rem);
+      font-weight: 400;
+      line-height: 0.95;
+      letter-spacing: -0.025em;
+      position: relative;
+    }
+
+    .hero-name em {
+      font-style: italic;
+      font-weight: 400;
+      color: var(--coral);
+    }
+
+    .hero-circled {
+      position: relative;
+      display: inline-block;
+    }
+
+    .hero-circled svg {
+      position: absolute;
+      left: -0.18em;
+      top: -0.12em;
+      width: calc(100% + 0.36em);
+      height: calc(100% + 0.24em);
+      overflow: visible;
+      pointer-events: none;
+    }
+
+    .hero-circled path {
+      fill: none;
+      stroke: var(--sage);
+      stroke-width: 1.3;
+      stroke-linecap: round;
+      stroke-dasharray: 280;
+      stroke-dashoffset: 280;
+      animation: draw 1.4s var(--ease) 0.6s forwards;
+    }
+
+    .hero-role {
+      margin-top: 0.9rem;
+      font-size: 0.92rem;
+      color: var(--ink-soft);
+    }
+
+    .hero-role a {
+      color: inherit;
+      text-decoration: none;
+      border-bottom: 1px solid var(--rule);
+      transition: color 0.2s, border-color 0.2s;
+    }
+
+    .hero-role a:hover,
+    .hero-role a:focus-visible {
+      color: var(--ink);
+      border-bottom-color: var(--coral);
+    }
+
+    .hero-role a:focus-visible {
+      outline: 2px solid var(--coral);
+      outline-offset: 3px;
+    }
+
+    .hero-scribble {
+      position: absolute;
+      right: -0.5rem;
+      top: 0.15rem;
+      font-family: var(--script);
+      font-size: 1.1rem;
+      color: var(--coral);
+      transform: rotate(12deg);
+      opacity: 0;
+      animation: fadeIn 0.6s var(--ease) 1s forwards;
+      white-space: nowrap;
+    }
+
+    .hero-scribble svg {
+      position: absolute;
+      left: -0.9rem;
+      top: 0.4rem;
+      width: 0.75rem;
+      height: 1.1rem;
+      overflow: visible;
+    }
+
+    .hero-scribble path {
+      fill: none;
+      stroke: var(--coral);
+      stroke-width: 1.1;
+      stroke-linecap: round;
+      stroke-dasharray: 30;
+      stroke-dashoffset: 30;
+      animation: draw 0.5s var(--ease) 1.15s forwards;
+    }
+
+    /* ── Lead ── */
+    .lead {
+      font-family: var(--display);
+      font-size: clamp(1.4rem, 4.2vw, 1.75rem);
+      line-height: 1.32;
+      margin-bottom: 1.25rem;
+      max-width: 36ch;
+      opacity: 0;
+      animation: rise 0.75s var(--ease) 0.2s forwards;
+    }
+
+    .lead::first-letter {
+      float: left;
+      font-size: 3.4em;
+      line-height: 0.78;
+      padding-right: 0.08em;
+      margin-top: 0.04em;
+      font-weight: 500;
+      color: var(--coral);
+    }
+
+    .lead .hl {
+      position: relative;
+      font-style: italic;
+    }
+
+    .lead .hl::after {
+      content: "";
+      position: absolute;
+      left: 0;
+      bottom: 0.05em;
+      width: 100%;
+      height: 0.38em;
+      background: var(--sage-soft);
+      z-index: -1;
+    }
+
+    .aside {
+      font-size: 0.9rem;
+      color: var(--ink-soft);
+      max-width: 40ch;
+      padding-left: 0.85rem;
+      border-left: 3px solid var(--amber);
+      margin-bottom: 2.5rem;
+      opacity: 0;
+      animation: rise 0.75s var(--ease) 0.35s forwards;
+    }
+
+    /* ── Spread: signals + margin ── */
+    .spread {
+      display: grid;
+      grid-template-columns: 1fr 6.5rem;
+      gap: 1.75rem;
+      margin-bottom: 2.5rem;
+      opacity: 0;
+      animation: rise 0.75s var(--ease) 0.45s forwards;
+    }
+
+    .section-tag {
+      font-size: 0.64rem;
+      letter-spacing: 0.18em;
+      text-transform: uppercase;
+      color: var(--ink-soft);
+      margin-bottom: 0.85rem;
+    }
+
+    .signals {
+      list-style: none;
+      counter-reset: sig;
+    }
+
+    .signals li {
+      counter-increment: sig;
+      position: relative;
+      padding-left: 1.65rem;
+      font-size: 0.86rem;
+      color: var(--ink-soft);
+      line-height: 1.48;
+      margin-bottom: 0.5rem;
+      transition: color 0.2s, transform 0.22s var(--ease);
+    }
+
+    .signals li:hover {
+      color: var(--ink);
+      transform: translateX(3px);
+    }
+
+    .signals li::before {
+      content: counter(sig, decimal-leading-zero);
+      position: absolute;
+      left: 0;
+      top: 0.05em;
+      font-family: var(--script);
+      font-size: 0.95rem;
+      color: var(--slate);
+    }
+
+    .signals li:first-child {
+      color: var(--ink);
+    }
+
+    .signals li:first-child::before {
+      color: var(--coral);
+    }
+
+    .margin-panel {
+      position: relative;
+      padding-top: 0.5rem;
+    }
+
+    .weather-stamp {
+      width: 5rem;
+      height: 5rem;
+      border: 1.5px solid var(--slate);
+      border-radius: 50%;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      text-align: center;
+      font-size: 0.55rem;
+      letter-spacing: 0.12em;
+      text-transform: uppercase;
+      color: var(--ink-soft);
+      transform: rotate(-8deg);
+      margin: 0 auto;
+    }
+
+    .weather-stamp .deg {
+      font-family: var(--display);
+      font-size: 1.65rem;
+      line-height: 1;
+      color: var(--coral);
+      letter-spacing: -0.02em;
+    }
+
+    .weather-stamp .cond {
+      font-family: var(--script);
+      font-size: 0.85rem;
+      letter-spacing: 0;
+      text-transform: none;
+      color: var(--slate);
+      margin-top: 0.1rem;
+    }
+
+    .margin-note {
+      margin-top: 1.5rem;
+      font-family: var(--script);
+      font-size: 1rem;
+      color: var(--slate);
+      text-align: center;
+      line-height: 1.25;
+      transform: rotate(3deg);
+    }
+
+    .margin-sketch {
+      margin-top: 1rem;
+      opacity: 0.65;
+    }
+
+    .margin-sketch svg {
+      width: 100%;
+      height: auto;
+      overflow: visible;
+    }
+
+    .margin-sketch path,
+    .margin-sketch circle {
+      fill: none;
+      stroke: var(--slate);
+      stroke-width: 0.9;
+      stroke-linecap: round;
+    }
+
+    .margin-sketch .draw {
+      stroke-dasharray: 120;
+      stroke-dashoffset: 120;
+      animation: draw 1.6s var(--ease) 0.9s forwards;
+    }
+
+    /* ── Clippings (tweets) ── */
+    .clippings {
+      margin-bottom: 2.5rem;
+      opacity: 0;
+      animation: rise 0.75s var(--ease) 0.55s forwards;
+    }
+
+    .clippings-row {
+      display: flex;
+      flex-direction: column;
+      gap: 0.6rem;
+    }
+
+    .clip {
+      display: block;
+      text-decoration: none;
+      color: inherit;
+      padding: 0.7rem 0.95rem;
+      background: var(--coral-soft);
+      border-left: 2px solid var(--coral);
+      transition: transform 0.25s var(--ease), box-shadow 0.25s;
+    }
+
+    .clip:nth-child(1) { transform: rotate(-0.35deg); }
+    .clip:nth-child(2) {
+      margin-left: 1.5rem;
+      background: var(--sage-soft);
+      border-left-color: var(--sage);
+      transform: rotate(0.5deg);
+    }
+    .clip:nth-child(3) {
+      margin-left: 0.65rem;
+      background: var(--slate-soft);
+      border-left-color: var(--slate);
+      transform: rotate(-0.2deg);
+    }
+
+    .clip:hover {
+      transform: rotate(0deg) translateX(5px);
+      box-shadow: -4px 4px 0 var(--rule);
+    }
+
+    .clip:focus-visible {
+      outline: 2px solid var(--coral);
+      outline-offset: 3px;
+    }
+
+    .clip-text {
+      font-size: 0.9rem;
+      line-height: 1.42;
+      white-space: pre-line;
+    }
+
+    .clip-meta {
+      display: block;
+      margin-top: 0.3rem;
+      font-family: var(--script);
+      font-size: 0.82rem;
+      color: var(--ink-soft);
+    }
+
+    /* ── Writing index ── */
+    .toc {
+      margin-bottom: 2.5rem;
+      opacity: 0;
+      animation: rise 0.75s var(--ease) 0.65s forwards;
+    }
+
+    .toc-head {
+      display: flex;
+      align-items: baseline;
+      gap: 0.65rem;
+      margin-bottom: 0.85rem;
+    }
+
+    .toc-head h2 {
+      font-family: var(--display);
+      font-size: 1.35rem;
+      font-weight: 500;
+    }
+
+    .toc-aside {
+      font-family: var(--script);
+      font-size: 1rem;
+      color: var(--coral);
+      transform: rotate(-2deg);
+    }
+
+    .toc-list {
+      list-style: none;
+      border-top: 1px solid var(--rule);
+    }
+
+    .toc-list li {
+      border-bottom: 1px solid var(--rule);
+    }
+
+    .toc-list a {
+      display: grid;
+      grid-template-columns: 2rem 1fr auto;
+      gap: 0.45rem;
+      align-items: baseline;
+      padding: 0.7rem 0;
+      text-decoration: none;
+      color: inherit;
+      transition: padding-left 0.25s var(--ease);
+    }
+
+    .toc-list a:hover {
+      padding-left: 0.4rem;
+    }
+
+    .toc-list a:hover .toc-title {
+      color: var(--coral);
+    }
+
+    .toc-list a:focus-visible {
+      outline: 2px solid var(--coral);
+      outline-offset: 3px;
+    }
+
+    .toc-num {
+      font-size: 0.7rem;
+      color: var(--ink-soft);
+      font-variant-numeric: tabular-nums;
+    }
+
+    .toc-title {
+      font-size: 0.94rem;
+      transition: color 0.2s;
+    }
+
+    .toc-date {
+      font-size: 0.68rem;
+      color: var(--ink-soft);
+      font-variant-numeric: tabular-nums;
+    }
+
+    .toc-list .out::after {
+      content: " ↗";
+      font-size: 0.6rem;
+      color: var(--ink-soft);
+    }
+
+    /* ── Footer ── */
+    .foot {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 0.45rem 1.15rem;
+      padding-top: 1.35rem;
+      border-top: 2px solid var(--ink);
+      font-size: 0.8rem;
+      opacity: 0;
+      animation: rise 0.75s var(--ease) 0.75s forwards;
+    }
+
+    .foot a {
+      color: var(--ink-soft);
+      text-decoration: none;
+      position: relative;
+      transition: color 0.2s;
+    }
+
+    .foot a::after {
+      content: "";
+      position: absolute;
+      left: 0;
+      bottom: -1px;
+      width: 0;
+      height: 1px;
+      background: var(--coral);
+      transition: width 0.25s var(--ease);
+    }
+
+    .foot a:hover,
+    .foot a:focus-visible {
+      color: var(--ink);
+    }
+
+    .foot a:hover::after,
+    .foot a:focus-visible::after {
+      width: 100%;
+    }
+
+    .foot a:focus-visible {
+      outline: none;
+    }
+
+    .foot-note {
+      width: 100%;
+      margin-top: 0.65rem;
+      font-family: var(--script);
+      font-size: 1.05rem;
+      color: var(--ink-soft);
+      transform: rotate(-0.8deg);
+    }
+
+    .foot-note .pulse {
+      display: inline-block;
+      width: 0.45rem;
+      height: 0.45rem;
+      border-radius: 50%;
+      background: var(--sage);
+      margin-right: 0.35rem;
+      vertical-align: middle;
+      animation: pulse 2.4s ease-in-out infinite;
+    }
+
+    /* ── Animations ── */
+    @keyframes draw {
+      to { stroke-dashoffset: 0; }
+    }
+
+    @keyframes rise {
+      from {
+        opacity: 0;
+        transform: translateY(12px);
+      }
+      to {
+        opacity: 1;
+        transform: translateY(0);
+      }
+    }
+
+    @keyframes fadeIn {
+      from { opacity: 0; }
+      to { opacity: 1; }
+    }
+
+    @keyframes pulse {
+      0%, 100% { opacity: 0.45; transform: scale(0.9); }
+      50% { opacity: 1; transform: scale(1); }
+    }
+
+    @media (max-width: 640px) {
+      html { font-size: 16px; }
+
+      .sheet {
+        padding: 2rem 1.1rem 3.5rem;
+      }
+
+      .sheet::before {
+        left: 0.55rem;
+      }
+
+      .hero-scribble {
+        position: static;
+        display: block;
+        margin-top: 0.4rem;
+        transform: rotate(4deg);
+      }
+
+      .hero-scribble svg { display: none; }
+
+      .spread {
+        grid-template-columns: 1fr;
+      }
+
+      .margin-panel {
+        display: flex;
+        align-items: center;
+        gap: 1.25rem;
+      }
+
+      .margin-note {
+        margin-top: 0;
+        text-align: left;
+      }
+
+      .margin-sketch {
+        max-width: 3.5rem;
+        margin-top: 0;
+      }
+
+      .clip:nth-child(2),
+      .clip:nth-child(3) {
+        margin-left: 0;
+      }
+
+      .toc-list a {
+        grid-template-columns: 1.5rem 1fr;
+      }
+
+      .toc-date {
+        grid-column: 2;
+        margin-top: -0.2rem;
+      }
+    }
+
+    @media (prefers-reduced-motion: reduce) {
+      *, *::before, *::after {
+        animation-duration: 0.01ms !important;
+        animation-delay: 0ms !important;
+        transition-duration: 0.01ms !important;
+      }
+    }
+  </style>
+
+<style id="__living_site_scroll_guard">
+  /* Scroll guard injected at build time to ensure generated pages remain scrollable in iframes. */
+  html, body {
+    height: auto !important;
+    min-height: 100% !important;
+    max-height: none !important;
+    overflow-y: auto !important;
+    overflow-x: hidden !important;
+    position: static !important;
+    -webkit-overflow-scrolling: touch !important;
+    touch-action: pan-y !important;
+    overscroll-behavior-y: contain !important;
+  }
+  /* Avoid accidental fixed full-screen traps that break scrolling on mobile. */
+  body {
+    inset: auto !important;
+  }
+</style>
+</head>
+<body>
+  <main class="sheet">
+    <header class="masthead">
+      <p class="masthead-kicker">Personal notebook · San Francisco</p>
+      <div class="masthead-title">
+        eriks.design
+        <svg viewBox="0 0 100 8" aria-hidden="true"><path d="M2 5 Q 35 0, 60 4 T 98 3"/></svg>
+      </div>
+      <div class="masthead-meta">
+        <time datetime="2026-10-20">Tue · Oct 20</time>
+        <span class="masthead-issue">no. 293 · autumn</span>
+      </div>
+    </header>
+
+    <section class="hero" aria-label="Introduction">
+      <h1 class="hero-name">
+        <span class="hero-circled">Erik<svg viewBox="0 0 80 48" aria-hidden="true"><path d="M6 38 C 18 4, 52 2, 74 28"/></svg></span> Nilsson
+        <span class="hero-scribble" aria-hidden="true">
+          <svg viewBox="0 0 10 16"><path d="M8 1 C 5 5, 3 9, 2 15"/></svg>
+          sf, for now
+        </span>
+      </h1>
+      <p class="hero-role">
+        Product Designer at <a href="https://cursor.com">Cursor</a>
+      </p>
+    </section>
+
+    <p class="lead">
+      Working on how people build software with <span class="hl">AI</span>.
+    </p>
+
+    <p class="aside">
+      Off-hours, tinkering with living-site: agents rebuild this corner of the web from fresh activity data each day.
+    </p>
+
+    <section class="spread" aria-label="Field notes">
+      <div>
+        <p class="section-tag">Signals · today</p>
+        <ol class="signals">
+          <li>payment rails stuttering when the cloud blinks</li>
+          <li>population clocks ticking slower than the doomsayers promised</li>
+          <li>open seats appearing in the yc winter hiring orbit</li>
+          <li>san francisco fog holding ten degrees at dusk</li>
+          <li>autumn light already retreating before six-thirty</li>
+          <li>agents waiting to be spun up from a pocket shortcut</li>
+        </ol>
+      </div>
+      <aside class="margin-panel" aria-label="Weather">
+        <div class="weather-stamp">
+          <span class="deg">10°</span>
+          <span>overcast</span>
+          <span class="cond">fog</span>
+        </div>
+        <p class="margin-note">light<br>retreating<br>early</p>
+        <div class="margin-sketch" aria-hidden="true">
+          <svg viewBox="0 0 50 40">
+            <path class="draw" d="M4 32 Q 18 18, 34 28 T 48 24"/>
+            <circle class="draw" cx="38" cy="10" r="5" style="animation-delay: 1.1s"/>
+          </svg>
+        </div>
+      </aside>
+    </section>
+
+    <section class="clippings" aria-label="Recent notes">
+      <p class="section-tag">Loose scraps</p>
+      <div class="clippings-row">
+        <a class="clip" href="https://x.com/flowstated/status/2002167999353241901" target="_blank" rel="noopener">
+          <span class="clip-text">imagine 2026</span>
+          <span class="clip-meta">Dec 20</span>
+        </a>
+        <a class="clip" href="https://x.com/flowstated/status/2000889983562080578" target="_blank" rel="noopener">
+          <span class="clip-text">shipping by sunrise</span>
+          <span class="clip-meta">Dec 16</span>
+        </a>
+        <a class="clip" href="https://x.com/flowstated/status/2000691637190861180" target="_blank" rel="noopener">
+          <span class="clip-text">exploring ways to spin up agents from my phone
+
+iOS shortcuts × github actions × cursor cli</span>
+          <span class="clip-meta">Dec 15</span>
+        </a>
+      </div>
+    </section>
+
+    <section class="toc" aria-label="Writing">
+      <div class="toc-head">
+        <h2>Writing</h2>
+        <span class="toc-aside">five pieces</span>
+      </div>
+      <ol class="toc-list">
+        <li>
+          <a href="https://cursor.com/blog/design-mode">
+            <span class="toc-num">01</span>
+            <span class="toc-title out">Directing agents visually</span>
+            <span class="toc-date">Jun 2026</span>
+          </a>
+        </li>
+        <li>
+          <a href="/posts/a-living-site">
+            <span class="toc-num">02</span>
+            <span class="toc-title">A living site</span>
+            <span class="toc-date">Dec 2025</span>
+          </a>
+        </li>
+        <li>
+          <a href="/posts/surgical-edits">
+            <span class="toc-num">03</span>
+            <span class="toc-title">Surgical edits</span>
+            <span class="toc-date">Nov 2025</span>
+          </a>
+        </li>
+        <li>
+          <a href="/posts/familiar-differentiation">
+            <span class="toc-num">04</span>
+            <span class="toc-title">Familiar differentiation</span>
+            <span class="toc-date">Nov 2024</span>
+          </a>
+        </li>
+        <li>
+          <a href="/posts/hackathon-energy-but-add-users">
+            <span class="toc-num">05</span>
+            <span class="toc-title">Hackathon energy, but add users</span>
+            <span class="toc-date">Oct 2022</span>
+          </a>
+        </li>
+      </ol>
+    </section>
+
+    <footer class="foot">
+      <a href="https://cursor.com">Cursor</a>
+      <a href="https://x.com/flowstated">X</a>
+      <a href="https://github.com/eriknson">GitHub</a>
+      <a href="https://linkedin.com/in/eriknson">LinkedIn</a>
+      <a href="mailto:contact@eriks.design">Email</a>
+      <p class="foot-note"><span class="pulse" aria-hidden="true"></span>rebuilt today · living-site experiment</p>
+    </footer>
+  </main>
+</body>
+</html>

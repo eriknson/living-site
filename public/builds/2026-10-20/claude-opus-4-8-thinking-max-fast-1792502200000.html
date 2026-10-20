@@ -1,0 +1,662 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+<title>Erik Nilsson — eriks.design</title>
+<meta name="description" content="A designer's notebook by Erik Nilsson — product designer at Cursor in San Francisco. Writing, marginalia, and a page that redraws itself each morning." />
+<meta name="author" content="Erik Nilsson" />
+<meta name="color-scheme" content="light dark" />
+<meta name="theme-color" content="#f7f1e4" media="(prefers-color-scheme: light)" />
+<meta name="theme-color" content="#14110b" media="(prefers-color-scheme: dark)" />
+<meta property="og:type" content="website" />
+<meta property="og:title" content="Erik Nilsson — eriks.design" />
+<meta property="og:description" content="A designer's notebook. Writing, marginalia, and a page that redraws itself each morning." />
+<meta property="og:url" content="https://eriks.design" />
+<link rel="icon" href="data:image/svg+xml,%3Csvg%20xmlns='http://www.w3.org/2000/svg'%20viewBox='0%200%2032%2032'%3E%3Crect%20width='32'%20height='32'%20rx='8'%20fill='%23f7f1e4'/%3E%3Cpath%20d='M11%2010.5h10M11%2016h8M11%2021.5h10'%20stroke='%23df3b16'%20stroke-width='2.4'%20stroke-linecap='round'/%3E%3C/svg%3E" />
+
+<style>
+/* ============================================================
+   eriks.design — a designer's notebook
+   One self-contained editorial page. No JS, no external requests.
+   Type : Iowan Old Style / Palatino / Georgia (system serif)
+          + system mono for the folio & meta
+   Ink  : hand-drawn SVG that draws itself on load
+   Color: one vibrant Display-P3 persimmon accent · no gradients
+   ============================================================ */
+
+/* ---------- Reset ---------- */
+*,*::before,*::after{box-sizing:border-box}
+html{-webkit-text-size-adjust:100%;text-size-adjust:100%}
+body{margin:0}
+a{color:inherit}
+svg{display:block}
+
+/* ---------- Palette · light / paper (sRGB fallback) ---------- */
+:root{
+  --paper:#f7f1e4;
+  --paper-2:#f1e7d4;
+  --card:#fbf6ec;
+  --ink:#241d14;
+  --ink-soft:#6c5d47;
+  --ink-faint:#9a8b73;
+
+  --rule:rgba(36,29,20,.16);
+  --rule-soft:rgba(36,29,20,.08);
+
+  /* the editor's pen — vermilion / persimmon */
+  --accent:#d6380f;
+  --accent-ink:#b73009;      /* deeper, for small link text contrast */
+  --accent-soft:rgba(214,56,15,.12);
+  --accent-line:rgba(214,56,15,.42);
+
+  /* highlighter — warm amber, flat (no gradient) */
+  --mark:rgba(255,200,41,.55);
+
+  --serif-display:"Iowan Old Style","Palatino Linotype",Palatino,"Book Antiqua",Georgia,Cambria,"Times New Roman",serif;
+  --serif:Georgia,"Iowan Old Style",Cambria,"Times New Roman",serif;
+  --mono:ui-monospace,"SF Mono",SFMono-Regular,"Cascadia Mono",Menlo,Consolas,"Liberation Mono",monospace;
+
+  --measure:38rem;          /* reading measure */
+  --note-w:11.5rem;         /* margin apparatus */
+  --note-gap:2rem;
+  --edge:clamp(1.25rem,5vw,2.5rem);
+
+  --grain:multiply;
+}
+
+/* ---------- Display-P3 — vivid where supported ---------- */
+@supports (color: color(display-p3 1 1 1)){
+  :root{
+    --accent:color(display-p3 .82 .24 .08);
+    --accent-ink:color(display-p3 .7 .19 .05);
+    --accent-soft:color(display-p3 .82 .24 .08 / .12);
+    --accent-line:color(display-p3 .82 .24 .08 / .42);
+    --mark:color(display-p3 1 .8 .18 / .5);
+  }
+}
+
+/* ---------- Dark · warm near-black ---------- */
+@media (prefers-color-scheme: dark){
+  :root{
+    --paper:#14110b;
+    --paper-2:#1b1710;
+    --card:#1a160f;
+    --ink:#f0e8d7;
+    --ink-soft:#b6a88e;
+    --ink-faint:#897b65;
+    --rule:rgba(240,232,215,.15);
+    --rule-soft:rgba(240,232,215,.07);
+    --accent:#ff6a44;
+    --accent-ink:#ff8763;
+    --accent-soft:rgba(255,106,68,.16);
+    --accent-line:rgba(255,106,68,.5);
+    --mark:rgba(255,200,41,.24);
+    --grain:screen;
+  }
+}
+@supports (color: color(display-p3 1 1 1)){
+  @media (prefers-color-scheme: dark){
+    :root{
+      --accent:color(display-p3 1 .44 .3);
+      --accent-ink:color(display-p3 1 .56 .42);
+      --accent-soft:color(display-p3 1 .44 .3 / .17);
+      --accent-line:color(display-p3 1 .44 .3 / .5);
+      --mark:color(display-p3 1 .8 .18 / .22);
+    }
+  }
+}
+
+/* ---------- Base ---------- */
+html,body{background:var(--paper);color:var(--ink)}
+body{
+  position:relative;
+  font-family:var(--serif);
+  font-size:1.0625rem;
+  line-height:1.62;
+  text-rendering:optimizeLegibility;
+  -webkit-font-smoothing:antialiased;
+  -moz-osx-font-smoothing:grayscale;
+  font-kerning:normal;
+  font-variant-ligatures:common-ligatures contextual;
+  -webkit-tap-highlight-color:transparent;
+  overflow-x:hidden;
+}
+
+/* subtle paper grain — an image (not a gradient); absolute so it never
+   bands across stitched full-page captures and covers the whole document */
+body::before{
+  content:"";
+  position:absolute;
+  inset:0;
+  z-index:0;
+  pointer-events:none;
+  opacity:.035;
+  mix-blend-mode:var(--grain);
+  background-image:url("data:image/svg+xml,%3Csvg%20xmlns='http://www.w3.org/2000/svg'%20width='140'%20height='140'%3E%3Cfilter%20id='n'%3E%3CfeTurbulence%20type='fractalNoise'%20baseFrequency='0.82'%20numOctaves='2'%20stitchTiles='stitch'/%3E%3C/filter%3E%3Crect%20width='100%25'%20height='100%25'%20filter='url(%23n)'/%3E%3C/svg%3E");
+}
+
+.page{position:relative;z-index:1;padding:0 var(--edge) 5rem}
+
+/* ---------- Skip link ---------- */
+.skip{
+  position:absolute;left:-9999px;top:0;
+  background:var(--ink);color:var(--paper);
+  padding:.6rem 1rem;border-radius:.4rem;z-index:50;
+  font-family:var(--mono);font-size:.8rem;
+}
+.skip:focus{left:var(--edge);top:.6rem}
+
+:where(a,summary):focus-visible,
+.piece:focus-visible{
+  outline:2px solid var(--accent);
+  outline-offset:3px;
+  border-radius:3px;
+}
+
+/* ============================================================
+   Layout — a centered measure with a left margin apparatus
+   ============================================================ */
+.measure{
+  max-width:var(--measure);
+  margin:0 auto;            /* centered */
+  width:100%;
+}
+.masthead,.wrap{max-width:var(--measure);margin:0 auto;width:100%}
+
+/* ---------- Masthead / folio ---------- */
+.masthead{
+  display:flex;flex-wrap:wrap;align-items:baseline;
+  justify-content:space-between;gap:.35rem 1.25rem;
+  padding:clamp(1.5rem,5vw,2.75rem) 0 .9rem;
+  font-family:var(--mono);
+  font-size:.74rem;letter-spacing:.06em;text-transform:uppercase;
+  color:var(--ink-soft);
+}
+.masthead .lhs{display:flex;align-items:baseline;gap:.6rem}
+.masthead .tick{color:var(--accent);font-size:1.1em;line-height:0}
+.masthead .rhs{color:var(--ink-faint);font-variant-numeric:tabular-nums}
+.masthead .rhs b{color:var(--ink-soft);font-weight:400}
+.folio-rule{
+  max-width:var(--measure);margin:0 auto;
+  height:0;border:0;border-top:1px solid var(--rule);
+}
+.strap{
+  max-width:var(--measure);margin:.7rem auto 0;
+  font-family:var(--mono);font-size:.72rem;letter-spacing:.04em;
+  color:var(--ink-faint);text-transform:uppercase;
+}
+
+/* ============================================================
+   Hero
+   ============================================================ */
+.hero{padding:clamp(2.75rem,9vw,4.75rem) 0 clamp(1.5rem,4vw,2.25rem)}
+.kicker{
+  margin:0 0 1.1rem;
+  font-family:var(--mono);
+  font-size:.76rem;letter-spacing:.22em;text-transform:uppercase;
+  color:var(--ink-soft);
+}
+.kicker .dot{color:var(--accent);padding:0 .15em}
+.wordmark{
+  margin:0;
+  font-family:var(--serif-display);
+  font-weight:600;
+  font-size:clamp(3rem,13vw,5.75rem);
+  line-height:.94;
+  letter-spacing:-.018em;
+  text-wrap:balance;
+}
+.hero-sub{
+  margin:1.4rem 0 0;
+  font-size:clamp(1.12rem,2.3vw,1.3rem);
+  line-height:1.5;
+  color:var(--ink-soft);
+  max-width:30rem;
+}
+.hero-sub a{font-style:italic}
+
+/* ============================================================
+   Lede — standfirst with drop cap
+   ============================================================ */
+.lede{position:relative;padding:clamp(1rem,3vw,1.75rem) 0 0}
+.lede p{
+  margin:0;
+  font-size:clamp(1.18rem,2.5vw,1.42rem);
+  line-height:1.52;
+  color:var(--ink);
+  text-wrap:pretty;
+  hanging-punctuation:first last;
+}
+.lede p::first-letter{
+  float:left;
+  font-family:var(--serif-display);
+  font-weight:600;
+  font-size:3.3em;
+  line-height:.72;
+  padding:.06em .1em 0 0;
+  color:var(--accent);
+}
+
+/* ============================================================
+   Section scaffolding
+   ============================================================ */
+.section{padding:clamp(2.5rem,7vw,4rem) 0 0}
+.sec-head{
+  display:flex;align-items:baseline;justify-content:space-between;
+  gap:1rem;margin:0 0 1.5rem;
+  padding-bottom:.65rem;
+  border-bottom:1px solid var(--rule);
+}
+.sec-title{
+  margin:0;
+  font-family:var(--mono);
+  font-size:.82rem;font-weight:400;letter-spacing:.2em;text-transform:uppercase;
+  color:var(--ink);
+}
+.sec-note{
+  font-family:var(--serif);font-style:italic;
+  font-size:.92rem;color:var(--ink-faint);
+  text-align:right;
+}
+
+/* ---------- Margin notes (Tufte-style) ---------- */
+.note{
+  display:block;
+  font-family:var(--serif);font-style:italic;
+  font-size:.95rem;line-height:1.42;color:var(--accent-ink);
+  margin:.7rem 0;
+  padding-left:.75rem;
+  border-left:2px solid var(--accent-line);
+}
+.note .arrow{font-style:normal;color:var(--accent);padding-right:.15em}
+
+/* ============================================================
+   Writing index
+   ============================================================ */
+.pieces{list-style:none;margin:0;padding:0}
+.pieces li{position:relative}
+.pieces li + li{border-top:1px solid var(--rule-soft)}
+
+.piece{
+  display:grid;
+  grid-template-columns:2.4rem 1fr auto;
+  align-items:baseline;
+  column-gap:1rem;row-gap:.15rem;
+  padding:.95rem .75rem;
+  margin:0 -.75rem;
+  border-radius:.55rem;
+  text-decoration:none;color:inherit;
+  transition:background-color .18s ease, transform .18s ease;
+}
+.piece-n{
+  font-family:var(--mono);font-size:.82rem;
+  color:var(--ink-faint);
+  font-variant-numeric:tabular-nums;
+  transition:color .18s ease;
+  padding-top:.1em;
+}
+.piece-main{min-width:0;display:flex;flex-direction:column;gap:.1rem}
+.piece-title{
+  font-family:var(--serif-display);
+  font-size:1.2rem;line-height:1.2;color:var(--ink);
+  letter-spacing:-.005em;
+}
+.piece-title .ext{color:var(--ink-faint);font-size:.8em;padding-left:.1em}
+.piece-src{
+  font-family:var(--mono);font-size:.68rem;letter-spacing:.11em;
+  text-transform:uppercase;color:var(--ink-faint);
+}
+.piece-meta{
+  display:flex;align-items:baseline;gap:.9rem;
+  font-family:var(--mono);font-size:.78rem;
+  color:var(--ink-faint);white-space:nowrap;
+  font-variant-numeric:tabular-nums;
+  justify-self:end;
+}
+.piece-meta .rt{color:var(--ink-soft)}
+
+@media (hover:hover){
+  .piece:hover{background:var(--card);transform:translateX(2px)}
+  .piece:hover .piece-n{color:var(--accent)}
+  .piece:hover .piece-title{color:var(--accent-ink)}
+}
+.piece:active{background:var(--paper-2)}
+/* external links: nudge the cursor like the live site does */
+a[target="_blank"]{cursor:ne-resize}
+
+/* ============================================================
+   Lately — desk jottings
+   ============================================================ */
+.jots{list-style:none;margin:0;padding:0;display:flex;flex-direction:column;gap:1.1rem}
+.jot{display:flex;gap:1rem;align-items:baseline}
+.jot time{
+  flex:0 0 3.25rem;
+  font-family:var(--mono);font-size:.72rem;letter-spacing:.03em;
+  color:var(--ink-faint);text-transform:uppercase;
+  font-variant-numeric:tabular-nums;padding-top:.15em;
+}
+.jot a{
+  text-decoration:none;color:var(--ink);
+  font-style:italic;font-size:1.06rem;line-height:1.4;
+  border-bottom:1px solid transparent;
+  transition:border-color .18s ease,color .18s ease;
+}
+.jot a .pin{color:var(--accent);font-style:normal;padding-right:.1em;opacity:.0;transition:opacity .18s ease}
+@media (hover:hover){
+  .jot a:hover{color:var(--accent-ink);border-bottom-color:var(--accent-line)}
+  .jot a:hover .pin{opacity:1}
+}
+
+/* ============================================================
+   Elsewhere
+   ============================================================ */
+.elsewhere{
+  display:flex;flex-wrap:wrap;gap:.5rem 1.6rem;
+}
+.el-link{
+  display:inline-flex;align-items:baseline;gap:.45rem;
+  text-decoration:none;color:var(--ink);
+  font-family:var(--serif-display);font-size:1.15rem;
+  padding:.1rem 0;
+  border-bottom:1px solid var(--rule);
+  transition:color .18s ease,border-color .18s ease;
+}
+.el-link .lbl-mono{
+  font-family:var(--mono);font-size:.68rem;letter-spacing:.08em;
+  text-transform:uppercase;color:var(--ink-faint);
+}
+.el-link .ext{color:var(--ink-faint);font-size:.8em}
+@media (hover:hover){
+  .el-link:hover{color:var(--accent-ink);border-bottom-color:var(--accent-line)}
+  .el-link:hover .ext{color:var(--accent)}
+}
+
+/* ============================================================
+   Colophon
+   ============================================================ */
+.colophon{
+  max-width:var(--measure);margin:0 auto;
+  padding-top:clamp(3rem,8vw,4.5rem);
+}
+.colophon .rule{height:0;border:0;border-top:1px solid var(--rule);margin:0 0 1.4rem}
+.colophon p{
+  margin:0 0 .5rem;
+  font-family:var(--mono);font-size:.74rem;line-height:1.7;
+  letter-spacing:.02em;color:var(--ink-faint);
+}
+.colophon p .hot{color:var(--accent)}
+.colophon .sign{margin:1.3rem 0 .4rem}
+.sig{width:150px;height:46px;overflow:visible}
+.colophon .by{color:var(--ink-soft)}
+
+/* ============================================================
+   Hand-drawn ink
+   ============================================================ */
+.ink path,.sig path{
+  fill:none;
+  stroke:var(--accent);
+  stroke-width:2.4;
+  stroke-linecap:round;
+  stroke-linejoin:round;
+  vector-effect:non-scaling-stroke;
+}
+/* underline under the surname */
+.u-ink{position:relative;white-space:nowrap}
+.u-ink .ink{
+  position:absolute;left:-.04em;right:-.04em;bottom:-.2em;
+  width:calc(100% + .08em);height:.5em;overflow:visible;
+}
+/* highlighter swipe (sits behind the text) */
+.hl{position:relative;white-space:nowrap;padding:0 .06em}
+.hl .swipe{
+  position:absolute;inset:-.06em -.18em;
+  width:calc(100% + .36em);height:calc(100% + .12em);
+  z-index:-1;overflow:visible;
+}
+.hl .swipe path{
+  stroke:var(--mark);
+  stroke-width:16;
+  stroke-linecap:round;
+}
+
+/* ============================================================
+   Motion — draw-in + gentle reveal (CSS only)
+   ============================================================ */
+@keyframes draw{to{stroke-dashoffset:0}}
+@keyframes rise{from{opacity:0;transform:translateY(12px)}to{opacity:1;transform:none}}
+
+.ink path,.sig path,.swipe path{
+  stroke-dasharray:1;stroke-dashoffset:1;
+  animation:draw 1.05s cubic-bezier(.65,0,.35,1) forwards;
+  animation-delay:var(--d,.5s);
+}
+.swipe path{animation-duration:.7s}
+.reveal{opacity:0;animation:rise .85s cubic-bezier(.2,.7,.2,1) forwards;animation-delay:var(--d,0s)}
+
+@media (prefers-reduced-motion:reduce){
+  .ink path,.sig path,.swipe path{animation:none;stroke-dashoffset:0}
+  .reveal{animation:none;opacity:1;transform:none}
+}
+
+/* ============================================================
+   Selection — warm champagne (matches eriks.design)
+   ============================================================ */
+::selection{background:#f0ddb4;color:#26201a}
+@supports (color: color(display-p3 1 1 1)){
+  ::selection{background:color(display-p3 .94 .87 .74);color:color(display-p3 .15 .14 .12)}
+}
+
+/* ============================================================
+   Responsive
+   ============================================================ */
+/* Wide: float the margin notes into the left apparatus */
+@media (min-width:62rem){
+  .note{
+    position:absolute;
+    left:calc(-1 * (var(--note-w) + var(--note-gap)));
+    width:var(--note-w);
+    margin:0;padding:0;
+    border-left:0;
+    text-align:right;
+    color:var(--accent-ink);
+  }
+  .sec-note{max-width:16rem}
+}
+
+/* Narrow */
+@media (max-width:40rem){
+  .page{padding:0 var(--edge) 4rem}
+  .piece{grid-template-columns:1.9rem 1fr;row-gap:.3rem}
+  .piece-meta{grid-column:2;justify-self:start;gap:.75rem}
+  .masthead{font-size:.68rem}
+  .jot time{flex-basis:2.9rem}
+  .hero-sub{max-width:none}
+}
+@media (max-width:24rem){
+  .piece-src{display:none}
+}
+</style>
+
+<style id="__living_site_scroll_guard">
+  /* Scroll guard injected at build time to ensure generated pages remain scrollable in iframes. */
+  html, body {
+    height: auto !important;
+    min-height: 100% !important;
+    max-height: none !important;
+    overflow-y: auto !important;
+    overflow-x: hidden !important;
+    position: static !important;
+    -webkit-overflow-scrolling: touch !important;
+    touch-action: pan-y !important;
+    overscroll-behavior-y: contain !important;
+  }
+  /* Avoid accidental fixed full-screen traps that break scrolling on mobile. */
+  body {
+    inset: auto !important;
+  }
+</style>
+</head>
+<body>
+<a class="skip" href="#writing">Skip to writing</a>
+
+<div class="page">
+
+  <!-- ===================== MASTHEAD ===================== -->
+  <header class="masthead reveal" role="banner">
+    <span class="lhs"><span class="tick">●</span>eriks.design</span>
+    <span class="rhs">San Francisco · <b>Tue 20 Oct 2026</b> · 10° overcast</span>
+  </header>
+  <hr class="folio-rule" />
+  <p class="strap reveal" style="--d:.05s">The living edition · № 293 — a notebook rebuilt by agents each morning</p>
+
+  <main class="measure">
+
+    <!-- ===================== HERO ===================== -->
+    <section class="hero reveal" style="--d:.1s" aria-label="Erik Nilsson">
+      <p class="kicker">A designer's notebook <span class="dot">·</span> est. San Francisco</p>
+      <h1 class="wordmark">Erik
+        <span class="u-ink">Nilsson<svg class="ink" viewBox="0 0 320 22" fill="none" preserveAspectRatio="none" aria-hidden="true" style="--d:.9s"><path pathLength="1" d="M5 14 C 58 7 110 18 164 11 C 218 4 268 15 315 11" /><path pathLength="1" d="M10 18 C 70 13 140 21 214 16 C 262 13 292 18 312 16" style="stroke-opacity:.4;stroke-width:1.6" /></svg></span>
+      </h1>
+      <p class="hero-sub">Product designer at <a href="https://cursor.com" target="_blank" rel="noopener">Cursor</a>, in San Francisco.</p>
+    </section>
+
+    <!-- ===================== LEDE ===================== -->
+    <section class="lede reveal" style="--d:.2s" aria-label="About">
+      <span class="note" aria-hidden="true"><span class="arrow">↳</span> you're reading today's edition</span>
+      <p>By day, I shape how people build software with AI. Off-hours, I tinker with <a href="https://github.com/eriknson/living-site" target="_blank" rel="noopener"><em>living-site</em></a> — a corner of the web where agents redraw this page from <span class="hl">fresh activity data<svg class="swipe" viewBox="0 0 220 34" fill="none" preserveAspectRatio="none" aria-hidden="true" style="--d:1.15s"><path pathLength="1" d="M8 20 C 70 14 150 24 212 17" /></svg></span> each morning.</p>
+    </section>
+
+    <!-- ===================== WRITING ===================== -->
+    <section class="section reveal" id="writing" style="--d:.28s" aria-labelledby="writing-h">
+      <div class="sec-head">
+        <h2 class="sec-title" id="writing-h">Writing</h2>
+        <span class="sec-note">six pieces · newest first</span>
+      </div>
+
+      <ol class="pieces">
+        <li>
+          <a class="piece" href="https://cursor.com/blog/design-mode" target="_blank" rel="noopener">
+            <span class="piece-n">01</span>
+            <span class="piece-main">
+              <span class="piece-title">Directing agents visually <span class="ext">↗</span></span>
+              <span class="piece-src">Cursor Blog</span>
+            </span>
+            <span class="piece-meta"><span class="rt">6 min</span><span class="dt">Jun 2026</span></span>
+          </a>
+        </li>
+
+        <li>
+          <span class="note" aria-hidden="true"><span class="arrow">↱</span> how this very page works</span>
+          <a class="piece" href="/posts/a-living-site">
+            <span class="piece-n">02</span>
+            <span class="piece-main">
+              <span class="piece-title">A living site</span>
+              <span class="piece-src">eriks.design</span>
+            </span>
+            <span class="piece-meta"><span class="rt">7 min</span><span class="dt">Dec 2025</span></span>
+          </a>
+        </li>
+
+        <li>
+          <a class="piece" href="/posts/surgical-edits">
+            <span class="piece-n">03</span>
+            <span class="piece-main">
+              <span class="piece-title">Surgical edits</span>
+              <span class="piece-src">eriks.design</span>
+            </span>
+            <span class="piece-meta"><span class="rt">4 min</span><span class="dt">Nov 2025</span></span>
+          </a>
+        </li>
+
+        <li>
+          <a class="piece" href="/posts/familiar-differentiation">
+            <span class="piece-n">04</span>
+            <span class="piece-main">
+              <span class="piece-title">Familiar differentiation</span>
+              <span class="piece-src">eriks.design</span>
+            </span>
+            <span class="piece-meta"><span class="rt">5 min</span><span class="dt">Nov 2024</span></span>
+          </a>
+        </li>
+
+        <li>
+          <a class="piece" href="/posts/hackathon-energy-but-add-users">
+            <span class="piece-n">05</span>
+            <span class="piece-main">
+              <span class="piece-title">Hackathon energy, but add users</span>
+              <span class="piece-src">eriks.design</span>
+            </span>
+            <span class="piece-meta"><span class="rt">4 min</span><span class="dt">Oct 2022</span></span>
+          </a>
+        </li>
+
+        <li>
+          <a class="piece" href="https://uu.diva-portal.org/smash/record.jsf?pid=diva2:1453018" target="_blank" rel="noopener">
+            <span class="piece-n">06</span>
+            <span class="piece-main">
+              <span class="piece-title">Go with the flow <span class="ext">↗</span></span>
+              <span class="piece-src">Thesis · Uppsala</span>
+            </span>
+            <span class="piece-meta"><span class="rt">45 min</span><span class="dt">Aug 2020</span></span>
+          </a>
+        </li>
+      </ol>
+    </section>
+
+    <!-- ===================== LATELY ===================== -->
+    <section class="section reveal" style="--d:.34s" aria-labelledby="lately-h">
+      <div class="sec-head">
+        <h2 class="sec-title" id="lately-h">From the desk</h2>
+        <span class="sec-note">quiet of late · last jotted dec ’25</span>
+      </div>
+      <ul class="jots">
+        <li class="jot">
+          <time datetime="2025-12-20">20 Dec</time>
+          <a href="https://x.com/flowstated/status/2002167999353241901" target="_blank" rel="noopener"><span class="pin">✦ </span>imagine 2026</a>
+        </li>
+        <li class="jot">
+          <time datetime="2025-12-16">16 Dec</time>
+          <a href="https://x.com/flowstated/status/2000889983562080578" target="_blank" rel="noopener"><span class="pin">✦ </span>shipping by sunrise</a>
+        </li>
+        <li class="jot">
+          <time datetime="2025-12-15">15 Dec</time>
+          <a href="https://x.com/flowstated/status/2000691637190861180" target="_blank" rel="noopener"><span class="pin">✦ </span>spinning up agents from my phone — iOS shortcuts × github actions × cursor cli</a>
+        </li>
+      </ul>
+    </section>
+
+    <!-- ===================== ELSEWHERE ===================== -->
+    <section class="section reveal" style="--d:.4s" aria-labelledby="else-h">
+      <div class="sec-head">
+        <h2 class="sec-title" id="else-h">Elsewhere</h2>
+        <span class="sec-note">say hello</span>
+      </div>
+      <nav class="elsewhere" aria-label="Elsewhere">
+        <a class="el-link" href="https://cursor.com" target="_blank" rel="noopener">Cursor <span class="ext">↗</span></a>
+        <a class="el-link" href="https://x.com/flowstated" target="_blank" rel="noopener">X <span class="lbl-mono">@flowstated</span> <span class="ext">↗</span></a>
+        <a class="el-link" href="https://github.com/eriknson" target="_blank" rel="noopener">GitHub <span class="ext">↗</span></a>
+        <a class="el-link" href="https://linkedin.com/in/eriknson" target="_blank" rel="noopener">LinkedIn <span class="ext">↗</span></a>
+        <a class="el-link" href="mailto:contact@eriks.design">Email</a>
+      </nav>
+    </section>
+
+  </main>
+
+  <!-- ===================== COLOPHON ===================== -->
+  <footer class="colophon reveal" id="colophon" style="--d:.46s">
+    <hr class="rule" />
+    <p>Set in Iowan Old Style &amp; Georgia. Marks drawn by hand, in one vibrant ink.</p>
+    <p>Outside: fog holding <span class="hot">ten degrees</span>, autumn light gone by half six.</p>
+    <div class="sign" aria-hidden="true">
+      <svg class="sig" viewBox="0 0 156 48" fill="none">
+        <path pathLength="1" d="M7 40 C 6 14 20 2 25 13 C 30 23 19 35 15 33 C 27 31 33 21 39 30 C 43 37 36 42 36 34 C 38 21 51 20 55 32 C 58 41 67 40 73 31 C 81 20 90 23 92 33 C 94 42 105 40 114 30 C 128 15 140 20 152 7" style="--d:1.25s" />
+        <path pathLength="1" d="M34 43 C 76 51 118 46 150 34" style="--d:1.75s;stroke-opacity:.5;stroke-width:1.5" />
+      </svg>
+    </div>
+    <p class="by">Erik Nilsson · MMXXVI · rebuilt this morning by an agent</p>
+  </footer>
+
+</div>
+</body>
+</html>
