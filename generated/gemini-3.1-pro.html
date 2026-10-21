@@ -6,23 +6,20 @@
   <title>Erik Nilsson — Product Designer</title>
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=Caveat:wght@400;600&family=Inter:wght@300;400;500&family=JetBrains+Mono:wght@400&family=Newsreader:ital,opsz,wght@0,6..72,200..700;1,6..72,200..700&display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Caveat:wght@500&family=Instrument+Serif:ital@0;1&family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
   <style>
     :root {
-      --bg: #F7F6F2;
-      --text: #141414;
-      --text-muted: #666666;
-      --border: #DCDAD2;
-      --red: #E63946;
-      --blue: #1D4ED8;
-      --yellow: #FDE047;
+      --bg: #F4F2EC;
+      --text: #1A1A19;
+      --red: #E03126;
+      --blue: #1C3EE8;
+      --border: rgba(26, 26, 25, 0.1);
     }
 
-    @media (color-gamut: p3) {
+    @supports (color: color(display-p3 1 0 0)) {
       :root {
-        --red: color(display-p3 1 0.1 0.1);
-        --blue: color(display-p3 0 0.2 1);
-        --yellow: color(display-p3 1 0.9 0);
+        --red: color(display-p3 0.9 0.15 0.1);
+        --blue: color(display-p3 0.1 0.2 0.95);
       }
     }
 
@@ -30,42 +27,303 @@
       :root {
         --bg: #1a1a1a;
         --text: #e0e0e0;
-        --text-muted: #999999;
-        --border: #333333;
+        --border: rgba(224, 224, 224, 0.1);
       }
 
-      .manuscript-excerpt {
-        background: #252525;
-        box-shadow: 0 4px 20px rgba(0, 0, 0, 0.2);
-      }
-
-      .manuscript-excerpt p {
-        color: #ccc;
-      }
-
-      .swatch {
-        border-color: rgba(255, 255, 255, 0.15);
-      }
+      .lead-bio { color: #ccc; }
+      .section-title,
+      .meta-label,
+      .index-list .date,
+      .link-list a::before { color: #999; }
+      .signal-list li { color: #ccc; }
     }
 
     body {
       background-color: var(--bg);
+      background-image: radial-gradient(var(--border) 1px, transparent 1px);
+      background-size: 24px 24px;
       color: var(--text);
-      font-family: 'Inter', -apple-system, sans-serif;
+      font-family: 'Inter', sans-serif;
       margin: 0;
       padding: 0;
       -webkit-font-smoothing: antialiased;
       -moz-osx-font-smoothing: grayscale;
-      line-height: 1.5;
+      cursor: crosshair;
+    }
+
+    a, button {
+      cursor: pointer;
+    }
+
+    .wrapper {
+      padding: 6rem 4rem;
+      max-width: 640px;
+      margin: 0 auto;
       overflow-x: hidden;
     }
 
-    .serif {
-      font-family: 'Newsreader', serif;
+    .grid {
+      display: grid;
+      grid-template-columns: repeat(12, 1fr);
+      gap: 2rem;
     }
 
-    .handwritten {
+    .meta-col { grid-column: 1 / 3; }
+    .main-col { grid-column: 3 / 9; }
+    .side-col { grid-column: 10 / 13; }
+
+    /* Typography */
+    .display-title {
+      font-family: 'Instrument Serif', serif;
+      font-size: clamp(4rem, 9vw, 11rem);
+      line-height: 0.9;
+      letter-spacing: -0.02em;
+      margin: 0 0 2rem -0.05em;
+      font-weight: 400;
+    }
+    .display-title em {
+      font-style: italic;
+      padding-left: 0.2em;
+    }
+
+    .lead-bio {
+      font-size: clamp(1.25rem, 2vw, 1.5rem);
+      line-height: 1.5;
+      font-weight: 400;
+      max-width: 36ch;
+      color: #222;
+      letter-spacing: -0.01em;
+    }
+
+    .section-title {
+      font-size: 0.65rem;
+      text-transform: uppercase;
+      letter-spacing: 0.1em;
+      color: #888;
+      margin-bottom: 2rem;
+      border-bottom: 1px solid var(--border);
+      padding-bottom: 0.5rem;
+      position: relative;
+    }
+
+    /* Meta */
+    .meta-item {
+      margin-bottom: 1.5rem;
+      display: flex;
+      flex-direction: column;
+    }
+    .meta-label {
+      font-size: 0.65rem;
+      text-transform: uppercase;
+      letter-spacing: 0.1em;
+      color: #888;
+      margin-bottom: 0.25rem;
+    }
+    .meta-value {
+      font-size: 0.875rem;
+      font-weight: 500;
+    }
+
+    /* Index */
+    .index-list {
+      list-style: none;
+      padding: 0;
+      margin: 0;
+    }
+    .index-list li {
+      margin-bottom: 1.25rem;
+      display: flex;
+      align-items: baseline;
+      gap: 1.5rem;
+    }
+    .index-list .date {
+      font-size: 0.75rem;
+      color: #888;
+      white-space: nowrap;
+      width: 4.5rem;
+      flex-shrink: 0;
+    }
+    .index-list a {
+      font-family: 'Instrument Serif', serif;
+      font-size: 2rem;
+      color: var(--text);
+      text-decoration: none;
+      line-height: 1.1;
+      transition: color 0.2s;
+    }
+    .index-list a:hover {
+      color: var(--blue);
+    }
+
+    /* Signals */
+    .signals {
+      margin-bottom: 4rem;
+    }
+    .signal-list {
+      list-style: none;
+      padding: 0;
+      margin: 0;
+      padding-left: 1.5rem;
+      margin-left: -1.5rem;
+    }
+    .signal-list li {
+      font-family: 'Instrument Serif', serif;
+      font-size: 1.35rem;
+      line-height: 1.25;
+      color: #333;
+      margin-bottom: 1.25rem;
+      padding-bottom: 1.25rem;
+      border-bottom: 1px solid var(--border);
+      transition: color 0.3s;
+      position: relative;
+    }
+    .signal-list li:last-child {
+      border-bottom: none;
+    }
+    .signal-list li:hover {
+      color: var(--red);
+    }
+    .signal-list li::before {
+      content: '→';
+      position: absolute;
+      left: -1.5rem;
+      opacity: 0;
+      color: var(--red);
+      transition: opacity 0.3s, transform 0.3s;
+      transform: translateX(-10px);
+      font-family: 'Inter', sans-serif;
+      font-size: 1rem;
+      line-height: 1.25;
+    }
+    .signal-list li:hover::before {
+      opacity: 1;
+      transform: translateX(0);
+    }
+
+    /* Links */
+    .link-list {
+      list-style: none;
+      padding: 0;
+      margin: 0;
+      display: flex;
+      flex-direction: column;
+      gap: 0.75rem;
+    }
+    .link-list a {
+      font-size: 0.875rem;
+      color: var(--text);
+      text-decoration: none;
+      display: inline-flex;
+      align-items: center;
+      font-weight: 500;
+    }
+    .link-list a:hover {
+      color: var(--blue);
+    }
+    .link-list a::before {
+      content: '↗';
+      margin-right: 0.5rem;
+      font-size: 0.75rem;
+      color: #888;
+    }
+
+    /* Annotations & Scribbles */
+    .annotation {
       font-family: 'Caveat', cursive;
+      position: absolute;
+      font-size: 1.5rem;
+      line-height: 1;
+      white-space: nowrap;
+      pointer-events: none;
+      z-index: 10;
+    }
+    .relative { position: relative; }
+    .a-meta {
+      top: 0;
+      left: 100%;
+      margin-left: 0.5rem;
+      transform: rotate(-5deg);
+      color: var(--blue);
+    }
+    .a-index {
+      right: 0;
+      top: -1rem;
+      transform: rotate(4deg);
+      color: var(--red);
+    }
+
+    .highlight-link {
+      position: relative;
+      text-decoration: none;
+      color: inherit;
+      font-weight: 500;
+    }
+    .highlight-link:hover {
+      color: var(--blue);
+    }
+    .highlight-link .scribble-underline {
+      transition: stroke 0.3s;
+    }
+    .highlight-link:hover .scribble-underline {
+      stroke: var(--blue);
+    }
+
+    .circled-text {
+      position: relative;
+      display: inline-block;
+      white-space: nowrap;
+      z-index: 1;
+    }
+    .circled-text .scribble-circle {
+      transition: stroke 0.3s;
+    }
+    .circled-text:hover .scribble-circle {
+      stroke: var(--red);
+    }
+
+    .scribble {
+      position: absolute;
+      pointer-events: none;
+      overflow: visible;
+      z-index: -1;
+    }
+    .scribble-underline {
+      bottom: -2px;
+      left: -2%;
+      width: 104%;
+      height: 8px;
+      stroke: var(--red);
+      stroke-width: 2;
+      fill: none;
+      stroke-linecap: round;
+      stroke-linejoin: round;
+    }
+    .scribble-circle {
+      top: -30%;
+      left: -15%;
+      width: 130%;
+      height: 160%;
+      stroke: var(--blue);
+      stroke-width: 2;
+      fill: none;
+      stroke-linecap: round;
+      stroke-linejoin: round;
+    }
+    .scribble path {
+      stroke-dasharray: 1;
+      stroke-dashoffset: 1;
+      animation: draw 1s cubic-bezier(0.4, 0, 0.2, 1) forwards;
+      animation-delay: 0.8s;
+    }
+    @keyframes draw {
+      to { stroke-dashoffset: 0; }
+    }
+
+    /* Separator */
+    .separator {
+      height: 1px;
+      background-color: var(--border);
+      margin: 4rem 0;
     }
 
     /* Registration Marks */
@@ -75,418 +333,54 @@
       height: 20px;
       pointer-events: none;
       z-index: 100;
-      opacity: 0.3;
     }
-    .registration-mark::before, .registration-mark::after {
+    .registration-mark::before,
+    .registration-mark::after {
       content: '';
       position: absolute;
-      background: var(--text);
-    }
-    .registration-mark::before { top: 50%; left: 0; right: 0; height: 1px; }
-    .registration-mark::after { left: 50%; top: 0; bottom: 0; width: 1px; }
-    .top-left { top: 20px; left: 20px; }
-    .top-right { top: 20px; right: 20px; }
-    .bottom-left { bottom: 20px; left: 20px; }
-    .bottom-right { bottom: 20px; right: 20px; }
-
-    /* Color Swatches */
-    .color-swatches {
-      position: fixed;
-      right: 2rem;
-      top: 50%;
-      transform: translateY(-50%);
-      display: flex;
-      flex-direction: column;
-      gap: 0.75rem;
-      z-index: 10;
-    }
-    .swatch {
-      width: 10px;
-      height: 10px;
-      border-radius: 50%;
-      border: 1px solid rgba(0,0,0,0.1);
-    }
-    .swatch-red { background: var(--red); }
-    .swatch-blue { background: var(--blue); }
-    .swatch-yellow { background: var(--yellow); }
-
-    .grid {
-      display: grid;
-      grid-template-columns: repeat(12, 1fr);
-      gap: 2rem;
-      padding: 4vw 6vw;
-      max-width: 640px;
-      margin: 0 auto;
-    }
-
-    .header {
-      grid-column: 1 / -1;
-      display: flex;
-      justify-content: space-between;
-      align-items: baseline;
-      margin-bottom: 6rem;
-      border-bottom: 1px solid var(--border);
-      padding-bottom: 1.5rem;
-    }
-
-    .title {
-      font-family: 'Newsreader', serif;
-      font-size: clamp(3rem, 7vw, 5.5rem);
-      font-weight: 300;
-      letter-spacing: -0.03em;
-      margin: 0;
-      line-height: 1;
-    }
-
-    .title em {
-      font-style: italic;
-      font-weight: 300;
-      color: var(--text);
-    }
-
-    .header-meta {
-      text-align: right;
-      font-size: 0.75rem;
-      text-transform: uppercase;
-      letter-spacing: 0.05em;
-      color: var(--text-muted);
-      display: flex;
-      gap: 2rem;
-    }
-
-    .bio-section {
-      grid-column: 2 / 10;
-      position: relative;
-      margin-bottom: 8rem;
-    }
-
-    .main-bio {
-      font-family: 'Newsreader', serif;
-      font-size: clamp(1.75rem, 3.5vw, 2.75rem);
-      font-weight: 300;
-      line-height: 1.3;
-      letter-spacing: -0.02em;
-      max-width: 26ch;
-      color: var(--text);
-    }
-
-    .main-bio p {
-      margin: 0;
-    }
-
-    .inline-link {
-      color: var(--text);
-      text-decoration: none;
-      position: relative;
-    }
-
-    .inline-link::after {
-      content: '';
-      position: absolute;
-      bottom: 0.1em;
-      left: 0;
-      right: 0;
-      height: 1px;
       background-color: var(--text);
-      transition: transform 0.2s ease;
-      transform-origin: left;
     }
+    .registration-mark::before {
+      top: 50%; left: 0; right: 0; height: 1px;
+    }
+    .registration-mark::after {
+      left: 50%; top: 0; bottom: 0; width: 1px;
+    }
+    .top-left { top: 2rem; left: 2rem; }
+    .top-right { top: 2rem; right: 2rem; }
+    .bottom-left { bottom: 2rem; left: 2rem; }
+    .bottom-right { bottom: 2rem; right: 2rem; }
 
-    .inline-link:hover::after {
-      transform: scaleX(0);
+    /* Animations */
+    @keyframes fadeUp {
+      from { opacity: 0; transform: translateY(10px); }
+      to { opacity: 1; transform: translateY(0); }
     }
-
-    /* Annotations */
-    .highlight-container {
-      position: relative;
-      display: inline-block;
-      z-index: 1;
-    }
-    .highlight-svg {
-      position: absolute;
-      bottom: -2px;
-      left: -5%;
-      width: 110%;
-      height: 20px;
-      z-index: -1;
-      pointer-events: none;
-    }
-
-    .circled-text {
-      position: relative;
-      display: inline-block;
-    }
-    .circle-svg {
-      position: absolute;
-      top: -20%;
-      left: -20%;
-      width: 140%;
-      height: 140%;
-      z-index: -1;
-      pointer-events: none;
-    }
-
-    .annotation-1 {
-      position: absolute;
-      right: -5%;
-      bottom: -3rem;
-      font-family: 'Caveat', cursive;
-      font-size: 1.5rem;
-      color: var(--blue);
-      transform: rotate(-2deg);
-      display: flex;
-      align-items: center;
-      gap: 0.5rem;
-    }
-
-    .section-title {
-      font-family: 'Inter', sans-serif;
-      font-size: 0.75rem;
-      text-transform: uppercase;
-      letter-spacing: 0.05em;
-      color: var(--text-muted);
-      margin: 0 0 2rem 0;
-      border-bottom: 1px solid var(--border);
-      padding-bottom: 0.5rem;
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
-    }
-
-    .writing-section {
-      grid-column: 2 / 6;
-    }
-
-    .writing-list {
-      list-style: none;
-      padding: 0;
-      margin: 0;
-    }
-
-    .writing-list li {
-      margin-bottom: 1.5rem;
-      display: flex;
-      flex-direction: column;
-      gap: 0.25rem;
-    }
-
-    .writing-list a {
-      text-decoration: none;
-      color: var(--text);
-      font-family: 'Newsreader', serif;
-      font-size: 1.25rem;
-      line-height: 1.3;
-      transition: color 0.2s ease;
-    }
-
-    .writing-list a:hover {
-      color: var(--red);
-    }
-
-    .writing-list .date {
-      font-size: 0.75rem;
-      color: var(--text-muted);
-      font-family: 'Inter', sans-serif;
-    }
-
-    .signals-section {
-      grid-column: 7 / 12;
-    }
-
-    .signal-list {
-      list-style: none;
-      padding: 0;
-      margin: 0;
-      font-family: 'Newsreader', serif;
-      font-size: 1.125rem;
-      color: var(--text);
-      line-height: 1.5;
-    }
-
-    .signal-list li {
-      margin-bottom: 1rem;
-      padding-bottom: 1rem;
-      border-bottom: 1px dashed var(--border);
-      position: relative;
-    }
-
-    .signal-list li::before {
-      content: '→';
-      position: absolute;
-      left: -1.5rem;
-      color: var(--red);
-      font-family: 'Inter', sans-serif;
+    .meta-col, .main-col, .side-col {
+      animation: fadeUp 0.8s cubic-bezier(0.16, 1, 0.3, 1) forwards;
       opacity: 0;
-      transition: opacity 0.2s ease, transform 0.2s ease;
-      transform: translateX(-10px);
     }
+    .meta-col { animation-delay: 0.1s; }
+    .main-col { animation-delay: 0.2s; }
+    .side-col { animation-delay: 0.3s; }
 
-    .signal-list li:hover::before {
-      opacity: 1;
-      transform: translateX(0);
-    }
-
-    .experiment-section {
-      grid-column: 3 / 10;
-      margin-top: 6rem;
-      margin-bottom: 4rem;
-    }
-
-    .manuscript-excerpt {
-      font-family: 'JetBrains Mono', monospace;
-      font-size: 0.875rem;
-      line-height: 1.6;
-      background: #FFFFFF;
-      padding: 2.5rem 3rem;
-      box-shadow: 0 4px 20px rgba(0,0,0,0.04);
-      transform: rotate(0.5deg);
-      position: relative;
-      border: 1px solid var(--border);
-    }
-
-    .tape {
-      position: absolute;
-      top: -12px;
-      left: 50%;
-      transform: translateX(-50%) rotate(-2deg);
-      width: 120px;
-      height: 24px;
-      background-color: rgba(255, 255, 255, 0.6);
-      box-shadow: 0 1px 3px rgba(0,0,0,0.05);
-      backdrop-filter: blur(2px);
-      border: 1px solid rgba(255,255,255,0.4);
-      z-index: 2;
-    }
-
-    .manuscript-excerpt p {
-      margin-bottom: 1.5rem;
-      color: #333;
-    }
-
-    .manuscript-excerpt p:last-child {
-      margin-bottom: 0;
-    }
-
-    .manuscript-excerpt .highlight {
-      background: var(--yellow);
-      color: #000;
-      padding: 0 0.25rem;
-    }
-
-    .footer {
-      grid-column: 1 / -1;
-      margin-top: 6rem;
-      display: flex;
-      justify-content: space-between;
-      align-items: flex-end;
-    }
-
-    .links {
-      display: flex;
-      gap: 1.5rem;
-    }
-
-    .links a {
-      color: var(--text-muted);
-      text-decoration: none;
-      font-size: 0.875rem;
-      text-transform: lowercase;
-      transition: color 0.2s ease;
-    }
-
-    .links a:hover {
-      color: var(--text);
-    }
-
-    .github-note {
-      font-size: 1.25rem;
-      color: var(--text-muted);
-      transform: rotate(-1deg);
-      max-width: 300px;
-      text-align: right;
-    }
-
-    .folio {
-      grid-column: 1 / -1;
-      display: flex;
-      justify-content: space-between;
-      font-size: 0.65rem;
-      text-transform: uppercase;
-      letter-spacing: 0.1em;
-      color: var(--text-muted);
-      margin-top: 2rem;
-      padding-top: 1rem;
-      border-top: 1px solid var(--border);
-    }
-
-    @media (max-width: 1200px) {
-      .color-swatches { display: none; }
-    }
-
+    /* Responsive */
     @media (max-width: 1024px) {
-      .bio-section { grid-column: 1 / -1; }
-      .writing-section { grid-column: 1 / 6; }
-      .signals-section { grid-column: 7 / -1; }
-      .experiment-section { grid-column: 1 / -1; }
+      .wrapper { padding: 4rem 2rem; }
+      .grid { grid-template-columns: 1fr; gap: 4rem; }
+      .meta-col, .main-col, .side-col { grid-column: 1 / -1; }
+      .meta-col { display: flex; gap: 2rem; flex-wrap: wrap; }
+      .meta-item { margin-bottom: 0; }
+      .display-title { margin-left: 0; }
+      .registration-mark { display: none; }
+      .signal-list { padding-left: 0; margin-left: 0; }
+      .signal-list li::before { display: none; }
+      .a-meta { left: auto; right: -2rem; top: -1rem; }
     }
-
-    @media (max-width: 640px) {
-      .grid {
-        padding: 1.5rem;
-      }
-      .title {
-        font-size: clamp(2.25rem, 10vw, 3rem);
-      }
-      .main-bio {
-        font-size: clamp(1.5rem, 5vw, 2rem);
-      }
-    }
-
-    @media (max-width: 768px) {
-      .grid {
-        grid-template-columns: 1fr;
-        gap: 4rem;
-        padding: 2rem;
-      }
-      .header {
-        flex-direction: column;
-        gap: 1rem;
-        align-items: flex-start;
-        margin-bottom: 2rem;
-      }
-      .header-meta {
-        flex-direction: column;
-        gap: 0.25rem;
-        text-align: left;
-      }
-      .writing-section, .signals-section {
-        grid-column: 1 / -1;
-      }
-      .annotation-1 {
-        position: relative;
-        right: auto;
-        bottom: auto;
-        margin-top: 2rem;
-        transform: none;
-      }
-      .arrow-svg {
-        display: none;
-      }
-      .footer {
-        flex-direction: column;
-        gap: 2rem;
-        align-items: flex-start;
-      }
-      .github-note {
-        text-align: left;
-        transform: none;
-      }
-      .links {
-        flex-wrap: wrap;
-      }
-      .manuscript-excerpt {
-        padding: 1.5rem;
-      }
+    @media (max-width: 600px) {
+      .index-list li { flex-direction: column; gap: 0.25rem; }
+      .index-list .date { margin-bottom: 0.25rem; }
+      .display-title { font-size: 4rem; }
     }
   </style>
 </head>
@@ -496,101 +390,77 @@
   <div class="registration-mark bottom-left"></div>
   <div class="registration-mark bottom-right"></div>
 
-  <div class="color-swatches">
-    <div class="swatch swatch-red"></div>
-    <div class="swatch swatch-blue"></div>
-    <div class="swatch swatch-yellow"></div>
-  </div>
+  <div class="wrapper">
+    <div class="grid">
+      <aside class="meta-col">
+        <div class="meta-item">
+          <span class="meta-label">Location</span>
+          <span class="meta-value">San Francisco, CA</span>
+        </div>
+        <div class="meta-item relative">
+          <span class="meta-label">Date</span>
+          <span class="meta-value">Oct 21, 2026</span>
+          <span class="annotation a-meta">today</span>
+        </div>
+        <div class="meta-item">
+          <span class="meta-label">Weather</span>
+          <span class="meta-value">14°C, Overcast</span>
+        </div>
+      </aside>
 
-  <div class="grid">
-    <header class="header">
-      <h1 class="title">Erik <em>Nilsson</em></h1>
-      <div class="header-meta">
-        <div>San Francisco, CA</div>
-        <div>10°C, Overcast</div>
-      </div>
-    </header>
+      <main class="main-col">
+        <h1 class="display-title">Erik <br><em>Nilsson</em></h1>
+        <p class="lead-bio">
+          I'm a product designer at <a href="https://cursor.com" class="highlight-link">Cursor<svg class="scribble scribble-underline" viewBox="0 0 100 10" preserveAspectRatio="none"><path d="M2,7 Q25,2 50,6 T98,4" pathLength="1" /></svg></a>, working on how people build software with AI. Off-hours, I'm tinkering with living-site — <span class="circled-text">agents<svg class="scribble scribble-circle" viewBox="0 0 100 100" preserveAspectRatio="none"><path d="M 45 15 C 75 10, 95 25, 95 50 C 95 75, 75 90, 50 90 C 25 90, 5 75, 5 50 C 5 25, 25 10, 55 12" pathLength="1" /></svg></span> rebuild this corner of the web from fresh activity data each day.
+        </p>
+        
+        <div class="separator"></div>
+        
+        <section class="writing-index">
+          <h2 class="section-title">
+            Notebook
+            <span class="annotation a-index">Recent</span>
+          </h2>
+          <ul class="index-list">
+            <li>
+              <span class="date">2025.12.20</span>
+              <a href="https://x.com/flowstated/status/2002167999353241901">imagine 2026</a>
+            </li>
+            <li>
+              <span class="date">2025.12.16</span>
+              <a href="https://x.com/flowstated/status/2000889983562080578">shipping by sunrise</a>
+            </li>
+            <li>
+              <span class="date">2025.12.15</span>
+              <a href="https://x.com/flowstated/status/2000691637190861180">exploring ways to spin up agents from my phone</a>
+            </li>
+          </ul>
+        </section>
+      </main>
 
-    <div class="bio-section">
-      <article class="main-bio">
-        <p>I'm a product designer at <a href="https://cursor.com" class="inline-link">Cursor</a>, working on how people build software with <span class="circled-text">AI<svg class="circle-svg" viewBox="0 0 100 100" preserveAspectRatio="none"><path d="M50,10 C80,10 90,40 80,80 C70,110 20,100 10,70 C0,40 20,10 50,10 Z" fill="none" stroke="var(--red)" stroke-width="4" stroke-linecap="round" stroke-linejoin="round"/></svg></span>. Off-hours, I'm tinkering with <span class="highlight-container">living-site<svg class="highlight-svg" viewBox="0 0 100 20" preserveAspectRatio="none"><path d="M-5,15 Q50,25 105,10" fill="none" stroke="var(--yellow)" stroke-width="12" stroke-linecap="round" mix-blend-mode="multiply"/></svg></span> — agents rebuild this corner of the web from fresh activity data each day.</p>
-      </article>
-      
-      <div class="annotation annotation-1">
-        <svg width="40" height="40" viewBox="0 0 40 40" class="arrow-svg">
-          <path d="M5,35 Q20,10 35,15 M35,15 L25,10 M35,15 L30,25" fill="none" stroke="var(--blue)" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
-        </svg>
-        <span>Rebuilt: Oct 20, 2026</span>
-      </div>
-    </div>
-
-    <section class="writing-section">
-      <h2 class="section-title">
-        <span style="position: relative;">
-          Notes
-          <svg style="position:absolute; bottom:-6px; left:0; width:100%; height:10px;" viewBox="0 0 100 10" preserveAspectRatio="none">
-            <path d="M0,5 Q50,8 100,2" fill="none" stroke="var(--blue)" stroke-width="1.5" />
-          </svg>
-        </span>
-      </h2>
-      <ul class="writing-list">
-        <li>
-          <a href="https://x.com/flowstated/status/2002167999353241901">imagine 2026</a>
-          <span class="date">Dec 20, 2025</span>
-        </li>
-        <li>
-          <a href="https://x.com/flowstated/status/2000889983562080578">shipping by sunrise</a>
-          <span class="date">Dec 16, 2025</span>
-        </li>
-        <li>
-          <a href="https://x.com/flowstated/status/2000691637190861180">exploring ways to spin up agents from my phone</a>
-          <span class="date">Dec 15, 2025</span>
-        </li>
-      </ul>
-    </section>
-
-    <section class="signals-section">
-      <h2 class="section-title">Signals <span class="handwritten" style="text-transform:none; letter-spacing:normal; font-size:1.25rem; color:var(--red);">observed</span></h2>
-      <ul class="signal-list">
-        <li>payment rails stuttering when the cloud blinks</li>
-        <li>population clocks ticking slower than the doomsayers promised</li>
-        <li>open seats appearing in the yc winter hiring orbit</li>
-        <li>san francisco fog holding ten degrees at dusk</li>
-        <li>autumn light already retreating before six-thirty</li>
-        <li>agents waiting to be spun up from a pocket shortcut</li>
-      </ul>
-    </section>
-
-    <section class="experiment-section">
-      <h2 class="section-title">Draft <span class="handwritten" style="text-transform:none; letter-spacing:normal; font-size:1.25rem; color:var(--blue);">v3</span></h2>
-      <div class="manuscript-excerpt">
-        <div class="tape"></div>
-        <p>> CONCEPT: Demographic Arcs</p>
-        <p>Flick autumn leaves into shrinking demographic chart arcs — each leaf balances a population curve before the forecast collapses.</p>
-        <p>> MECHANIC: <span class="highlight">physics flick</span></p>
-        <p>> HOOK: Watching a leaf arc perfectly into its slot with a soft thud closes one forecast gap.</p>
-        <p>> AESTHETIC: paper cutout census charts with hand-painted leaves</p>
-      </div>
-    </section>
-
-    <footer class="footer">
-      <div class="links">
-        <a href="https://eriks.design">site</a>
-        <a href="https://cursor.com">cursor</a>
-        <a href="https://x.com/flowstated">x</a>
-        <a href="https://github.com/eriknson">github</a>
-        <a href="https://linkedin.com/in/eriknson">linkedin</a>
-        <a href="mailto:contact@eriks.design">email</a>
-      </div>
-      <div class="github-note handwritten">
-        * GitHub repos are side projects and experiments — small personal things I tinker with outside of work.
-      </div>
-    </footer>
-
-    <div class="folio">
-      <span>PG. 01</span>
-      <span>ERIK NILSSON — NOTEBOOK</span>
-      <span>AUTUMN 2026</span>
+      <aside class="side-col">
+        <section class="signals">
+          <h2 class="section-title">World Signals</h2>
+          <ul class="signal-list">
+            <li>a cybersecurity fortress darkened by the language beneath it</li>
+            <li>fire escapes rusting on brick facades, their purpose half-forgotten</li>
+            <li>startups planting roots in austin autumn soil</li>
+            <li>karl-the-fog rolling over san francisco at fourteen degrees</li>
+            <li>a long-awaited exchange closes one chapter at the border</li>
+            <li>autumn streets still parsing who lit the flame</li>
+          </ul>
+        </section>
+        
+        <section class="links">
+          <h2 class="section-title">Connect</h2>
+          <ul class="link-list">
+            <li><a href="https://x.com/flowstated">X (Twitter)</a></li>
+            <li><a href="https://github.com/eriknson">GitHub</a></li>
+            <li><a href="https://linkedin.com/in/eriknson">LinkedIn</a></li>
+            <li><a href="mailto:contact@eriks.design">Email</a></li>
+          </ul>
+        </section>
+      </aside>
     </div>
   </div>
 </body>

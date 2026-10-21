@@ -1,0 +1,486 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Erik Nilsson — Product Designer</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Caveat:wght@500&family=Instrument+Serif:ital@0;1&family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
+  <style>
+    :root {
+      --bg: #F4F2EC;
+      --text: #1A1A19;
+      --red: #E03126;
+      --blue: #1C3EE8;
+      --border: rgba(26, 26, 25, 0.1);
+    }
+
+    @supports (color: color(display-p3 1 0 0)) {
+      :root {
+        --red: color(display-p3 0.9 0.15 0.1);
+        --blue: color(display-p3 0.1 0.2 0.95);
+      }
+    }
+
+    @media (prefers-color-scheme: dark) {
+      :root {
+        --bg: #1a1a1a;
+        --text: #e0e0e0;
+        --border: rgba(224, 224, 224, 0.1);
+      }
+
+      .lead-bio { color: #ccc; }
+      .section-title,
+      .meta-label,
+      .index-list .date,
+      .link-list a::before { color: #999; }
+      .signal-list li { color: #ccc; }
+    }
+
+    body {
+      background-color: var(--bg);
+      background-image: radial-gradient(var(--border) 1px, transparent 1px);
+      background-size: 24px 24px;
+      color: var(--text);
+      font-family: 'Inter', sans-serif;
+      margin: 0;
+      padding: 0;
+      -webkit-font-smoothing: antialiased;
+      -moz-osx-font-smoothing: grayscale;
+      cursor: crosshair;
+    }
+
+    a, button {
+      cursor: pointer;
+    }
+
+    .wrapper {
+      padding: 6rem 4rem;
+      max-width: 640px;
+      margin: 0 auto;
+      overflow-x: hidden;
+    }
+
+    .grid {
+      display: grid;
+      grid-template-columns: repeat(12, 1fr);
+      gap: 2rem;
+    }
+
+    .meta-col { grid-column: 1 / 3; }
+    .main-col { grid-column: 3 / 9; }
+    .side-col { grid-column: 10 / 13; }
+
+    /* Typography */
+    .display-title {
+      font-family: 'Instrument Serif', serif;
+      font-size: clamp(4rem, 9vw, 11rem);
+      line-height: 0.9;
+      letter-spacing: -0.02em;
+      margin: 0 0 2rem -0.05em;
+      font-weight: 400;
+    }
+    .display-title em {
+      font-style: italic;
+      padding-left: 0.2em;
+    }
+
+    .lead-bio {
+      font-size: clamp(1.25rem, 2vw, 1.5rem);
+      line-height: 1.5;
+      font-weight: 400;
+      max-width: 36ch;
+      color: #222;
+      letter-spacing: -0.01em;
+    }
+
+    .section-title {
+      font-size: 0.65rem;
+      text-transform: uppercase;
+      letter-spacing: 0.1em;
+      color: #888;
+      margin-bottom: 2rem;
+      border-bottom: 1px solid var(--border);
+      padding-bottom: 0.5rem;
+      position: relative;
+    }
+
+    /* Meta */
+    .meta-item {
+      margin-bottom: 1.5rem;
+      display: flex;
+      flex-direction: column;
+    }
+    .meta-label {
+      font-size: 0.65rem;
+      text-transform: uppercase;
+      letter-spacing: 0.1em;
+      color: #888;
+      margin-bottom: 0.25rem;
+    }
+    .meta-value {
+      font-size: 0.875rem;
+      font-weight: 500;
+    }
+
+    /* Index */
+    .index-list {
+      list-style: none;
+      padding: 0;
+      margin: 0;
+    }
+    .index-list li {
+      margin-bottom: 1.25rem;
+      display: flex;
+      align-items: baseline;
+      gap: 1.5rem;
+    }
+    .index-list .date {
+      font-size: 0.75rem;
+      color: #888;
+      white-space: nowrap;
+      width: 4.5rem;
+      flex-shrink: 0;
+    }
+    .index-list a {
+      font-family: 'Instrument Serif', serif;
+      font-size: 2rem;
+      color: var(--text);
+      text-decoration: none;
+      line-height: 1.1;
+      transition: color 0.2s;
+    }
+    .index-list a:hover {
+      color: var(--blue);
+    }
+
+    /* Signals */
+    .signals {
+      margin-bottom: 4rem;
+    }
+    .signal-list {
+      list-style: none;
+      padding: 0;
+      margin: 0;
+      padding-left: 1.5rem;
+      margin-left: -1.5rem;
+    }
+    .signal-list li {
+      font-family: 'Instrument Serif', serif;
+      font-size: 1.35rem;
+      line-height: 1.25;
+      color: #333;
+      margin-bottom: 1.25rem;
+      padding-bottom: 1.25rem;
+      border-bottom: 1px solid var(--border);
+      transition: color 0.3s;
+      position: relative;
+    }
+    .signal-list li:last-child {
+      border-bottom: none;
+    }
+    .signal-list li:hover {
+      color: var(--red);
+    }
+    .signal-list li::before {
+      content: '→';
+      position: absolute;
+      left: -1.5rem;
+      opacity: 0;
+      color: var(--red);
+      transition: opacity 0.3s, transform 0.3s;
+      transform: translateX(-10px);
+      font-family: 'Inter', sans-serif;
+      font-size: 1rem;
+      line-height: 1.25;
+    }
+    .signal-list li:hover::before {
+      opacity: 1;
+      transform: translateX(0);
+    }
+
+    /* Links */
+    .link-list {
+      list-style: none;
+      padding: 0;
+      margin: 0;
+      display: flex;
+      flex-direction: column;
+      gap: 0.75rem;
+    }
+    .link-list a {
+      font-size: 0.875rem;
+      color: var(--text);
+      text-decoration: none;
+      display: inline-flex;
+      align-items: center;
+      font-weight: 500;
+    }
+    .link-list a:hover {
+      color: var(--blue);
+    }
+    .link-list a::before {
+      content: '↗';
+      margin-right: 0.5rem;
+      font-size: 0.75rem;
+      color: #888;
+    }
+
+    /* Annotations & Scribbles */
+    .annotation {
+      font-family: 'Caveat', cursive;
+      position: absolute;
+      font-size: 1.5rem;
+      line-height: 1;
+      white-space: nowrap;
+      pointer-events: none;
+      z-index: 10;
+    }
+    .relative { position: relative; }
+    .a-meta {
+      top: 0;
+      left: 100%;
+      margin-left: 0.5rem;
+      transform: rotate(-5deg);
+      color: var(--blue);
+    }
+    .a-index {
+      right: 0;
+      top: -1rem;
+      transform: rotate(4deg);
+      color: var(--red);
+    }
+
+    .highlight-link {
+      position: relative;
+      text-decoration: none;
+      color: inherit;
+      font-weight: 500;
+    }
+    .highlight-link:hover {
+      color: var(--blue);
+    }
+    .highlight-link .scribble-underline {
+      transition: stroke 0.3s;
+    }
+    .highlight-link:hover .scribble-underline {
+      stroke: var(--blue);
+    }
+
+    .circled-text {
+      position: relative;
+      display: inline-block;
+      white-space: nowrap;
+      z-index: 1;
+    }
+    .circled-text .scribble-circle {
+      transition: stroke 0.3s;
+    }
+    .circled-text:hover .scribble-circle {
+      stroke: var(--red);
+    }
+
+    .scribble {
+      position: absolute;
+      pointer-events: none;
+      overflow: visible;
+      z-index: -1;
+    }
+    .scribble-underline {
+      bottom: -2px;
+      left: -2%;
+      width: 104%;
+      height: 8px;
+      stroke: var(--red);
+      stroke-width: 2;
+      fill: none;
+      stroke-linecap: round;
+      stroke-linejoin: round;
+    }
+    .scribble-circle {
+      top: -30%;
+      left: -15%;
+      width: 130%;
+      height: 160%;
+      stroke: var(--blue);
+      stroke-width: 2;
+      fill: none;
+      stroke-linecap: round;
+      stroke-linejoin: round;
+    }
+    .scribble path {
+      stroke-dasharray: 1;
+      stroke-dashoffset: 1;
+      animation: draw 1s cubic-bezier(0.4, 0, 0.2, 1) forwards;
+      animation-delay: 0.8s;
+    }
+    @keyframes draw {
+      to { stroke-dashoffset: 0; }
+    }
+
+    /* Separator */
+    .separator {
+      height: 1px;
+      background-color: var(--border);
+      margin: 4rem 0;
+    }
+
+    /* Registration Marks */
+    .registration-mark {
+      position: fixed;
+      width: 20px;
+      height: 20px;
+      pointer-events: none;
+      z-index: 100;
+    }
+    .registration-mark::before,
+    .registration-mark::after {
+      content: '';
+      position: absolute;
+      background-color: var(--text);
+    }
+    .registration-mark::before {
+      top: 50%; left: 0; right: 0; height: 1px;
+    }
+    .registration-mark::after {
+      left: 50%; top: 0; bottom: 0; width: 1px;
+    }
+    .top-left { top: 2rem; left: 2rem; }
+    .top-right { top: 2rem; right: 2rem; }
+    .bottom-left { bottom: 2rem; left: 2rem; }
+    .bottom-right { bottom: 2rem; right: 2rem; }
+
+    /* Animations */
+    @keyframes fadeUp {
+      from { opacity: 0; transform: translateY(10px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+    .meta-col, .main-col, .side-col {
+      animation: fadeUp 0.8s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+      opacity: 0;
+    }
+    .meta-col { animation-delay: 0.1s; }
+    .main-col { animation-delay: 0.2s; }
+    .side-col { animation-delay: 0.3s; }
+
+    /* Responsive */
+    @media (max-width: 1024px) {
+      .wrapper { padding: 4rem 2rem; }
+      .grid { grid-template-columns: 1fr; gap: 4rem; }
+      .meta-col, .main-col, .side-col { grid-column: 1 / -1; }
+      .meta-col { display: flex; gap: 2rem; flex-wrap: wrap; }
+      .meta-item { margin-bottom: 0; }
+      .display-title { margin-left: 0; }
+      .registration-mark { display: none; }
+      .signal-list { padding-left: 0; margin-left: 0; }
+      .signal-list li::before { display: none; }
+      .a-meta { left: auto; right: -2rem; top: -1rem; }
+    }
+    @media (max-width: 600px) {
+      .index-list li { flex-direction: column; gap: 0.25rem; }
+      .index-list .date { margin-bottom: 0.25rem; }
+      .display-title { font-size: 4rem; }
+    }
+  </style>
+
+<style id="__living_site_scroll_guard">
+  /* Scroll guard injected at build time to ensure generated pages remain scrollable in iframes. */
+  html, body {
+    height: auto !important;
+    min-height: 100% !important;
+    max-height: none !important;
+    overflow-y: auto !important;
+    overflow-x: hidden !important;
+    position: static !important;
+    -webkit-overflow-scrolling: touch !important;
+    touch-action: pan-y !important;
+    overscroll-behavior-y: contain !important;
+  }
+  /* Avoid accidental fixed full-screen traps that break scrolling on mobile. */
+  body {
+    inset: auto !important;
+  }
+</style>
+</head>
+<body>
+  <div class="registration-mark top-left"></div>
+  <div class="registration-mark top-right"></div>
+  <div class="registration-mark bottom-left"></div>
+  <div class="registration-mark bottom-right"></div>
+
+  <div class="wrapper">
+    <div class="grid">
+      <aside class="meta-col">
+        <div class="meta-item">
+          <span class="meta-label">Location</span>
+          <span class="meta-value">San Francisco, CA</span>
+        </div>
+        <div class="meta-item relative">
+          <span class="meta-label">Date</span>
+          <span class="meta-value">Oct 21, 2026</span>
+          <span class="annotation a-meta">today</span>
+        </div>
+        <div class="meta-item">
+          <span class="meta-label">Weather</span>
+          <span class="meta-value">14°C, Overcast</span>
+        </div>
+      </aside>
+
+      <main class="main-col">
+        <h1 class="display-title">Erik <br><em>Nilsson</em></h1>
+        <p class="lead-bio">
+          I'm a product designer at <a href="https://cursor.com" class="highlight-link">Cursor<svg class="scribble scribble-underline" viewBox="0 0 100 10" preserveAspectRatio="none"><path d="M2,7 Q25,2 50,6 T98,4" pathLength="1" /></svg></a>, working on how people build software with AI. Off-hours, I'm tinkering with living-site — <span class="circled-text">agents<svg class="scribble scribble-circle" viewBox="0 0 100 100" preserveAspectRatio="none"><path d="M 45 15 C 75 10, 95 25, 95 50 C 95 75, 75 90, 50 90 C 25 90, 5 75, 5 50 C 5 25, 25 10, 55 12" pathLength="1" /></svg></span> rebuild this corner of the web from fresh activity data each day.
+        </p>
+        
+        <div class="separator"></div>
+        
+        <section class="writing-index">
+          <h2 class="section-title">
+            Notebook
+            <span class="annotation a-index">Recent</span>
+          </h2>
+          <ul class="index-list">
+            <li>
+              <span class="date">2025.12.20</span>
+              <a href="https://x.com/flowstated/status/2002167999353241901">imagine 2026</a>
+            </li>
+            <li>
+              <span class="date">2025.12.16</span>
+              <a href="https://x.com/flowstated/status/2000889983562080578">shipping by sunrise</a>
+            </li>
+            <li>
+              <span class="date">2025.12.15</span>
+              <a href="https://x.com/flowstated/status/2000691637190861180">exploring ways to spin up agents from my phone</a>
+            </li>
+          </ul>
+        </section>
+      </main>
+
+      <aside class="side-col">
+        <section class="signals">
+          <h2 class="section-title">World Signals</h2>
+          <ul class="signal-list">
+            <li>a cybersecurity fortress darkened by the language beneath it</li>
+            <li>fire escapes rusting on brick facades, their purpose half-forgotten</li>
+            <li>startups planting roots in austin autumn soil</li>
+            <li>karl-the-fog rolling over san francisco at fourteen degrees</li>
+            <li>a long-awaited exchange closes one chapter at the border</li>
+            <li>autumn streets still parsing who lit the flame</li>
+          </ul>
+        </section>
+        
+        <section class="links">
+          <h2 class="section-title">Connect</h2>
+          <ul class="link-list">
+            <li><a href="https://x.com/flowstated">X (Twitter)</a></li>
+            <li><a href="https://github.com/eriknson">GitHub</a></li>
+            <li><a href="https://linkedin.com/in/eriknson">LinkedIn</a></li>
+            <li><a href="mailto:contact@eriks.design">Email</a></li>
+          </ul>
+        </section>
+      </aside>
+    </div>
+  </div>
+</body>
+</html>

@@ -1,0 +1,740 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Erik Nilsson — eriks.design</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Caveat:wght@400;500&family=Instrument+Serif:ital@0;1&family=Newsreader:ital,opsz,wght@0,6..72,400;0,6..72,500;1,6..72,400&display=swap" rel="stylesheet">
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    :root {
+      --paper: #f6f2ea;
+      --ink: #1a1816;
+      --ink-soft: #5c5650;
+      --rule: #ddd6c8;
+      --rust: #b4563f;
+      --fog: #84929c;
+      --sage: #3a6b5c;
+      --margin: #c4b8a8;
+      --max: 640px;
+      --serif: "Instrument Serif", "Times New Roman", serif;
+      --body: "Newsreader", Georgia, serif;
+      --hand: "Caveat", cursive;
+    }
+
+    @supports (color: color(display-p3 1 1 1)) {
+      :root {
+        --paper: color(display-p3 0.965 0.949 0.918);
+        --ink: color(display-p3 0.102 0.094 0.086);
+        --ink-soft: color(display-p3 0.357 0.337 0.314);
+        --rule: color(display-p3 0.867 0.839 0.784);
+        --rust: color(display-p3 0.706 0.337 0.247);
+        --fog: color(display-p3 0.518 0.573 0.612);
+        --sage: color(display-p3 0.227 0.420 0.361);
+        --margin: color(display-p3 0.769 0.722 0.659);
+      }
+    }
+
+    @media (prefers-color-scheme: dark) {
+      :root {
+        --paper: #141312;
+        --ink: #ece8e1;
+        --ink-soft: #9a948c;
+        --rule: #2a2825;
+        --rust: color(display-p3 0.82 0.48 0.38);
+        --fog: color(display-p3 0.58 0.64 0.70);
+        --sage: color(display-p3 0.52 0.72 0.62);
+        --margin: #4a4540;
+      }
+    }
+
+    html {
+      font-size: 18px;
+      -webkit-font-smoothing: antialiased;
+      text-rendering: optimizeLegibility;
+    }
+
+    body {
+      background: var(--paper);
+      color: var(--ink);
+      font-family: var(--body);
+      font-weight: 400;
+      line-height: 1.65;
+      min-height: 100vh;
+      overflow-x: hidden;
+      color-scheme: light;
+    }
+
+    @media (prefers-color-scheme: dark) {
+      body { color-scheme: dark; }
+    }
+
+    :focus-visible {
+      outline: 2px solid var(--rust);
+      outline-offset: 3px;
+    }
+
+    /* notebook ruling — solid stripes, not decorative gradients */
+    body::before {
+      content: "";
+      position: fixed;
+      inset: 0;
+      pointer-events: none;
+      opacity: 0.35;
+      background-image: repeating-linear-gradient(
+        to bottom,
+        transparent,
+        transparent 31px,
+        var(--rule) 31px,
+        var(--rule) 32px
+      );
+      z-index: 0;
+    }
+
+    .page {
+      position: relative;
+      z-index: 1;
+      max-width: var(--max);
+      margin: 0 auto;
+      padding: 3.5rem 1.5rem 5rem;
+    }
+
+    /* ── masthead ── */
+    .masthead {
+      display: grid;
+      grid-template-columns: 1fr auto;
+      align-items: end;
+      gap: 1rem 2rem;
+      margin-bottom: 3.25rem;
+      animation: rise 0.9s cubic-bezier(0.22, 1, 0.36, 1) both;
+    }
+
+    .masthead__domain {
+      font-family: var(--body);
+      font-size: 0.72rem;
+      font-weight: 500;
+      letter-spacing: 0.22em;
+      text-transform: uppercase;
+      color: var(--ink-soft);
+      grid-column: 1 / -1;
+    }
+
+    .masthead__name {
+      font-family: var(--serif);
+      font-size: clamp(2.8rem, 9vw, 4.1rem);
+      font-weight: 400;
+      line-height: 0.95;
+      letter-spacing: -0.02em;
+    }
+
+    .masthead__name em {
+      font-style: italic;
+      font-weight: 400;
+    }
+
+    .masthead__date {
+      position: relative;
+      text-align: right;
+      font-size: 0.78rem;
+      color: var(--ink-soft);
+      line-height: 1.45;
+      padding-top: 0.4rem;
+    }
+
+    .masthead__weather {
+      position: relative;
+      display: inline-block;
+      margin-top: 0.15rem;
+    }
+
+    .masthead__weather .hand {
+      display: block;
+      font-family: var(--hand);
+      font-size: 1.15rem;
+      color: var(--fog);
+      transform: rotate(-2deg);
+    }
+
+    .masthead__weather-ring {
+      position: absolute;
+      inset: -0.35rem -0.55rem -0.45rem -0.45rem;
+      pointer-events: none;
+    }
+
+    .masthead__weather-ring ellipse {
+      fill: none;
+      stroke: var(--fog);
+      stroke-width: 1;
+      opacity: 0.45;
+    }
+
+    /* red margin line */
+    .page::before {
+      content: "";
+      position: absolute;
+      top: 0;
+      bottom: 0;
+      left: 1.35rem;
+      width: 1px;
+      background: var(--rust);
+      opacity: 0.22;
+    }
+
+    /* ── lede ── */
+    .lede {
+      margin-bottom: 2.75rem;
+      padding-left: 0.25rem;
+      animation: rise 0.9s 0.08s cubic-bezier(0.22, 1, 0.36, 1) both;
+    }
+
+    .lede__role {
+      font-family: var(--serif);
+      font-size: 1.35rem;
+      font-style: italic;
+      margin-bottom: 1.1rem;
+      color: var(--ink);
+    }
+
+    .lede__role a {
+      color: inherit;
+      text-decoration: none;
+      border-bottom: 1px solid var(--rule);
+      transition: border-color 0.25s, color 0.25s;
+    }
+
+    .lede__role a:hover {
+      color: var(--rust);
+      border-color: var(--rust);
+    }
+
+    .lede__bio {
+      font-size: 1.05rem;
+      max-width: 34em;
+      color: var(--ink-soft);
+    }
+
+    .lede__bio em {
+      font-style: italic;
+      color: var(--ink);
+    }
+
+    .annotated {
+      position: relative;
+      display: inline;
+      color: var(--ink);
+    }
+
+    .annotated__mark {
+      position: absolute;
+      left: -0.15em;
+      right: -0.2em;
+      bottom: -0.05em;
+      height: 0.55em;
+      pointer-events: none;
+    }
+
+    .annotated__mark path {
+      stroke: var(--sage);
+      stroke-width: 1.4;
+      fill: none;
+      stroke-linecap: round;
+    }
+
+    .margin-note {
+      position: relative;
+      display: inline-block;
+      margin-left: 0.35rem;
+    }
+
+    .margin-note__arrow {
+      position: absolute;
+      left: -1.6rem;
+      top: 0.1rem;
+      width: 1.2rem;
+      height: 1.2rem;
+      opacity: 0.7;
+    }
+
+    .margin-note__text {
+      font-family: var(--hand);
+      font-size: 1.05rem;
+      color: var(--sage);
+      transform: rotate(-1.5deg);
+      white-space: nowrap;
+    }
+
+    /* ── signals ── */
+    .signals {
+      margin-bottom: 3rem;
+      padding: 1.5rem 0 1.5rem 1rem;
+      border-top: 1px solid var(--rule);
+      border-bottom: 1px solid var(--rule);
+      animation: rise 0.9s 0.16s cubic-bezier(0.22, 1, 0.36, 1) both;
+    }
+
+    .signals__label {
+      font-size: 0.68rem;
+      font-weight: 500;
+      letter-spacing: 0.18em;
+      text-transform: uppercase;
+      color: var(--margin);
+      margin-bottom: 1rem;
+    }
+
+    .signals__list {
+      list-style: none;
+      display: flex;
+      flex-direction: column;
+      gap: 0.55rem;
+    }
+
+    .signals__item {
+      font-family: var(--serif);
+      font-size: 1.02rem;
+      font-style: italic;
+      color: var(--ink-soft);
+      padding-left: 1.1rem;
+      position: relative;
+      transition: color 0.3s, transform 0.3s;
+    }
+
+    .signals__item::before {
+      content: "—";
+      position: absolute;
+      left: 0;
+      color: var(--fog);
+      font-style: normal;
+    }
+
+    .signals__item:nth-child(odd) { padding-left: 1.6rem; }
+    .signals__item:nth-child(3) { padding-left: 0.6rem; }
+    .signals__item:nth-child(5) { padding-left: 2rem; }
+
+    @media (hover: hover) {
+      .signals__item:hover {
+        color: var(--ink);
+        transform: translateX(2px);
+      }
+    }
+
+    /* ── scraps (tweets) ── */
+    .scraps {
+      margin-bottom: 3.25rem;
+      animation: rise 0.9s 0.24s cubic-bezier(0.22, 1, 0.36, 1) both;
+    }
+
+    .scraps__label {
+      font-size: 0.68rem;
+      font-weight: 500;
+      letter-spacing: 0.18em;
+      text-transform: uppercase;
+      color: var(--margin);
+      margin-bottom: 1.15rem;
+    }
+
+    .scraps__grid {
+      display: flex;
+      flex-direction: column;
+      gap: 0.85rem;
+    }
+
+    .scrap {
+      position: relative;
+      padding: 0.85rem 1rem 0.85rem 1.15rem;
+      background: var(--paper);
+      border: 1px solid var(--rule);
+      text-decoration: none;
+      color: inherit;
+      transition: border-color 0.3s, transform 0.35s cubic-bezier(0.22, 1, 0.36, 1);
+    }
+
+    .scrap::before {
+      content: "";
+      position: absolute;
+      left: 0;
+      top: 0;
+      bottom: 0;
+      width: 3px;
+      background: var(--fog);
+    }
+
+    .scrap:nth-child(1)::before { background: var(--rust); }
+    .scrap:nth-child(2)::before { background: var(--fog); }
+    .scrap:nth-child(3)::before { background: var(--sage); }
+
+    .scrap:nth-child(2) { transform: rotate(0.4deg); margin-left: 0.5rem; }
+    .scrap:nth-child(3) { transform: rotate(-0.35deg); margin-right: 0.75rem; }
+
+    .scrap:hover {
+      border-color: var(--ink-soft);
+      transform: rotate(0deg) translateY(-2px);
+    }
+
+    .scrap__text {
+      font-size: 0.95rem;
+      line-height: 1.55;
+      white-space: pre-line;
+    }
+
+    .scrap__meta {
+      margin-top: 0.45rem;
+      font-size: 0.72rem;
+      color: var(--ink-soft);
+      letter-spacing: 0.04em;
+    }
+
+    /* ── writing index ── */
+    .writing {
+      margin-bottom: 3.5rem;
+      animation: rise 0.9s 0.32s cubic-bezier(0.22, 1, 0.36, 1) both;
+    }
+
+    .writing__header {
+      display: flex;
+      align-items: baseline;
+      justify-content: space-between;
+      gap: 1rem;
+      margin-bottom: 1.25rem;
+      padding-bottom: 0.65rem;
+      border-bottom: 2px solid var(--ink);
+    }
+
+    .writing__title {
+      font-family: var(--serif);
+      font-size: 1.5rem;
+      font-weight: 400;
+    }
+
+    .writing__count {
+      font-family: var(--hand);
+      font-size: 1.2rem;
+      color: var(--rust);
+      transform: rotate(2deg);
+    }
+
+    .writing__list {
+      list-style: none;
+    }
+
+    .writing__item {
+      border-bottom: 1px solid var(--rule);
+    }
+
+    .writing__link {
+      display: grid;
+      grid-template-columns: 1fr auto;
+      gap: 0.5rem 1.5rem;
+      align-items: baseline;
+      padding: 0.85rem 0;
+      text-decoration: none;
+      color: inherit;
+      transition: padding-left 0.35s cubic-bezier(0.22, 1, 0.36, 1);
+    }
+
+    .writing__link:hover {
+      padding-left: 0.5rem;
+    }
+
+    .writing__link:hover .writing__name {
+      color: var(--rust);
+    }
+
+    .writing__name {
+      font-family: var(--serif);
+      font-size: 1.12rem;
+      transition: color 0.25s;
+    }
+
+    .writing__date {
+      font-size: 0.75rem;
+      color: var(--ink-soft);
+      font-variant-numeric: tabular-nums;
+    }
+
+    .writing__link::after {
+      content: "→";
+      grid-column: 2;
+      grid-row: 1;
+      font-size: 0.85rem;
+      color: var(--margin);
+      opacity: 0;
+      transform: translateX(-4px);
+      transition: opacity 0.25s, transform 0.25s, color 0.25s;
+    }
+
+    .writing__link:hover::after {
+      opacity: 1;
+      transform: translateX(0);
+      color: var(--rust);
+    }
+
+    /* ── footer links ── */
+    .contact {
+      padding-top: 1.5rem;
+      border-top: 1px solid var(--rule);
+      animation: rise 0.9s 0.4s cubic-bezier(0.22, 1, 0.36, 1) both;
+    }
+
+    .contact__links {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 0.35rem 1.25rem;
+      list-style: none;
+      margin-bottom: 1.5rem;
+    }
+
+    .contact__links a {
+      font-size: 0.82rem;
+      color: var(--ink-soft);
+      text-decoration: none;
+      letter-spacing: 0.02em;
+      border-bottom: 1px solid transparent;
+      transition: color 0.25s, border-color 0.25s;
+    }
+
+    .contact__links a:hover {
+      color: var(--ink);
+      border-color: var(--rule);
+    }
+
+    .contact__location {
+      font-size: 0.75rem;
+      color: var(--margin);
+      letter-spacing: 0.06em;
+    }
+
+    .contact__aside {
+      margin-top: 0.75rem;
+      font-family: var(--hand);
+      font-size: 1.05rem;
+      color: var(--margin);
+      transform: rotate(-0.5deg);
+      max-width: 22em;
+      line-height: 1.35;
+    }
+
+    /* ── decorative corner mark ── */
+    .page-mark {
+      position: fixed;
+      bottom: 1.5rem;
+      right: 1.5rem;
+      width: 2.5rem;
+      height: 2.5rem;
+      pointer-events: none;
+      opacity: 0.18;
+    }
+
+    @keyframes rise {
+      from {
+        opacity: 0;
+        transform: translateY(14px);
+      }
+      to {
+        opacity: 1;
+        transform: translateY(0);
+      }
+    }
+
+    @media (max-width: 640px) {
+      html { font-size: 16px; }
+
+      .page {
+        padding: 2.5rem 1.15rem 4rem;
+      }
+
+      .page::before { left: 0.85rem; }
+
+      .masthead {
+        grid-template-columns: 1fr;
+        margin-bottom: 2.5rem;
+      }
+
+      .masthead__date {
+        text-align: left;
+      }
+
+      .margin-note {
+        display: block;
+        margin: 0.5rem 0 0 1.5rem;
+      }
+
+      .margin-note__arrow {
+        left: -1.3rem;
+        top: 0.25rem;
+      }
+
+      .scrap:nth-child(2),
+      .scrap:nth-child(3) {
+        margin-left: 0;
+        margin-right: 0;
+      }
+
+      .writing__link {
+        grid-template-columns: 1fr;
+        gap: 0.2rem;
+      }
+
+      .writing__link::after {
+        display: none;
+      }
+
+      .contact__links {
+        gap: 0.5rem 1rem;
+      }
+    }
+
+    @media (prefers-reduced-motion: reduce) {
+      *, *::before, *::after {
+        animation-duration: 0.01ms !important;
+        transition-duration: 0.01ms !important;
+      }
+    }
+  </style>
+
+<style id="__living_site_scroll_guard">
+  /* Scroll guard injected at build time to ensure generated pages remain scrollable in iframes. */
+  html, body {
+    height: auto !important;
+    min-height: 100% !important;
+    max-height: none !important;
+    overflow-y: auto !important;
+    overflow-x: hidden !important;
+    position: static !important;
+    -webkit-overflow-scrolling: touch !important;
+    touch-action: pan-y !important;
+    overscroll-behavior-y: contain !important;
+  }
+  /* Avoid accidental fixed full-screen traps that break scrolling on mobile. */
+  body {
+    inset: auto !important;
+  }
+</style>
+</head>
+<body>
+  <main class="page">
+    <header class="masthead">
+      <p class="masthead__domain">eriks.design</p>
+      <h1 class="masthead__name">Erik <em>Nilsson</em></h1>
+      <div class="masthead__date">
+        <time datetime="2026-10-21">Oct 21, 2026</time>
+        <span class="masthead__weather">
+          <svg class="masthead__weather-ring" viewBox="0 0 120 32" preserveAspectRatio="none" aria-hidden="true">
+            <ellipse cx="60" cy="16" rx="58" ry="14"/>
+          </svg>
+          <span class="hand">autumn · 14° · overcast</span>
+        </span>
+      </div>
+    </header>
+
+    <section class="lede">
+      <p class="lede__role">Product designer at <a href="https://cursor.com">Cursor</a></p>
+      <p class="lede__bio">
+        Working on how people build software with AI. Off-hours, tinkering with
+        <span class="annotated">living-site
+          <svg class="annotated__mark" viewBox="0 0 100 12" preserveAspectRatio="none" aria-hidden="true">
+            <path d="M2 9 Q25 2, 50 7 T98 4"/>
+          </svg>
+        </span>—agents rebuild this corner of the web from fresh activity data each day.
+        <span class="margin-note" aria-hidden="true">
+          <svg class="margin-note__arrow" viewBox="0 0 24 24" fill="none" aria-hidden="true">
+            <path d="M20 4 L4 14 M4 14 L10 14 M4 14 L4 8" stroke="currentColor" stroke-width="1.2" stroke-linecap="round" stroke-linejoin="round"/>
+          </svg>
+          <span class="margin-note__text">this page too</span>
+        </span>
+      </p>
+    </section>
+
+    <section class="signals" aria-label="Today's signals">
+      <p class="signals__label">Field notes</p>
+      <ul class="signals__list">
+        <li class="signals__item">a cybersecurity fortress darkened by the language beneath it</li>
+        <li class="signals__item">fire escapes rusting on brick facades, their purpose half-forgotten</li>
+        <li class="signals__item">startups planting roots in austin autumn soil</li>
+        <li class="signals__item">karl-the-fog rolling over san francisco at fourteen degrees</li>
+        <li class="signals__item">a long-awaited exchange closes one chapter at the border</li>
+        <li class="signals__item">autumn streets still parsing who lit the flame</li>
+      </ul>
+    </section>
+
+    <section class="scraps" aria-label="Recent thoughts">
+      <p class="scraps__label">Loose pages</p>
+      <div class="scraps__grid">
+        <a class="scrap" href="https://x.com/flowstated/status/2002167999353241901" rel="noopener noreferrer">
+          <p class="scrap__text">imagine 2026</p>
+          <p class="scrap__meta">Dec 20, 2025</p>
+        </a>
+        <a class="scrap" href="https://x.com/flowstated/status/2000889983562080578" rel="noopener noreferrer">
+          <p class="scrap__text">shipping by sunrise</p>
+          <p class="scrap__meta">Dec 16, 2025</p>
+        </a>
+        <a class="scrap" href="https://x.com/flowstated/status/2000691637190861180" rel="noopener noreferrer">
+          <p class="scrap__text">exploring ways to spin up agents from my phone
+
+iOS shortcuts × github actions × cursor cli</p>
+          <p class="scrap__meta">Dec 15, 2025</p>
+        </a>
+      </div>
+    </section>
+
+    <section class="writing" aria-label="Writing">
+      <div class="writing__header">
+        <h2 class="writing__title">Writing</h2>
+        <span class="writing__count">five pieces</span>
+      </div>
+      <ol class="writing__list">
+        <li class="writing__item">
+          <a class="writing__link" href="https://cursor.com/blog/design-mode">
+            <span class="writing__name">Directing agents visually</span>
+            <time class="writing__date" datetime="2026-06-05">2026</time>
+          </a>
+        </li>
+        <li class="writing__item">
+          <a class="writing__link" href="https://eriks.design/posts/a-living-site">
+            <span class="writing__name">A living site</span>
+            <time class="writing__date" datetime="2025-12-26">2025</time>
+          </a>
+        </li>
+        <li class="writing__item">
+          <a class="writing__link" href="https://eriks.design/posts/surgical-edits">
+            <span class="writing__name">Surgical edits</span>
+            <time class="writing__date" datetime="2025-11-23">2025</time>
+          </a>
+        </li>
+        <li class="writing__item">
+          <a class="writing__link" href="https://eriks.design/posts/familiar-differentiation">
+            <span class="writing__name">Familiar differentiation</span>
+            <time class="writing__date" datetime="2024-11-15">2024</time>
+          </a>
+        </li>
+        <li class="writing__item">
+          <a class="writing__link" href="https://eriks.design/posts/hackathon-energy-but-add-users">
+            <span class="writing__name">Hackathon energy, but add users</span>
+            <time class="writing__date" datetime="2022-10-15">2022</time>
+          </a>
+        </li>
+      </ol>
+    </section>
+
+    <footer class="contact">
+      <ul class="contact__links">
+        <li><a href="https://cursor.com">Cursor</a></li>
+        <li><a href="https://x.com/flowstated">X</a></li>
+        <li><a href="https://github.com/eriknson">GitHub</a></li>
+        <li><a href="https://linkedin.com/in/eriknson">LinkedIn</a></li>
+        <li><a href="mailto:contact@eriks.design">Email</a></li>
+      </ul>
+      <p class="contact__location">San Francisco, CA</p>
+      <p class="contact__aside">GitHub is side projects — small experiments, not the day job.</p>
+    </footer>
+  </main>
+
+  <svg class="page-mark" viewBox="0 0 40 40" aria-hidden="true">
+    <rect x="8" y="8" width="24" height="24" fill="none" stroke="currentColor" stroke-width="1"/>
+    <line x1="8" y1="20" x2="32" y2="20" stroke="currentColor" stroke-width="0.5" opacity="0.5"/>
+    <line x1="20" y1="8" x2="20" y2="32" stroke="currentColor" stroke-width="0.5" opacity="0.5"/>
+  </svg>
+</body>
+</html>

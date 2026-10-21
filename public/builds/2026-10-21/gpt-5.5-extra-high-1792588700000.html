@@ -1,0 +1,947 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Erik Nilsson - Editorial Notebook</title>
+  <meta name="description" content="Erik Nilsson is a product designer at Cursor in San Francisco. A minimal editorial notebook of notes, writing, and current signals.">
+  <style>
+    :root {
+      color-scheme: light;
+      --paper: #fbf6ec;
+      --paper-deep: #f1e7d4;
+      --ink: #17120d;
+      --ink-soft: #5e5144;
+      --ink-faint: #948777;
+      --rule: rgba(23, 18, 13, 0.14);
+      --rule-strong: rgba(23, 18, 13, 0.26);
+      --field: rgba(255, 252, 244, 0.74);
+      --coral: #ff4f3e;
+      --coral-p3: color(display-p3 1 0.24 0.17);
+      --blue: #185cff;
+      --blue-p3: color(display-p3 0.02 0.25 1);
+      --green: #05a863;
+      --green-p3: color(display-p3 0 0.68 0.38);
+      --gold: #ca7a00;
+      --shadow: 0 24px 80px rgba(62, 42, 15, 0.12);
+      --serif: Iowan Old Style, Apple Garamond, Palatino Linotype, Book Antiqua, Georgia, serif;
+      --sans: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, Segoe UI, sans-serif;
+      --mono: SFMono-Regular, Menlo, Consolas, Liberation Mono, monospace;
+      --hand: Bradley Hand, Segoe Print, Comic Sans MS, cursive;
+    }
+
+    @media (prefers-color-scheme: dark) {
+      :root {
+        color-scheme: dark;
+        --paper: #1a1814;
+        --paper-deep: #12100e;
+        --ink: #ebe4d6;
+        --ink-soft: #b0a090;
+        --ink-faint: #7a6e60;
+        --rule: rgba(235, 228, 214, 0.12);
+        --rule-strong: rgba(235, 228, 214, 0.22);
+        --field: rgba(30, 26, 22, 0.82);
+        --shadow: 0 24px 80px rgba(0, 0, 0, 0.35);
+      }
+
+      a {
+        text-decoration-color: rgba(235, 228, 214, 0.28);
+      }
+
+      .contact a {
+        background: rgba(30, 26, 22, 0.64);
+      }
+
+      .notecard {
+        border-color: rgba(202, 122, 0, 0.32);
+        background: rgba(30, 26, 22, 0.72);
+      }
+
+      .quote-strip {
+        background: rgba(30, 26, 22, 0.56);
+      }
+
+      .side {
+        background: rgba(22, 20, 17, 0.42);
+      }
+
+      .annotation {
+        background: rgba(26, 24, 20, 0.72);
+      }
+    }
+
+    * {
+      box-sizing: border-box;
+    }
+
+    html {
+      background: var(--paper);
+      color: var(--ink);
+      font-family: var(--sans);
+      font-size: 16px;
+      scroll-behavior: smooth;
+    }
+
+    body {
+      min-height: 100vh;
+      margin: 0;
+      background: var(--paper);
+    }
+
+    a {
+      color: inherit;
+      text-decoration-color: rgba(23, 18, 13, 0.32);
+      text-decoration-thickness: 1px;
+      text-underline-offset: 0.18em;
+      transition: color 180ms ease, text-decoration-color 180ms ease, transform 180ms ease;
+    }
+
+    a:hover {
+      color: var(--blue-p3, var(--blue));
+      text-decoration-color: currentColor;
+    }
+
+    .page {
+      width: min(1500px, 100%);
+      margin: 0 auto;
+      padding: 28px clamp(18px, 4vw, 56px) 48px;
+    }
+
+    .sheet {
+      position: relative;
+      isolation: isolate;
+      overflow: hidden;
+      min-height: calc(100vh - 56px);
+      border: 1px solid var(--rule);
+      border-radius: 30px;
+      background: var(--paper);
+      box-shadow: var(--shadow);
+    }
+
+    .sheet::before {
+      position: absolute;
+      top: 0;
+      bottom: 0;
+      left: clamp(72px, 9vw, 128px);
+      z-index: 0;
+      width: 1px;
+      background: rgba(255, 79, 62, 0.32);
+      content: "";
+    }
+
+    .sheet::after {
+      position: absolute;
+      top: 10%;
+      left: 9%;
+      z-index: 0;
+      width: 260px;
+      height: 260px;
+      border-radius: 999px;
+      pointer-events: none;
+      content: "";
+      background: rgba(255, 79, 62, 0.08);
+      box-shadow:
+        980px -120px 0 24px rgba(24, 92, 255, 0.07),
+        900px 720px 0 48px rgba(5, 168, 99, 0.08);
+    }
+
+    .masthead {
+      position: relative;
+      z-index: 1;
+      display: grid;
+      grid-template-columns: minmax(110px, 0.72fr) minmax(0, 3.8fr) minmax(210px, 1.1fr);
+      gap: clamp(20px, 3vw, 48px);
+      align-items: end;
+      padding: clamp(22px, 4vw, 52px) clamp(22px, 5vw, 72px) 24px;
+      border-bottom: 1px solid var(--rule);
+    }
+
+    .issue {
+      display: grid;
+      gap: 8px;
+      color: var(--ink-soft);
+      font-family: var(--mono);
+      font-size: 0.72rem;
+      letter-spacing: 0.08em;
+      line-height: 1.45;
+      text-transform: uppercase;
+    }
+
+    .issue strong {
+      color: var(--ink);
+      font-weight: 700;
+    }
+
+    .brand {
+      margin: 0;
+      font-family: var(--serif);
+      font-size: clamp(4.6rem, 14vw, 13.8rem);
+      font-weight: 400;
+      letter-spacing: -0.095em;
+      line-height: 0.78;
+      text-wrap: balance;
+    }
+
+    .brand span {
+      display: inline-block;
+    }
+
+    .brand .dot {
+      color: var(--coral-p3, var(--coral));
+      font-family: var(--sans);
+      font-size: 0.76em;
+      font-weight: 700;
+      transform: translate(-0.02em, -0.03em) rotate(-7deg);
+    }
+
+    .contact {
+      display: flex;
+      flex-wrap: wrap;
+      justify-content: flex-end;
+      gap: 8px;
+      font-size: 0.82rem;
+    }
+
+    .contact a {
+      border: 1px solid var(--rule);
+      border-radius: 999px;
+      padding: 8px 11px;
+      background: rgba(255, 252, 244, 0.46);
+      text-decoration: none;
+    }
+
+    .contact a:hover {
+      border-color: rgba(24, 92, 255, 0.38);
+      transform: translateY(-1px);
+    }
+
+    main {
+      position: relative;
+      z-index: 1;
+      display: grid;
+      grid-template-columns: minmax(74px, 0.62fr) minmax(0, 1.7fr) minmax(280px, 0.82fr);
+      min-height: 760px;
+    }
+
+    .margin-notes {
+      position: relative;
+      padding: 34px clamp(14px, 2.2vw, 30px);
+      border-right: 1px solid var(--rule);
+      color: var(--ink-soft);
+    }
+
+    .vertical-label {
+      position: sticky;
+      top: 28px;
+      display: inline-flex;
+      transform: rotate(-90deg) translateX(-100%);
+      transform-origin: left top;
+      gap: 10px;
+      white-space: nowrap;
+      font-family: var(--mono);
+      font-size: 0.72rem;
+      letter-spacing: 0.11em;
+      text-transform: uppercase;
+    }
+
+    .vertical-label b {
+      color: var(--coral-p3, var(--coral));
+      font-weight: 700;
+    }
+
+    .story {
+      display: grid;
+      align-content: start;
+      gap: clamp(34px, 5vw, 70px);
+      padding: clamp(34px, 6vw, 78px) clamp(24px, 5vw, 76px) clamp(46px, 6vw, 86px);
+    }
+
+    .hero {
+      display: grid;
+      gap: 24px;
+      max-width: 880px;
+    }
+
+    .kicker {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 10px;
+      align-items: center;
+      color: var(--ink-soft);
+      font-family: var(--mono);
+      font-size: 0.74rem;
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+    }
+
+    .kicker::before {
+      display: inline-block;
+      width: 42px;
+      height: 2px;
+      background: var(--blue-p3, var(--blue));
+      content: "";
+      transform: rotate(-2deg);
+    }
+
+    .headline {
+      max-width: 10.5em;
+      margin: 0;
+      font-family: var(--serif);
+      font-size: clamp(3.3rem, 8vw, 9rem);
+      font-weight: 400;
+      letter-spacing: -0.075em;
+      line-height: 0.87;
+      text-wrap: balance;
+    }
+
+    .headline .mark {
+      position: relative;
+      display: inline-block;
+      color: var(--green-p3, var(--green));
+      font-style: italic;
+      letter-spacing: -0.1em;
+    }
+
+    .headline .mark::after {
+      position: absolute;
+      right: -0.08em;
+      bottom: 0.02em;
+      left: -0.04em;
+      height: 0.08em;
+      border: 2px solid var(--coral-p3, var(--coral));
+      border-top: 0;
+      border-radius: 50%;
+      content: "";
+      transform: rotate(-2deg);
+    }
+
+    .dek {
+      display: grid;
+      grid-template-columns: minmax(0, 1fr) minmax(180px, 0.48fr);
+      gap: clamp(18px, 4vw, 44px);
+      align-items: end;
+      max-width: 840px;
+      color: var(--ink-soft);
+    }
+
+    .dek p {
+      margin: 0;
+      font-family: var(--serif);
+      font-size: clamp(1.34rem, 2.5vw, 2rem);
+      line-height: 1.22;
+      text-wrap: pretty;
+    }
+
+    .notecard {
+      position: relative;
+      padding: 16px 16px 14px;
+      border: 1px solid rgba(202, 122, 0, 0.26);
+      border-radius: 18px 18px 22px 16px;
+      background: rgba(255, 252, 244, 0.66);
+      color: var(--ink);
+      font-family: var(--hand);
+      font-size: clamp(0.98rem, 1.3vw, 1.12rem);
+      line-height: 1.3;
+      transform: rotate(1.2deg);
+    }
+
+    .notecard::before {
+      position: absolute;
+      top: -10px;
+      left: 22px;
+      width: 58px;
+      height: 18px;
+      background: rgba(255, 79, 62, 0.13);
+      content: "";
+      transform: rotate(-4deg);
+    }
+
+    .essay-grid {
+      display: grid;
+      grid-template-columns: minmax(0, 1fr) minmax(240px, 0.48fr);
+      gap: clamp(24px, 5vw, 64px);
+      align-items: start;
+    }
+
+    .intro {
+      display: grid;
+      gap: 18px;
+      max-width: 660px;
+    }
+
+    .intro p {
+      margin: 0;
+      font-family: var(--serif);
+      font-size: clamp(1.28rem, 1.9vw, 1.68rem);
+      line-height: 1.42;
+      text-wrap: pretty;
+    }
+
+    .intro .small {
+      color: var(--ink-soft);
+      font-family: var(--sans);
+      font-size: 1rem;
+      line-height: 1.65;
+    }
+
+    .inline-note {
+      display: inline-block;
+      margin-inline: 0.12em;
+      color: var(--coral-p3, var(--coral));
+      font-family: var(--hand);
+      font-size: 0.8em;
+      transform: rotate(-3deg) translateY(-0.08em);
+    }
+
+    .field-note {
+      position: relative;
+      display: grid;
+      gap: 18px;
+      padding: 20px;
+      border: 1px solid var(--rule);
+      border-radius: 24px;
+      background: var(--field);
+    }
+
+    .field-note::before {
+      position: absolute;
+      top: -13px;
+      right: 26px;
+      padding: 3px 9px;
+      border: 1px solid var(--rule);
+      border-radius: 999px;
+      background: var(--paper);
+      color: var(--ink-soft);
+      content: "today";
+      font-family: var(--mono);
+      font-size: 0.68rem;
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+    }
+
+    .field-row {
+      display: grid;
+      gap: 4px;
+      padding-bottom: 14px;
+      border-bottom: 1px solid var(--rule);
+    }
+
+    .field-row:last-child {
+      padding-bottom: 0;
+      border-bottom: 0;
+    }
+
+    .field-row dt {
+      color: var(--ink-faint);
+      font-family: var(--mono);
+      font-size: 0.68rem;
+      letter-spacing: 0.1em;
+      text-transform: uppercase;
+    }
+
+    .field-row dd {
+      margin: 0;
+      font-family: var(--serif);
+      font-size: 1.18rem;
+      line-height: 1.25;
+    }
+
+    .quote-strip {
+      display: grid;
+      grid-template-columns: repeat(3, minmax(0, 1fr));
+      border: 1px solid var(--rule-strong);
+      border-radius: 26px;
+      background: rgba(255, 252, 244, 0.5);
+      overflow: hidden;
+    }
+
+    .quote {
+      min-height: 180px;
+      padding: clamp(18px, 3vw, 28px);
+      border-right: 1px solid var(--rule);
+    }
+
+    .quote:last-child {
+      border-right: 0;
+    }
+
+    .quote small {
+      display: block;
+      margin-bottom: 26px;
+      color: var(--ink-faint);
+      font-family: var(--mono);
+      font-size: 0.68rem;
+      letter-spacing: 0.1em;
+      text-transform: uppercase;
+    }
+
+    .quote p {
+      margin: 0;
+      font-family: var(--serif);
+      font-size: clamp(1.38rem, 2.2vw, 2.18rem);
+      letter-spacing: -0.04em;
+      line-height: 1.02;
+      text-wrap: balance;
+    }
+
+    .quote:nth-child(1) p {
+      color: var(--blue-p3, var(--blue));
+    }
+
+    .quote:nth-child(2) p {
+      color: var(--coral-p3, var(--coral));
+    }
+
+    .quote:nth-child(3) p {
+      color: var(--green-p3, var(--green));
+    }
+
+    .writing {
+      display: grid;
+      gap: 18px;
+      max-width: 860px;
+    }
+
+    .section-title {
+      display: flex;
+      gap: 12px;
+      align-items: center;
+      margin: 0;
+      font-family: var(--mono);
+      font-size: 0.78rem;
+      letter-spacing: 0.12em;
+      text-transform: uppercase;
+    }
+
+    .section-title::after {
+      flex: 1;
+      height: 1px;
+      background: var(--rule);
+      content: "";
+    }
+
+    .writing-list {
+      display: grid;
+      border-top: 1px solid var(--rule-strong);
+    }
+
+    .writing-list a {
+      display: grid;
+      grid-template-columns: 7.2rem minmax(0, 1fr) auto;
+      gap: 18px;
+      align-items: baseline;
+      padding: 18px 0;
+      border-bottom: 1px solid var(--rule);
+      text-decoration: none;
+    }
+
+    .writing-list a:hover {
+      transform: translateX(4px);
+    }
+
+    .writing-list time,
+    .writing-list span:last-child {
+      color: var(--ink-faint);
+      font-family: var(--mono);
+      font-size: 0.72rem;
+      letter-spacing: 0.06em;
+      text-transform: uppercase;
+    }
+
+    .writing-list strong {
+      font-family: var(--serif);
+      font-size: clamp(1.35rem, 2vw, 2rem);
+      font-weight: 400;
+      letter-spacing: -0.04em;
+    }
+
+    .side {
+      display: grid;
+      align-content: start;
+      gap: 26px;
+      padding: clamp(28px, 5vw, 62px) clamp(20px, 3vw, 38px);
+      border-left: 1px solid var(--rule);
+      background: rgba(255, 252, 244, 0.34);
+    }
+
+    .annotation {
+      position: relative;
+      display: grid;
+      gap: 12px;
+      padding: 18px 18px 20px;
+      border: 1px solid var(--rule);
+      border-radius: 22px;
+      background: rgba(251, 246, 236, 0.62);
+    }
+
+    .annotation:nth-child(2) {
+      transform: rotate(-0.8deg);
+    }
+
+    .annotation:nth-child(3) {
+      transform: rotate(0.7deg);
+    }
+
+    .annotation h2,
+    .annotation h3 {
+      margin: 0;
+      font-family: var(--mono);
+      font-size: 0.72rem;
+      letter-spacing: 0.11em;
+      text-transform: uppercase;
+    }
+
+    .annotation p {
+      margin: 0;
+      color: var(--ink-soft);
+      font-size: 0.95rem;
+      line-height: 1.55;
+      text-wrap: pretty;
+    }
+
+    .annotation .large {
+      color: var(--ink);
+      font-family: var(--serif);
+      font-size: clamp(1.52rem, 2.3vw, 2.2rem);
+      letter-spacing: -0.045em;
+      line-height: 1.04;
+    }
+
+    .signal-list {
+      display: grid;
+      gap: 11px;
+      margin: 0;
+      padding: 0;
+      list-style: none;
+    }
+
+    .signal-list li {
+      position: relative;
+      padding-left: 18px;
+      color: var(--ink-soft);
+      font-family: var(--serif);
+      font-size: 1.05rem;
+      line-height: 1.28;
+    }
+
+    .signal-list li::before {
+      position: absolute;
+      top: 0.54em;
+      left: 0;
+      width: 8px;
+      height: 8px;
+      border: 1.5px solid var(--coral-p3, var(--coral));
+      border-radius: 999px;
+      content: "";
+    }
+
+    .scribble {
+      position: relative;
+      padding: 20px 18px;
+      border: 1.5px solid var(--blue-p3, var(--blue));
+      border-radius: 54% 46% 52% 48% / 44% 58% 42% 56%;
+      color: var(--blue-p3, var(--blue));
+      font-family: var(--hand);
+      font-size: 1.15rem;
+      line-height: 1.25;
+      transform: rotate(2.2deg);
+    }
+
+    .colophon {
+      position: relative;
+      z-index: 1;
+      display: flex;
+      flex-wrap: wrap;
+      gap: 10px;
+      align-items: center;
+      justify-content: space-between;
+      padding: 20px clamp(22px, 5vw, 72px);
+      border-top: 1px solid var(--rule);
+      color: var(--ink-soft);
+      font-family: var(--mono);
+      font-size: 0.72rem;
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+    }
+
+    .colophon a {
+      text-decoration: none;
+    }
+
+    .ink-dot {
+      display: inline-block;
+      width: 0.72em;
+      height: 0.72em;
+      margin-inline: 0.15em 0.1em;
+      border-radius: 999px;
+      background: var(--coral-p3, var(--coral));
+      vertical-align: -0.02em;
+    }
+
+    @media (prefers-reduced-motion: no-preference) {
+      .notecard,
+      .annotation,
+      .scribble {
+        animation: settle 700ms cubic-bezier(0.2, 0.8, 0.2, 1) both;
+      }
+
+      .annotation:nth-child(3) {
+        animation-delay: 90ms;
+      }
+
+      .annotation:nth-child(4) {
+        animation-delay: 160ms;
+      }
+
+      @keyframes settle {
+        from {
+          opacity: 0;
+          translate: 0 10px;
+        }
+        to {
+          opacity: 1;
+          translate: 0 0;
+        }
+      }
+    }
+
+    @media (max-width: 1100px) {
+      .masthead {
+        grid-template-columns: 1fr;
+        align-items: start;
+      }
+
+      .contact {
+        justify-content: flex-start;
+      }
+
+      main {
+        grid-template-columns: minmax(0, 1fr);
+      }
+
+      .margin-notes {
+        display: none;
+      }
+
+      .side {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+        border-top: 1px solid var(--rule);
+        border-left: 0;
+      }
+
+      .scribble {
+        grid-column: 1 / -1;
+      }
+    }
+
+    @media (max-width: 760px) {
+      .page {
+        padding: 12px;
+      }
+
+      .sheet {
+        border-radius: 22px;
+        background: var(--paper);
+      }
+
+      .masthead,
+      .story,
+      .side,
+      .colophon {
+        padding-inline: 18px;
+      }
+
+      .brand {
+        font-size: clamp(4.1rem, 21vw, 7rem);
+      }
+
+      .dek,
+      .essay-grid,
+      .quote-strip {
+        grid-template-columns: 1fr;
+      }
+
+      .quote {
+        min-height: auto;
+        border-right: 0;
+        border-bottom: 1px solid var(--rule);
+      }
+
+      .quote:last-child {
+        border-bottom: 0;
+      }
+
+      .side {
+        grid-template-columns: 1fr;
+      }
+
+      .writing-list a {
+        grid-template-columns: 1fr auto;
+        gap: 7px 14px;
+      }
+
+      .writing-list time {
+        grid-column: 1 / -1;
+      }
+    }
+  </style>
+
+<style id="__living_site_scroll_guard">
+  /* Scroll guard injected at build time to ensure generated pages remain scrollable in iframes. */
+  html, body {
+    height: auto !important;
+    min-height: 100% !important;
+    max-height: none !important;
+    overflow-y: auto !important;
+    overflow-x: hidden !important;
+    position: static !important;
+    -webkit-overflow-scrolling: touch !important;
+    touch-action: pan-y !important;
+    overscroll-behavior-y: contain !important;
+  }
+  /* Avoid accidental fixed full-screen traps that break scrolling on mobile. */
+  body {
+    inset: auto !important;
+  }
+</style>
+</head>
+<body>
+  <div class="page">
+    <article class="sheet" aria-label="Erik Nilsson editorial notebook">
+      <header class="masthead">
+        <div class="issue" aria-label="Issue details">
+          <span><strong>eriks.design</strong></span>
+          <span>Notebook / 2026.10.21</span>
+          <span>San Francisco / overcast / 14 C</span>
+        </div>
+
+        <h1 class="brand" aria-label="Erik Nilsson">
+          <span>Erik</span><span class="dot">.</span><span>Nilsson</span>
+        </h1>
+
+        <nav class="contact" aria-label="Contact links">
+          <a href="mailto:contact@eriks.design">Email</a>
+          <a href="https://x.com/flowstated">X</a>
+          <a href="https://github.com/eriknson">GitHub</a>
+          <a href="https://linkedin.com/in/eriknson">LinkedIn</a>
+        </nav>
+      </header>
+
+      <main>
+        <aside class="margin-notes" aria-hidden="true">
+          <div class="vertical-label"><b>field copy</b> part magazine page / part designer notebook</div>
+        </aside>
+
+        <section class="story">
+          <div class="hero">
+            <div class="kicker">Product Designer at Cursor</div>
+            <h2 class="headline">Designing software with <span class="mark">AI</span>, one careful interaction at a time.</h2>
+            <div class="dek">
+              <p>Erik Nilsson is a product designer in San Francisco, working on how people build software with AI.</p>
+              <div class="notecard">Keep the page quiet. Let the details do the talking.</div>
+            </div>
+          </div>
+
+          <div class="essay-grid">
+            <div class="intro">
+              <p>At Cursor, the work sits somewhere between toolmaking and taste: small decisions about flow, context, and feedback that can make building feel lighter.</p>
+              <p class="small">Off-hours, this corner of the web keeps changing. Agents rebuild it from fresh activity data, turning weather, posts, and tiny signals into a daily surface. Today is quieter: no commits, no new posts, just overcast autumn air and a few notes pinned to the edge.</p>
+              <p class="small">The mood: surgical moves over sweeping one-shots <span class="inline-note">yes</span> and a belief that the best interfaces help people steer clearly while the machinery disappears.</p>
+            </div>
+
+            <dl class="field-note" aria-label="Current field note">
+              <div class="field-row">
+                <dt>Location</dt>
+                <dd>San Francisco, CA</dd>
+              </div>
+              <div class="field-row">
+                <dt>Current phase</dt>
+                <dd>Quieter, focused, observant.</dd>
+              </div>
+              <div class="field-row">
+                <dt>Signal</dt>
+                <dd>Karl-the-fog rolling over the city at fourteen degrees.</dd>
+              </div>
+            </dl>
+          </div>
+
+          <section class="quote-strip" aria-label="Recent short notes">
+            <div class="quote">
+              <small>Recent note</small>
+              <p>imagine 2026</p>
+            </div>
+            <div class="quote">
+              <small>Recent note</small>
+              <p>shipping by sunrise</p>
+            </div>
+            <div class="quote">
+              <small>Recent note</small>
+              <p>iOS shortcuts × github actions × cursor cli</p>
+            </div>
+          </section>
+
+          <section class="writing" aria-labelledby="writing-title">
+            <h2 class="section-title" id="writing-title">Writing Index</h2>
+            <div class="writing-list">
+              <a href="https://cursor.com/blog/design-mode">
+                <time datetime="2026-06-05">Jun 05, 2026</time>
+                <strong>Directing agents visually</strong>
+                <span>6 min</span>
+              </a>
+              <a href="/posts/a-living-site">
+                <time datetime="2025-12-26">Dec 26, 2025</time>
+                <strong>A living site</strong>
+                <span>7 min</span>
+              </a>
+              <a href="/posts/surgical-edits">
+                <time datetime="2025-11-23">Nov 23, 2025</time>
+                <strong>Surgical edits</strong>
+                <span>4 min</span>
+              </a>
+              <a href="/posts/familiar-differentiation">
+                <time datetime="2024-11-15">Nov 15, 2024</time>
+                <strong>Familiar differentiation</strong>
+                <span>5 min</span>
+              </a>
+              <a href="/posts/hackathon-energy-but-add-users">
+                <time datetime="2022-10-15">Oct 15, 2022</time>
+                <strong>Hackathon energy, but add users</strong>
+                <span>4 min</span>
+              </a>
+            </div>
+          </section>
+        </section>
+
+        <aside class="side" aria-label="Notebook annotations">
+          <section class="annotation">
+            <h2>Margin note</h2>
+            <p class="large">Simplicity is not the absence of texture.</p>
+            <p>It is choosing where the texture belongs: in the pause, the underline, the hover, the one sentence that keeps the whole page human.</p>
+          </section>
+
+          <section class="annotation">
+            <h3>World Signals</h3>
+            <ul class="signal-list">
+              <li>fire escapes rusting on brick facades</li>
+              <li>startups planting roots in Austin autumn soil</li>
+              <li>autumn streets parsing who lit the flame</li>
+            </ul>
+          </section>
+
+          <section class="annotation">
+            <h3>Working Belief</h3>
+            <p>AI agents as collaborators, not replacements. Stay in flow, keep context close, and iterate until the thing clicks.</p>
+          </section>
+
+          <div class="scribble">Designer notebook, but edited. Warm paper, sharp type, a few deliberate fingerprints.</div>
+        </aside>
+      </main>
+
+      <footer class="colophon">
+        <span>Built from identity + brief data <span class="ink-dot" aria-hidden="true"></span> one self-contained HTML file</span>
+        <a href="https://cursor.com">Cursor</a>
+      </footer>
+    </article>
+  </div>
+</body>
+</html>
