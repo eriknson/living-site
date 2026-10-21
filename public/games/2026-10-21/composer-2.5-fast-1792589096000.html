@@ -1,0 +1,654 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Rivet Run — Fire Escape Sprint</title>
+<style>
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+:root{
+  --bg:#1a1614;--fg:#e8e0d8;--muted:#9a9088;--accent:#c45c26;--accent2:#d4a017;
+  --brick:#6b3a2a;--rust:#8b4513;--fog:rgba(180,190,200,.55);--panel:rgba(26,22,20,.92);
+  --btn-bg:#c45c26;--btn-fg:#fff;--hud-bg:rgba(26,22,20,.75);
+}
+@media(prefers-color-scheme:light){
+  :root{
+    --bg:#f0ebe4;--fg:#2a2018;--muted:#6a5e54;--accent:#a04818;--accent2:#b8860b;
+    --brick:#8b5a4a;--rust:#7a4010;--fog:rgba(160,170,185,.45);--panel:rgba(240,235,228,.94);
+    --btn-bg:#a04818;--btn-fg:#fff;--hud-bg:rgba(240,235,228,.85);
+  }
+}
+html,body{width:100%;height:100%;overflow:hidden;background:var(--bg);color:var(--fg);
+  font-family:ui-monospace,'SFMono-Regular',Menlo,monospace;touch-action:none;user-select:none;-webkit-user-select:none}
+#wrap{position:fixed;inset:0;width:100dvw;height:100dvh;display:flex;flex-direction:column}
+#gameCanvas{display:block;width:100%;flex:1;touch-action:none;user-select:none}
+#hud{position:absolute;top:0;left:0;right:0;padding:max(12px,env(safe-area-inset-top)) 16px 8px;
+  display:flex;justify-content:space-between;align-items:flex-start;pointer-events:none;z-index:2}
+.hud-block{display:flex;flex-direction:column;gap:2px;background:var(--hud-bg);padding:8px 12px;border-radius:4px;
+  backdrop-filter:blur(6px);-webkit-backdrop-filter:blur(6px);font-size:11px;letter-spacing:.04em}
+.hud-block span.label{color:var(--muted);font-size:9px;text-transform:uppercase}
+.hud-block span.val{font-size:15px;font-weight:600;color:var(--accent2)}
+#progressWrap{position:absolute;top:max(52px,env(safe-area-inset-top));left:16px;right:16px;height:3px;
+  background:rgba(128,128,128,.2);border-radius:2px;pointer-events:none;z-index:2;overflow:hidden}
+#progressBar{height:100%;width:0;background:var(--accent);border-radius:2px;transition:width .15s linear}
+.overlay{position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;
+  padding:24px;pointer-events:none;z-index:10;text-align:center}
+.overlay.hidden{display:none}
+.overlay-card{background:var(--panel);border:1px solid rgba(128,128,128,.25);border-radius:8px;
+  padding:28px 24px;max-width:340px;width:100%;backdrop-filter:blur(12px);-webkit-backdrop-filter:blur(12px)}
+.overlay h1{font-size:22px;font-weight:700;letter-spacing:.06em;margin-bottom:6px;color:var(--fg)}
+.overlay .sub{font-size:11px;color:var(--muted);line-height:1.6;margin-bottom:20px}
+.overlay .hint{font-size:10px;color:var(--muted);margin-top:16px;line-height:1.5}
+.btn{display:inline-flex;align-items:center;justify-content:center;min-height:48px;min-width:160px;
+  padding:12px 28px;border:none;border-radius:6px;background:var(--btn-bg);color:var(--btn-fg);
+  font-family:inherit;font-size:13px;font-weight:600;letter-spacing:.08em;text-transform:uppercase;
+  cursor:pointer;pointer-events:auto;touch-action:manipulation;-webkit-tap-highlight-color:transparent;
+  transition:transform .12s ease,opacity .12s ease}
+.btn:active{transform:scale(.96);opacity:.88}
+#swipeHint{position:absolute;bottom:max(24px,env(safe-area-inset-bottom));left:0;right:0;
+  text-align:center;font-size:10px;color:var(--muted);pointer-events:none;z-index:2;letter-spacing:.06em}
+#swipeHint.hidden{display:none}
+</style>
+</head>
+<body>
+<div id="wrap">
+  <canvas id="gameCanvas"></canvas>
+  <div id="hud">
+    <div class="hud-block"><span class="label">Rivets</span><span class="val" id="scoreVal">0</span></div>
+    <div class="hud-block"><span class="label">Time</span><span class="val" id="timeVal">40.0</span></div>
+    <div class="hud-block"><span class="label">Combo</span><span class="val" id="comboVal">×1</span></div>
+  </div>
+  <div id="progressWrap"><div id="progressBar"></div></div>
+  <div id="swipeHint">← SWIPE LANES →</div>
+
+  <div id="titleScreen" class="overlay">
+    <div class="overlay-card">
+      <h1>RIVET RUN</h1>
+      <p class="sub">Three swaying fire escapes. Fog at fourteen degrees.<br>Collect rivets. Reach the rooftop.</p>
+      <button class="btn" data-smoke="start" id="startBtn">Climb</button>
+      <p class="hint">Swipe left / right to switch ladders<br>Arrow keys on desktop</p>
+    </div>
+  </div>
+
+  <div id="gameOverScreen" class="overlay hidden">
+    <div class="overlay-card">
+      <h1 id="endTitle">FADED IN FOG</h1>
+      <p class="sub" id="endMsg">The rust took another runner.</p>
+      <p class="sub" id="endStats"></p>
+      <button class="btn" data-smoke="restart" id="restartBtn">Try Again</button>
+    </div>
+  </div>
+</div>
+<script>
+(function(){
+'use strict';
+
+var canvas = document.getElementById('gameCanvas');
+var ctx = canvas && canvas.getContext ? canvas.getContext('2d') : null;
+var scoreEl = document.getElementById('scoreVal');
+var timeEl = document.getElementById('timeVal');
+var comboEl = document.getElementById('comboVal');
+var progressBar = document.getElementById('progressBar');
+var titleScreen = document.getElementById('titleScreen');
+var gameOverScreen = document.getElementById('gameOverScreen');
+var endTitle = document.getElementById('endTitle');
+var endMsg = document.getElementById('endMsg');
+var endStats = document.getElementById('endStats');
+var swipeHint = document.getElementById('swipeHint');
+var startBtn = document.getElementById('startBtn');
+var restartBtn = document.getElementById('restartBtn');
+
+var W = 360, H = 640;
+var state = 'title';
+var lane = 1;
+var targetLane = 1;
+var laneT = 1;
+var climbSpeed = 90;
+var distance = 0;
+var totalDist = 5200;
+var timeLeft = 40;
+var score = 0;
+var combo = 1;
+var maxCombo = 1;
+var fogY = 0;
+var fogSpeed = 28;
+var elapsed = 0;
+var shakeT = 0;
+var hitPause = 0;
+var particles = [];
+var rungs = [];
+var rivets = [];
+var missingChance = 0.08;
+var nextRungY = 0;
+var animId = 0;
+var lastTs = 0;
+var audioCtx = null;
+var darkMode = true;
+
+var LANE_X = [0.22, 0.5, 0.78];
+var SWAY_AMP = 14;
+var SWAY_FREQ = 0.9;
+
+function prefersDark(){
+  try{ return window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches; }
+  catch(e){ return true; }
+}
+
+function getColors(){
+  darkMode = prefersDark();
+  if(darkMode){
+    return {bg:'#1a1614',brick1:'#4a2820',brick2:'#3a2018',mortar:'#2a1810',rail:'#6a5040',
+      rung:'#7a5840',rust:'#8b4513',fog1:'rgba(140,155,170,0.35)',fog2:'rgba(100,115,130,0.55)',
+      rivet:'#d4a017',rivetSh:'#a07810',player:'#e8e0d8',playerAcc:'#c45c26',particle:'#c45c26'};
+  }
+  return {bg:'#f0ebe4',brick1:'#9a6858',brick2:'#8a5848',mortar:'#c8b8a8',rail:'#5a4030',
+    rung:'#6a4830',rust:'#7a4010',fog1:'rgba(160,175,190,0.3)',fog2:'rgba(130,145,160,0.45)',
+    rivet:'#b8860b',rivetSh:'#886008',player:'#2a2018',playerAcc:'#a04818',particle:'#a04818'};
+}
+
+var C = getColors();
+
+try{
+  if(window.matchMedia){
+    window.matchMedia('(prefers-color-scheme: dark)').addEventListener('change', function(){ C = getColors(); });
+  }
+}catch(e){}
+
+function resize(){
+  if(!canvas) return;
+  var dpr = Math.min(window.devicePixelRatio || 1, 2);
+  var rect = canvas.getBoundingClientRect();
+  W = rect.width || window.innerWidth || 360;
+  H = rect.height || window.innerHeight || 640;
+  canvas.width = Math.floor(W * dpr);
+  canvas.height = Math.floor(H * dpr);
+  ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+}
+window.addEventListener('resize', resize);
+resize();
+
+function initAudio(){
+  if(audioCtx) return;
+  try{
+    var AC = window.AudioContext || window.webkitAudioContext;
+    if(AC) audioCtx = new AC();
+  }catch(e){}
+}
+
+function playTone(freq, dur, vol, type){
+  if(!audioCtx) return;
+  try{
+    if(audioCtx.state === 'suspended') audioCtx.resume();
+    var o = audioCtx.createOscillator();
+    var g = audioCtx.createGain();
+    o.type = type || 'sine';
+    o.frequency.value = freq;
+    g.gain.setValueAtTime(vol || 0.08, audioCtx.currentTime);
+    g.gain.exponentialRampToValueAtTime(0.001, audioCtx.currentTime + dur);
+    o.connect(g); g.connect(audioCtx.destination);
+    o.start(); o.stop(audioCtx.currentTime + dur);
+  }catch(e){}
+}
+
+function vibrate(ms){
+  try{ if(navigator.vibrate) navigator.vibrate(ms); }catch(e){}
+}
+
+function laneX(l, t, worldY){
+  var base = W * LANE_X[l];
+  var sway = Math.sin(t * SWAY_FREQ + l * 1.4 + worldY * 0.008) * SWAY_AMP;
+  return base + sway;
+}
+
+function playerScreenY(){
+  return H * 0.68;
+}
+
+function resetGame(){
+  lane = 1; targetLane = 1; laneT = 1;
+  climbSpeed = 90; distance = 0; timeLeft = 40;
+  score = 0; combo = 1; maxCombo = 1;
+  fogY = -H * 0.3; fogSpeed = 28; elapsed = 0;
+  shakeT = 0; hitPause = 0; particles = [];
+  rungs = []; rivets = []; missingChance = 0.08;
+  nextRungY = playerScreenY() - 60;
+  generateRungsAhead(true);
+  updateHUD();
+  progressBar.style.width = '0%';
+}
+
+function generateRungsAhead(isStart){
+  var py = playerScreenY();
+  while(nextRungY < py + H * 1.5){
+    var rowMiss = [false, false, false];
+    for(var l = 0; l < 3; l++){
+      var nearStart = isStart && Math.abs(nextRungY - py) < 30 && l === 1;
+      rowMiss[l] = nearStart ? false : Math.random() < missingChance;
+    }
+    if(rowMiss[0] && rowMiss[1] && rowMiss[2]) rowMiss[1 + Math.floor(Math.random()*2)] = false;
+    for(var l2 = 0; l2 < 3; l2++){
+      rungs.push({lane:l2, y:nextRungY, miss:rowMiss[l2], alpha:1});
+      if(!rowMiss[l2] && Math.random() < 0.38){
+        var off = Math.random();
+        rivets.push({lane:l2, y:nextRungY - 8, collected:false, pulse:Math.random()*Math.PI*2, offCenter:off});
+      }
+    }
+    nextRungY += 52 + Math.random() * 18;
+  }
+  if(isStart) generateRungsAhead(false);
+}
+
+function spawnParticles(x, y, col, n){
+  for(var i = 0; i < n; i++){
+    particles.push({
+      x:x, y:y,
+      vx:(Math.random()-0.5)*120,
+      vy:(Math.random()-0.5)*120 - 40,
+      life:0.4 + Math.random()*0.3,
+      max:0.4 + Math.random()*0.3,
+      col:col, size:2 + Math.random()*3
+    });
+  }
+}
+
+function updateHUD(){
+  if(scoreEl) scoreEl.textContent = String(score);
+  if(timeEl) timeEl.textContent = Math.max(0, timeLeft).toFixed(1);
+  if(comboEl) comboEl.textContent = '×' + combo;
+  if(progressBar) progressBar.style.width = Math.min(100, (distance/totalDist)*100) + '%';
+}
+
+function startGame(){
+  initAudio();
+  resetGame();
+  state = 'playing';
+  titleScreen.classList.add('hidden');
+  gameOverScreen.classList.add('hidden');
+  swipeHint.classList.remove('hidden');
+  lastTs = performance.now();
+  if(!animId) loop(lastTs);
+}
+
+function endGame(won){
+  state = won ? 'won' : 'lost';
+  swipeHint.classList.add('hidden');
+  gameOverScreen.classList.remove('hidden');
+  if(won){
+    endTitle.textContent = 'ROOFTOP';
+    endMsg.textContent = 'You outran the fog. Shipping by sunrise.';
+    playTone(523, 0.15, 0.1, 'triangle');
+    setTimeout(function(){ playTone(659, 0.15, 0.1, 'triangle'); }, 120);
+    setTimeout(function(){ playTone(784, 0.25, 0.12, 'triangle'); }, 240);
+    vibrate([30, 20, 50]);
+  } else {
+    endTitle.textContent = distance >= totalDist * 0.85 ? 'SO CLOSE' : 'FADED IN FOG';
+    endMsg.textContent = distance >= totalDist * 0.85 ? 'One more ladder switch.' : 'The rust took another runner.';
+    playTone(180, 0.4, 0.1, 'sawtooth');
+    vibrate(80);
+  }
+  var bonus = won ? Math.floor(timeLeft * 10) : 0;
+  endStats.textContent = 'Rivets: ' + score + '  ·  Best combo: ×' + maxCombo +
+    (bonus ? '  ·  Time bonus: +' + bonus : '') +
+    '  ·  ' + Math.floor(distance/totalDist*100) + '% climbed';
+}
+
+function switchLane(dir){
+  if(state !== 'playing') return;
+  var nl = targetLane + dir;
+  if(nl < 0 || nl > 2) return;
+  targetLane = nl;
+  playTone(280 + nl * 40, 0.06, 0.05, 'square');
+}
+
+function update(dt){
+  if(state !== 'playing') return;
+  if(hitPause > 0){ hitPause -= dt; return; }
+
+  elapsed += dt;
+  timeLeft -= dt;
+  if(timeLeft <= 0){ timeLeft = 0; endGame(false); return; }
+
+  var diff = 1 + elapsed * 0.035;
+  fogSpeed = 28 + elapsed * 2.2;
+  missingChance = Math.min(0.35, 0.08 + elapsed * 0.006);
+  climbSpeed = 90 + elapsed * 4;
+
+  laneT += (targetLane - laneT) * Math.min(1, dt * 12);
+  if(Math.abs(targetLane - laneT) < 0.01) laneT = targetLane;
+  lane = Math.round(laneT);
+
+  var move = climbSpeed * dt;
+  distance += move;
+  fogY += fogSpeed * dt;
+
+  if(distance >= totalDist){ endGame(true); return; }
+
+  var py = playerScreenY();
+  var px = laneX(laneT, elapsed, distance);
+
+  for(var i = rivets.length - 1; i >= 0; i--){
+    var r = rivets[i];
+    if(r.collected) continue;
+    r.y -= move;
+    r.pulse += dt * 5;
+    var rx = laneX(r.lane, elapsed, distance - (py - r.y));
+    if(r.offCenter > 0.6) rx += (r.offCenter - 0.5) * 30 * (r.lane === 0 ? 1 : -1);
+    var dy = Math.abs(r.y - py);
+    var dx = Math.abs(rx - px);
+    if(dy < 22 && dx < 28 && Math.abs(r.lane - laneT) < 0.6){
+      r.collected = true;
+      var pts = Math.ceil(10 * combo);
+      score += pts;
+      combo = Math.min(8, combo + 1);
+      if(combo > maxCombo) maxCombo = combo;
+      hitPause = 0.04;
+      spawnParticles(rx, r.y, C.rivet, 8);
+      playTone(440 + combo * 30, 0.08, 0.07, 'sine');
+      vibrate(15);
+    }
+  }
+
+  var onRung = false;
+  for(var j = 0; j < rungs.length; j++){
+    var rg = rungs[j];
+    rg.y -= move;
+    if(rg.miss) continue;
+    if(rg.lane === lane && Math.abs(rg.y - py) < 26) onRung = true;
+  }
+
+  if(!onRung){
+    var nearMiss = false;
+    for(var k = 0; k < rungs.length; k++){
+      var rg2 = rungs[k];
+      if(!rg2.miss && rg2.lane === lane && Math.abs(rg2.y - py) < 58) nearMiss = true;
+    }
+    if(!nearMiss && elapsed > 1.2){
+      combo = 1;
+      shakeT = 0.3;
+      spawnParticles(px, py, C.rust, 12);
+      endGame(false);
+      return;
+    }
+  }
+
+  if(fogY > py - 30){
+    endGame(false);
+    return;
+  }
+
+  rungs = rungs.filter(function(r){ return r.y > -40; });
+  rivets = rivets.filter(function(r){ return !r.collected && r.y > -40; });
+  generateRungsAhead();
+
+  for(var p = particles.length - 1; p >= 0; p--){
+    var pt = particles[p];
+    pt.x += pt.vx * dt; pt.y += pt.vy * dt;
+    pt.vy += 200 * dt;
+    pt.life -= dt;
+    if(pt.life <= 0) particles.splice(p, 1);
+  }
+  if(shakeT > 0) shakeT -= dt;
+
+  updateHUD();
+}
+
+function drawBrick(wy){
+  var rows = Math.ceil(H / 24) + 2;
+  var startRow = Math.floor(wy / 24);
+  for(var row = 0; row < rows; row++){
+    var by = (row + startRow) * 24 - (wy % 24);
+    var offset = (row + startRow) % 2 === 0 ? 0 : 30;
+    for(var bx = -30 + offset; bx < W + 30; bx += 60){
+      ctx.fillStyle = (row + Math.floor(bx/60)) % 2 === 0 ? C.brick1 : C.brick2;
+      ctx.fillRect(bx, by, 58, 22);
+      ctx.fillStyle = C.mortar;
+      ctx.fillRect(bx, by + 22, 58, 2);
+    }
+  }
+}
+
+function drawLadder(l, t, wy){
+  var rails = [];
+  for(var i = 0; i < 3; i++){
+    var x = laneX(l, t, wy + i * 200) - 16;
+    rails.push(x);
+  }
+  ctx.strokeStyle = C.rail;
+  ctx.lineWidth = 4;
+  ctx.lineCap = 'round';
+  ctx.beginPath();
+  ctx.moveTo(rails[0], 0);
+  ctx.lineTo(rails[1], H * 0.5);
+  ctx.lineTo(rails[2], H);
+  ctx.stroke();
+  ctx.beginPath();
+  ctx.moveTo(rails[0] + 32, 0);
+  ctx.lineTo(rails[1] + 32, H * 0.5);
+  ctx.lineTo(rails[2] + 32, H);
+  ctx.stroke();
+
+  for(var j = 0; j < rungs.length; j++){
+    var rg = rungs[j];
+    if(rg.lane !== l) continue;
+    if(rg.miss){
+      ctx.globalAlpha = 0.25;
+      ctx.strokeStyle = C.rust;
+      ctx.lineWidth = 2;
+      ctx.setLineDash([4, 6]);
+      var rx = laneX(l, t, wy + (playerScreenY() - rg.y));
+      ctx.beginPath();
+      ctx.moveTo(rx - 14, rg.y);
+      ctx.lineTo(rx + 14, rg.y);
+      ctx.stroke();
+      ctx.setLineDash([]);
+      ctx.globalAlpha = 1;
+      continue;
+    }
+    var rx2 = laneX(l, t, wy + (playerScreenY() - rg.y));
+    ctx.strokeStyle = C.rung;
+    ctx.lineWidth = 5;
+    ctx.beginPath();
+    ctx.moveTo(rx2 - 16, rg.y);
+    ctx.lineTo(rx2 + 16, rg.y);
+    ctx.stroke();
+  }
+}
+
+function drawRivets(t){
+  for(var i = 0; i < rivets.length; i++){
+    var r = rivets[i];
+    if(r.collected) continue;
+    var pulse = 1 + Math.sin(r.pulse) * 0.15;
+    var rx = laneX(r.lane, t, distance - (playerScreenY() - r.y));
+    if(r.offCenter > 0.6) rx += (r.offCenter - 0.5) * 30 * (r.lane === 0 ? 1 : -1);
+    ctx.save();
+    ctx.translate(rx, r.y);
+    ctx.scale(pulse, pulse);
+    ctx.fillStyle = C.rivetSh;
+    ctx.beginPath(); ctx.arc(0, 2, 7, 0, Math.PI * 2); ctx.fill();
+    ctx.fillStyle = C.rivet;
+    ctx.beginPath(); ctx.arc(0, 0, 5, 0, Math.PI * 2); ctx.fill();
+    ctx.fillStyle = 'rgba(255,255,255,0.35)';
+    ctx.beginPath(); ctx.arc(-1.5, -1.5, 2, 0, Math.PI * 2); ctx.fill();
+    ctx.restore();
+  }
+}
+
+function drawPlayer(t){
+  var px = laneX(laneT, t, distance);
+  var py = playerScreenY();
+  ctx.save();
+  ctx.translate(px, py);
+  var lean = (targetLane - laneT) * 8;
+  ctx.rotate(lean * 0.04);
+  ctx.fillStyle = C.playerAcc;
+  ctx.fillRect(-6, -18, 12, 8);
+  ctx.fillStyle = C.player;
+  ctx.beginPath();
+  ctx.arc(0, -24, 7, 0, Math.PI * 2);
+  ctx.fill();
+  ctx.strokeStyle = C.playerAcc;
+  ctx.lineWidth = 3;
+  ctx.beginPath();
+  ctx.moveTo(-8, -10); ctx.lineTo(-14, 6);
+  ctx.moveTo(8, -10); ctx.lineTo(14, 6);
+  ctx.stroke();
+  if(combo > 1 && state === 'playing'){
+    ctx.globalAlpha = 0.15 + Math.sin(elapsed * 8) * 0.05;
+    ctx.strokeStyle = C.rivet;
+    ctx.lineWidth = 2;
+    ctx.beginPath(); ctx.arc(0, -32, 14 + combo, 0, Math.PI * 2); ctx.stroke();
+    ctx.globalAlpha = 1;
+  }
+  ctx.restore();
+}
+
+function drawFog(t){
+  var fy = fogY;
+  var grad = ctx.createLinearGradient(0, fy - 120, 0, fy + 80);
+  grad.addColorStop(0, 'rgba(0,0,0,0)');
+  grad.addColorStop(0.3, C.fog1);
+  grad.addColorStop(1, C.fog2);
+  ctx.fillStyle = grad;
+  ctx.fillRect(0, fy - 120, W, H);
+
+  ctx.globalAlpha = 0.4;
+  for(var i = 0; i < 5; i++){
+    var fx = (Math.sin(t * 0.3 + i * 1.7) * 0.5 + 0.5) * W;
+    var fy2 = fy - 40 + i * 25 + Math.sin(t + i) * 10;
+    ctx.fillStyle = darkMode ? 'rgba(180,195,210,0.2)' : 'rgba(150,165,180,0.25)';
+    ctx.beginPath();
+    ctx.ellipse(fx, fy2, 60 + i * 15, 20, 0, 0, Math.PI * 2);
+    ctx.fill();
+  }
+  ctx.globalAlpha = 1;
+
+  ctx.globalAlpha = 0.35;
+  for(var li = 0; li < 6; li++){
+    var lx = (Math.sin(t * 0.4 + li * 2.1) * 0.5 + 0.5) * W;
+    var ly = fy - 60 + li * 35 + Math.cos(t * 0.6 + li) * 20;
+    ctx.fillStyle = darkMode ? '#8a5030' : '#a06030';
+    ctx.beginPath();
+    ctx.ellipse(lx, ly, 4, 2.5, t + li, 0, Math.PI * 2);
+    ctx.fill();
+  }
+  ctx.globalAlpha = 1;
+}
+
+function drawParticles(){
+  for(var i = 0; i < particles.length; i++){
+    var p = particles[i];
+    ctx.globalAlpha = Math.max(0, p.life / p.max);
+    ctx.fillStyle = p.col;
+    ctx.fillRect(p.x - p.size/2, p.y - p.size/2, p.size, p.size);
+  }
+  ctx.globalAlpha = 1;
+}
+
+function drawRooftop(){
+  var rem = totalDist - distance;
+  if(rem > 400) return;
+  var alpha = 1 - rem / 400;
+  var topY = 40 + rem * 0.3;
+  ctx.globalAlpha = alpha * 0.9;
+  ctx.fillStyle = darkMode ? '#2a3530' : '#5a7068';
+  ctx.fillRect(0, 0, W, topY);
+  ctx.fillStyle = darkMode ? '#3a4540' : '#6a8078';
+  for(var i = 0; i < 4; i++){
+    ctx.fillRect(W * 0.1 + i * W * 0.22, topY - 30, W * 0.08, 30);
+  }
+  ctx.globalAlpha = 1;
+}
+
+function render(t){
+  if(!ctx) return;
+  C = getColors();
+  ctx.save();
+  var sx = shakeT > 0 ? (Math.random()-0.5) * 8 * shakeT : 0;
+  var sy = shakeT > 0 ? (Math.random()-0.5) * 8 * shakeT : 0;
+  ctx.translate(sx, sy);
+
+  ctx.fillStyle = C.bg;
+  ctx.fillRect(0, 0, W, H);
+  drawBrick(distance * 0.5);
+  drawRooftop();
+
+  for(var l = 0; l < 3; l++) drawLadder(l, t, distance);
+  drawRivets(t);
+  drawPlayer(t);
+  drawFog(t);
+  drawParticles();
+
+  if(state === 'title'){
+    ctx.fillStyle = darkMode ? 'rgba(26,22,20,0.5)' : 'rgba(240,235,228,0.5)';
+    ctx.fillRect(0, 0, W, H);
+  }
+
+  ctx.restore();
+}
+
+function loop(ts){
+  animId = requestAnimationFrame(loop);
+  var dt = Math.min(0.05, (ts - lastTs) / 1000);
+  lastTs = ts;
+  update(dt);
+  render(elapsed);
+}
+
+/* Input */
+var touchStartX = 0, touchStartY = 0, touchActive = false;
+
+function onTouchStart(e){
+  if(e.target.closest && e.target.closest('button')) return;
+  e.preventDefault();
+  if(e.touches && e.touches[0]){
+    touchStartX = e.touches[0].clientX;
+    touchStartY = e.touches[0].clientY;
+    touchActive = true;
+  }
+}
+
+function onTouchEnd(e){
+  if(e.target.closest && e.target.closest('button')) return;
+  e.preventDefault();
+  if(!touchActive) return;
+  touchActive = false;
+  var t = e.changedTouches && e.changedTouches[0];
+  if(!t) return;
+  var dx = t.clientX - touchStartX;
+  var dy = t.clientY - touchStartY;
+  if(Math.abs(dx) > 30 && Math.abs(dx) > Math.abs(dy)){
+    switchLane(dx > 0 ? 1 : -1);
+  }
+}
+
+function onKeyDown(e){
+  if(e.key === 'ArrowLeft' || e.key === 'a' || e.key === 'A') switchLane(-1);
+  if(e.key === 'ArrowRight' || e.key === 'd' || e.key === 'D') switchLane(1);
+}
+
+canvas.addEventListener('touchstart', onTouchStart, {passive:false});
+canvas.addEventListener('touchend', onTouchEnd, {passive:false});
+canvas.addEventListener('touchmove', function(e){ if(touchActive) e.preventDefault(); }, {passive:false});
+window.addEventListener('keydown', onKeyDown);
+
+if(startBtn) startBtn.addEventListener('click', function(e){ e.stopPropagation(); startGame(); });
+if(restartBtn) restartBtn.addEventListener('click', function(e){ e.stopPropagation(); startGame(); });
+
+/* Initial render + idle animation */
+elapsed = 0;
+lastTs = performance.now();
+requestAnimationFrame(function idle(ts){
+  if(state === 'title'){
+    elapsed += Math.min(0.05, (ts - lastTs) / 1000);
+    lastTs = ts;
+    render(elapsed);
+    requestAnimationFrame(idle);
+  }
+});
+render(0);
+
+})();
+</script>
+</body>
+</html>
