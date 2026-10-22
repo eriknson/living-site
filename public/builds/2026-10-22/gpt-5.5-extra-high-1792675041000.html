@@ -1,0 +1,972 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <meta name="color-scheme" content="light dark">
+  <meta name="description" content="Erik Nilsson, Product Designer at Cursor. A polished editorial notebook about design, software, and building with AI.">
+  <title>Erik Nilsson - Editorial Notebook</title>
+  <style>
+    :root {
+      color-scheme: light dark;
+      --paper: #fbf7ee;
+      --ink: #191611;
+      --ink-soft: #4f463a;
+      --muted: #8b7e6d;
+      --line: rgba(25, 22, 17, .16);
+      --line-strong: rgba(25, 22, 17, .34);
+      --orange: #ff5c26;
+      --blue: #2458ff;
+      --green: #118d57;
+      --shadow: rgba(62, 48, 29, .12);
+      --sans: ui-sans-serif, -apple-system, BlinkMacSystemFont, "SF Pro Text", "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+      --serif: ui-serif, Georgia, Cambria, "Times New Roman", Times, serif;
+      --mono: ui-monospace, "SFMono-Regular", Menlo, Monaco, Consolas, monospace;
+      --hand: "Bradley Hand", "Segoe Print", "Noteworthy", "Comic Sans MS", cursive;
+    }
+
+    @supports (color: color(display-p3 1 1 1)) {
+      :root {
+        --paper: color(display-p3 .982 .963 .914);
+        --ink: color(display-p3 .089 .076 .054);
+        --ink-soft: color(display-p3 .29 .255 .207);
+        --muted: color(display-p3 .526 .47 .392);
+        --orange: color(display-p3 1 .31 .115);
+        --blue: color(display-p3 .105 .315 1);
+        --green: color(display-p3 .02 .55 .29);
+      }
+    }
+
+    * {
+      box-sizing: border-box;
+    }
+
+    html {
+      background: var(--paper);
+      color: var(--ink);
+      font-family: var(--sans);
+      font-feature-settings: "kern", "liga", "calt";
+      -webkit-font-smoothing: antialiased;
+      text-rendering: optimizeLegibility;
+    }
+
+    body {
+      min-height: 100vh;
+      margin: 0;
+      background: var(--paper);
+      overflow-x: hidden;
+    }
+
+    body::before {
+      content: "";
+      position: fixed;
+      inset: 0;
+      pointer-events: none;
+      opacity: .45;
+      background-image: url("data:image/svg+xml,%3Csvg width='160' height='160' viewBox='0 0 160 160' xmlns='http://www.w3.org/2000/svg'%3E%3Cg fill='%23191611' fill-opacity='.035'%3E%3Ccircle cx='18' cy='24' r='.7'/%3E%3Ccircle cx='72' cy='12' r='.55'/%3E%3Ccircle cx='132' cy='48' r='.6'/%3E%3Ccircle cx='44' cy='92' r='.5'/%3E%3Ccircle cx='116' cy='126' r='.65'/%3E%3Ccircle cx='10' cy='146' r='.45'/%3E%3C/g%3E%3C/svg%3E");
+      z-index: 0;
+    }
+
+    a {
+      color: inherit;
+      text-decoration: none;
+    }
+
+    a:focus-visible {
+      outline: 2px solid var(--blue);
+      outline-offset: 5px;
+    }
+
+    ::selection {
+      background: var(--orange);
+      color: #fffaf0;
+    }
+
+    .page {
+      position: relative;
+      z-index: 1;
+      width: 100%;
+      max-width: 640px;
+      min-height: 100vh;
+      margin: 0 auto;
+      padding: 22px;
+    }
+
+    .sheet {
+      min-height: calc(100vh - 44px);
+      border: 1px solid var(--line-strong);
+      background: rgba(255, 251, 242, .52);
+      box-shadow: 0 30px 80px var(--shadow);
+      overflow: clip;
+      animation: enter .8s cubic-bezier(.2, .8, .2, 1) both;
+    }
+
+    .topbar {
+      display: grid;
+      grid-template-columns: 1fr auto 1fr;
+      align-items: center;
+      gap: 18px;
+      min-height: 58px;
+      padding: 0 24px;
+      border-bottom: 1px solid var(--line);
+      font: 700 11px/1 var(--mono);
+      letter-spacing: .14em;
+      text-transform: uppercase;
+    }
+
+    .topbar__center {
+      color: var(--muted);
+      text-align: center;
+    }
+
+    .topbar__links {
+      display: flex;
+      justify-content: flex-end;
+      gap: 14px;
+      color: var(--ink-soft);
+    }
+
+    .topbar a {
+      position: relative;
+      padding: 6px 0;
+    }
+
+    .topbar a::after,
+    .writing a::after,
+    .footer a::after {
+      content: "";
+      position: absolute;
+      left: 0;
+      right: 0;
+      bottom: 1px;
+      height: 1px;
+      background: currentColor;
+      transform: scaleX(.25);
+      transform-origin: left;
+      opacity: .42;
+      transition: transform .28s ease, opacity .28s ease;
+    }
+
+    .topbar a:hover::after,
+    .writing a:hover::after,
+    .footer a:hover::after {
+      transform: scaleX(1);
+      opacity: 1;
+    }
+
+    .hero {
+      position: relative;
+      display: grid;
+      grid-template-columns: minmax(0, 1fr) minmax(320px, 37vw);
+      min-height: 650px;
+      border-bottom: 1px solid var(--line);
+    }
+
+    .hero__main {
+      position: relative;
+      display: flex;
+      flex-direction: column;
+      justify-content: space-between;
+      padding: clamp(34px, 6vw, 86px);
+      border-right: 1px solid var(--line);
+    }
+
+    .issue {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
+      margin-bottom: 54px;
+      font: 700 11px/1 var(--mono);
+      letter-spacing: .13em;
+      text-transform: uppercase;
+      color: var(--muted);
+    }
+
+    .issue span {
+      border: 1px solid var(--line);
+      border-radius: 999px;
+      padding: 9px 11px;
+      background: rgba(255, 252, 246, .48);
+    }
+
+    .masthead {
+      max-width: 950px;
+    }
+
+    h1 {
+      margin: 0;
+      max-width: 10ch;
+      font-family: var(--serif);
+      font-size: clamp(78px, 13.4vw, 214px);
+      font-weight: 500;
+      line-height: .78;
+      letter-spacing: -.085em;
+    }
+
+    .deck {
+      width: min(680px, 100%);
+      margin: clamp(26px, 4.5vw, 52px) 0 0;
+      color: var(--ink-soft);
+      font-family: var(--serif);
+      font-size: clamp(25px, 3.2vw, 45px);
+      line-height: 1.08;
+      letter-spacing: -.038em;
+    }
+
+    .deck em {
+      color: var(--orange);
+      font-style: italic;
+    }
+
+    .bio-line {
+      display: grid;
+      grid-template-columns: auto minmax(90px, 1fr) auto;
+      align-items: end;
+      gap: 16px;
+      margin-top: 62px;
+      color: var(--muted);
+      font: 700 12px/1.45 var(--mono);
+      letter-spacing: .08em;
+      text-transform: uppercase;
+    }
+
+    .bio-line::before {
+      content: "";
+      height: 1px;
+      background: var(--line-strong);
+    }
+
+    .note {
+      position: absolute;
+      right: clamp(22px, 4vw, 58px);
+      top: clamp(134px, 20vw, 214px);
+      width: min(260px, 32vw);
+      color: var(--blue);
+      font: 700 clamp(17px, 1.7vw, 24px)/1.1 var(--hand);
+      letter-spacing: -.035em;
+      transform: rotate(-5deg);
+    }
+
+    .note::before {
+      content: "";
+      position: absolute;
+      width: 82px;
+      height: 36px;
+      left: -58px;
+      top: 19px;
+      border-top: 2px solid currentColor;
+      border-left: 2px solid currentColor;
+      border-radius: 70% 0 0 0;
+      transform: rotate(-15deg);
+      opacity: .62;
+    }
+
+    .hero__side {
+      display: grid;
+      grid-template-rows: auto 1fr auto;
+      min-width: 0;
+      background: rgba(241, 232, 218, .45);
+    }
+
+    .today {
+      padding: 28px;
+      border-bottom: 1px solid var(--line);
+    }
+
+    .label {
+      margin: 0 0 18px;
+      color: var(--muted);
+      font: 800 11px/1 var(--mono);
+      letter-spacing: .16em;
+      text-transform: uppercase;
+    }
+
+    .today__date {
+      margin: 0;
+      font-family: var(--serif);
+      font-size: clamp(42px, 5vw, 82px);
+      font-weight: 500;
+      line-height: .86;
+      letter-spacing: -.06em;
+    }
+
+    .today__weather {
+      margin: 22px 0 0;
+      color: var(--ink-soft);
+      font-size: 15px;
+      line-height: 1.55;
+    }
+
+    .signals {
+      display: grid;
+      align-content: center;
+      gap: 0;
+      padding: 0;
+    }
+
+    .signal {
+      display: grid;
+      grid-template-columns: 42px 1fr;
+      gap: 18px;
+      padding: 22px 28px;
+      border-bottom: 1px solid var(--line);
+      transition: background-color .25s ease;
+    }
+
+    .signal:hover {
+      background: rgba(255, 252, 246, .42);
+    }
+
+    .signal b {
+      color: var(--orange);
+      font: 800 12px/1 var(--mono);
+      letter-spacing: .12em;
+    }
+
+    .signal span {
+      color: var(--ink-soft);
+      font: 500 clamp(17px, 1.55vw, 23px)/1.18 var(--serif);
+      letter-spacing: -.025em;
+    }
+
+    .scrap {
+      margin: 28px;
+      padding: 22px;
+      border: 1px solid var(--line-strong);
+      background: var(--paper);
+      transform: rotate(1.4deg);
+      box-shadow: 10px 12px 0 rgba(25, 22, 17, .07);
+      transition: transform .28s ease, box-shadow .28s ease;
+    }
+
+    .scrap:hover {
+      transform: rotate(-.6deg) translateY(-2px);
+      box-shadow: 7px 9px 0 rgba(25, 22, 17, .09);
+    }
+
+    .scrap p {
+      margin: 0;
+      color: var(--ink);
+      font: 700 22px/1.05 var(--hand);
+      letter-spacing: -.04em;
+    }
+
+    .scrap small {
+      display: block;
+      margin-top: 14px;
+      color: var(--muted);
+      font: 700 10px/1 var(--mono);
+      letter-spacing: .14em;
+      text-transform: uppercase;
+    }
+
+    .body {
+      display: grid;
+      grid-template-columns: minmax(0, .92fr) minmax(320px, .58fr);
+      min-height: 520px;
+    }
+
+    .essay {
+      padding: clamp(34px, 6vw, 84px);
+      border-right: 1px solid var(--line);
+    }
+
+    .essay p {
+      max-width: 780px;
+      margin: 0;
+      color: var(--ink);
+      font-family: var(--serif);
+      font-size: clamp(30px, 4vw, 66px);
+      font-weight: 500;
+      line-height: 1.02;
+      letter-spacing: -.055em;
+    }
+
+    .essay p + p {
+      margin-top: 28px;
+      color: var(--ink-soft);
+      font-family: var(--sans);
+      font-size: clamp(17px, 1.45vw, 22px);
+      font-weight: 450;
+      line-height: 1.5;
+      letter-spacing: -.02em;
+    }
+
+    .essay .mark {
+      position: relative;
+      display: inline-block;
+      color: var(--green);
+      font-style: italic;
+    }
+
+    .essay .mark::after {
+      content: "";
+      position: absolute;
+      left: -.04em;
+      right: -.04em;
+      bottom: .03em;
+      height: .16em;
+      background: currentColor;
+      opacity: .14;
+      z-index: -1;
+    }
+
+    .pull {
+      width: min(420px, 100%);
+      margin-top: 56px;
+      padding-left: 22px;
+      border-left: 3px solid var(--orange);
+      color: var(--ink-soft);
+      font: 700 15px/1.55 var(--mono);
+      letter-spacing: .02em;
+    }
+
+    .writing {
+      padding: clamp(30px, 4.4vw, 58px);
+      background: rgba(255, 252, 246, .26);
+    }
+
+    .writing h2 {
+      margin: 0 0 6px;
+      font-family: var(--serif);
+      font-size: clamp(38px, 4vw, 64px);
+      font-weight: 500;
+      line-height: .9;
+      letter-spacing: -.055em;
+    }
+
+    .writing__intro {
+      margin: 0 0 28px;
+      color: var(--muted);
+      font: 700 11px/1.5 var(--mono);
+      letter-spacing: .1em;
+      text-transform: uppercase;
+    }
+
+    .writing ol {
+      list-style: none;
+      margin: 0;
+      padding: 0;
+      border-top: 1px solid var(--line-strong);
+    }
+
+    .writing li {
+      display: grid;
+      grid-template-columns: 34px 1fr auto;
+      gap: 16px;
+      align-items: baseline;
+      padding: 18px 0;
+      border-bottom: 1px solid var(--line);
+    }
+
+    .writing .num {
+      color: var(--orange);
+      font: 800 12px/1 var(--mono);
+    }
+
+    .writing a {
+      position: relative;
+      width: fit-content;
+      font-family: var(--serif);
+      font-size: clamp(20px, 2vw, 28px);
+      line-height: 1.1;
+      letter-spacing: -.035em;
+    }
+
+    .writing time {
+      color: var(--muted);
+      font: 700 11px/1 var(--mono);
+      letter-spacing: .08em;
+      text-transform: uppercase;
+      white-space: nowrap;
+    }
+
+    .contact {
+      display: grid;
+      grid-template-columns: minmax(0, .7fr) minmax(260px, .3fr);
+      border-top: 1px solid var(--line);
+    }
+
+    .notebook {
+      position: relative;
+      padding: clamp(34px, 5vw, 72px);
+      border-right: 1px solid var(--line);
+    }
+
+    .notebook p {
+      width: min(690px, 100%);
+      margin: 0;
+      color: var(--ink-soft);
+      font-size: clamp(18px, 2vw, 26px);
+      line-height: 1.34;
+      letter-spacing: -.035em;
+    }
+
+    .notebook strong {
+      color: var(--ink);
+      font-weight: 650;
+    }
+
+    .scribbles {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 10px;
+      margin-top: 34px;
+    }
+
+    .scribbles a,
+    .scribbles span {
+      border: 1px solid var(--line-strong);
+      border-radius: 999px;
+      padding: 10px 13px;
+      color: var(--ink-soft);
+      background: rgba(255, 252, 246, .4);
+      font: 800 11px/1 var(--mono);
+      letter-spacing: .1em;
+      text-transform: uppercase;
+      transition: transform .24s ease, border-color .24s ease, color .24s ease;
+    }
+
+    .scribbles a:hover {
+      color: var(--blue);
+      border-color: currentColor;
+      transform: translateY(-2px) rotate(-1deg);
+    }
+
+    .mini {
+      display: grid;
+      align-content: center;
+      gap: 16px;
+      padding: clamp(28px, 4vw, 46px);
+      background: var(--ink);
+      color: var(--paper);
+    }
+
+    .mini blockquote {
+      margin: 0;
+      font-family: var(--serif);
+      font-size: clamp(24px, 3vw, 42px);
+      line-height: 1;
+      letter-spacing: -.052em;
+    }
+
+    .mini cite {
+      color: rgba(251, 247, 238, .62);
+      font: 700 11px/1.4 var(--mono);
+      letter-spacing: .13em;
+      text-transform: uppercase;
+      font-style: normal;
+    }
+
+    .footer {
+      display: flex;
+      justify-content: space-between;
+      gap: 24px;
+      padding: 18px 24px;
+      border-top: 1px solid var(--line);
+      color: var(--muted);
+      font: 700 11px/1.4 var(--mono);
+      letter-spacing: .1em;
+      text-transform: uppercase;
+    }
+
+    .footer a {
+      position: relative;
+      color: var(--ink);
+    }
+
+    .cursor-note {
+      position: fixed;
+      z-index: 5;
+      left: 0;
+      top: 0;
+      pointer-events: none;
+      opacity: 0;
+      transform: translate(-50%, -50%) rotate(-4deg);
+      color: var(--blue);
+      font: 700 18px/1 var(--hand);
+      transition: opacity .18s ease;
+      will-change: transform;
+    }
+
+    @keyframes enter {
+      from {
+        opacity: 0;
+        transform: translateY(12px) scale(.992);
+      }
+      to {
+        opacity: 1;
+        transform: translateY(0) scale(1);
+      }
+    }
+
+    @media (hover: hover) and (pointer: fine) {
+      .sheet {
+        transition: border-color .3s ease;
+      }
+
+      .sheet:hover {
+        border-color: rgba(25, 22, 17, .48);
+      }
+
+      .cursor-note.is-visible {
+        opacity: 1;
+      }
+    }
+
+    @media (prefers-color-scheme: dark) {
+      :root {
+        color-scheme: dark;
+        --paper: #1a1814;
+        --ink: #e8e2d8;
+        --ink-soft: #b8ad9c;
+        --muted: #8a8072;
+        --line: rgba(232, 226, 216, .16);
+        --line-strong: rgba(232, 226, 216, .34);
+        --shadow: rgba(0, 0, 0, .35);
+      }
+
+      .sheet {
+        background: rgba(26, 24, 20, .72);
+      }
+
+      .issue span,
+      .signal:hover,
+      .writing,
+      .scribbles a,
+      .scribbles span {
+        background: rgba(36, 33, 28, .48);
+      }
+
+      .hero__side {
+        background: rgba(22, 20, 17, .55);
+      }
+
+      .scrap {
+        box-shadow: 10px 12px 0 rgba(0, 0, 0, .18);
+      }
+
+      .scrap:hover {
+        box-shadow: 7px 9px 0 rgba(0, 0, 0, .22);
+      }
+    }
+
+    @media (prefers-reduced-motion: reduce) {
+      *,
+      *::before,
+      *::after {
+        animation-duration: .001ms !important;
+        animation-iteration-count: 1 !important;
+        scroll-behavior: auto !important;
+        transition-duration: .001ms !important;
+      }
+    }
+
+    @media (max-width: 980px) {
+      .page {
+        padding: 12px;
+      }
+
+      .sheet {
+        min-height: calc(100vh - 24px);
+      }
+
+      .topbar {
+        grid-template-columns: 1fr;
+        align-items: start;
+        gap: 8px;
+        padding: 18px;
+      }
+
+      .topbar__center {
+        text-align: left;
+      }
+
+      .topbar__links {
+        justify-content: flex-start;
+        flex-wrap: wrap;
+      }
+
+      .hero,
+      .body,
+      .contact {
+        grid-template-columns: 1fr;
+      }
+
+      .hero__main,
+      .essay,
+      .notebook {
+        border-right: 0;
+      }
+
+      .hero__main,
+      .essay,
+      .writing,
+      .notebook {
+        border-bottom: 1px solid var(--line);
+      }
+
+      .hero {
+        min-height: 0;
+      }
+
+      .note {
+        position: relative;
+        inset: auto;
+        width: min(320px, 86vw);
+        margin-top: 30px;
+      }
+
+      .note::before {
+        display: none;
+      }
+
+      .bio-line {
+        grid-template-columns: 1fr;
+      }
+
+      .bio-line::before {
+        width: 100%;
+      }
+
+      .hero__side {
+        background: transparent;
+      }
+    }
+
+    @media (max-width: 620px) {
+      .page {
+        padding: 0;
+      }
+
+      .sheet {
+        min-height: 100vh;
+        border-left: 0;
+        border-right: 0;
+        box-shadow: none;
+      }
+
+      .hero__main {
+        padding: 30px 22px 34px;
+      }
+
+      h1 {
+        font-size: clamp(68px, 28vw, 118px);
+      }
+
+      .deck {
+        font-size: 29px;
+      }
+
+      .issue {
+        margin-bottom: 42px;
+      }
+
+      .today,
+      .signal,
+      .essay,
+      .writing,
+      .notebook,
+      .mini {
+        padding-left: 22px;
+        padding-right: 22px;
+      }
+
+      .writing li {
+        grid-template-columns: 28px 1fr;
+      }
+
+      .writing time {
+        grid-column: 2;
+        margin-top: -8px;
+      }
+
+      .footer {
+        flex-direction: column;
+        padding: 18px 22px 28px;
+      }
+    }
+  </style>
+
+<style id="__living_site_scroll_guard">
+  /* Scroll guard injected at build time to ensure generated pages remain scrollable in iframes. */
+  html, body {
+    height: auto !important;
+    min-height: 100% !important;
+    max-height: none !important;
+    overflow-y: auto !important;
+    overflow-x: hidden !important;
+    position: static !important;
+    -webkit-overflow-scrolling: touch !important;
+    touch-action: pan-y !important;
+    overscroll-behavior-y: contain !important;
+  }
+  /* Avoid accidental fixed full-screen traps that break scrolling on mobile. */
+  body {
+    inset: auto !important;
+  }
+</style>
+</head>
+<body>
+  <div class="page">
+    <main class="sheet" aria-label="Editorial notebook for Erik Nilsson">
+      <header class="topbar">
+        <a href="https://eriks.design" aria-label="eriks.design home" rel="me">eriks.design</a>
+        <div class="topbar__center">Editorial notebook / Autumn issue</div>
+        <nav class="topbar__links" aria-label="Primary links">
+          <a href="https://cursor.com" rel="noopener">Cursor</a>
+          <a href="https://x.com/flowstated" rel="noopener">X</a>
+          <a href="mailto:contact@eriks.design">Email</a>
+        </nav>
+      </header>
+
+      <section class="hero" aria-labelledby="title">
+        <div class="hero__main">
+          <div>
+            <div class="issue" aria-label="Issue details">
+              <span>San Francisco</span>
+              <span>15 C</span>
+              <span>Heavy drizzle</span>
+            </div>
+
+            <div class="masthead">
+              <h1 id="title">Erik Nilsson</h1>
+              <p class="deck">Product designer at Cursor, working where software starts to feel <em>alive</em>.</p>
+            </div>
+
+            <p class="note">part magazine page, part designer notebook</p>
+          </div>
+
+          <div class="bio-line">
+            <span>Building tools for people who build software with AI.</span>
+            <span>Living-site rebuilt from fresh activity data.</span>
+          </div>
+        </div>
+
+        <aside class="hero__side" aria-label="Today in the margin">
+          <div class="today">
+            <p class="label">Today</p>
+            <p class="today__date">Oct. 22<br>2026</p>
+            <p class="today__weather">Autumn in San Francisco. Heavy drizzle at dusk. Public activity is quiet; the notebook keeps listening.</p>
+          </div>
+
+          <div class="signals" aria-label="World signals">
+            <div class="signal">
+              <b>01</b>
+              <span>Patches racing ahead of public disclosure.</span>
+            </div>
+            <div class="signal">
+              <b>02</b>
+              <span>Kernel secrets surfacing before their time.</span>
+            </div>
+            <div class="signal">
+              <b>03</b>
+              <span>October light thinning toward winter.</span>
+            </div>
+          </div>
+
+          <a class="scrap" href="https://x.com/flowstated/status/2002167999353241901" rel="noopener" aria-label="Read recent note on X">
+            <p>imagine 2026</p>
+            <small>recent note</small>
+          </a>
+        </aside>
+      </section>
+
+      <section class="body" aria-label="Notebook and writing">
+        <article class="essay">
+          <p>Erik designs interfaces with a bias for flow: fewer steps, sharper surfaces, and tiny moments that make complex tools feel <span class="mark">direct</span>.</p>
+          <p>Off-hours, this site becomes the experiment: agents rebuild the page from current signals, recent writing, and the weather outside. The result is less portfolio, more living margin note.</p>
+          <div class="pull">surgical moves &gt; sweeping one shots</div>
+        </article>
+
+        <section class="writing" aria-labelledby="writing-title">
+          <h2 id="writing-title">Writing</h2>
+          <p class="writing__intro">Small index, newest first</p>
+          <ol>
+            <li>
+              <span class="num">01</span>
+              <a href="https://cursor.com/blog/design-mode" rel="noopener">Directing agents visually</a>
+              <time datetime="2026-06-05">2026</time>
+            </li>
+            <li>
+              <span class="num">02</span>
+              <a href="/posts/a-living-site">A living site</a>
+              <time datetime="2025-12-26">2025</time>
+            </li>
+            <li>
+              <span class="num">03</span>
+              <a href="/posts/surgical-edits">Surgical edits</a>
+              <time datetime="2025-11-23">2025</time>
+            </li>
+            <li>
+              <span class="num">04</span>
+              <a href="/posts/familiar-differentiation">Familiar differentiation</a>
+              <time datetime="2024-11-15">2024</time>
+            </li>
+            <li>
+              <span class="num">05</span>
+              <a href="/posts/hackathon-energy-but-add-users">Hackathon energy, but add users</a>
+              <time datetime="2022-10-15">2022</time>
+            </li>
+          </ol>
+        </section>
+      </section>
+
+      <section class="contact" aria-label="Notebook close">
+        <div class="notebook">
+          <p><strong>Current preoccupation:</strong> directing agents without losing taste, context, or the small human corrections that make a product feel considered.</p>
+          <div class="scribbles" aria-label="Links and notes">
+            <a href="https://github.com/eriknson" rel="noopener">GitHub</a>
+            <a href="https://linkedin.com/in/eriknson" rel="noopener">LinkedIn</a>
+            <a href="mailto:contact@eriks.design?subject=Hej">Contact</a>
+            <span>quiet week</span>
+            <span>developer tools</span>
+          </div>
+        </div>
+
+        <aside class="mini">
+          <blockquote>&ldquo;Stay in flow. Never leave context.&rdquo;</blockquote>
+          <cite>From the notebook themes</cite>
+        </aside>
+      </section>
+
+      <footer class="footer">
+        <span>Erik Nilsson / Product Designer at Cursor</span>
+        <span><a href="https://eriks.design" rel="me">eriks.design</a></span>
+      </footer>
+    </main>
+  </div>
+
+  <div class="cursor-note" aria-hidden="true">annotate gently</div>
+
+  <script>
+    const note = document.querySelector(".cursor-note");
+    const links = document.querySelectorAll("a");
+    let x = 0;
+    let y = 0;
+    let tx = 0;
+    let ty = 0;
+
+    function frame() {
+      x += (tx - x) * 0.18;
+      y += (ty - y) * 0.18;
+      if (note) note.style.transform = `translate(${x + 28}px, ${y + 24}px) rotate(-4deg)`;
+      requestAnimationFrame(frame);
+    }
+
+    if (window.matchMedia("(hover: hover) and (pointer: fine)").matches && note) {
+      window.addEventListener("mousemove", (event) => {
+        tx = event.clientX;
+        ty = event.clientY;
+      }, { passive: true });
+
+      links.forEach((link) => {
+        link.addEventListener("mouseenter", () => note.classList.add("is-visible"));
+        link.addEventListener("mouseleave", () => note.classList.remove("is-visible"));
+      });
+
+      frame();
+    }
+  </script>
+</body>
+</html>

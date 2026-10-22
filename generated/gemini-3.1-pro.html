@@ -2,24 +2,31 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="viewport" content="width=device-width, initial-width=1.0">
   <title>Erik Nilsson — Product Designer</title>
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=Caveat:wght@500&family=Instrument+Serif:ital@0;1&family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Caveat:wght@500&family=Inter:wght@300;400;500&family=Newsreader:ital,opsz,wght@0,6..72,300..400;1,6..72,300..400&display=swap" rel="stylesheet">
   <style>
     :root {
-      --bg: #F4F2EC;
-      --text: #1A1A19;
-      --red: #E03126;
-      --blue: #1C3EE8;
-      --border: rgba(26, 26, 25, 0.1);
+      --bg: #F2F0E9;
+      --text: #141413;
+      --text-muted: #7A7974;
+      --red: #E03A16;
+      --blue: #1640E0;
+      --yellow: #E8D53A;
+      --line: rgba(20, 20, 19, 0.15);
+      
+      --serif: 'Newsreader', 'Times New Roman', serif;
+      --sans: 'Inter', -apple-system, sans-serif;
+      --hand: 'Caveat', cursive;
     }
 
-    @supports (color: color(display-p3 1 0 0)) {
+    @media (color-gamut: p3) {
       :root {
-        --red: color(display-p3 0.9 0.15 0.1);
-        --blue: color(display-p3 0.1 0.2 0.95);
+        --red: color(display-p3 0.88 0.23 0.09);
+        --blue: color(display-p3 0.09 0.25 0.88);
+        --yellow: color(display-p3 0.91 0.84 0.23);
       }
     }
 
@@ -27,440 +34,441 @@
       :root {
         --bg: #1a1a1a;
         --text: #e0e0e0;
-        --border: rgba(224, 224, 224, 0.1);
+        --text-muted: #9a9994;
+        --line: rgba(224, 224, 224, 0.15);
       }
+    }
 
-      .lead-bio { color: #ccc; }
-      .section-title,
-      .meta-label,
-      .index-list .date,
-      .link-list a::before { color: #999; }
-      .signal-list li { color: #ccc; }
+    * {
+      box-sizing: border-box;
     }
 
     body {
       background-color: var(--bg);
-      background-image: radial-gradient(var(--border) 1px, transparent 1px);
-      background-size: 24px 24px;
       color: var(--text);
-      font-family: 'Inter', sans-serif;
+      font-family: var(--serif);
       margin: 0;
-      padding: 0;
+      padding: 2vw 4vw;
+      min-height: 100vh;
+      display: flex;
+      justify-content: center;
       -webkit-font-smoothing: antialiased;
       -moz-osx-font-smoothing: grayscale;
-      cursor: crosshair;
-    }
-
-    a, button {
-      cursor: pointer;
-    }
-
-    .wrapper {
-      padding: 6rem 4rem;
-      max-width: 640px;
-      margin: 0 auto;
       overflow-x: hidden;
     }
 
-    .grid {
-      display: grid;
-      grid-template-columns: repeat(12, 1fr);
-      gap: 2rem;
+    ::selection {
+      background: var(--yellow);
+      color: var(--text);
     }
 
-    .meta-col { grid-column: 1 / 3; }
-    .main-col { grid-column: 3 / 9; }
-    .side-col { grid-column: 10 / 13; }
-
-    /* Typography */
-    .display-title {
-      font-family: 'Instrument Serif', serif;
-      font-size: clamp(4rem, 9vw, 11rem);
-      line-height: 0.9;
-      letter-spacing: -0.02em;
-      margin: 0 0 2rem -0.05em;
-      font-weight: 400;
-    }
-    .display-title em {
-      font-style: italic;
-      padding-left: 0.2em;
-    }
-
-    .lead-bio {
-      font-size: clamp(1.25rem, 2vw, 1.5rem);
-      line-height: 1.5;
-      font-weight: 400;
-      max-width: 36ch;
-      color: #222;
-      letter-spacing: -0.01em;
-    }
-
-    .section-title {
-      font-size: 0.65rem;
-      text-transform: uppercase;
-      letter-spacing: 0.1em;
-      color: #888;
-      margin-bottom: 2rem;
-      border-bottom: 1px solid var(--border);
-      padding-bottom: 0.5rem;
+    .page {
+      width: 100%;
+      max-width: 640px;
+      margin: 0 auto;
       position: relative;
     }
 
-    /* Meta */
-    .meta-item {
-      margin-bottom: 1.5rem;
+    /* Folio / Meta */
+    .folio {
       display: flex;
-      flex-direction: column;
-    }
-    .meta-label {
+      justify-content: space-between;
+      font-family: var(--sans);
       font-size: 0.65rem;
       text-transform: uppercase;
       letter-spacing: 0.1em;
-      color: #888;
-      margin-bottom: 0.25rem;
+      color: var(--text-muted);
+      border-bottom: 1px solid var(--line);
+      padding-bottom: 1rem;
+      margin-bottom: 6rem;
     }
-    .meta-value {
-      font-size: 0.875rem;
-      font-weight: 500;
+
+    .folio-left, .folio-right {
+      display: flex;
+      gap: 3rem;
+    }
+
+    /* Hero */
+    .hero {
+      margin-bottom: 8rem;
+      position: relative;
+    }
+
+    .title {
+      font-size: clamp(4rem, 10vw, 9rem);
+      font-weight: 400;
+      letter-spacing: -0.03em;
+      line-height: 0.85;
+      margin: 0 0 1.5rem -0.05em;
+    }
+
+    .subtitle {
+      font-family: var(--sans);
+      font-size: clamp(1rem, 1.5vw, 1.25rem);
+      font-weight: 300;
+      color: var(--text-muted);
+      margin-left: 0.5rem;
+      display: inline-block;
+      position: relative;
+    }
+
+    .subtitle a {
+      color: var(--text);
+      text-decoration: none;
+      border-bottom: 1px solid var(--line);
+      transition: all 0.2s;
+    }
+
+    .subtitle a:hover {
+      color: var(--blue);
+      border-color: var(--blue);
+    }
+
+    /* Grid Layout */
+    .grid {
+      display: grid;
+      grid-template-columns: 6fr 4fr;
+      gap: 8rem;
+      margin-bottom: 8rem;
+    }
+
+    .lead {
+      font-size: clamp(1.5rem, 2.5vw, 2.5rem);
+      line-height: 1.3;
+      font-weight: 300;
+      margin-bottom: 2rem;
+      max-width: 28ch;
+    }
+
+    .highlight {
+      position: relative;
+      display: inline-block;
+      white-space: nowrap;
+      cursor: default;
+    }
+
+    .highlight::after {
+      content: '';
+      position: absolute;
+      bottom: 0.15em;
+      left: -2%;
+      width: 104%;
+      height: 0.3em;
+      background-color: var(--yellow);
+      z-index: -1;
+      transform: rotate(-1deg);
+      transition: height 0.2s ease, transform 0.2s ease, opacity 0.2s ease;
+    }
+
+    .highlight:hover::after {
+      height: 100%;
+      transform: rotate(0deg);
+      opacity: 0.4;
     }
 
     /* Index */
+    .index-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: baseline;
+      border-bottom: 1px solid var(--text);
+      padding-bottom: 0.5rem;
+      margin-bottom: 2rem;
+    }
+
+    .index-header h2 {
+      font-family: var(--sans);
+      font-size: 0.75rem;
+      font-weight: 500;
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+      margin: 0;
+    }
+
+    .index-count {
+      font-family: var(--sans);
+      font-size: 0.75rem;
+      color: var(--text-muted);
+      position: relative;
+    }
+
     .index-list {
       list-style: none;
       padding: 0;
       margin: 0;
     }
+
     .index-list li {
-      margin-bottom: 1.25rem;
-      display: flex;
-      align-items: baseline;
-      gap: 1.5rem;
-    }
-    .index-list .date {
-      font-size: 0.75rem;
-      color: #888;
-      white-space: nowrap;
-      width: 4.5rem;
-      flex-shrink: 0;
-    }
-    .index-list a {
-      font-family: 'Instrument Serif', serif;
-      font-size: 2rem;
-      color: var(--text);
-      text-decoration: none;
-      line-height: 1.1;
-      transition: color 0.2s;
-    }
-    .index-list a:hover {
-      color: var(--blue);
+      border-bottom: 1px solid var(--line);
     }
 
-    /* Signals */
-    .signals {
-      margin-bottom: 4rem;
-    }
-    .signal-list {
-      list-style: none;
-      padding: 0;
-      margin: 0;
-      padding-left: 1.5rem;
-      margin-left: -1.5rem;
-    }
-    .signal-list li {
-      font-family: 'Instrument Serif', serif;
-      font-size: 1.35rem;
-      line-height: 1.25;
-      color: #333;
-      margin-bottom: 1.25rem;
-      padding-bottom: 1.25rem;
-      border-bottom: 1px solid var(--border);
-      transition: color 0.3s;
+    .index-list a {
+      display: flex;
+      justify-content: space-between;
+      align-items: baseline;
+      padding: 1.25rem 0;
+      text-decoration: none;
+      color: var(--text);
+      transition: color 0.2s, padding-left 0.2s;
+      gap: 2rem;
       position: relative;
     }
-    .signal-list li:last-child {
-      border-bottom: none;
-    }
-    .signal-list li:hover {
-      color: var(--red);
-    }
-    .signal-list li::before {
+
+    .index-list a::before {
       content: '→';
       position: absolute;
-      left: -1.5rem;
+      left: 0;
       opacity: 0;
       color: var(--red);
-      transition: opacity 0.3s, transform 0.3s;
+      transition: opacity 0.2s, transform 0.2s;
       transform: translateX(-10px);
-      font-family: 'Inter', sans-serif;
-      font-size: 1rem;
-      line-height: 1.25;
+      font-family: var(--sans);
+      font-size: 1.25rem;
     }
-    .signal-list li:hover::before {
+
+    .index-list a:hover {
+      color: var(--red);
+      padding-left: 2rem;
+    }
+
+    .index-list a:hover::before {
       opacity: 1;
       transform: translateX(0);
     }
 
-    /* Links */
-    .link-list {
-      list-style: none;
-      padding: 0;
-      margin: 0;
-      display: flex;
-      flex-direction: column;
-      gap: 0.75rem;
+    .index-title {
+      font-size: 1.25rem;
+      line-height: 1.2;
     }
-    .link-list a {
-      font-size: 0.875rem;
+
+    .index-date {
+      font-family: var(--sans);
+      font-size: 0.75rem;
+      color: var(--text-muted);
+      white-space: nowrap;
+    }
+
+    /* Footer */
+    .footer {
+      border-top: 1px solid var(--line);
+      padding-top: 2rem;
+      display: flex;
+      justify-content: space-between;
+      align-items: flex-start;
+      padding-bottom: 4rem;
+    }
+
+    .links {
+      display: flex;
+      gap: 2rem;
+      font-family: var(--sans);
+      font-size: 0.85rem;
+    }
+
+    .links a {
       color: var(--text);
       text-decoration: none;
-      display: inline-flex;
-      align-items: center;
-      font-weight: 500;
-    }
-    .link-list a:hover {
-      color: var(--blue);
-    }
-    .link-list a::before {
-      content: '↗';
-      margin-right: 0.5rem;
-      font-size: 0.75rem;
-      color: #888;
+      transition: color 0.2s;
     }
 
-    /* Annotations & Scribbles */
-    .annotation {
-      font-family: 'Caveat', cursive;
-      position: absolute;
+    .links a:hover {
+      color: var(--blue);
+    }
+
+    /* Handwritten Notes */
+    .note {
+      font-family: var(--hand);
       font-size: 1.5rem;
-      line-height: 1;
-      white-space: nowrap;
+      line-height: 1.1;
+      position: absolute;
       pointer-events: none;
-      z-index: 10;
     }
-    .relative { position: relative; }
-    .a-meta {
-      top: 0;
+
+    .note-cursor {
+      color: var(--blue);
+      top: -1.5rem;
       left: 100%;
-      margin-left: 0.5rem;
-      transform: rotate(-5deg);
-      color: var(--blue);
-    }
-    .a-index {
-      right: 0;
-      top: -1rem;
-      transform: rotate(4deg);
-      color: var(--red);
-    }
-
-    .highlight-link {
-      position: relative;
-      text-decoration: none;
-      color: inherit;
-      font-weight: 500;
-    }
-    .highlight-link:hover {
-      color: var(--blue);
-    }
-    .highlight-link .scribble-underline {
-      transition: stroke 0.3s;
-    }
-    .highlight-link:hover .scribble-underline {
-      stroke: var(--blue);
-    }
-
-    .circled-text {
-      position: relative;
-      display: inline-block;
+      margin-left: 1rem;
+      transform: rotate(-4deg);
       white-space: nowrap;
-      z-index: 1;
-    }
-    .circled-text .scribble-circle {
-      transition: stroke 0.3s;
-    }
-    .circled-text:hover .scribble-circle {
-      stroke: var(--red);
     }
 
-    .scribble {
+    .note-weather {
+      color: var(--red);
+      position: relative;
+      margin-top: 4rem;
+      transform: rotate(2deg);
+      max-width: 250px;
+      font-size: 1.25rem;
+    }
+
+    .note-github {
+      color: var(--text-muted);
+      position: relative;
+      max-width: 300px;
+      font-size: 1.25rem;
+      transform: rotate(-1deg);
+      text-align: right;
+    }
+
+    .marginalia {
       position: absolute;
+      writing-mode: vertical-rl;
+      transform: rotate(180deg);
+      font-family: var(--hand);
+      color: var(--text-muted);
+      font-size: 1.25rem;
+      opacity: 0.6;
       pointer-events: none;
+    }
+
+    /* SVG Elements */
+    .svg-arrow {
+      position: absolute;
       overflow: visible;
-      z-index: -1;
-    }
-    .scribble-underline {
-      bottom: -2px;
-      left: -2%;
-      width: 104%;
-      height: 8px;
-      stroke: var(--red);
-      stroke-width: 2;
-      fill: none;
-      stroke-linecap: round;
-      stroke-linejoin: round;
-    }
-    .scribble-circle {
-      top: -30%;
-      left: -15%;
-      width: 130%;
-      height: 160%;
-      stroke: var(--blue);
-      stroke-width: 2;
-      fill: none;
-      stroke-linecap: round;
-      stroke-linejoin: round;
-    }
-    .scribble path {
-      stroke-dasharray: 1;
-      stroke-dashoffset: 1;
-      animation: draw 1s cubic-bezier(0.4, 0, 0.2, 1) forwards;
-      animation-delay: 0.8s;
-    }
-    @keyframes draw {
-      to { stroke-dashoffset: 0; }
     }
 
-    /* Separator */
-    .separator {
-      height: 1px;
-      background-color: var(--border);
-      margin: 4rem 0;
-    }
-
-    /* Registration Marks */
-    .registration-mark {
-      position: fixed;
-      width: 20px;
-      height: 20px;
-      pointer-events: none;
-      z-index: 100;
-    }
-    .registration-mark::before,
-    .registration-mark::after {
-      content: '';
-      position: absolute;
-      background-color: var(--text);
-    }
-    .registration-mark::before {
-      top: 50%; left: 0; right: 0; height: 1px;
-    }
-    .registration-mark::after {
-      left: 50%; top: 0; bottom: 0; width: 1px;
-    }
-    .top-left { top: 2rem; left: 2rem; }
-    .top-right { top: 2rem; right: 2rem; }
-    .bottom-left { bottom: 2rem; left: 2rem; }
-    .bottom-right { bottom: 2rem; right: 2rem; }
-
-    /* Animations */
-    @keyframes fadeUp {
-      from { opacity: 0; transform: translateY(10px); }
-      to { opacity: 1; transform: translateY(0); }
-    }
-    .meta-col, .main-col, .side-col {
-      animation: fadeUp 0.8s cubic-bezier(0.16, 1, 0.3, 1) forwards;
-      opacity: 0;
-    }
-    .meta-col { animation-delay: 0.1s; }
-    .main-col { animation-delay: 0.2s; }
-    .side-col { animation-delay: 0.3s; }
-
-    /* Responsive */
     @media (max-width: 1024px) {
-      .wrapper { padding: 4rem 2rem; }
-      .grid { grid-template-columns: 1fr; gap: 4rem; }
-      .meta-col, .main-col, .side-col { grid-column: 1 / -1; }
-      .meta-col { display: flex; gap: 2rem; flex-wrap: wrap; }
-      .meta-item { margin-bottom: 0; }
-      .display-title { margin-left: 0; }
-      .registration-mark { display: none; }
-      .signal-list { padding-left: 0; margin-left: 0; }
-      .signal-list li::before { display: none; }
-      .a-meta { left: auto; right: -2rem; top: -1rem; }
+      .grid {
+        gap: 4rem;
+      }
+      .marginalia {
+        display: none;
+      }
     }
-    @media (max-width: 600px) {
-      .index-list li { flex-direction: column; gap: 0.25rem; }
-      .index-list .date { margin-bottom: 0.25rem; }
-      .display-title { font-size: 4rem; }
+
+    @media (max-width: 768px) {
+      .grid {
+        grid-template-columns: 1fr;
+        gap: 4rem;
+      }
+      .folio-left, .folio-right {
+        gap: 1rem;
+      }
+      .note-cursor {
+        left: auto;
+        right: 0;
+        top: -3rem;
+      }
+      .footer {
+        flex-direction: column;
+        gap: 2rem;
+      }
+      .note-github {
+        text-align: left;
+      }
+    }
+
+    @media (max-width: 640px) {
+      body {
+        padding: 1.5rem;
+      }
+      .folio {
+        margin-bottom: 4rem;
+      }
+      .hero {
+        margin-bottom: 4rem;
+      }
     }
   </style>
 </head>
 <body>
-  <div class="registration-mark top-left"></div>
-  <div class="registration-mark top-right"></div>
-  <div class="registration-mark bottom-left"></div>
-  <div class="registration-mark bottom-right"></div>
+  <div class="page">
+    <div class="marginalia" style="top: 15vh; right: -5vw;">
+      patches racing ahead of public disclosure
+    </div>
+    <div class="marginalia" style="top: 60vh; right: -5vw; color: var(--blue);">
+      kernel secrets surfacing before their time
+    </div>
+    <div class="marginalia" style="bottom: 30vh; left: -5vw; transform: rotate(180deg);">
+      games metered by the hour like parking
+    </div>
 
-  <div class="wrapper">
+    <div class="folio">
+      <div class="folio-left">
+        <span>01</span>
+        <span>ERIK NILSSON</span>
+      </div>
+      <div class="folio-right">
+        <span>OCT 22, 2026</span>
+        <span>SAN FRANCISCO</span>
+      </div>
+    </div>
+
+    <div class="hero">
+      <h1 class="title">Erik Nilsson</h1>
+      <div class="subtitle">
+        Product Designer at <a href="https://cursor.com" class="cursor-link">Cursor</a>
+        <div class="note note-cursor">
+          <svg class="svg-arrow" viewBox="0 0 50 50" style="left: -35px; top: 12px; width: 30px; height: 30px;">
+            <path d="M25,5 Q10,20 0,30" fill="none" stroke="var(--blue)" stroke-width="2" stroke-linecap="round"/>
+            <path d="M10,25 L0,30 L5,20" fill="none" stroke="var(--blue)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+          </svg>
+          building with AI
+        </div>
+      </div>
+    </div>
+
     <div class="grid">
-      <aside class="meta-col">
-        <div class="meta-item">
-          <span class="meta-label">Location</span>
-          <span class="meta-value">San Francisco, CA</span>
-        </div>
-        <div class="meta-item relative">
-          <span class="meta-label">Date</span>
-          <span class="meta-value">Oct 21, 2026</span>
-          <span class="annotation a-meta">today</span>
-        </div>
-        <div class="meta-item">
-          <span class="meta-label">Weather</span>
-          <span class="meta-value">14°C, Overcast</span>
-        </div>
-      </aside>
-
-      <main class="main-col">
-        <h1 class="display-title">Erik <br><em>Nilsson</em></h1>
-        <p class="lead-bio">
-          I'm a product designer at <a href="https://cursor.com" class="highlight-link">Cursor<svg class="scribble scribble-underline" viewBox="0 0 100 10" preserveAspectRatio="none"><path d="M2,7 Q25,2 50,6 T98,4" pathLength="1" /></svg></a>, working on how people build software with AI. Off-hours, I'm tinkering with living-site — <span class="circled-text">agents<svg class="scribble scribble-circle" viewBox="0 0 100 100" preserveAspectRatio="none"><path d="M 45 15 C 75 10, 95 25, 95 50 C 95 75, 75 90, 50 90 C 25 90, 5 75, 5 50 C 5 25, 25 10, 55 12" pathLength="1" /></svg></span> rebuild this corner of the web from fresh activity data each day.
+      <div class="main-col">
+        <p class="lead">
+          I'm a product designer at Cursor, working on how people build software with AI.
+        </p>
+        <p class="lead">
+          Off-hours, I'm tinkering with <span class="highlight">living-site</span> — agents rebuild this corner of the web from fresh activity data each day.
         </p>
         
-        <div class="separator"></div>
-        
-        <section class="writing-index">
-          <h2 class="section-title">
-            Notebook
-            <span class="annotation a-index">Recent</span>
-          </h2>
-          <ul class="index-list">
-            <li>
-              <span class="date">2025.12.20</span>
-              <a href="https://x.com/flowstated/status/2002167999353241901">imagine 2026</a>
-            </li>
-            <li>
-              <span class="date">2025.12.16</span>
-              <a href="https://x.com/flowstated/status/2000889983562080578">shipping by sunrise</a>
-            </li>
-            <li>
-              <span class="date">2025.12.15</span>
-              <a href="https://x.com/flowstated/status/2000691637190861180">exploring ways to spin up agents from my phone</a>
-            </li>
-          </ul>
-        </section>
-      </main>
+        <div class="note note-weather">
+          * heavy drizzle settling over San Francisco at dusk
+        </div>
+      </div>
 
-      <aside class="side-col">
-        <section class="signals">
-          <h2 class="section-title">World Signals</h2>
-          <ul class="signal-list">
-            <li>a cybersecurity fortress darkened by the language beneath it</li>
-            <li>fire escapes rusting on brick facades, their purpose half-forgotten</li>
-            <li>startups planting roots in austin autumn soil</li>
-            <li>karl-the-fog rolling over san francisco at fourteen degrees</li>
-            <li>a long-awaited exchange closes one chapter at the border</li>
-            <li>autumn streets still parsing who lit the flame</li>
-          </ul>
-        </section>
-        
-        <section class="links">
-          <h2 class="section-title">Connect</h2>
-          <ul class="link-list">
-            <li><a href="https://x.com/flowstated">X (Twitter)</a></li>
-            <li><a href="https://github.com/eriknson">GitHub</a></li>
-            <li><a href="https://linkedin.com/in/eriknson">LinkedIn</a></li>
-            <li><a href="mailto:contact@eriks.design">Email</a></li>
-          </ul>
-        </section>
-      </aside>
+      <div class="side-col">
+        <div class="index-header">
+          <h2>Notes & Fragments</h2>
+          <span class="index-count">
+            03
+            <svg viewBox="0 0 40 40" style="position: absolute; left: -12px; top: -12px; width: 40px; height: 40px; pointer-events: none; overflow: visible;">
+              <path d="M18,6 C30,4 36,14 34,26 C32,38 16,40 8,30 C0,20 6,8 18,6 Z" fill="none" stroke="var(--red)" stroke-width="1.5" stroke-linecap="round"/>
+            </svg>
+          </span>
+        </div>
+        <ul class="index-list">
+          <li>
+            <a href="https://x.com/flowstated/status/2002167999353241901">
+              <span class="index-title">imagine 2026</span>
+              <span class="index-date">Dec 20</span>
+            </a>
+          </li>
+          <li>
+            <a href="https://x.com/flowstated/status/2000889983562080578">
+              <span class="index-title">shipping by sunrise</span>
+              <span class="index-date">Dec 16</span>
+            </a>
+          </li>
+          <li>
+            <a href="https://x.com/flowstated/status/2000691637190861180">
+              <span class="index-title">exploring ways to spin up agents from my phone</span>
+              <span class="index-date">Dec 15</span>
+            </a>
+          </li>
+        </ul>
+      </div>
+    </div>
+
+    <div class="footer">
+      <div class="links">
+        <a href="https://x.com/flowstated">X (Twitter)</a>
+        <a href="https://github.com/eriknson">GitHub</a>
+        <a href="https://linkedin.com/in/eriknson">LinkedIn</a>
+        <a href="mailto:contact@eriks.design">Email</a>
+      </div>
+      <div class="note note-github">
+        <svg viewBox="0 0 50 50" style="position: absolute; right: -20px; top: -20px; width: 30px; height: 30px; overflow: visible;">
+          <path d="M10,30 Q25,15 40,5" fill="none" stroke="var(--text-muted)" stroke-width="1.5" stroke-linecap="round" stroke-dasharray="4 4"/>
+        </svg>
+        GitHub repos are side projects and experiments — small personal things I tinker with outside of work.
+      </div>
     </div>
   </div>
 </body>

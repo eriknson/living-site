@@ -1,72 +1,39 @@
-<!doctype html>
+<!DOCTYPE html>
 <html lang="en">
 <head>
   <meta charset="utf-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <meta name="color-scheme" content="light dark">
+  <meta name="description" content="Erik Nilsson, Product Designer at Cursor. A polished editorial notebook about design, software, and building with AI.">
   <title>Erik Nilsson - Editorial Notebook</title>
-  <meta name="description" content="Erik Nilsson is a product designer at Cursor in San Francisco. A minimal editorial notebook of notes, writing, and current signals.">
   <style>
     :root {
-      color-scheme: light;
-      --paper: #fbf6ec;
-      --paper-deep: #f1e7d4;
-      --ink: #17120d;
-      --ink-soft: #5e5144;
-      --ink-faint: #948777;
-      --rule: rgba(23, 18, 13, 0.14);
-      --rule-strong: rgba(23, 18, 13, 0.26);
-      --field: rgba(255, 252, 244, 0.74);
-      --coral: #ff4f3e;
-      --coral-p3: color(display-p3 1 0.24 0.17);
-      --blue: #185cff;
-      --blue-p3: color(display-p3 0.02 0.25 1);
-      --green: #05a863;
-      --green-p3: color(display-p3 0 0.68 0.38);
-      --gold: #ca7a00;
-      --shadow: 0 24px 80px rgba(62, 42, 15, 0.12);
-      --serif: Iowan Old Style, Apple Garamond, Palatino Linotype, Book Antiqua, Georgia, serif;
-      --sans: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, Segoe UI, sans-serif;
-      --mono: SFMono-Regular, Menlo, Consolas, Liberation Mono, monospace;
-      --hand: Bradley Hand, Segoe Print, Comic Sans MS, cursive;
+      color-scheme: light dark;
+      --paper: #fbf7ee;
+      --ink: #191611;
+      --ink-soft: #4f463a;
+      --muted: #8b7e6d;
+      --line: rgba(25, 22, 17, .16);
+      --line-strong: rgba(25, 22, 17, .34);
+      --orange: #ff5c26;
+      --blue: #2458ff;
+      --green: #118d57;
+      --shadow: rgba(62, 48, 29, .12);
+      --sans: ui-sans-serif, -apple-system, BlinkMacSystemFont, "SF Pro Text", "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+      --serif: ui-serif, Georgia, Cambria, "Times New Roman", Times, serif;
+      --mono: ui-monospace, "SFMono-Regular", Menlo, Monaco, Consolas, monospace;
+      --hand: "Bradley Hand", "Segoe Print", "Noteworthy", "Comic Sans MS", cursive;
     }
 
-    @media (prefers-color-scheme: dark) {
+    @supports (color: color(display-p3 1 1 1)) {
       :root {
-        color-scheme: dark;
-        --paper: #1a1814;
-        --paper-deep: #12100e;
-        --ink: #ebe4d6;
-        --ink-soft: #b0a090;
-        --ink-faint: #7a6e60;
-        --rule: rgba(235, 228, 214, 0.12);
-        --rule-strong: rgba(235, 228, 214, 0.22);
-        --field: rgba(30, 26, 22, 0.82);
-        --shadow: 0 24px 80px rgba(0, 0, 0, 0.35);
-      }
-
-      a {
-        text-decoration-color: rgba(235, 228, 214, 0.28);
-      }
-
-      .contact a {
-        background: rgba(30, 26, 22, 0.64);
-      }
-
-      .notecard {
-        border-color: rgba(202, 122, 0, 0.32);
-        background: rgba(30, 26, 22, 0.72);
-      }
-
-      .quote-strip {
-        background: rgba(30, 26, 22, 0.56);
-      }
-
-      .side {
-        background: rgba(22, 20, 17, 0.42);
-      }
-
-      .annotation {
-        background: rgba(26, 24, 20, 0.72);
+        --paper: color(display-p3 .982 .963 .914);
+        --ink: color(display-p3 .089 .076 .054);
+        --ink-soft: color(display-p3 .29 .255 .207);
+        --muted: color(display-p3 .526 .47 .392);
+        --orange: color(display-p3 1 .31 .115);
+        --blue: color(display-p3 .105 .315 1);
+        --green: color(display-p3 .02 .55 .29);
       }
     }
 
@@ -78,851 +45,909 @@
       background: var(--paper);
       color: var(--ink);
       font-family: var(--sans);
-      font-size: 16px;
-      scroll-behavior: smooth;
+      font-feature-settings: "kern", "liga", "calt";
+      -webkit-font-smoothing: antialiased;
+      text-rendering: optimizeLegibility;
     }
 
     body {
       min-height: 100vh;
       margin: 0;
       background: var(--paper);
+      overflow-x: hidden;
+    }
+
+    body::before {
+      content: "";
+      position: fixed;
+      inset: 0;
+      pointer-events: none;
+      opacity: .45;
+      background-image: url("data:image/svg+xml,%3Csvg width='160' height='160' viewBox='0 0 160 160' xmlns='http://www.w3.org/2000/svg'%3E%3Cg fill='%23191611' fill-opacity='.035'%3E%3Ccircle cx='18' cy='24' r='.7'/%3E%3Ccircle cx='72' cy='12' r='.55'/%3E%3Ccircle cx='132' cy='48' r='.6'/%3E%3Ccircle cx='44' cy='92' r='.5'/%3E%3Ccircle cx='116' cy='126' r='.65'/%3E%3Ccircle cx='10' cy='146' r='.45'/%3E%3C/g%3E%3C/svg%3E");
+      z-index: 0;
     }
 
     a {
       color: inherit;
-      text-decoration-color: rgba(23, 18, 13, 0.32);
-      text-decoration-thickness: 1px;
-      text-underline-offset: 0.18em;
-      transition: color 180ms ease, text-decoration-color 180ms ease, transform 180ms ease;
+      text-decoration: none;
     }
 
-    a:hover {
-      color: var(--blue-p3, var(--blue));
-      text-decoration-color: currentColor;
+    a:focus-visible {
+      outline: 2px solid var(--blue);
+      outline-offset: 5px;
+    }
+
+    ::selection {
+      background: var(--orange);
+      color: #fffaf0;
     }
 
     .page {
-      width: min(1500px, 100%);
+      position: relative;
+      z-index: 1;
+      width: 100%;
+      max-width: 640px;
+      min-height: 100vh;
       margin: 0 auto;
-      padding: 28px clamp(18px, 4vw, 56px) 48px;
+      padding: 22px;
     }
 
     .sheet {
-      position: relative;
-      isolation: isolate;
-      overflow: hidden;
-      min-height: calc(100vh - 56px);
-      border: 1px solid var(--rule);
-      border-radius: 30px;
-      background: var(--paper);
-      box-shadow: var(--shadow);
+      min-height: calc(100vh - 44px);
+      border: 1px solid var(--line-strong);
+      background: rgba(255, 251, 242, .52);
+      box-shadow: 0 30px 80px var(--shadow);
+      overflow: clip;
+      animation: enter .8s cubic-bezier(.2, .8, .2, 1) both;
     }
 
-    .sheet::before {
-      position: absolute;
-      top: 0;
-      bottom: 0;
-      left: clamp(72px, 9vw, 128px);
-      z-index: 0;
-      width: 1px;
-      background: rgba(255, 79, 62, 0.32);
-      content: "";
-    }
-
-    .sheet::after {
-      position: absolute;
-      top: 10%;
-      left: 9%;
-      z-index: 0;
-      width: 260px;
-      height: 260px;
-      border-radius: 999px;
-      pointer-events: none;
-      content: "";
-      background: rgba(255, 79, 62, 0.08);
-      box-shadow:
-        980px -120px 0 24px rgba(24, 92, 255, 0.07),
-        900px 720px 0 48px rgba(5, 168, 99, 0.08);
-    }
-
-    .masthead {
-      position: relative;
-      z-index: 1;
+    .topbar {
       display: grid;
-      grid-template-columns: minmax(110px, 0.72fr) minmax(0, 3.8fr) minmax(210px, 1.1fr);
-      gap: clamp(20px, 3vw, 48px);
-      align-items: end;
-      padding: clamp(22px, 4vw, 52px) clamp(22px, 5vw, 72px) 24px;
-      border-bottom: 1px solid var(--rule);
-    }
-
-    .issue {
-      display: grid;
-      gap: 8px;
-      color: var(--ink-soft);
-      font-family: var(--mono);
-      font-size: 0.72rem;
-      letter-spacing: 0.08em;
-      line-height: 1.45;
+      grid-template-columns: 1fr auto 1fr;
+      align-items: center;
+      gap: 18px;
+      min-height: 58px;
+      padding: 0 24px;
+      border-bottom: 1px solid var(--line);
+      font: 700 11px/1 var(--mono);
+      letter-spacing: .14em;
       text-transform: uppercase;
     }
 
-    .issue strong {
-      color: var(--ink);
-      font-weight: 700;
+    .topbar__center {
+      color: var(--muted);
+      text-align: center;
     }
 
-    .brand {
-      margin: 0;
-      font-family: var(--serif);
-      font-size: clamp(4.6rem, 14vw, 13.8rem);
-      font-weight: 400;
-      letter-spacing: -0.095em;
-      line-height: 0.78;
-      text-wrap: balance;
-    }
-
-    .brand span {
-      display: inline-block;
-    }
-
-    .brand .dot {
-      color: var(--coral-p3, var(--coral));
-      font-family: var(--sans);
-      font-size: 0.76em;
-      font-weight: 700;
-      transform: translate(-0.02em, -0.03em) rotate(-7deg);
-    }
-
-    .contact {
+    .topbar__links {
       display: flex;
-      flex-wrap: wrap;
       justify-content: flex-end;
-      gap: 8px;
-      font-size: 0.82rem;
-    }
-
-    .contact a {
-      border: 1px solid var(--rule);
-      border-radius: 999px;
-      padding: 8px 11px;
-      background: rgba(255, 252, 244, 0.46);
-      text-decoration: none;
-    }
-
-    .contact a:hover {
-      border-color: rgba(24, 92, 255, 0.38);
-      transform: translateY(-1px);
-    }
-
-    main {
-      position: relative;
-      z-index: 1;
-      display: grid;
-      grid-template-columns: minmax(74px, 0.62fr) minmax(0, 1.7fr) minmax(280px, 0.82fr);
-      min-height: 760px;
-    }
-
-    .margin-notes {
-      position: relative;
-      padding: 34px clamp(14px, 2.2vw, 30px);
-      border-right: 1px solid var(--rule);
+      gap: 14px;
       color: var(--ink-soft);
     }
 
-    .vertical-label {
-      position: sticky;
-      top: 28px;
-      display: inline-flex;
-      transform: rotate(-90deg) translateX(-100%);
-      transform-origin: left top;
-      gap: 10px;
-      white-space: nowrap;
-      font-family: var(--mono);
-      font-size: 0.72rem;
-      letter-spacing: 0.11em;
-      text-transform: uppercase;
+    .topbar a {
+      position: relative;
+      padding: 6px 0;
     }
 
-    .vertical-label b {
-      color: var(--coral-p3, var(--coral));
-      font-weight: 700;
+    .topbar a::after,
+    .writing a::after,
+    .footer a::after {
+      content: "";
+      position: absolute;
+      left: 0;
+      right: 0;
+      bottom: 1px;
+      height: 1px;
+      background: currentColor;
+      transform: scaleX(.25);
+      transform-origin: left;
+      opacity: .42;
+      transition: transform .28s ease, opacity .28s ease;
     }
 
-    .story {
-      display: grid;
-      align-content: start;
-      gap: clamp(34px, 5vw, 70px);
-      padding: clamp(34px, 6vw, 78px) clamp(24px, 5vw, 76px) clamp(46px, 6vw, 86px);
+    .topbar a:hover::after,
+    .writing a:hover::after,
+    .footer a:hover::after {
+      transform: scaleX(1);
+      opacity: 1;
     }
 
     .hero {
+      position: relative;
       display: grid;
-      gap: 24px;
-      max-width: 880px;
+      grid-template-columns: minmax(0, 1fr) minmax(320px, 37vw);
+      min-height: 650px;
+      border-bottom: 1px solid var(--line);
     }
 
-    .kicker {
+    .hero__main {
+      position: relative;
+      display: flex;
+      flex-direction: column;
+      justify-content: space-between;
+      padding: clamp(34px, 6vw, 86px);
+      border-right: 1px solid var(--line);
+    }
+
+    .issue {
       display: flex;
       flex-wrap: wrap;
-      gap: 10px;
-      align-items: center;
+      gap: 8px;
+      margin-bottom: 54px;
+      font: 700 11px/1 var(--mono);
+      letter-spacing: .13em;
+      text-transform: uppercase;
+      color: var(--muted);
+    }
+
+    .issue span {
+      border: 1px solid var(--line);
+      border-radius: 999px;
+      padding: 9px 11px;
+      background: rgba(255, 252, 246, .48);
+    }
+
+    .masthead {
+      max-width: 950px;
+    }
+
+    h1 {
+      margin: 0;
+      max-width: 10ch;
+      font-family: var(--serif);
+      font-size: clamp(78px, 13.4vw, 214px);
+      font-weight: 500;
+      line-height: .78;
+      letter-spacing: -.085em;
+    }
+
+    .deck {
+      width: min(680px, 100%);
+      margin: clamp(26px, 4.5vw, 52px) 0 0;
       color: var(--ink-soft);
-      font-family: var(--mono);
-      font-size: 0.74rem;
-      letter-spacing: 0.08em;
+      font-family: var(--serif);
+      font-size: clamp(25px, 3.2vw, 45px);
+      line-height: 1.08;
+      letter-spacing: -.038em;
+    }
+
+    .deck em {
+      color: var(--orange);
+      font-style: italic;
+    }
+
+    .bio-line {
+      display: grid;
+      grid-template-columns: auto minmax(90px, 1fr) auto;
+      align-items: end;
+      gap: 16px;
+      margin-top: 62px;
+      color: var(--muted);
+      font: 700 12px/1.45 var(--mono);
+      letter-spacing: .08em;
       text-transform: uppercase;
     }
 
-    .kicker::before {
-      display: inline-block;
-      width: 42px;
-      height: 2px;
-      background: var(--blue-p3, var(--blue));
+    .bio-line::before {
       content: "";
-      transform: rotate(-2deg);
+      height: 1px;
+      background: var(--line-strong);
     }
 
-    .headline {
-      max-width: 10.5em;
+    .note {
+      position: absolute;
+      right: clamp(22px, 4vw, 58px);
+      top: clamp(134px, 20vw, 214px);
+      width: min(260px, 32vw);
+      color: var(--blue);
+      font: 700 clamp(17px, 1.7vw, 24px)/1.1 var(--hand);
+      letter-spacing: -.035em;
+      transform: rotate(-5deg);
+    }
+
+    .note::before {
+      content: "";
+      position: absolute;
+      width: 82px;
+      height: 36px;
+      left: -58px;
+      top: 19px;
+      border-top: 2px solid currentColor;
+      border-left: 2px solid currentColor;
+      border-radius: 70% 0 0 0;
+      transform: rotate(-15deg);
+      opacity: .62;
+    }
+
+    .hero__side {
+      display: grid;
+      grid-template-rows: auto 1fr auto;
+      min-width: 0;
+      background: rgba(241, 232, 218, .45);
+    }
+
+    .today {
+      padding: 28px;
+      border-bottom: 1px solid var(--line);
+    }
+
+    .label {
+      margin: 0 0 18px;
+      color: var(--muted);
+      font: 800 11px/1 var(--mono);
+      letter-spacing: .16em;
+      text-transform: uppercase;
+    }
+
+    .today__date {
       margin: 0;
       font-family: var(--serif);
-      font-size: clamp(3.3rem, 8vw, 9rem);
-      font-weight: 400;
-      letter-spacing: -0.075em;
-      line-height: 0.87;
-      text-wrap: balance;
+      font-size: clamp(42px, 5vw, 82px);
+      font-weight: 500;
+      line-height: .86;
+      letter-spacing: -.06em;
     }
 
-    .headline .mark {
-      position: relative;
-      display: inline-block;
-      color: var(--green-p3, var(--green));
-      font-style: italic;
-      letter-spacing: -0.1em;
-    }
-
-    .headline .mark::after {
-      position: absolute;
-      right: -0.08em;
-      bottom: 0.02em;
-      left: -0.04em;
-      height: 0.08em;
-      border: 2px solid var(--coral-p3, var(--coral));
-      border-top: 0;
-      border-radius: 50%;
-      content: "";
-      transform: rotate(-2deg);
-    }
-
-    .dek {
-      display: grid;
-      grid-template-columns: minmax(0, 1fr) minmax(180px, 0.48fr);
-      gap: clamp(18px, 4vw, 44px);
-      align-items: end;
-      max-width: 840px;
+    .today__weather {
+      margin: 22px 0 0;
       color: var(--ink-soft);
+      font-size: 15px;
+      line-height: 1.55;
     }
 
-    .dek p {
-      margin: 0;
-      font-family: var(--serif);
-      font-size: clamp(1.34rem, 2.5vw, 2rem);
-      line-height: 1.22;
-      text-wrap: pretty;
-    }
-
-    .notecard {
-      position: relative;
-      padding: 16px 16px 14px;
-      border: 1px solid rgba(202, 122, 0, 0.26);
-      border-radius: 18px 18px 22px 16px;
-      background: rgba(255, 252, 244, 0.66);
-      color: var(--ink);
-      font-family: var(--hand);
-      font-size: clamp(0.98rem, 1.3vw, 1.12rem);
-      line-height: 1.3;
-      transform: rotate(1.2deg);
-    }
-
-    .notecard::before {
-      position: absolute;
-      top: -10px;
-      left: 22px;
-      width: 58px;
-      height: 18px;
-      background: rgba(255, 79, 62, 0.13);
-      content: "";
-      transform: rotate(-4deg);
-    }
-
-    .essay-grid {
+    .signals {
       display: grid;
-      grid-template-columns: minmax(0, 1fr) minmax(240px, 0.48fr);
-      gap: clamp(24px, 5vw, 64px);
-      align-items: start;
+      align-content: center;
+      gap: 0;
+      padding: 0;
     }
 
-    .intro {
+    .signal {
       display: grid;
+      grid-template-columns: 42px 1fr;
       gap: 18px;
-      max-width: 660px;
+      padding: 22px 28px;
+      border-bottom: 1px solid var(--line);
+      transition: background-color .25s ease;
     }
 
-    .intro p {
+    .signal:hover {
+      background: rgba(255, 252, 246, .42);
+    }
+
+    .signal b {
+      color: var(--orange);
+      font: 800 12px/1 var(--mono);
+      letter-spacing: .12em;
+    }
+
+    .signal span {
+      color: var(--ink-soft);
+      font: 500 clamp(17px, 1.55vw, 23px)/1.18 var(--serif);
+      letter-spacing: -.025em;
+    }
+
+    .scrap {
+      margin: 28px;
+      padding: 22px;
+      border: 1px solid var(--line-strong);
+      background: var(--paper);
+      transform: rotate(1.4deg);
+      box-shadow: 10px 12px 0 rgba(25, 22, 17, .07);
+      transition: transform .28s ease, box-shadow .28s ease;
+    }
+
+    .scrap:hover {
+      transform: rotate(-.6deg) translateY(-2px);
+      box-shadow: 7px 9px 0 rgba(25, 22, 17, .09);
+    }
+
+    .scrap p {
       margin: 0;
-      font-family: var(--serif);
-      font-size: clamp(1.28rem, 1.9vw, 1.68rem);
-      line-height: 1.42;
-      text-wrap: pretty;
+      color: var(--ink);
+      font: 700 22px/1.05 var(--hand);
+      letter-spacing: -.04em;
     }
 
-    .intro .small {
+    .scrap small {
+      display: block;
+      margin-top: 14px;
+      color: var(--muted);
+      font: 700 10px/1 var(--mono);
+      letter-spacing: .14em;
+      text-transform: uppercase;
+    }
+
+    .body {
+      display: grid;
+      grid-template-columns: minmax(0, .92fr) minmax(320px, .58fr);
+      min-height: 520px;
+    }
+
+    .essay {
+      padding: clamp(34px, 6vw, 84px);
+      border-right: 1px solid var(--line);
+    }
+
+    .essay p {
+      max-width: 780px;
+      margin: 0;
+      color: var(--ink);
+      font-family: var(--serif);
+      font-size: clamp(30px, 4vw, 66px);
+      font-weight: 500;
+      line-height: 1.02;
+      letter-spacing: -.055em;
+    }
+
+    .essay p + p {
+      margin-top: 28px;
       color: var(--ink-soft);
       font-family: var(--sans);
-      font-size: 1rem;
-      line-height: 1.65;
+      font-size: clamp(17px, 1.45vw, 22px);
+      font-weight: 450;
+      line-height: 1.5;
+      letter-spacing: -.02em;
     }
 
-    .inline-note {
-      display: inline-block;
-      margin-inline: 0.12em;
-      color: var(--coral-p3, var(--coral));
-      font-family: var(--hand);
-      font-size: 0.8em;
-      transform: rotate(-3deg) translateY(-0.08em);
-    }
-
-    .field-note {
+    .essay .mark {
       position: relative;
-      display: grid;
-      gap: 18px;
-      padding: 20px;
-      border: 1px solid var(--rule);
-      border-radius: 24px;
-      background: var(--field);
+      display: inline-block;
+      color: var(--green);
+      font-style: italic;
     }
 
-    .field-note::before {
+    .essay .mark::after {
+      content: "";
       position: absolute;
-      top: -13px;
-      right: 26px;
-      padding: 3px 9px;
-      border: 1px solid var(--rule);
-      border-radius: 999px;
-      background: var(--paper);
+      left: -.04em;
+      right: -.04em;
+      bottom: .03em;
+      height: .16em;
+      background: currentColor;
+      opacity: .14;
+      z-index: -1;
+    }
+
+    .pull {
+      width: min(420px, 100%);
+      margin-top: 56px;
+      padding-left: 22px;
+      border-left: 3px solid var(--orange);
       color: var(--ink-soft);
-      content: "today";
-      font-family: var(--mono);
-      font-size: 0.68rem;
-      letter-spacing: 0.08em;
-      text-transform: uppercase;
-    }
-
-    .field-row {
-      display: grid;
-      gap: 4px;
-      padding-bottom: 14px;
-      border-bottom: 1px solid var(--rule);
-    }
-
-    .field-row:last-child {
-      padding-bottom: 0;
-      border-bottom: 0;
-    }
-
-    .field-row dt {
-      color: var(--ink-faint);
-      font-family: var(--mono);
-      font-size: 0.68rem;
-      letter-spacing: 0.1em;
-      text-transform: uppercase;
-    }
-
-    .field-row dd {
-      margin: 0;
-      font-family: var(--serif);
-      font-size: 1.18rem;
-      line-height: 1.25;
-    }
-
-    .quote-strip {
-      display: grid;
-      grid-template-columns: repeat(3, minmax(0, 1fr));
-      border: 1px solid var(--rule-strong);
-      border-radius: 26px;
-      background: rgba(255, 252, 244, 0.5);
-      overflow: hidden;
-    }
-
-    .quote {
-      min-height: 180px;
-      padding: clamp(18px, 3vw, 28px);
-      border-right: 1px solid var(--rule);
-    }
-
-    .quote:last-child {
-      border-right: 0;
-    }
-
-    .quote small {
-      display: block;
-      margin-bottom: 26px;
-      color: var(--ink-faint);
-      font-family: var(--mono);
-      font-size: 0.68rem;
-      letter-spacing: 0.1em;
-      text-transform: uppercase;
-    }
-
-    .quote p {
-      margin: 0;
-      font-family: var(--serif);
-      font-size: clamp(1.38rem, 2.2vw, 2.18rem);
-      letter-spacing: -0.04em;
-      line-height: 1.02;
-      text-wrap: balance;
-    }
-
-    .quote:nth-child(1) p {
-      color: var(--blue-p3, var(--blue));
-    }
-
-    .quote:nth-child(2) p {
-      color: var(--coral-p3, var(--coral));
-    }
-
-    .quote:nth-child(3) p {
-      color: var(--green-p3, var(--green));
+      font: 700 15px/1.55 var(--mono);
+      letter-spacing: .02em;
     }
 
     .writing {
-      display: grid;
-      gap: 18px;
-      max-width: 860px;
+      padding: clamp(30px, 4.4vw, 58px);
+      background: rgba(255, 252, 246, .26);
     }
 
-    .section-title {
-      display: flex;
-      gap: 12px;
-      align-items: center;
-      margin: 0;
-      font-family: var(--mono);
-      font-size: 0.78rem;
-      letter-spacing: 0.12em;
-      text-transform: uppercase;
-    }
-
-    .section-title::after {
-      flex: 1;
-      height: 1px;
-      background: var(--rule);
-      content: "";
-    }
-
-    .writing-list {
-      display: grid;
-      border-top: 1px solid var(--rule-strong);
-    }
-
-    .writing-list a {
-      display: grid;
-      grid-template-columns: 7.2rem minmax(0, 1fr) auto;
-      gap: 18px;
-      align-items: baseline;
-      padding: 18px 0;
-      border-bottom: 1px solid var(--rule);
-      text-decoration: none;
-    }
-
-    .writing-list a:hover {
-      transform: translateX(4px);
-    }
-
-    .writing-list time,
-    .writing-list span:last-child {
-      color: var(--ink-faint);
-      font-family: var(--mono);
-      font-size: 0.72rem;
-      letter-spacing: 0.06em;
-      text-transform: uppercase;
-    }
-
-    .writing-list strong {
+    .writing h2 {
+      margin: 0 0 6px;
       font-family: var(--serif);
-      font-size: clamp(1.35rem, 2vw, 2rem);
-      font-weight: 400;
-      letter-spacing: -0.04em;
+      font-size: clamp(38px, 4vw, 64px);
+      font-weight: 500;
+      line-height: .9;
+      letter-spacing: -.055em;
     }
 
-    .side {
-      display: grid;
-      align-content: start;
-      gap: 26px;
-      padding: clamp(28px, 5vw, 62px) clamp(20px, 3vw, 38px);
-      border-left: 1px solid var(--rule);
-      background: rgba(255, 252, 244, 0.34);
-    }
-
-    .annotation {
-      position: relative;
-      display: grid;
-      gap: 12px;
-      padding: 18px 18px 20px;
-      border: 1px solid var(--rule);
-      border-radius: 22px;
-      background: rgba(251, 246, 236, 0.62);
-    }
-
-    .annotation:nth-child(2) {
-      transform: rotate(-0.8deg);
-    }
-
-    .annotation:nth-child(3) {
-      transform: rotate(0.7deg);
-    }
-
-    .annotation h2,
-    .annotation h3 {
-      margin: 0;
-      font-family: var(--mono);
-      font-size: 0.72rem;
-      letter-spacing: 0.11em;
+    .writing__intro {
+      margin: 0 0 28px;
+      color: var(--muted);
+      font: 700 11px/1.5 var(--mono);
+      letter-spacing: .1em;
       text-transform: uppercase;
     }
 
-    .annotation p {
-      margin: 0;
-      color: var(--ink-soft);
-      font-size: 0.95rem;
-      line-height: 1.55;
-      text-wrap: pretty;
-    }
-
-    .annotation .large {
-      color: var(--ink);
-      font-family: var(--serif);
-      font-size: clamp(1.52rem, 2.3vw, 2.2rem);
-      letter-spacing: -0.045em;
-      line-height: 1.04;
-    }
-
-    .signal-list {
-      display: grid;
-      gap: 11px;
+    .writing ol {
+      list-style: none;
       margin: 0;
       padding: 0;
-      list-style: none;
+      border-top: 1px solid var(--line-strong);
     }
 
-    .signal-list li {
+    .writing li {
+      display: grid;
+      grid-template-columns: 34px 1fr auto;
+      gap: 16px;
+      align-items: baseline;
+      padding: 18px 0;
+      border-bottom: 1px solid var(--line);
+    }
+
+    .writing .num {
+      color: var(--orange);
+      font: 800 12px/1 var(--mono);
+    }
+
+    .writing a {
       position: relative;
-      padding-left: 18px;
-      color: var(--ink-soft);
+      width: fit-content;
       font-family: var(--serif);
-      font-size: 1.05rem;
-      line-height: 1.28;
+      font-size: clamp(20px, 2vw, 28px);
+      line-height: 1.1;
+      letter-spacing: -.035em;
     }
 
-    .signal-list li::before {
-      position: absolute;
-      top: 0.54em;
-      left: 0;
-      width: 8px;
-      height: 8px;
-      border: 1.5px solid var(--coral-p3, var(--coral));
-      border-radius: 999px;
-      content: "";
+    .writing time {
+      color: var(--muted);
+      font: 700 11px/1 var(--mono);
+      letter-spacing: .08em;
+      text-transform: uppercase;
+      white-space: nowrap;
     }
 
-    .scribble {
+    .contact {
+      display: grid;
+      grid-template-columns: minmax(0, .7fr) minmax(260px, .3fr);
+      border-top: 1px solid var(--line);
+    }
+
+    .notebook {
       position: relative;
-      padding: 20px 18px;
-      border: 1.5px solid var(--blue-p3, var(--blue));
-      border-radius: 54% 46% 52% 48% / 44% 58% 42% 56%;
-      color: var(--blue-p3, var(--blue));
-      font-family: var(--hand);
-      font-size: 1.15rem;
-      line-height: 1.25;
-      transform: rotate(2.2deg);
+      padding: clamp(34px, 5vw, 72px);
+      border-right: 1px solid var(--line);
     }
 
-    .colophon {
-      position: relative;
-      z-index: 1;
+    .notebook p {
+      width: min(690px, 100%);
+      margin: 0;
+      color: var(--ink-soft);
+      font-size: clamp(18px, 2vw, 26px);
+      line-height: 1.34;
+      letter-spacing: -.035em;
+    }
+
+    .notebook strong {
+      color: var(--ink);
+      font-weight: 650;
+    }
+
+    .scribbles {
       display: flex;
       flex-wrap: wrap;
       gap: 10px;
-      align-items: center;
-      justify-content: space-between;
-      padding: 20px clamp(22px, 5vw, 72px);
-      border-top: 1px solid var(--rule);
+      margin-top: 34px;
+    }
+
+    .scribbles a,
+    .scribbles span {
+      border: 1px solid var(--line-strong);
+      border-radius: 999px;
+      padding: 10px 13px;
       color: var(--ink-soft);
-      font-family: var(--mono);
-      font-size: 0.72rem;
-      letter-spacing: 0.08em;
+      background: rgba(255, 252, 246, .4);
+      font: 800 11px/1 var(--mono);
+      letter-spacing: .1em;
+      text-transform: uppercase;
+      transition: transform .24s ease, border-color .24s ease, color .24s ease;
+    }
+
+    .scribbles a:hover {
+      color: var(--blue);
+      border-color: currentColor;
+      transform: translateY(-2px) rotate(-1deg);
+    }
+
+    .mini {
+      display: grid;
+      align-content: center;
+      gap: 16px;
+      padding: clamp(28px, 4vw, 46px);
+      background: var(--ink);
+      color: var(--paper);
+    }
+
+    .mini blockquote {
+      margin: 0;
+      font-family: var(--serif);
+      font-size: clamp(24px, 3vw, 42px);
+      line-height: 1;
+      letter-spacing: -.052em;
+    }
+
+    .mini cite {
+      color: rgba(251, 247, 238, .62);
+      font: 700 11px/1.4 var(--mono);
+      letter-spacing: .13em;
+      text-transform: uppercase;
+      font-style: normal;
+    }
+
+    .footer {
+      display: flex;
+      justify-content: space-between;
+      gap: 24px;
+      padding: 18px 24px;
+      border-top: 1px solid var(--line);
+      color: var(--muted);
+      font: 700 11px/1.4 var(--mono);
+      letter-spacing: .1em;
       text-transform: uppercase;
     }
 
-    .colophon a {
-      text-decoration: none;
+    .footer a {
+      position: relative;
+      color: var(--ink);
     }
 
-    .ink-dot {
-      display: inline-block;
-      width: 0.72em;
-      height: 0.72em;
-      margin-inline: 0.15em 0.1em;
-      border-radius: 999px;
-      background: var(--coral-p3, var(--coral));
-      vertical-align: -0.02em;
+    .cursor-note {
+      position: fixed;
+      z-index: 5;
+      left: 0;
+      top: 0;
+      pointer-events: none;
+      opacity: 0;
+      transform: translate(-50%, -50%) rotate(-4deg);
+      color: var(--blue);
+      font: 700 18px/1 var(--hand);
+      transition: opacity .18s ease;
+      will-change: transform;
     }
 
-    @media (prefers-reduced-motion: no-preference) {
-      .notecard,
-      .annotation,
-      .scribble {
-        animation: settle 700ms cubic-bezier(0.2, 0.8, 0.2, 1) both;
+    @keyframes enter {
+      from {
+        opacity: 0;
+        transform: translateY(12px) scale(.992);
       }
-
-      .annotation:nth-child(3) {
-        animation-delay: 90ms;
-      }
-
-      .annotation:nth-child(4) {
-        animation-delay: 160ms;
-      }
-
-      @keyframes settle {
-        from {
-          opacity: 0;
-          translate: 0 10px;
-        }
-        to {
-          opacity: 1;
-          translate: 0 0;
-        }
+      to {
+        opacity: 1;
+        transform: translateY(0) scale(1);
       }
     }
 
-    @media (max-width: 1100px) {
-      .masthead {
-        grid-template-columns: 1fr;
-        align-items: start;
+    @media (hover: hover) and (pointer: fine) {
+      .sheet {
+        transition: border-color .3s ease;
       }
 
-      .contact {
-        justify-content: flex-start;
+      .sheet:hover {
+        border-color: rgba(25, 22, 17, .48);
       }
 
-      main {
-        grid-template-columns: minmax(0, 1fr);
-      }
-
-      .margin-notes {
-        display: none;
-      }
-
-      .side {
-        grid-template-columns: repeat(2, minmax(0, 1fr));
-        border-top: 1px solid var(--rule);
-        border-left: 0;
-      }
-
-      .scribble {
-        grid-column: 1 / -1;
+      .cursor-note.is-visible {
+        opacity: 1;
       }
     }
 
-    @media (max-width: 760px) {
+    @media (prefers-color-scheme: dark) {
+      :root {
+        color-scheme: dark;
+        --paper: #1a1814;
+        --ink: #e8e2d8;
+        --ink-soft: #b8ad9c;
+        --muted: #8a8072;
+        --line: rgba(232, 226, 216, .16);
+        --line-strong: rgba(232, 226, 216, .34);
+        --shadow: rgba(0, 0, 0, .35);
+      }
+
+      .sheet {
+        background: rgba(26, 24, 20, .72);
+      }
+
+      .issue span,
+      .signal:hover,
+      .writing,
+      .scribbles a,
+      .scribbles span {
+        background: rgba(36, 33, 28, .48);
+      }
+
+      .hero__side {
+        background: rgba(22, 20, 17, .55);
+      }
+
+      .scrap {
+        box-shadow: 10px 12px 0 rgba(0, 0, 0, .18);
+      }
+
+      .scrap:hover {
+        box-shadow: 7px 9px 0 rgba(0, 0, 0, .22);
+      }
+    }
+
+    @media (prefers-reduced-motion: reduce) {
+      *,
+      *::before,
+      *::after {
+        animation-duration: .001ms !important;
+        animation-iteration-count: 1 !important;
+        scroll-behavior: auto !important;
+        transition-duration: .001ms !important;
+      }
+    }
+
+    @media (max-width: 980px) {
       .page {
         padding: 12px;
       }
 
       .sheet {
-        border-radius: 22px;
-        background: var(--paper);
+        min-height: calc(100vh - 24px);
       }
 
-      .masthead,
-      .story,
-      .side,
-      .colophon {
-        padding-inline: 18px;
+      .topbar {
+        grid-template-columns: 1fr;
+        align-items: start;
+        gap: 8px;
+        padding: 18px;
       }
 
-      .brand {
-        font-size: clamp(4.1rem, 21vw, 7rem);
+      .topbar__center {
+        text-align: left;
       }
 
-      .dek,
-      .essay-grid,
-      .quote-strip {
+      .topbar__links {
+        justify-content: flex-start;
+        flex-wrap: wrap;
+      }
+
+      .hero,
+      .body,
+      .contact {
         grid-template-columns: 1fr;
       }
 
-      .quote {
-        min-height: auto;
+      .hero__main,
+      .essay,
+      .notebook {
         border-right: 0;
-        border-bottom: 1px solid var(--rule);
       }
 
-      .quote:last-child {
-        border-bottom: 0;
+      .hero__main,
+      .essay,
+      .writing,
+      .notebook {
+        border-bottom: 1px solid var(--line);
       }
 
-      .side {
+      .hero {
+        min-height: 0;
+      }
+
+      .note {
+        position: relative;
+        inset: auto;
+        width: min(320px, 86vw);
+        margin-top: 30px;
+      }
+
+      .note::before {
+        display: none;
+      }
+
+      .bio-line {
         grid-template-columns: 1fr;
       }
 
-      .writing-list a {
-        grid-template-columns: 1fr auto;
-        gap: 7px 14px;
+      .bio-line::before {
+        width: 100%;
       }
 
-      .writing-list time {
-        grid-column: 1 / -1;
+      .hero__side {
+        background: transparent;
+      }
+    }
+
+    @media (max-width: 620px) {
+      .page {
+        padding: 0;
+      }
+
+      .sheet {
+        min-height: 100vh;
+        border-left: 0;
+        border-right: 0;
+        box-shadow: none;
+      }
+
+      .hero__main {
+        padding: 30px 22px 34px;
+      }
+
+      h1 {
+        font-size: clamp(68px, 28vw, 118px);
+      }
+
+      .deck {
+        font-size: 29px;
+      }
+
+      .issue {
+        margin-bottom: 42px;
+      }
+
+      .today,
+      .signal,
+      .essay,
+      .writing,
+      .notebook,
+      .mini {
+        padding-left: 22px;
+        padding-right: 22px;
+      }
+
+      .writing li {
+        grid-template-columns: 28px 1fr;
+      }
+
+      .writing time {
+        grid-column: 2;
+        margin-top: -8px;
+      }
+
+      .footer {
+        flex-direction: column;
+        padding: 18px 22px 28px;
       }
     }
   </style>
 </head>
 <body>
   <div class="page">
-    <article class="sheet" aria-label="Erik Nilsson editorial notebook">
-      <header class="masthead">
-        <div class="issue" aria-label="Issue details">
-          <span><strong>eriks.design</strong></span>
-          <span>Notebook / 2026.10.21</span>
-          <span>San Francisco / overcast / 14 C</span>
-        </div>
-
-        <h1 class="brand" aria-label="Erik Nilsson">
-          <span>Erik</span><span class="dot">.</span><span>Nilsson</span>
-        </h1>
-
-        <nav class="contact" aria-label="Contact links">
+    <main class="sheet" aria-label="Editorial notebook for Erik Nilsson">
+      <header class="topbar">
+        <a href="https://eriks.design" aria-label="eriks.design home" rel="me">eriks.design</a>
+        <div class="topbar__center">Editorial notebook / Autumn issue</div>
+        <nav class="topbar__links" aria-label="Primary links">
+          <a href="https://cursor.com" rel="noopener">Cursor</a>
+          <a href="https://x.com/flowstated" rel="noopener">X</a>
           <a href="mailto:contact@eriks.design">Email</a>
-          <a href="https://x.com/flowstated">X</a>
-          <a href="https://github.com/eriknson">GitHub</a>
-          <a href="https://linkedin.com/in/eriknson">LinkedIn</a>
         </nav>
       </header>
 
-      <main>
-        <aside class="margin-notes" aria-hidden="true">
-          <div class="vertical-label"><b>field copy</b> part magazine page / part designer notebook</div>
+      <section class="hero" aria-labelledby="title">
+        <div class="hero__main">
+          <div>
+            <div class="issue" aria-label="Issue details">
+              <span>San Francisco</span>
+              <span>15 C</span>
+              <span>Heavy drizzle</span>
+            </div>
+
+            <div class="masthead">
+              <h1 id="title">Erik Nilsson</h1>
+              <p class="deck">Product designer at Cursor, working where software starts to feel <em>alive</em>.</p>
+            </div>
+
+            <p class="note">part magazine page, part designer notebook</p>
+          </div>
+
+          <div class="bio-line">
+            <span>Building tools for people who build software with AI.</span>
+            <span>Living-site rebuilt from fresh activity data.</span>
+          </div>
+        </div>
+
+        <aside class="hero__side" aria-label="Today in the margin">
+          <div class="today">
+            <p class="label">Today</p>
+            <p class="today__date">Oct. 22<br>2026</p>
+            <p class="today__weather">Autumn in San Francisco. Heavy drizzle at dusk. Public activity is quiet; the notebook keeps listening.</p>
+          </div>
+
+          <div class="signals" aria-label="World signals">
+            <div class="signal">
+              <b>01</b>
+              <span>Patches racing ahead of public disclosure.</span>
+            </div>
+            <div class="signal">
+              <b>02</b>
+              <span>Kernel secrets surfacing before their time.</span>
+            </div>
+            <div class="signal">
+              <b>03</b>
+              <span>October light thinning toward winter.</span>
+            </div>
+          </div>
+
+          <a class="scrap" href="https://x.com/flowstated/status/2002167999353241901" rel="noopener" aria-label="Read recent note on X">
+            <p>imagine 2026</p>
+            <small>recent note</small>
+          </a>
         </aside>
+      </section>
 
-        <section class="story">
-          <div class="hero">
-            <div class="kicker">Product Designer at Cursor</div>
-            <h2 class="headline">Designing software with <span class="mark">AI</span>, one careful interaction at a time.</h2>
-            <div class="dek">
-              <p>Erik Nilsson is a product designer in San Francisco, working on how people build software with AI.</p>
-              <div class="notecard">Keep the page quiet. Let the details do the talking.</div>
-            </div>
-          </div>
+      <section class="body" aria-label="Notebook and writing">
+        <article class="essay">
+          <p>Erik designs interfaces with a bias for flow: fewer steps, sharper surfaces, and tiny moments that make complex tools feel <span class="mark">direct</span>.</p>
+          <p>Off-hours, this site becomes the experiment: agents rebuild the page from current signals, recent writing, and the weather outside. The result is less portfolio, more living margin note.</p>
+          <div class="pull">surgical moves &gt; sweeping one shots</div>
+        </article>
 
-          <div class="essay-grid">
-            <div class="intro">
-              <p>At Cursor, the work sits somewhere between toolmaking and taste: small decisions about flow, context, and feedback that can make building feel lighter.</p>
-              <p class="small">Off-hours, this corner of the web keeps changing. Agents rebuild it from fresh activity data, turning weather, posts, and tiny signals into a daily surface. Today is quieter: no commits, no new posts, just overcast autumn air and a few notes pinned to the edge.</p>
-              <p class="small">The mood: surgical moves over sweeping one-shots <span class="inline-note">yes</span> and a belief that the best interfaces help people steer clearly while the machinery disappears.</p>
-            </div>
-
-            <dl class="field-note" aria-label="Current field note">
-              <div class="field-row">
-                <dt>Location</dt>
-                <dd>San Francisco, CA</dd>
-              </div>
-              <div class="field-row">
-                <dt>Current phase</dt>
-                <dd>Quieter, focused, observant.</dd>
-              </div>
-              <div class="field-row">
-                <dt>Signal</dt>
-                <dd>Karl-the-fog rolling over the city at fourteen degrees.</dd>
-              </div>
-            </dl>
-          </div>
-
-          <section class="quote-strip" aria-label="Recent short notes">
-            <div class="quote">
-              <small>Recent note</small>
-              <p>imagine 2026</p>
-            </div>
-            <div class="quote">
-              <small>Recent note</small>
-              <p>shipping by sunrise</p>
-            </div>
-            <div class="quote">
-              <small>Recent note</small>
-              <p>iOS shortcuts × github actions × cursor cli</p>
-            </div>
-          </section>
-
-          <section class="writing" aria-labelledby="writing-title">
-            <h2 class="section-title" id="writing-title">Writing Index</h2>
-            <div class="writing-list">
-              <a href="https://cursor.com/blog/design-mode">
-                <time datetime="2026-06-05">Jun 05, 2026</time>
-                <strong>Directing agents visually</strong>
-                <span>6 min</span>
-              </a>
-              <a href="/posts/a-living-site">
-                <time datetime="2025-12-26">Dec 26, 2025</time>
-                <strong>A living site</strong>
-                <span>7 min</span>
-              </a>
-              <a href="/posts/surgical-edits">
-                <time datetime="2025-11-23">Nov 23, 2025</time>
-                <strong>Surgical edits</strong>
-                <span>4 min</span>
-              </a>
-              <a href="/posts/familiar-differentiation">
-                <time datetime="2024-11-15">Nov 15, 2024</time>
-                <strong>Familiar differentiation</strong>
-                <span>5 min</span>
-              </a>
-              <a href="/posts/hackathon-energy-but-add-users">
-                <time datetime="2022-10-15">Oct 15, 2022</time>
-                <strong>Hackathon energy, but add users</strong>
-                <span>4 min</span>
-              </a>
-            </div>
-          </section>
+        <section class="writing" aria-labelledby="writing-title">
+          <h2 id="writing-title">Writing</h2>
+          <p class="writing__intro">Small index, newest first</p>
+          <ol>
+            <li>
+              <span class="num">01</span>
+              <a href="https://cursor.com/blog/design-mode" rel="noopener">Directing agents visually</a>
+              <time datetime="2026-06-05">2026</time>
+            </li>
+            <li>
+              <span class="num">02</span>
+              <a href="/posts/a-living-site">A living site</a>
+              <time datetime="2025-12-26">2025</time>
+            </li>
+            <li>
+              <span class="num">03</span>
+              <a href="/posts/surgical-edits">Surgical edits</a>
+              <time datetime="2025-11-23">2025</time>
+            </li>
+            <li>
+              <span class="num">04</span>
+              <a href="/posts/familiar-differentiation">Familiar differentiation</a>
+              <time datetime="2024-11-15">2024</time>
+            </li>
+            <li>
+              <span class="num">05</span>
+              <a href="/posts/hackathon-energy-but-add-users">Hackathon energy, but add users</a>
+              <time datetime="2022-10-15">2022</time>
+            </li>
+          </ol>
         </section>
+      </section>
 
-        <aside class="side" aria-label="Notebook annotations">
-          <section class="annotation">
-            <h2>Margin note</h2>
-            <p class="large">Simplicity is not the absence of texture.</p>
-            <p>It is choosing where the texture belongs: in the pause, the underline, the hover, the one sentence that keeps the whole page human.</p>
-          </section>
+      <section class="contact" aria-label="Notebook close">
+        <div class="notebook">
+          <p><strong>Current preoccupation:</strong> directing agents without losing taste, context, or the small human corrections that make a product feel considered.</p>
+          <div class="scribbles" aria-label="Links and notes">
+            <a href="https://github.com/eriknson" rel="noopener">GitHub</a>
+            <a href="https://linkedin.com/in/eriknson" rel="noopener">LinkedIn</a>
+            <a href="mailto:contact@eriks.design?subject=Hej">Contact</a>
+            <span>quiet week</span>
+            <span>developer tools</span>
+          </div>
+        </div>
 
-          <section class="annotation">
-            <h3>World Signals</h3>
-            <ul class="signal-list">
-              <li>fire escapes rusting on brick facades</li>
-              <li>startups planting roots in Austin autumn soil</li>
-              <li>autumn streets parsing who lit the flame</li>
-            </ul>
-          </section>
-
-          <section class="annotation">
-            <h3>Working Belief</h3>
-            <p>AI agents as collaborators, not replacements. Stay in flow, keep context close, and iterate until the thing clicks.</p>
-          </section>
-
-          <div class="scribble">Designer notebook, but edited. Warm paper, sharp type, a few deliberate fingerprints.</div>
+        <aside class="mini">
+          <blockquote>&ldquo;Stay in flow. Never leave context.&rdquo;</blockquote>
+          <cite>From the notebook themes</cite>
         </aside>
-      </main>
+      </section>
 
-      <footer class="colophon">
-        <span>Built from identity + brief data <span class="ink-dot" aria-hidden="true"></span> one self-contained HTML file</span>
-        <a href="https://cursor.com">Cursor</a>
+      <footer class="footer">
+        <span>Erik Nilsson / Product Designer at Cursor</span>
+        <span><a href="https://eriks.design" rel="me">eriks.design</a></span>
       </footer>
-    </article>
+    </main>
   </div>
+
+  <div class="cursor-note" aria-hidden="true">annotate gently</div>
+
+  <script>
+    const note = document.querySelector(".cursor-note");
+    const links = document.querySelectorAll("a");
+    let x = 0;
+    let y = 0;
+    let tx = 0;
+    let ty = 0;
+
+    function frame() {
+      x += (tx - x) * 0.18;
+      y += (ty - y) * 0.18;
+      if (note) note.style.transform = `translate(${x + 28}px, ${y + 24}px) rotate(-4deg)`;
+      requestAnimationFrame(frame);
+    }
+
+    if (window.matchMedia("(hover: hover) and (pointer: fine)").matches && note) {
+      window.addEventListener("mousemove", (event) => {
+        tx = event.clientX;
+        ty = event.clientY;
+      }, { passive: true });
+
+      links.forEach((link) => {
+        link.addEventListener("mouseenter", () => note.classList.add("is-visible"));
+        link.addEventListener("mouseleave", () => note.classList.remove("is-visible"));
+      });
+
+      frame();
+    }
+  </script>
 </body>
 </html>
