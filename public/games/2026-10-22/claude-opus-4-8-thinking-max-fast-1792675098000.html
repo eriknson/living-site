@@ -1,0 +1,1063 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+<meta name="color-scheme" content="dark light" />
+<title>CROSSWIRE — node routing</title>
+<style>
+  /* ---------- Theme tokens (light default, dark override) ---------- */
+  :root{
+    --bg0:#eef2f5;
+    --ink:#0d2231;
+    --dim:#5c7384;
+    --panel:rgba(255,255,255,0.74);
+    --panel-brd:rgba(10,70,100,0.16);
+    --accent:#0a938a;
+    --accent-ink:#f3fbfa;
+    --shadow:rgba(10,40,60,0.18);
+    --hud:rgba(255,255,255,0.55);
+    --focus:#0a938a;
+  }
+  @media (prefers-color-scheme: dark){
+    :root{
+      --bg0:#05070b;
+      --ink:#e3f4f7;
+      --dim:#7f98a5;
+      --panel:rgba(10,16,22,0.52);
+      --panel-brd:rgba(110,210,215,0.18);
+      --accent:#34ebdd;
+      --accent-ink:#031210;
+      --shadow:rgba(0,0,0,0.55);
+      --hud:rgba(8,13,18,0.35);
+      --focus:#34ebdd;
+    }
+  }
+
+  *{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+  html,body{height:100%}
+  html{background:var(--bg0)}
+  body{
+    margin:0;
+    min-height:100dvh;
+    background:var(--bg0);
+    color:var(--ink);
+    font-family:ui-monospace,"SFMono-Regular",Menlo,Consolas,monospace;
+    overflow:hidden;
+    user-select:none;
+    -webkit-user-select:none;
+    touch-action:none;
+    overscroll-behavior:none;
+  }
+
+  #c{
+    position:fixed;
+    inset:0;
+    width:100dvw;
+    height:100dvh;
+    display:block;
+    touch-action:none;
+    z-index:0;
+  }
+
+  /* ---------- HUD ---------- */
+  #hud{
+    position:fixed;
+    top:0;left:0;right:0;
+    z-index:40;
+    pointer-events:none;
+    padding:calc(env(safe-area-inset-top,0px) + 10px) calc(env(safe-area-inset-right,0px) + 14px) 0 calc(env(safe-area-inset-left,0px) + 14px);
+    transition:opacity .35s ease;
+  }
+  #hud.hidden{opacity:0;pointer-events:none}
+  .pwr-track{
+    height:7px;border-radius:7px;
+    background:var(--hud);
+    border:1px solid var(--panel-brd);
+    overflow:hidden;
+    backdrop-filter:blur(6px);
+    -webkit-backdrop-filter:blur(6px);
+  }
+  .pwr-fill{
+    height:100%;width:60%;
+    border-radius:7px;
+    background:var(--accent);
+    transition:background .25s linear;
+  }
+  .hud-row{
+    display:flex;align-items:center;justify-content:space-between;
+    margin-top:8px;gap:8px;
+  }
+  .stat{display:flex;flex-direction:column;line-height:1}
+  .stat .lab{font-size:9px;letter-spacing:2px;color:var(--dim);margin-bottom:4px}
+  .stat .val{font-size:19px;font-weight:600;letter-spacing:1px;font-variant-numeric:tabular-nums}
+  .hud-mid{flex:1;text-align:center}
+  #combo{
+    font-size:14px;letter-spacing:1px;font-weight:600;
+    color:var(--accent);opacity:0;transition:opacity .2s ease;
+    display:inline-block;
+  }
+  #combo.on{opacity:1}
+  .hud-right{display:flex;align-items:center;gap:10px}
+  #reset{
+    pointer-events:auto;
+    width:44px;height:44px;min-width:44px;
+    border-radius:12px;
+    border:1px solid var(--panel-brd);
+    background:var(--hud);
+    color:var(--ink);
+    font-size:20px;line-height:1;
+    cursor:pointer;
+    display:flex;align-items:center;justify-content:center;
+    backdrop-filter:blur(6px);
+    -webkit-backdrop-filter:blur(6px);
+    transition:transform .12s ease,border-color .2s ease;
+  }
+  #reset:hover{border-color:var(--accent)}
+  #reset:active{transform:scale(.92)}
+
+  /* ---------- Overlays ---------- */
+  .overlay{
+    position:fixed;inset:0;
+    display:flex;align-items:center;justify-content:center;
+    padding:24px;
+    pointer-events:none;
+    z-index:20;
+    transition:opacity .4s ease;
+  }
+  #over{z-index:30}
+  .overlay.hidden{opacity:0;visibility:hidden}
+  .panel{
+    pointer-events:none;
+    width:min(92vw,420px);
+    text-align:center;
+    background:var(--panel);
+    border:1px solid var(--panel-brd);
+    border-radius:22px;
+    padding:30px 26px 26px;
+    backdrop-filter:blur(16px) saturate(1.1);
+    -webkit-backdrop-filter:blur(16px) saturate(1.1);
+    box-shadow:0 24px 60px var(--shadow);
+    animation:rise .5s cubic-bezier(.2,.9,.25,1) both;
+  }
+  @keyframes rise{from{opacity:0;transform:translateY(14px) scale(.97)}to{opacity:1;transform:none}}
+  .kicker{
+    font-size:10px;letter-spacing:5px;color:var(--dim);
+    text-transform:uppercase;margin-bottom:14px;
+  }
+  h1{
+    margin:0;font-size:clamp(34px,11vw,56px);
+    letter-spacing:2px;font-weight:700;line-height:.95;
+  }
+  h1 b{color:var(--accent);font-weight:700}
+  .tag{
+    margin:14px auto 0;max-width:30ch;
+    font-size:13px;line-height:1.5;color:var(--dim);letter-spacing:.3px;
+  }
+  .big-score{
+    margin:4px 0 2px;font-size:clamp(46px,16vw,72px);
+    font-weight:700;letter-spacing:1px;color:var(--accent);
+    font-variant-numeric:tabular-nums;line-height:1;
+  }
+  .best{
+    margin-top:10px;font-size:11px;letter-spacing:3px;color:var(--dim);
+  }
+  .best b{color:var(--ink);font-weight:600}
+  .btn{
+    pointer-events:auto;
+    margin-top:22px;
+    appearance:none;border:none;cursor:pointer;
+    font-family:inherit;font-size:16px;font-weight:700;letter-spacing:3px;
+    color:var(--accent-ink);
+    background:var(--accent);
+    padding:16px 40px;min-height:52px;
+    border-radius:14px;
+    box-shadow:0 10px 26px var(--shadow);
+    transition:transform .12s ease,filter .2s ease;
+  }
+  .btn:hover{filter:brightness(1.06)}
+  .btn:active{transform:translateY(1px) scale(.98)}
+  .btn:focus-visible{outline:3px solid var(--focus);outline-offset:3px}
+  #reset:focus-visible{outline:3px solid var(--focus);outline-offset:2px}
+  .hint{
+    margin:16px auto 0;max-width:32ch;
+    font-size:11px;line-height:1.5;color:var(--dim);letter-spacing:.3px;
+  }
+  .kbd{
+    opacity:.8;font-size:10px;margin-top:10px;color:var(--dim);letter-spacing:.5px;
+  }
+  .kbd span{
+    border:1px solid var(--panel-brd);border-radius:5px;
+    padding:1px 6px;margin:0 2px;
+  }
+</style>
+</head>
+<body>
+  <canvas id="c"></canvas>
+
+  <!-- HUD (shown during play / game over) -->
+  <div id="hud" class="hidden" aria-hidden="true">
+    <div class="pwr-track"><div id="pwr" class="pwr-fill"></div></div>
+    <div class="hud-row">
+      <div class="stat">
+        <span class="lab">SCORE</span>
+        <span id="score" class="val">0</span>
+      </div>
+      <div class="hud-mid"><span id="combo">CHAIN ×2</span></div>
+      <div class="hud-right">
+        <div class="stat" style="text-align:right">
+          <span class="lab">LEVEL</span>
+          <span id="level" class="val">1</span>
+        </div>
+        <button id="reset" data-smoke="restart" aria-label="Restart game" title="Restart (R)">&#8635;</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Title -->
+  <div id="title" class="overlay">
+    <div class="panel">
+      <div class="kicker">node routing · dusk build</div>
+      <h1>CROSS<b>WIRE</b></h1>
+      <p class="tag">Wire every node into one clean chain. Cross a live wire and the whole run short-circuits.</p>
+      <button class="btn" id="start" data-smoke="start">START</button>
+      <p class="hint">Drag from the <b style="color:var(--accent)">glowing</b> node to another node. Route around wires you&rsquo;ve already laid. Connect them all for a cascade.</p>
+      <p class="kbd">desktop <span>&larr;</span><span>&rarr;</span> aim · <span>enter</span> connect</p>
+    </div>
+  </div>
+
+  <!-- Game over -->
+  <div id="over" class="overlay hidden">
+    <div class="panel">
+      <div class="kicker" id="over-k">circuit lost</div>
+      <div id="final" class="big-score">0</div>
+      <p class="tag"><span id="final-sub">you routed 0 nodes across 1 level</span></p>
+      <div class="best">BEST <b id="best">0</b></div>
+      <button class="btn" id="again">PLAY AGAIN</button>
+      <p class="hint">Keep the chain flowing — don&rsquo;t let the power drain hit zero.</p>
+    </div>
+  </div>
+
+<script>
+"use strict";
+(function(){
+  /* =========================================================================
+     CROSSWIRE — draw non-crossing wires between neon nodes, chain them all
+     for a cascade. Power drains constantly; connections refill it; a crossed
+     wire short-circuits (penalty + combo reset). Pure Canvas 2D, no deps.
+     ========================================================================= */
+
+  var canvas = document.getElementById('c');
+  var ctx = null;
+  try { ctx = canvas.getContext('2d', { alpha:false }); } catch(e){ ctx = null; }
+
+  // ---- DOM refs ----
+  var elHud=document.getElementById('hud');
+  var elPwr=document.getElementById('pwr');
+  var elScore=document.getElementById('score');
+  var elCombo=document.getElementById('combo');
+  var elLevel=document.getElementById('level');
+  var elTitle=document.getElementById('title');
+  var elOver=document.getElementById('over');
+  var elFinal=document.getElementById('final');
+  var elFinalSub=document.getElementById('final-sub');
+  var elBest=document.getElementById('best');
+  var elOverK=document.getElementById('over-k');
+
+  // ---- Theme ----
+  var mq=null, dark=true;
+  try{ mq=window.matchMedia('(prefers-color-scheme: dark)'); dark=mq.matches; }catch(e){ dark=true; }
+  var PAL_DARK={
+    bg0:'#070a0f', bg1:'#04060a',
+    grid:'rgba(90,150,170,0.075)',
+    glow:true,
+    wire:'#2fd6cf', wireGlow:'rgba(52,235,221,0.16)',
+    node:'#4a6472', nodeDim:'rgba(120,160,175,0.9)',
+    src:'#34ebdd', charged:'#1ea7a0',
+    good:'#b4ff5c', danger:'#ff466b',
+    text:'rgba(225,245,248,0.92)', faint:'rgba(150,180,190,0.55)',
+    rain:'rgba(150,200,215,0.10)'
+  };
+  var PAL_LIGHT={
+    bg0:'#f3f6f8', bg1:'#e6ecf1',
+    grid:'rgba(20,80,115,0.09)',
+    glow:false,
+    wire:'#0a938a', wireGlow:'rgba(10,147,138,0.14)',
+    node:'#9fb2bd', nodeDim:'rgba(70,100,115,0.85)',
+    src:'#0a938a', charged:'#12857d',
+    good:'#2a9d3c', danger:'#d21d49',
+    text:'rgba(13,34,49,0.92)', faint:'rgba(70,100,115,0.6)',
+    rain:'rgba(40,90,120,0.08)'
+  };
+  function PAL(){ return dark?PAL_DARK:PAL_LIGHT; }
+  if(mq){
+    var onTheme=function(e){ dark = e.matches; };
+    try{ mq.addEventListener('change', onTheme); }
+    catch(_){ try{ mq.addListener(onTheme); }catch(__){} }
+  }
+
+  // ---- Canvas sizing ----
+  var W=0,H=0,DPR=1;
+  var arena={x:0,y:0,w:0,h:0};
+  var R=16, GRAB=42, SNAP=40, EXEMPT=40, MINSEG=6;
+
+  function computeArena(){
+    var top = 96, bottom = 34, side = 26;
+    arena.x = side;
+    arena.y = top;
+    arena.w = Math.max(40, W - side*2);
+    arena.h = Math.max(40, H - top - bottom);
+    R = Math.max(13, Math.min(20, Math.min(W,H)*0.044));
+    GRAB = R + 30;
+    SNAP = R + 26;
+    EXEMPT = R + 22;
+  }
+
+  function resize(){
+   try{
+    var cw = canvas.clientWidth || window.innerWidth || 360;
+    var ch = canvas.clientHeight || window.innerHeight || 640;
+    var old = {x:arena.x,y:arena.y,w:arena.w,h:arena.h};
+    W = cw; H = ch;
+    DPR = Math.min(window.devicePixelRatio||1, 2);
+    if(canvas){
+      canvas.width = Math.round(W*DPR);
+      canvas.height = Math.round(H*DPR);
+    }
+    computeArena();
+    // Re-map existing geometry proportionally so a resize never breaks a run.
+    if(old.w>0 && old.h>0 && (nodes.length||wires.length)){
+      var sx=arena.w/old.w, sy=arena.h/old.h;
+      var remap=function(p){ p.x=arena.x+(p.x-old.x)*sx; p.y=arena.y+(p.y-old.y)*sy; };
+      for(var i=0;i<nodes.length;i++) remap(nodes[i]);
+      for(var w=0;w<wires.length;w++){ for(var k=0;k<wires[w].pts.length;k++) remap(wires[w].pts[k]); }
+      for(var p=0;p<path.length;p++) remap(path[p]);
+    }
+   }catch(err){}
+  }
+
+  // ---- Utility ----
+  function rnd(a,b){ return a + Math.random()*(b-a); }
+  function dist(ax,ay,bx,by){ var dx=ax-bx, dy=ay-by; return Math.sqrt(dx*dx+dy*dy); }
+  function clamp(v,a,b){ return v<a?a:(v>b?b:v); }
+
+  // segment intersection (proper crossing)
+  function ccw(ax,ay,bx,by,cx,cy){ return (cy-ay)*(bx-ax) > (by-ay)*(cx-ax); }
+  function segCross(ax,ay,bx,by,cx,cy,dx,dy){
+    return (ccw(ax,ay,cx,cy,dx,dy)!==ccw(bx,by,cx,cy,dx,dy)) &&
+           (ccw(ax,ay,bx,by,cx,cy)!==ccw(ax,ay,bx,by,dx,dy));
+  }
+  // distance from point to segment (for exemption near source)
+  function ptSeg(px,py,ax,ay,bx,by){
+    var dx=bx-ax, dy=by-ay, l2=dx*dx+dy*dy;
+    if(l2===0) return dist(px,py,ax,ay);
+    var t=clamp(((px-ax)*dx+(py-ay)*dy)/l2,0,1);
+    return dist(px,py,ax+t*dx,ay+t*dy);
+  }
+
+  // ---- Game state ----
+  var STATE='title'; // title | play | over
+  var nodes=[];      // {x,y,charged,pulse}
+  var wires=[];      // {pts:[{x,y}], to, pulse, lit}
+  var chain=[];      // node indices in connection order
+  var srcIdx=-1;
+  var drawing=false, path=[], crossed=false, hover=-1;
+  var selTarget=-1, kbd=false;
+
+  var power=0, score=0, best=0, combo=0, level=1, totalWired=0;
+  var nodeCount=4, drainRate=8;
+
+  var shake=0, freeze=0;
+  var flash=0, flashCol='#fff';
+  var particles=[];
+  var rain=[];
+
+  var casc=null; // {i,t,endT} while a cascade plays
+  var hintA=0, taughtConnect=false;
+  var tSec=0;    // running clock for animations
+
+  // tuning
+  var POWMAX=100, START_POWER=66;
+  var CONNECT_GAIN=9, CROSS_PEN=17, CASCADE_GAIN=24;
+
+  function drainFor(lv){ return 6 + (lv-1)*2.55; }
+  function countFor(lv){ return Math.min(4 + (lv-1), 8); }
+
+  // ---- Rain / ambience ----
+  function initRain(){
+    rain.length=0;
+    var n=46;
+    for(var i=0;i<n;i++){
+      rain.push({ x:rnd(0,W), y:rnd(0,H), len:rnd(10,22), spd:rnd(320,560), a:rnd(0.3,1) });
+    }
+  }
+
+  // ---- Node placement ----
+  function placeNodes(n){
+    nodes.length=0;
+    var tries, target = Math.max(78, Math.sqrt((arena.w*arena.h)/n)*0.66);
+    for(var i=0;i<n;i++){
+      var pick=null, bestDist=-1;
+      for(tries=0;tries<34;tries++){
+        var cand={ x:arena.x + rnd(R*1.4, arena.w-R*1.4), y:arena.y + rnd(R*1.4, arena.h-R*1.4), charged:false, pulse:0 };
+        var md=1e9;
+        for(var j=0;j<nodes.length;j++){ var d=dist(cand.x,cand.y,nodes[j].x,nodes[j].y); if(d<md) md=d; }
+        if(nodes.length===0){ pick=cand; break; }
+        if(md>=target){ pick=cand; break; }
+        if(md>bestDist){ bestDist=md; pick=cand; }
+      }
+      nodes.push(pick);
+    }
+  }
+
+  function genBoard(){
+    nodeCount = countFor(level);
+    drainRate = drainFor(level);
+    placeNodes(nodeCount);
+    wires.length=0; chain.length=0; path.length=0;
+    drawing=false; crossed=false; hover=-1;
+    srcIdx = Math.floor(rnd(0,nodes.length));
+    nodes[srcIdx].charged=true; nodes[srcIdx].pulse=1;
+    chain.push(srcIdx);
+    selTarget = firstUncharged();
+  }
+
+  function firstUncharged(){
+    for(var i=0;i<nodes.length;i++) if(!nodes[i].charged) return i;
+    return -1;
+  }
+
+  // ---- Lifecycle ----
+  function startGame(){
+    ensureAudio();
+    STATE='play';
+    score=0; combo=0; level=1; power=START_POWER; totalWired=0;
+    particles.length=0; casc=null; freeze=0; shake=0; flash=0;
+    hintA=1; taughtConnect=false; kbd=false;
+    genBoard();
+    elTitle.classList.add('hidden');
+    elOver.classList.add('hidden');
+    elHud.classList.remove('hidden');
+    elHud.setAttribute('aria-hidden','false');
+    updateHUD();
+    sfx('start');
+    buzz(10);
+  }
+
+  function gameOver(){
+    if(STATE==='over') return;
+    STATE='over';
+    drawing=false; casc=null;
+    if(score>best) best=score;
+    shake=12; flash=0.5; flashCol=PAL().danger;
+    elFinal.textContent = score;
+    elFinalSub.textContent = 'wired '+totalWired+' node'+(totalWired===1?'':'s')+' across '+level+' level'+(level===1?'':'s');
+    elBest.textContent = best;
+    elOverK.textContent = level>=6 ? 'grid overloaded' : (level>=3 ? 'circuit lost' : 'power drained');
+    elOver.classList.remove('hidden');
+    sfx('over'); buzz([24,40,24]);
+  }
+
+  function nextLevel(){
+    level++;
+    // carry a little momentum
+    power = Math.min(POWMAX, power + CASCADE_GAIN);
+    genBoard();
+    updateHUD();
+  }
+
+  // ---- HUD ----
+  function updateHUD(){
+    elScore.textContent = score;
+    elLevel.textContent = level;
+    if(combo>=2){ elCombo.textContent='CHAIN ×'+combo; elCombo.classList.add('on'); }
+    else{ elCombo.classList.remove('on'); }
+  }
+
+  // ---- Crossing test (new segment a->b vs committed wires) ----
+  function wouldCross(ax,ay,bx,by){
+    if(srcIdx<0) return false;
+    var s=nodes[srcIdx];
+    // exempt the junction region around the live source node
+    if(dist(ax,ay,s.x,s.y)<EXEMPT || dist(bx,by,s.x,s.y)<EXEMPT) return false;
+    for(var w=0;w<wires.length;w++){
+      var pts=wires[w].pts;
+      var incident = (wires[w].to===srcIdx);
+      for(var k=0;k<pts.length-1;k++){
+        var p=pts[k], q=pts[k+1];
+        if(incident && ptSeg(s.x,s.y,p.x,p.y,q.x,q.y)<EXEMPT) continue;
+        if(segCross(ax,ay,bx,by,p.x,p.y,q.x,q.y)) return true;
+      }
+    }
+    return false;
+  }
+
+  function findTarget(px,py){
+    var bi=-1, bd=SNAP;
+    for(var i=0;i<nodes.length;i++){
+      if(nodes[i].charged) continue;
+      var d=dist(px,py,nodes[i].x,nodes[i].y);
+      if(d<=bd){ bd=d; bi=i; }
+    }
+    return bi;
+  }
+
+  // ---- Connect + fail ----
+  function commit(targetIdx, pts){
+    wires.push({ pts:pts, to:targetIdx, pulse:0, lit:false });
+    nodes[targetIdx].charged=true;
+    nodes[targetIdx].pulse=1;
+    chain.push(targetIdx);
+    srcIdx=targetIdx;
+    combo++;
+    totalWired++;
+    var gain = 12 + combo*3;
+    score += gain;
+    power = Math.min(POWMAX, power + CONNECT_GAIN);
+    var n=nodes[targetIdx];
+    burst(n.x, n.y, PAL().good, 16, 190);
+    floatText(n.x, n.y-R-6, '+'+gain, PAL().good);
+    sfx('connect', combo);
+    buzz(10);
+    taughtConnect=true;
+    selTarget=firstUncharged();
+    updateHUD();
+    if(firstUncharged()===-1) triggerCascade();
+  }
+
+  function shortCircuit(x,y){
+    if(crossed) return;
+    crossed=true; drawing=false;
+    combo=0;
+    power -= CROSS_PEN; if(power<0) power=0;
+    shake=11; flash=0.55; flashCol=PAL().danger;
+    burst(x,y,PAL().danger,22,300);
+    floatText(x,y-14,'SHORT!',PAL().danger);
+    sfx('cross'); buzz([28,36,28]);
+    path.length=0;
+    updateHUD();
+    if(power<=0) gameOver();
+  }
+
+  function triggerCascade(){
+    casc={ i:0, t:0, endT:-1 };
+    freeze=0.08; shake=7; flash=0.42; flashCol=PAL().src;
+    sfx('cascadeStart');
+    buzz([12,30,12,30,24]);
+  }
+
+  // cascade stepping (called from update)
+  function stepCascade(dt){
+    casc.t += dt;
+    var STEP=0.075;
+    while(casc.endT<0 && casc.i<chain.length && casc.t>=STEP){
+      casc.t-=STEP;
+      var ni=chain[casc.i];
+      var n=nodes[ni];
+      n.pulse=1.4;
+      if(casc.i>0 && wires[casc.i-1]) { wires[casc.i-1].lit=true; wires[casc.i-1].pulse=0; }
+      burst(n.x,n.y,PAL().src,10,150);
+      var b=18*level; score+=b;
+      sfx('casc', casc.i);
+      casc.i++;
+      if(casc.i>=chain.length){
+        casc.endT=0.45;
+        score += 40*level;
+        floatText(arena.x+arena.w/2, arena.y+arena.h/2, 'CASCADE +'+(40*level), PAL().src);
+        shake=9; flash=0.6; flashCol=PAL().good;
+        buzz([10,20,10,20,10,40]);
+        updateHUD();
+      }
+    }
+    if(casc.endT>=0){
+      casc.endT-=dt;
+      if(casc.endT<=0){ casc=null; nextLevel(); }
+    }
+  }
+
+  // ---- Particles ----
+  function burst(x,y,col,n,spd){
+    for(var i=0;i<n;i++){
+      var a=rnd(0,Math.PI*2), s=rnd(spd*0.3,spd);
+      particles.push({t:'spark',x:x,y:y,vx:Math.cos(a)*s,vy:Math.sin(a)*s,life:rnd(0.4,0.8),max:0.8,col:col,r:rnd(1.4,3.2)});
+    }
+  }
+  function floatText(x,y,str,col){
+    particles.push({t:'text',x:x,y:y,vy:-42,life:0.95,max:0.95,col:col,str:str});
+  }
+
+  // ---- Audio (lazy, guarded) ----
+  var AC=null, master=null;
+  function ensureAudio(){
+    if(AC) { if(AC.state==='suspended'){ try{AC.resume();}catch(e){} } return; }
+    try{
+      var Ctx = window.AudioContext || window.webkitAudioContext;
+      if(!Ctx) return;
+      AC = new Ctx();
+      master = AC.createGain();
+      master.gain.value = 0.16;
+      master.connect(AC.destination);
+    }catch(e){ AC=null; }
+  }
+  function tone(freq,dur,type,vol,when,slideTo){
+    if(!AC||!master) return;
+    try{
+      var t0=(when||AC.currentTime);
+      var o=AC.createOscillator();
+      var g=AC.createGain();
+      o.type=type||'sine';
+      o.frequency.setValueAtTime(freq,t0);
+      if(slideTo){ o.frequency.exponentialRampToValueAtTime(Math.max(1,slideTo), t0+dur); }
+      g.gain.setValueAtTime(0.0001,t0);
+      g.gain.exponentialRampToValueAtTime(vol||0.3,t0+0.012);
+      g.gain.exponentialRampToValueAtTime(0.0001,t0+dur);
+      o.connect(g); g.connect(master);
+      o.start(t0); o.stop(t0+dur+0.02);
+    }catch(e){}
+  }
+  function sfx(kind,n){
+    if(!AC) return;
+    var t=AC.currentTime;
+    if(kind==='connect'){
+      var base=440*Math.pow(1.0595,Math.min((n||1),14));
+      tone(base,0.14,'triangle',0.3,t);
+      tone(base*2,0.1,'sine',0.14,t+0.01);
+    } else if(kind==='cross'){
+      tone(150,0.22,'sawtooth',0.3,t,60);
+      tone(90,0.26,'square',0.2,t);
+    } else if(kind==='cascadeStart'){
+      tone(330,0.1,'triangle',0.24,t);
+    } else if(kind==='casc'){
+      var seq=[523,587,659,784,880,988,1175,1319];
+      var f=seq[(n||0)%seq.length]*(1+Math.floor((n||0)/seq.length)*0.03);
+      tone(f,0.16,'triangle',0.3,t);
+      tone(f*1.5,0.12,'sine',0.1,t+0.005);
+    } else if(kind==='over'){
+      tone(330,0.5,'sawtooth',0.26,t,70);
+      tone(220,0.6,'sine',0.18,t);
+    } else if(kind==='start'){
+      tone(392,0.12,'triangle',0.25,t);
+      tone(587,0.14,'triangle',0.22,t+0.08);
+      tone(784,0.2,'sine',0.18,t+0.16);
+    }
+  }
+  function buzz(p){ try{ if(navigator.vibrate) navigator.vibrate(p); }catch(e){} }
+
+  // ---- Input ----
+  function toLocal(e){
+    var r=canvas.getBoundingClientRect();
+    return { x:e.clientX-r.left, y:e.clientY-r.top };
+  }
+  function onDown(e){
+    try{
+      if(STATE!=='play'||casc||freeze>0) { return; }
+      var p=toLocal(e);
+      if(srcIdx<0) return;
+      var s=nodes[srcIdx];
+      if(dist(p.x,p.y,s.x,s.y)<=GRAB){
+        drawing=true; crossed=false;
+        path=[{x:s.x,y:s.y}];
+        kbd=false;
+        try{ canvas.setPointerCapture(e.pointerId); }catch(_){}
+      }
+    }catch(err){} finally { if(e.cancelable) e.preventDefault(); }
+  }
+  function onMove(e){
+    try{
+      if(!drawing) return;
+      var p=toLocal(e);
+      var a=path[path.length-1];
+      if(dist(p.x,p.y,a.x,a.y)>=MINSEG){
+        path.push({x:p.x,y:p.y});
+        if(!crossed && wouldCross(a.x,a.y,p.x,p.y)) shortCircuit(p.x,p.y);
+      }
+      hover = drawing ? findTarget(p.x,p.y) : -1;
+    }catch(err){} finally { if(e.cancelable) e.preventDefault(); }
+  }
+  function onUp(e){
+    try{
+      if(drawing && !crossed){
+        var p=toLocal(e);
+        var t=findTarget(p.x,p.y);
+        if(t>=0 && t!==srcIdx){
+          var last=path[path.length-1];
+          var tn=nodes[t];
+          if(!wouldCross(last.x,last.y,tn.x,tn.y)){
+            var pts=path.slice();
+            pts.push({x:tn.x,y:tn.y});
+            commit(t, pts);
+          } else {
+            shortCircuit(tn.x,tn.y);
+          }
+        }
+      }
+    }catch(err){} finally {
+      drawing=false; crossed=false; path.length=0; hover=-1;
+      try{ canvas.releasePointerCapture(e.pointerId); }catch(_){}
+      if(e.cancelable) e.preventDefault();
+    }
+  }
+  function onCancel(e){
+    drawing=false; crossed=false; path.length=0; hover=-1;
+  }
+
+  // keyboard
+  function cycleTarget(dir){
+    if(STATE!=='play'||casc) return;
+    kbd=true;
+    var avail=[];
+    for(var i=0;i<nodes.length;i++) if(!nodes[i].charged) avail.push(i);
+    if(!avail.length){ selTarget=-1; return; }
+    var cur=avail.indexOf(selTarget);
+    if(cur<0) cur = dir>0?-1:0;
+    cur=(cur+dir+avail.length)%avail.length;
+    selTarget=avail[cur];
+  }
+  function kbdConnect(){
+    if(STATE!=='play'||casc||freeze>0) return;
+    if(selTarget<0||selTarget>=nodes.length||nodes[selTarget].charged) selTarget=firstUncharged();
+    if(selTarget<0) return;
+    kbd=true;
+    var s=nodes[srcIdx], tn=nodes[selTarget];
+    // sample a straight line into segments, test crossing
+    var steps=10, crossedNow=false, pts=[{x:s.x,y:s.y}];
+    for(var i=1;i<=steps;i++){
+      var x=s.x+(tn.x-s.x)*i/steps, y=s.y+(tn.y-s.y)*i/steps;
+      var a=pts[pts.length-1];
+      if(wouldCross(a.x,a.y,x,y)){ crossedNow=true; }
+      pts.push({x:x,y:y});
+    }
+    if(crossedNow){ shortCircuit((s.x+tn.x)/2,(s.y+tn.y)/2); }
+    else { commit(selTarget, pts); }
+  }
+  function onKey(e){
+   try{
+    var k=e.key;
+    if(STATE==='title'){
+      if(k==='Enter'||k===' '){ e.preventDefault(); startGame(); }
+      return;
+    }
+    if(STATE==='over'){
+      if(k==='Enter'||k===' '||k==='r'||k==='R'){ e.preventDefault(); startGame(); }
+      return;
+    }
+    // play
+    if(k==='ArrowRight'||k==='ArrowDown'||k==='Tab'){ e.preventDefault(); cycleTarget(1); }
+    else if(k==='ArrowLeft'||k==='ArrowUp'){ e.preventDefault(); cycleTarget(-1); }
+    else if(k==='Enter'||k===' '){ e.preventDefault(); kbdConnect(); }
+    else if(k==='r'||k==='R'){ e.preventDefault(); startGame(); }
+   }catch(err){}
+  }
+
+  // ---- Update ----
+  function update(dt){
+    tSec+=dt;
+    // decay fx
+    if(shake>0){ shake-=dt*34; if(shake<0)shake=0; }
+    if(flash>0){ flash-=dt*2.4; if(flash<0)flash=0; }
+    if(hintA>0 && taughtConnect){ hintA-=dt*1.6; if(hintA<0)hintA=0; }
+
+    // node pulses
+    for(var i=0;i<nodes.length;i++){ if(nodes[i].pulse>0){ nodes[i].pulse-=dt*2.2; if(nodes[i].pulse<0)nodes[i].pulse=0; } }
+    // wire pulses
+    for(var w=0;w<wires.length;w++){ if(wires[w].pulse>=0 && wires[w].pulse<1){ wires[w].pulse+=dt*2.6; if(wires[w].pulse>1)wires[w].pulse=1; } }
+
+    // particles
+    for(var p=particles.length-1;p>=0;p--){
+      var q=particles[p];
+      q.life-=dt;
+      if(q.life<=0){ particles.splice(p,1); continue; }
+      if(q.t==='spark'){ q.x+=q.vx*dt; q.y+=q.vy*dt; q.vx*=0.92; q.vy=q.vy*0.92+90*dt; }
+      else if(q.t==='text'){ q.y+=q.vy*dt; q.vy*=0.96; }
+    }
+
+    // rain
+    for(var r=0;r<rain.length;r++){
+      var d=rain[r];
+      d.y+=d.spd*dt; d.x+=d.spd*0.16*dt;
+      if(d.y>H+20){ d.y=-20; d.x=rnd(-20,W); }
+      if(d.x>W+20){ d.x=-20; }
+    }
+
+    if(freeze>0){ freeze-=dt; return; }
+
+    if(STATE==='play'){
+      if(casc){ stepCascade(dt); }
+      else {
+        power -= drainRate*dt;
+        // gentle breathing bonus when idle-safe? no—keep pressure honest.
+        if(power<=0){ power=0; gameOver(); }
+      }
+    }
+  }
+
+  // ---- Draw helpers ----
+  function strokePath(pts, lw, col, close){
+    if(pts.length<2) return;
+    ctx.lineWidth=lw; ctx.strokeStyle=col;
+    ctx.lineJoin='round'; ctx.lineCap='round';
+    ctx.beginPath();
+    ctx.moveTo(pts[0].x,pts[0].y);
+    for(var i=1;i<pts.length-1;i++){
+      var mx=(pts[i].x+pts[i+1].x)/2, my=(pts[i].y+pts[i+1].y)/2;
+      ctx.quadraticCurveTo(pts[i].x,pts[i].y,mx,my);
+    }
+    var L=pts.length-1;
+    ctx.lineTo(pts[L].x,pts[L].y);
+    ctx.stroke();
+  }
+  function pointAt(pts, f){
+    // f in 0..1 along polyline (approx by segment count)
+    if(pts.length<2) return {x:pts[0].x,y:pts[0].y};
+    var total=pts.length-1, pos=f*total;
+    var i=Math.floor(pos); if(i>=total)i=total-1;
+    var tt=pos-i;
+    return { x:pts[i].x+(pts[i+1].x-pts[i].x)*tt, y:pts[i].y+(pts[i+1].y-pts[i].y)*tt };
+  }
+
+  function render(){
+    if(!ctx) return;
+    var P=PAL();
+    ctx.setTransform(DPR,0,0,DPR,0,0);
+
+    // background
+    var g=ctx.createLinearGradient(0,0,0,H);
+    g.addColorStop(0,P.bg0); g.addColorStop(1,P.bg1);
+    ctx.fillStyle=g; ctx.fillRect(0,0,W,H);
+
+    var sx=0,sy=0;
+    if(shake>0){ sx=rnd(-shake,shake); sy=rnd(-shake,shake); }
+    ctx.save();
+    ctx.translate(sx,sy);
+
+    // grid
+    ctx.strokeStyle=P.grid; ctx.lineWidth=1;
+    var step=42;
+    ctx.beginPath();
+    for(var gx=(arena.x% step); gx<W; gx+=step){ ctx.moveTo(gx,0); ctx.lineTo(gx,H); }
+    for(var gy=(arena.y% step); gy<H; gy+=step){ ctx.moveTo(0,gy); ctx.lineTo(W,gy); }
+    ctx.stroke();
+
+    // rain (subtle drizzle)
+    ctx.strokeStyle=P.rain; ctx.lineWidth=1;
+    ctx.beginPath();
+    for(var i=0;i<rain.length;i++){
+      var d=rain[i];
+      ctx.moveTo(d.x,d.y); ctx.lineTo(d.x-d.len*0.16, d.y-d.len);
+    }
+    ctx.stroke();
+
+    // committed wires
+    for(var w=0;w<wires.length;w++){
+      var wr=wires[w];
+      var lit = wr.lit;
+      var col = lit ? P.good : P.wire;
+      if(P.glow){
+        ctx.shadowColor=col; ctx.shadowBlur=lit?18:10;
+      }
+      // soft underlay
+      ctx.shadowBlur=P.glow?(lit?20:12):0;
+      strokePath(wr.pts, lit?6:5, P.wireGlow, false);
+      ctx.shadowBlur=P.glow?(lit?14:7):0;
+      strokePath(wr.pts, lit?3.4:2.6, col, false);
+      ctx.shadowBlur=0;
+      // travelling pulse on fresh connect
+      if(wr.pulse>=0 && wr.pulse<1){
+        var pp=pointAt(wr.pts, wr.pulse);
+        ctx.fillStyle=P.good;
+        if(P.glow){ ctx.shadowColor=P.good; ctx.shadowBlur=16; }
+        ctx.beginPath(); ctx.arc(pp.x,pp.y,4.5,0,Math.PI*2); ctx.fill();
+        ctx.shadowBlur=0;
+      }
+    }
+
+    // current drawing wire
+    if(drawing && path.length>1){
+      var dcol = crossed ? P.danger : P.src;
+      if(P.glow){ ctx.shadowColor=dcol; ctx.shadowBlur=14; }
+      strokePath(path, 3, dcol, false);
+      ctx.shadowBlur=0;
+      // leading dot
+      var tip=path[path.length-1];
+      ctx.fillStyle=dcol;
+      ctx.beginPath(); ctx.arc(tip.x,tip.y,3.5,0,Math.PI*2); ctx.fill();
+    }
+
+    // instructional hint arc (first level only, pre-connect)
+    if(STATE==='play' && !taughtConnect && hintA>0 && srcIdx>=0 && selTarget>=0 && !drawing && !casc){
+      var s0=nodes[srcIdx], t0=nodes[selTarget];
+      ctx.save();
+      ctx.globalAlpha=hintA*0.6*(0.6+0.4*Math.sin(tSec*4));
+      ctx.setLineDash([2,8]); ctx.lineWidth=2; ctx.strokeStyle=P.src;
+      ctx.beginPath(); ctx.moveTo(s0.x,s0.y); ctx.lineTo(t0.x,t0.y); ctx.stroke();
+      ctx.setLineDash([]);
+      ctx.restore();
+    }
+
+    // nodes
+    for(var n=0;n<nodes.length;n++){
+      var nd=nodes[n];
+      var isSrc=(n===srcIdx), isChg=nd.charged;
+      var pr=nd.pulse;
+      var baseR=R + pr*5;
+
+      if(isSrc){
+        // live source: pulsing halo + double ring
+        var pulse=0.5+0.5*Math.sin(tSec*4.5);
+        if(P.glow){ ctx.shadowColor=P.src; ctx.shadowBlur=22+pulse*12; }
+        ctx.strokeStyle=P.src; ctx.lineWidth=3;
+        ctx.beginPath(); ctx.arc(nd.x,nd.y,baseR,0,Math.PI*2); ctx.stroke();
+        ctx.shadowBlur=0;
+        ctx.globalAlpha=0.35+0.3*pulse;
+        ctx.strokeStyle=P.src; ctx.lineWidth=2;
+        ctx.beginPath(); ctx.arc(nd.x,nd.y,baseR+7+pulse*5,0,Math.PI*2); ctx.stroke();
+        ctx.globalAlpha=1;
+        ctx.fillStyle=P.src;
+        ctx.beginPath(); ctx.arc(nd.x,nd.y,R*0.42,0,Math.PI*2); ctx.fill();
+      } else if(isChg){
+        if(P.glow){ ctx.shadowColor=P.charged; ctx.shadowBlur=10+pr*16; }
+        ctx.fillStyle=P.charged;
+        ctx.beginPath(); ctx.arc(nd.x,nd.y,baseR*0.92,0,Math.PI*2); ctx.fill();
+        ctx.shadowBlur=0;
+        ctx.fillStyle=dark?'rgba(255,255,255,0.75)':'rgba(255,255,255,0.9)';
+        ctx.beginPath(); ctx.arc(nd.x,nd.y,R*0.3,0,Math.PI*2); ctx.fill();
+      } else {
+        // uncharged target
+        var isHover=(drawing && hover===n) || (kbd && selTarget===n);
+        if(isHover){
+          var hp=0.5+0.5*Math.sin(tSec*7);
+          if(P.glow){ ctx.shadowColor=P.src; ctx.shadowBlur=16; }
+          ctx.strokeStyle=P.src; ctx.lineWidth=3;
+          ctx.beginPath(); ctx.arc(nd.x,nd.y,baseR+3+hp*3,0,Math.PI*2); ctx.stroke();
+          ctx.shadowBlur=0;
+          ctx.fillStyle=P.src; ctx.globalAlpha=0.3+0.3*hp;
+          ctx.beginPath(); ctx.arc(nd.x,nd.y,R*0.6,0,Math.PI*2); ctx.fill();
+          ctx.globalAlpha=1;
+        } else {
+          ctx.strokeStyle=P.nodeDim; ctx.lineWidth=2.2;
+          ctx.beginPath(); ctx.arc(nd.x,nd.y,R*0.82,0,Math.PI*2); ctx.stroke();
+          ctx.fillStyle=P.nodeDim;
+          ctx.globalAlpha=0.5;
+          ctx.beginPath(); ctx.arc(nd.x,nd.y,R*0.2,0,Math.PI*2); ctx.fill();
+          ctx.globalAlpha=1;
+        }
+      }
+    }
+
+    // particles
+    for(var pi=0;pi<particles.length;pi++){
+      var q=particles[pi];
+      var a=clamp(q.life/q.max,0,1);
+      if(q.t==='spark'){
+        ctx.globalAlpha=a;
+        ctx.fillStyle=q.col;
+        if(P.glow){ ctx.shadowColor=q.col; ctx.shadowBlur=8; }
+        ctx.beginPath(); ctx.arc(q.x,q.y,q.r,0,Math.PI*2); ctx.fill();
+        ctx.shadowBlur=0; ctx.globalAlpha=1;
+      } else if(q.t==='text'){
+        ctx.globalAlpha=a;
+        ctx.fillStyle=q.col;
+        ctx.font='700 '+Math.round(R*0.95)+'px ui-monospace,Menlo,monospace';
+        ctx.textAlign='center'; ctx.textBaseline='middle';
+        ctx.fillText(q.str,q.x,q.y);
+        ctx.globalAlpha=1;
+      }
+    }
+
+    ctx.restore();
+
+    // low-power vignette
+    var pr2=power/POWMAX;
+    if(STATE==='play' && pr2<0.33){
+      var warn=(0.33-pr2)/0.33;
+      var vg=ctx.createRadialGradient(W/2,H/2,Math.min(W,H)*0.3,W/2,H/2,Math.max(W,H)*0.7);
+      vg.addColorStop(0,'rgba(0,0,0,0)');
+      vg.addColorStop(1,'rgba('+(dark?'255,70,107':'210,29,73')+','+(0.28*warn*(0.6+0.4*Math.sin(tSec*8)))+')');
+      ctx.fillStyle=vg; ctx.fillRect(0,0,W,H);
+    }
+
+    // flash
+    if(flash>0){
+      ctx.globalAlpha=clamp(flash,0,0.8);
+      ctx.fillStyle=flashCol;
+      ctx.fillRect(0,0,W,H);
+      ctx.globalAlpha=1;
+    }
+
+    // live power bar color via DOM
+    paintPowerBar(pr2);
+  }
+
+  function paintPowerBar(pr){
+    if(!elPwr) return;
+    var P=PAL();
+    var col = pr>0.5 ? P.good : (pr>0.25 ? '#ffc14d' : P.danger);
+    elPwr.style.width = (clamp(pr,0,1)*100).toFixed(1)+'%';
+    elPwr.style.background = col;
+  }
+
+  // ---- Main loop ----
+  var lastT=0, raf=0;
+  function frame(ts){
+    raf=requestAnimationFrame(frame);
+    if(!lastT) lastT=ts;
+    var dt=(ts-lastT)/1000;
+    lastT=ts;
+    if(dt>0.05) dt=0.05; // clamp big gaps
+    try{ update(dt); render(); }
+    catch(err){ /* never let a frame crash the loop */ }
+  }
+
+  // ---- Wire up ----
+  function init(){
+    if(canvas){
+      canvas.addEventListener('pointerdown', onDown, {passive:false});
+      canvas.addEventListener('pointermove', onMove, {passive:false});
+      canvas.addEventListener('pointerup', onUp, {passive:false});
+      canvas.addEventListener('pointercancel', onCancel, {passive:false});
+      canvas.addEventListener('pointerleave', onCancel, {passive:false});
+    }
+    window.addEventListener('keydown', onKey, {passive:false});
+    window.addEventListener('resize', resize);
+    try{ window.addEventListener('orientationchange', function(){ setTimeout(resize,120); }); }catch(e){}
+
+    var bStart=document.getElementById('start');
+    var bAgain=document.getElementById('again');
+    var bReset=document.getElementById('reset');
+    if(bStart) bStart.addEventListener('click', function(e){ e.preventDefault(); startGame(); });
+    if(bAgain) bAgain.addEventListener('click', function(e){ e.preventDefault(); startGame(); });
+    if(bReset) bReset.addEventListener('click', function(e){ e.preventDefault(); startGame(); });
+
+    resize();
+    initRain();
+    // idle title ambience board (visual only, not interactive)
+    buildTitleDemo();
+    raf=requestAnimationFrame(frame);
+  }
+
+  // A soft non-interactive arrangement behind the title for atmosphere.
+  function buildTitleDemo(){
+    level=1; nodeCount=5; drainRate=drainFor(1);
+    placeNodes(5);
+    wires.length=0; chain.length=0;
+    srcIdx=0; nodes[0].charged=true; chain.push(0);
+    // pre-wire a couple of clean links for visual flavor
+    for(var i=1;i<3;i++){
+      if(nodes[i]){
+        nodes[i].charged=true;
+        wires.push({pts:[{x:nodes[i-1].x,y:nodes[i-1].y},{x:nodes[i].x,y:nodes[i].y}], to:i, pulse:1, lit:false});
+        chain.push(i); srcIdx=i;
+      }
+    }
+    selTarget=firstUncharged();
+  }
+
+  if(document.readyState==='loading'){
+    document.addEventListener('DOMContentLoaded', init);
+  } else {
+    init();
+  }
+})();
+</script>
+</body>
+</html>
