@@ -1,0 +1,945 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <meta name="color-scheme" content="light dark">
+  <title>Last Amber Band</title>
+  <style>
+    :root {
+      color-scheme: light dark;
+      --ink: #f9efe2;
+      --muted: rgba(249, 239, 226, .72);
+      --panel: rgba(6, 14, 24, .58);
+      --panel-line: rgba(255, 210, 138, .18);
+      --button-bg: #ffd18a;
+      --button-ink: #15120c;
+      --button-shadow: rgba(255, 150, 58, .35);
+      --danger: #ff744f;
+      --mono: ui-monospace, "SFMono-Regular", Menlo, Monaco, Consolas, monospace;
+      --sans: ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+    }
+
+    @media (prefers-color-scheme: light) {
+      :root {
+        --ink: #142033;
+        --muted: rgba(20, 32, 51, .68);
+        --panel: rgba(255, 249, 236, .72);
+        --panel-line: rgba(160, 91, 28, .18);
+        --button-bg: #17324a;
+        --button-ink: #fff3dc;
+        --button-shadow: rgba(23, 50, 74, .22);
+        --danger: #bd3e23;
+      }
+    }
+
+    @media (prefers-color-scheme: dark) {
+      :root {
+        --ink: #f9efe2;
+        --muted: rgba(249, 239, 226, .72);
+      }
+    }
+
+    * { box-sizing: border-box; }
+
+    html, body {
+      width: 100%;
+      min-height: 100%;
+      margin: 0;
+      overflow: hidden;
+      background: #08111d;
+      color: var(--ink);
+      font-family: var(--sans);
+    }
+
+    body {
+      min-height: 100dvh;
+    }
+
+    #game {
+      position: fixed;
+      inset: 0;
+      width: 100dvw;
+      height: 100dvh;
+      min-height: 100dvh;
+      overflow: hidden;
+      user-select: none;
+      -webkit-user-select: none;
+      touch-action: none;
+      background:
+        radial-gradient(circle at 50% 78%, rgba(255, 173, 78, .22), transparent 32%),
+        linear-gradient(180deg, hsl(212 61% 7%) 0%, hsl(201 57% 15%) 54%, hsl(153 24% 16%) 100%);
+    }
+
+    @media (prefers-color-scheme: light) {
+      html, body { background: #f7ead3; }
+      #game {
+        background:
+          radial-gradient(circle at 50% 78%, rgba(255, 171, 69, .32), transparent 35%),
+          linear-gradient(180deg, hsl(186 42% 89%) 0%, hsl(37 76% 77%) 56%, hsl(39 100% 91%) 100%);
+      }
+    }
+
+    canvas {
+      position: absolute;
+      inset: 0;
+      width: 100%;
+      height: 100%;
+      display: block;
+      touch-action: none;
+    }
+
+    .hud {
+      position: absolute;
+      top: max(14px, env(safe-area-inset-top));
+      left: max(14px, env(safe-area-inset-left));
+      right: max(14px, env(safe-area-inset-right));
+      z-index: 5;
+      display: flex;
+      align-items: flex-start;
+      justify-content: space-between;
+      gap: 12px;
+      pointer-events: none;
+      font-family: var(--mono);
+      letter-spacing: .04em;
+      text-transform: uppercase;
+    }
+
+    .stack {
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+      min-width: 0;
+    }
+
+    .pill {
+      width: max-content;
+      max-width: calc(100dvw - 116px);
+      min-height: 34px;
+      padding: 8px 11px;
+      border: 1px solid var(--panel-line);
+      border-radius: 999px;
+      background: var(--panel);
+      box-shadow: 0 16px 42px rgba(0, 0, 0, .12);
+      backdrop-filter: blur(14px);
+      -webkit-backdrop-filter: blur(14px);
+      color: var(--ink);
+      font-size: 12px;
+      white-space: nowrap;
+    }
+
+    #hint {
+      opacity: .88;
+      color: var(--muted);
+    }
+
+    #restartBtn {
+      position: absolute;
+      z-index: 12;
+      min-width: 44px;
+      min-height: 44px;
+      border: 0;
+      border-radius: 999px;
+      padding: 0 17px;
+      display: none;
+      align-items: center;
+      justify-content: center;
+      background: rgba(255, 241, 211, .12);
+      color: var(--ink);
+      box-shadow: inset 0 0 0 1px var(--panel-line), 0 14px 38px rgba(0, 0, 0, .14);
+      backdrop-filter: blur(14px);
+      -webkit-backdrop-filter: blur(14px);
+      font: 700 12px/1 var(--mono);
+      letter-spacing: .08em;
+      text-transform: uppercase;
+      pointer-events: auto;
+      cursor: pointer;
+      transition: transform .22s ease, background .22s ease, color .22s ease, box-shadow .22s ease, opacity .22s ease;
+    }
+
+    .playing #restartBtn {
+      display: inline-flex;
+      top: max(14px, env(safe-area-inset-top));
+      right: max(14px, env(safe-area-inset-right));
+    }
+
+    .gameover #restartBtn {
+      display: inline-flex;
+      left: 50%;
+      bottom: max(36px, calc(env(safe-area-inset-bottom) + 8dvh));
+      transform: translateX(-50%);
+      min-width: min(76dvw, 270px);
+      min-height: 56px;
+      background: var(--button-bg);
+      color: var(--button-ink);
+      box-shadow: 0 20px 50px var(--button-shadow);
+      font-size: 13px;
+    }
+
+    #restartBtn:active,
+    #startBtn:active {
+      transform: translateY(1px) scale(.985);
+    }
+
+    .gameover #restartBtn:active {
+      transform: translateX(-50%) translateY(1px) scale(.985);
+    }
+
+    .overlay {
+      position: absolute;
+      inset: 0;
+      z-index: 9;
+      display: grid;
+      place-items: center;
+      padding: max(22px, env(safe-area-inset-top)) 22px max(26px, env(safe-area-inset-bottom));
+      pointer-events: none;
+      text-align: center;
+    }
+
+    .panel {
+      width: min(520px, 92dvw);
+      border: 1px solid var(--panel-line);
+      border-radius: 30px;
+      padding: clamp(22px, 5dvw, 38px);
+      background: var(--panel);
+      box-shadow: 0 30px 90px rgba(0, 0, 0, .24);
+      backdrop-filter: blur(18px);
+      -webkit-backdrop-filter: blur(18px);
+      transition: opacity .28s ease, transform .28s ease;
+    }
+
+    .eyebrow {
+      margin: 0 0 13px;
+      font: 700 11px/1.4 var(--mono);
+      letter-spacing: .14em;
+      text-transform: uppercase;
+      color: var(--muted);
+    }
+
+    h1 {
+      margin: 0;
+      font-size: clamp(42px, 13dvw, 82px);
+      line-height: .86;
+      letter-spacing: -.08em;
+      font-weight: 820;
+    }
+
+    p {
+      margin: 18px auto 0;
+      max-width: 34em;
+      color: var(--muted);
+      font-size: clamp(15px, 3.8dvw, 18px);
+      line-height: 1.5;
+    }
+
+    #startBtn {
+      pointer-events: auto;
+      min-width: min(76dvw, 290px);
+      min-height: 58px;
+      margin-top: 26px;
+      border: 0;
+      border-radius: 999px;
+      padding: 0 24px;
+      background: var(--button-bg);
+      color: var(--button-ink);
+      box-shadow: 0 24px 58px var(--button-shadow);
+      cursor: pointer;
+      font: 800 13px/1 var(--mono);
+      letter-spacing: .1em;
+      text-transform: uppercase;
+      transition: transform .2s ease, box-shadow .2s ease;
+    }
+
+    .title #titlePanel { opacity: 1; transform: translateY(0) scale(1); }
+    .playing #titlePanel,
+    .gameover #titlePanel { opacity: 0; transform: translateY(10px) scale(.98); }
+
+    #endPanel {
+      opacity: 0;
+      transform: translateY(12px) scale(.98);
+    }
+
+    .gameover #endPanel {
+      opacity: 1;
+      transform: translateY(-22px) scale(1);
+    }
+
+    .title #endPanel,
+    .playing #endPanel {
+      display: none;
+    }
+
+    .toast {
+      position: absolute;
+      inset: auto 18px 19dvh;
+      z-index: 6;
+      display: grid;
+      place-items: center;
+      min-height: 42px;
+      border-radius: 999px;
+      color: var(--ink);
+      font: 900 12px/1 var(--mono);
+      letter-spacing: .12em;
+      text-transform: uppercase;
+      text-align: center;
+      opacity: 0;
+      transform: translateY(12px) scale(.96);
+      transition: opacity .2s ease, transform .2s ease;
+      pointer-events: none;
+      text-shadow: 0 2px 18px rgba(255, 176, 76, .35);
+    }
+
+    .toast.show {
+      opacity: 1;
+      transform: translateY(0) scale(1);
+    }
+
+    @media (max-width: 410px) {
+      .pill { font-size: 11px; padding-inline: 9px; }
+      #hint { display: none; }
+      .panel { border-radius: 26px; }
+    }
+  </style>
+</head>
+<body>
+  <main id="game" class="title" aria-label="Last Amber Band game">
+    <canvas id="stage" aria-hidden="true"></canvas>
+    <div class="hud" aria-live="polite">
+      <div class="stack">
+        <div class="pill" id="score">Score 0000 · Combo x0</div>
+        <div class="pill" id="hint">Tap amber at the halo. Ignore smoke rings.</div>
+      </div>
+    </div>
+    <button id="restartBtn" data-smoke="restart" type="button" aria-label="Restart game">Restart</button>
+    <section class="overlay" aria-label="Title screen">
+      <div class="panel" id="titlePanel">
+        <p class="eyebrow">Clear October dusk · 11°C</p>
+        <h1>Last Amber Band</h1>
+        <p>Tap the sunset rings exactly as they touch the ship halo. Smoke rings are decoys. Five perfects lights a shipped-by-sunrise burst.</p>
+        <button id="startBtn" data-smoke="start" type="button">Start Sync</button>
+      </div>
+      <div class="panel" id="endPanel" aria-live="polite">
+        <p class="eyebrow" id="endKicker">Night settled</p>
+        <h1 id="endTitle">Signal Lost</h1>
+        <p id="endCopy">Score 0 · Best streak 0</p>
+      </div>
+    </section>
+    <div class="toast" id="toast">Shipped by sunrise</div>
+  </main>
+  <script>
+    (() => {
+      "use strict";
+
+      const root = document.getElementById("game");
+      const canvas = document.getElementById("stage");
+      const startBtn = document.getElementById("startBtn");
+      const restartBtn = document.getElementById("restartBtn");
+      const scoreEl = document.getElementById("score");
+      const hintEl = document.getElementById("hint");
+      const toastEl = document.getElementById("toast");
+      const endKicker = document.getElementById("endKicker");
+      const endTitle = document.getElementById("endTitle");
+      const endCopy = document.getElementById("endCopy");
+
+      if (!root || !canvas) return;
+
+      const ctx = canvas.getContext ? canvas.getContext("2d", { alpha: false }) : null;
+      const TAU = Math.PI * 2;
+      const clamp = (v, a, b) => Math.max(a, Math.min(b, v));
+      const rnd = (a, b) => a + Math.random() * (b - a);
+      const mq = window.matchMedia ? window.matchMedia("(prefers-color-scheme: light)") : null;
+
+      let W = 1, H = 1, DPR = 1, cx = 1, cy = 1, targetR = 64, outerR = 300;
+      let state = "title";
+      let last = performance.now();
+      let elapsed = 0;
+      let score = 0;
+      let combo = 0;
+      let bestCombo = 0;
+      let signal = 100;
+      let spawnClock = 0;
+      let roundDuration = 48;
+      let rings = [];
+      let particles = [];
+      let stars = [];
+      let ripples = [];
+      let flash = 0;
+      let shake = 0;
+      let perfectRun = 0;
+      let toastTimer = 0;
+      let audioCtx = null;
+      let ringId = 1;
+      let titlePhase = 0;
+
+      function palette() {
+        const light = !!(mq && mq.matches);
+        return light ? {
+          top: "#d7edf0", mid: "#f0d19a", low: "#fff2d4", ink: "#142033",
+          dim: "rgba(20,32,51,.38)", star: "rgba(92,74,45,.38)",
+          amber: "#c96e17", hot: "#f39a21", gold: "#ffd485", smoke: "#6e8a9a",
+          cyan: "#28556b", panel: "rgba(255,246,226,.68)"
+        } : {
+          top: "#07111d", mid: "#10283a", low: "#20342f", ink: "#f9efe2",
+          dim: "rgba(249,239,226,.28)", star: "rgba(255,226,174,.62)",
+          amber: "#ffb54a", hot: "#ff7438", gold: "#ffe0a1", smoke: "#7891a0",
+          cyan: "#8bd4da", panel: "rgba(6,14,24,.62)"
+        };
+      }
+
+      function resize() {
+        DPR = clamp(window.devicePixelRatio || 1, 1, 2);
+        W = Math.max(1, Math.floor(window.innerWidth || document.documentElement.clientWidth || 360));
+        H = Math.max(1, Math.floor(window.innerHeight || document.documentElement.clientHeight || 640));
+        canvas.width = Math.floor(W * DPR);
+        canvas.height = Math.floor(H * DPR);
+        canvas.style.width = W + "px";
+        canvas.style.height = H + "px";
+        if (ctx) ctx.setTransform(DPR, 0, 0, DPR, 0, 0);
+        cx = W * .5;
+        cy = H * .52;
+        targetR = clamp(Math.min(W, H) * .18, 54, 92);
+        outerR = Math.hypot(W, H) * .56 + 70;
+        buildStars();
+      }
+
+      function buildStars() {
+        stars = [];
+        const count = Math.round(clamp((W * H) / 18000, 22, 70));
+        for (let i = 0; i < count; i++) {
+          stars.push({
+            x: Math.random() * W,
+            y: Math.random() * H * .72,
+            r: rnd(.45, 1.8),
+            a: rnd(.18, .82),
+            p: rnd(0, TAU)
+          });
+        }
+      }
+
+      function setMode(next) {
+        state = next;
+        root.className = next;
+        if (restartBtn) {
+          restartBtn.textContent = next === "gameover" ? "Play Again" : "Restart";
+          restartBtn.setAttribute("aria-label", next === "gameover" ? "Play again" : "Restart game");
+        }
+        if (scoreEl) scoreEl.style.opacity = next === "title" ? ".72" : "1";
+      }
+
+      function ensureAudio() {
+        if (audioCtx) return audioCtx;
+        const AC = window.AudioContext || window.webkitAudioContext;
+        if (!AC) return null;
+        try {
+          audioCtx = new AC();
+        } catch (_) {
+          audioCtx = null;
+        }
+        return audioCtx;
+      }
+
+      function tone(kind) {
+        const ac = audioCtx;
+        if (!ac || !ac.createOscillator || !ac.createGain) return;
+        try {
+          if (ac.state === "suspended" && ac.resume) ac.resume().catch(() => {});
+          const now = ac.currentTime;
+          const osc = ac.createOscillator();
+          const gain = ac.createGain();
+          const table = {
+            perfect: [880, .07, .055],
+            good: [520, .05, .04],
+            miss: [120, .08, .05],
+            burst: [1040, .12, .075]
+          };
+          const cfg = table[kind] || table.good;
+          osc.type = kind === "miss" ? "sawtooth" : "sine";
+          osc.frequency.setValueAtTime(cfg[0], now);
+          if (kind === "burst") osc.frequency.exponentialRampToValueAtTime(1560, now + cfg[1]);
+          gain.gain.setValueAtTime(0, now);
+          gain.gain.linearRampToValueAtTime(cfg[2], now + .008);
+          gain.gain.exponentialRampToValueAtTime(.0001, now + cfg[1]);
+          osc.connect(gain);
+          gain.connect(ac.destination);
+          osc.start(now);
+          osc.stop(now + cfg[1] + .02);
+        } catch (_) {}
+      }
+
+      function buzz(ms) {
+        try {
+          if (navigator.vibrate) navigator.vibrate(ms);
+        } catch (_) {}
+      }
+
+      function startGame() {
+        ensureAudio();
+        elapsed = 0;
+        score = 0;
+        combo = 0;
+        bestCombo = 0;
+        signal = 100;
+        spawnClock = .18;
+        rings = [];
+        particles = [];
+        ripples = [];
+        flash = 0;
+        shake = 0;
+        perfectRun = 0;
+        toastTimer = 0;
+        ringId = 1;
+        setMode("playing");
+        updateHud("Tap amber at the halo. Ignore smoke rings.");
+        spawnRing(false, 0);
+      }
+
+      function gameOver(won) {
+        if (state !== "playing") return;
+        setMode("gameover");
+        tone(won ? "burst" : "miss");
+        buzz(won ? 35 : 70);
+        if (endKicker) endKicker.textContent = won ? "Shipped by sunrise" : "Night settled";
+        if (endTitle) endTitle.textContent = won ? "Dawn Synced" : "Signal Lost";
+        if (endCopy) endCopy.textContent = "Score " + Math.round(score) + " · Best streak " + bestCombo + " · Signal " + Math.max(0, Math.round(signal)) + "%";
+      }
+
+      function updateHud(message) {
+        if (scoreEl) scoreEl.textContent = "Score " + String(Math.round(score)).padStart(4, "0") + " · Combo x" + combo;
+        if (hintEl && message) hintEl.textContent = message;
+      }
+
+      function showToast(text) {
+        if (!toastEl) return;
+        toastEl.textContent = text;
+        toastEl.classList.add("show");
+        toastTimer = 1.15;
+      }
+
+      function spawnRing(decoy, offsetSec) {
+        const progress = clamp(elapsed / roundDuration, 0, 1);
+        const speed = rnd(172, 214) + progress * 108 + Math.min(combo, 20) * 1.4;
+        const offset = (offsetSec || 0) * speed;
+        rings.push({
+          id: ringId++,
+          r: outerR + offset,
+          speed,
+          decoy: !!decoy,
+          width: decoy ? rnd(3.5, 5.5) : rnd(6.5, 10),
+          wobble: rnd(0, TAU),
+          alpha: 1,
+          hit: false,
+          missed: false,
+          dash: decoy ? rnd(14, 26) : 0
+        });
+      }
+
+      function scheduleSpawns(dt) {
+        const progress = clamp(elapsed / roundDuration, 0, 1);
+        spawnClock -= dt;
+        while (spawnClock <= 0) {
+          spawnRing(false, 0);
+          const decoyChance = .18 + progress * .42;
+          if (Math.random() < decoyChance) spawnRing(true, rnd(-.34, .38));
+          if (progress > .48 && Math.random() < .18 + progress * .2) spawnRing(false, rnd(.28, .5));
+          spawnClock += rnd(1.05 - progress * .38, 1.38 - progress * .52);
+        }
+      }
+
+      function gradeTap() {
+        const progress = clamp(elapsed / roundDuration, 0, 1);
+        const okWindow = 42 - progress * 12;
+        let best = null;
+        let bestDist = Infinity;
+        let nearDecoy = false;
+        for (const ring of rings) {
+          if (ring.hit || ring.missed) continue;
+          const dist = Math.abs(ring.r - targetR);
+          if (ring.decoy && dist < okWindow) nearDecoy = true;
+          if (!ring.decoy && dist < bestDist) {
+            best = ring;
+            bestDist = dist;
+          }
+        }
+
+        if (best && bestDist <= okWindow) {
+          best.hit = true;
+          best.alpha = 0;
+          const perfect = bestDist <= 10;
+          const great = bestDist <= 23;
+          const base = perfect ? 210 : great ? 135 : 80;
+          combo += 1;
+          bestCombo = Math.max(bestCombo, combo);
+          score += base + combo * 9;
+          signal = clamp(signal + (perfect ? 2.8 : 1.2), 0, 100);
+          perfectRun = perfect ? perfectRun + 1 : 0;
+          addHitParticles(perfect ? 42 : 26, perfect);
+          ripples.push({ r: targetR, a: 1, hot: perfect });
+          tone(perfect ? "perfect" : "good");
+          buzz(perfect ? 12 : 7);
+          updateHud(perfect ? "Perfect. Keep the sunrise streak alive." : great ? "Great sync." : "Good. Stay on the amber band.");
+          if (perfectRun > 0 && perfectRun % 5 === 0) {
+            score += 360;
+            flash = 1;
+            shake = Math.max(shake, 4);
+            showToast("Shipped by sunrise");
+            tone("burst");
+            clearDecoys();
+          }
+          return;
+        }
+
+        combo = 0;
+        perfectRun = 0;
+        signal -= nearDecoy ? 16 : 10;
+        shake = Math.max(shake, nearDecoy ? 7 : 4);
+        tone("miss");
+        buzz(nearDecoy ? 35 : 18);
+        addMissParticles();
+        updateHud(nearDecoy ? "Decoy smoke. Wait for amber." : "Off beat. Tap when the ring touches the halo.");
+        if (signal <= 0) gameOver(false);
+      }
+
+      function clearDecoys() {
+        for (const ring of rings) {
+          if (ring.decoy) {
+            ring.hit = true;
+            ring.alpha = Math.min(ring.alpha, .25);
+          }
+        }
+      }
+
+      function addHitParticles(count, perfect) {
+        const colors = perfect ? ["#ffe3a1", "#ffb54a", "#ff7438"] : ["#ffd18a", "#f39a21", "#fff0c9"];
+        for (let i = 0; i < count; i++) {
+          const a = rnd(0, TAU);
+          const rr = targetR + rnd(-5, 5);
+          particles.push({
+            x: cx + Math.cos(a) * rr,
+            y: cy + Math.sin(a) * rr,
+            vx: Math.cos(a) * rnd(30, perfect ? 170 : 110),
+            vy: Math.sin(a) * rnd(30, perfect ? 170 : 110),
+            life: rnd(.36, .78),
+            age: 0,
+            s: rnd(1.2, perfect ? 4.2 : 3),
+            c: colors[(Math.random() * colors.length) | 0]
+          });
+        }
+      }
+
+      function addMissParticles() {
+        for (let i = 0; i < 16; i++) {
+          const a = rnd(0, TAU);
+          particles.push({
+            x: cx + Math.cos(a) * targetR,
+            y: cy + Math.sin(a) * targetR,
+            vx: Math.cos(a) * rnd(-95, 95),
+            vy: Math.sin(a) * rnd(-95, 95),
+            life: rnd(.25, .55),
+            age: 0,
+            s: rnd(1, 3),
+            c: "#7891a0"
+          });
+        }
+      }
+
+      function onTap(e) {
+        if (e && e.cancelable) e.preventDefault();
+        if (state !== "playing") return;
+        ensureAudio();
+        gradeTap();
+      }
+
+      function update(dt) {
+        titlePhase += dt;
+        if (toastTimer > 0) {
+          toastTimer -= dt;
+          if (toastTimer <= 0 && toastEl) toastEl.classList.remove("show");
+        }
+        flash = Math.max(0, flash - dt * 1.8);
+        shake = Math.max(0, shake - dt * 18);
+
+        if (state !== "playing") {
+          for (const r of ripples) r.a -= dt * 1.2;
+          ripples = ripples.filter(r => r.a > 0);
+          updateParticles(dt);
+          return;
+        }
+
+        elapsed += dt;
+        scheduleSpawns(dt);
+        const progress = clamp(elapsed / roundDuration, 0, 1);
+        const okWindow = 42 - progress * 12;
+
+        for (const ring of rings) {
+          ring.r -= ring.speed * dt;
+          if (ring.hit) ring.alpha -= dt * 4.2;
+          if (!ring.decoy && !ring.hit && !ring.missed && ring.r < targetR - okWindow) {
+            ring.missed = true;
+            combo = 0;
+            perfectRun = 0;
+            signal -= 22;
+            shake = Math.max(shake, 8);
+            addMissParticles();
+            tone("miss");
+            buzz(30);
+            updateHud("Missed amber. Night is closing.");
+          }
+        }
+
+        rings = rings.filter(r => r.r > 8 && r.alpha > .02);
+        for (const r of ripples) r.a -= dt * 1.45;
+        ripples = ripples.filter(r => r.a > 0);
+        updateParticles(dt);
+
+        if (elapsed >= roundDuration) {
+          score += Math.round(signal * 12 + bestCombo * 20);
+          gameOver(true);
+        } else if (signal <= 0) {
+          gameOver(false);
+        }
+      }
+
+      function updateParticles(dt) {
+        for (const p of particles) {
+          p.age += dt;
+          p.x += p.vx * dt;
+          p.y += p.vy * dt;
+          p.vx *= Math.pow(.08, dt);
+          p.vy *= Math.pow(.08, dt);
+        }
+        particles = particles.filter(p => p.age < p.life);
+      }
+
+      function draw() {
+        if (!ctx) return;
+        const p = palette();
+        const progress = state === "playing" ? clamp(elapsed / roundDuration, 0, 1) : state === "gameover" ? 1 : .08;
+        const sx = shake ? rnd(-shake, shake) : 0;
+        const sy = shake ? rnd(-shake, shake) : 0;
+
+        ctx.save();
+        const sky = ctx.createLinearGradient(0, 0, 0, H);
+        sky.addColorStop(0, p.top);
+        sky.addColorStop(.58, p.mid);
+        sky.addColorStop(1, p.low);
+        ctx.fillStyle = sky;
+        ctx.fillRect(0, 0, W, H);
+
+        ctx.globalAlpha = .16 + progress * .34;
+        ctx.fillStyle = state === "title" ? "rgba(4,14,25,.18)" : "rgba(1,8,17,.52)";
+        ctx.fillRect(0, 0, W, H);
+        ctx.globalAlpha = 1;
+
+        drawBackdrop(p, progress);
+        ctx.translate(sx, sy);
+        drawTimingField(p, progress);
+        drawRings(p);
+        drawRipples(p);
+        drawShip(p);
+        drawParticles();
+        ctx.restore();
+
+        if (flash > 0) {
+          ctx.save();
+          ctx.globalAlpha = flash * .36;
+          ctx.fillStyle = "#ffd18a";
+          ctx.fillRect(0, 0, W, H);
+          ctx.restore();
+        }
+      }
+
+      function drawBackdrop(p, progress) {
+        ctx.save();
+        for (const s of stars) {
+          const twinkle = .65 + Math.sin(titlePhase * 1.4 + s.p) * .35;
+          ctx.globalAlpha = s.a * twinkle * (state === "title" ? .55 : clamp(progress + .2, .25, .95));
+          ctx.fillStyle = p.star;
+          ctx.beginPath();
+          ctx.arc(s.x, s.y, s.r, 0, TAU);
+          ctx.fill();
+        }
+
+        const glow = ctx.createRadialGradient(cx, H * .78, 4, cx, H * .78, Math.max(W, H) * .5);
+        glow.addColorStop(0, "rgba(255, 177, 70, .42)");
+        glow.addColorStop(.34, "rgba(255, 123, 54, .18)");
+        glow.addColorStop(1, "rgba(255, 177, 70, 0)");
+        ctx.globalAlpha = state === "gameover" ? .25 : .5;
+        ctx.fillStyle = glow;
+        ctx.fillRect(0, 0, W, H);
+
+        ctx.globalAlpha = .18;
+        ctx.strokeStyle = p.dim;
+        ctx.lineWidth = 1;
+        for (let i = 0; i < 7; i++) {
+          const y = H * (.74 + i * .038);
+          ctx.beginPath();
+          ctx.moveTo(0, y);
+          ctx.quadraticCurveTo(W * .5, y + Math.sin(titlePhase + i) * 9, W, y + Math.cos(titlePhase * .8 + i) * 6);
+          ctx.stroke();
+        }
+        ctx.restore();
+      }
+
+      function drawTimingField(p, progress) {
+        ctx.save();
+        const pulse = Math.sin(titlePhase * 3) * 2.5;
+        ctx.globalAlpha = .14;
+        ctx.strokeStyle = p.gold;
+        ctx.lineWidth = 1;
+        ctx.beginPath();
+        ctx.arc(cx, cy, targetR - 17 + pulse * .3, 0, TAU);
+        ctx.stroke();
+        ctx.globalAlpha = .32;
+        ctx.lineWidth = 2;
+        ctx.beginPath();
+        ctx.arc(cx, cy, targetR + pulse, 0, TAU);
+        ctx.stroke();
+        ctx.globalAlpha = .2 + .18 * (1 - progress);
+        ctx.lineWidth = 10;
+        ctx.beginPath();
+        ctx.arc(cx, cy, targetR, -Math.PI * .72, Math.PI * .28);
+        ctx.stroke();
+        ctx.restore();
+      }
+
+      function drawRings(p) {
+        const sorted = rings.slice().sort((a, b) => b.r - a.r);
+        for (const ring of sorted) {
+          ctx.save();
+          const near = 1 - clamp(Math.abs(ring.r - targetR) / 95, 0, 1);
+          ctx.globalAlpha = ring.alpha * (ring.decoy ? .38 + near * .28 : .58 + near * .42);
+          ctx.lineWidth = ring.width + near * (ring.decoy ? 1 : 5);
+          ctx.lineCap = "round";
+          if (ring.decoy) {
+            ctx.strokeStyle = p.smoke;
+            ctx.setLineDash([ring.dash, ring.dash * .8]);
+            ctx.lineDashOffset = -titlePhase * 55 + ring.wobble * 20;
+          } else {
+            const grad = ctx.createLinearGradient(cx - ring.r, cy - ring.r, cx + ring.r, cy + ring.r);
+            grad.addColorStop(0, p.gold);
+            grad.addColorStop(.52, p.amber);
+            grad.addColorStop(1, p.hot);
+            ctx.strokeStyle = grad;
+            ctx.shadowColor = p.hot;
+            ctx.shadowBlur = 18 + near * 18;
+          }
+          ctx.beginPath();
+          if (ring.decoy) {
+            ctx.arc(cx, cy, ring.r, ring.wobble, ring.wobble + TAU * .88);
+          } else {
+            ctx.arc(cx, cy, ring.r, 0, TAU);
+          }
+          ctx.stroke();
+          ctx.restore();
+        }
+      }
+
+      function drawRipples(p) {
+        for (const r of ripples) {
+          ctx.save();
+          ctx.globalAlpha = r.a;
+          ctx.strokeStyle = r.hot ? p.gold : p.amber;
+          ctx.lineWidth = r.hot ? 5 : 3;
+          ctx.shadowColor = r.hot ? p.gold : p.amber;
+          ctx.shadowBlur = r.hot ? 22 : 12;
+          ctx.beginPath();
+          ctx.arc(cx, cy, r.r + (1 - r.a) * 58, 0, TAU);
+          ctx.stroke();
+          ctx.restore();
+        }
+      }
+
+      function drawShip(p) {
+        ctx.save();
+        const bob = Math.sin(titlePhase * 2.4) * 3;
+        ctx.translate(cx, cy + bob);
+        ctx.rotate(Math.sin(titlePhase * 1.6) * .05);
+        ctx.shadowColor = p.gold;
+        ctx.shadowBlur = 18 + flash * 30;
+
+        ctx.fillStyle = p.ink;
+        ctx.beginPath();
+        ctx.moveTo(0, -19);
+        ctx.lineTo(12, 14);
+        ctx.quadraticCurveTo(0, 8, -12, 14);
+        ctx.closePath();
+        ctx.fill();
+
+        ctx.fillStyle = p.gold;
+        ctx.beginPath();
+        ctx.arc(0, -4, 4.5, 0, TAU);
+        ctx.fill();
+
+        ctx.globalAlpha = .8;
+        ctx.strokeStyle = p.cyan;
+        ctx.lineWidth = 1.5;
+        ctx.beginPath();
+        ctx.moveTo(-7, 11);
+        ctx.lineTo(-15, 22 + Math.sin(titlePhase * 12) * 3);
+        ctx.moveTo(7, 11);
+        ctx.lineTo(15, 22 + Math.cos(titlePhase * 12) * 3);
+        ctx.stroke();
+        ctx.restore();
+      }
+
+      function drawParticles() {
+        ctx.save();
+        for (const part of particles) {
+          const a = 1 - part.age / part.life;
+          ctx.globalAlpha = Math.max(0, a);
+          ctx.fillStyle = part.c;
+          ctx.beginPath();
+          ctx.arc(part.x, part.y, part.s * (.5 + a), 0, TAU);
+          ctx.fill();
+        }
+        ctx.restore();
+      }
+
+      function loop(now) {
+        const dt = clamp((now - last) / 1000, 0, .05);
+        last = now;
+        update(dt);
+        draw();
+        if (state === "playing") {
+          updateHud();
+          const left = Math.max(0, Math.ceil(roundDuration - elapsed));
+          if (hintEl && elapsed > 5) hintEl.textContent = "Signal " + Math.max(0, Math.round(signal)) + "% · Night in " + left + "s";
+        }
+        window.requestAnimationFrame(loop);
+      }
+
+      window.addEventListener("resize", resize, { passive: true });
+      if (mq && mq.addEventListener) mq.addEventListener("change", draw);
+
+      canvas.addEventListener("pointerdown", onTap, { passive: false });
+      window.addEventListener("keydown", (e) => {
+        if (e.code === "Space" || e.code === "Enter" || e.key.toLowerCase() === "k") {
+          if (state === "title") return;
+          e.preventDefault();
+          if (state === "gameover") startGame();
+          else onTap(e);
+        } else if (e.key.toLowerCase() === "r") {
+          e.preventDefault();
+          startGame();
+        }
+      });
+
+      if (startBtn) startBtn.addEventListener("click", (e) => {
+        e.preventDefault();
+        startGame();
+      });
+      if (restartBtn) restartBtn.addEventListener("click", (e) => {
+        e.preventDefault();
+        startGame();
+      });
+
+      resize();
+      updateHud("Tap amber at the halo. Ignore smoke rings.");
+      window.requestAnimationFrame((t) => {
+        last = t;
+        loop(t);
+      });
+    })();
+  </script>
+</body>
+</html>

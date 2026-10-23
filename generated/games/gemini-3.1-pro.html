@@ -1,606 +1,727 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
-<title>Chrono Sync</title>
-<style>
-  :root {
-    --bg-color: #050a10;
-    --text-color: #aaddff;
-    --btn-bg: #0a1f33;
-    --btn-border: #2288cc;
-    --accent: #00eeff;
-    --accent-glow: 0, 238, 255;
-  }
-  @media (prefers-color-scheme: dark) {
-    :root {
-      --bg-color: #050a10;
-      --text-color: #aaddff;
-      --btn-bg: #0a1f33;
-      --btn-border: #2288cc;
-      --accent: #00eeff;
-      --accent-glow: 0, 238, 255;
-    }
-  }
-  @media (prefers-color-scheme: light) {
-    :root {
-      --bg-color: #eef2f5;
-      --text-color: #113344;
-      --btn-bg: #ccddee;
-      --btn-border: #4499cc;
-      --accent: #ee6600;
-      --accent-glow: 238, 102, 0;
-    }
-  }
-  body, html {
-    margin: 0; padding: 0;
-    width: 100vw; height: 100vh;
-    width: 100dvw; height: 100dvh;
-    overflow: hidden;
-    background-color: var(--bg-color);
-    color: var(--text-color);
-    font-family: ui-monospace, 'SFMono-Regular', Menlo, monospace;
-    touch-action: none;
-    user-select: none;
-  }
-  canvas {
-    display: block;
-    width: 100%; height: 100%;
-  }
-  #ui-layer {
-    position: absolute;
-    top: 0; left: 0;
-    width: 100%; height: 100%;
-    pointer-events: none;
-    display: flex;
-    justify-content: center;
-    align-items: center;
-  }
-  .screen {
-    pointer-events: none;
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    text-align: center;
-    padding: 2rem;
-    background: var(--bg-color);
-    border: 1px solid var(--accent);
-    border-radius: 12px;
-    box-shadow: 0 0 20px rgba(var(--accent-glow), 0.2);
-  }
-  .screen h1 {
-    color: var(--accent);
-    margin-top: 0;
-    margin-bottom: 0.5rem;
-    text-shadow: 0 0 10px rgba(var(--accent-glow), 0.5);
-  }
-  button {
-    pointer-events: auto;
-    margin-top: 2rem;
-    padding: 1rem 2rem;
-    font-family: inherit;
-    font-size: 1.2rem;
-    font-weight: bold;
-    color: var(--accent);
-    background: var(--btn-bg);
-    border: 2px solid var(--btn-border);
-    border-radius: 8px;
-    cursor: pointer;
-    text-transform: uppercase;
-    box-shadow: 0 0 15px rgba(var(--accent-glow), 0.4);
-    transition: transform 0.1s, background 0.1s;
-  }
-  button:active {
-    transform: scale(0.95);
-    background: var(--accent);
-    color: var(--bg-color);
-  }
-  .hidden {
-    display: none !important;
-  }
-  #hud {
-    position: absolute;
-    top: 1rem; left: 1rem; right: 1rem;
-    display: flex;
-    justify-content: space-between;
-    font-size: 1.2rem;
-    font-weight: bold;
-    text-shadow: 0 0 4px var(--bg-color);
-  }
-</style>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+    <title>Autumn Flick</title>
+    <style>
+        :root {
+            --bg-color: #F8F9FA;
+            --text-color: #1E293B;
+            --overlay-bg: rgba(248, 249, 250, 0.85);
+        }
+
+        @media (prefers-color-scheme: dark) {
+            :root {
+                --bg-color: #0A1128;
+                --text-color: #F8F9FA;
+                --overlay-bg: rgba(10, 17, 40, 0.85);
+            }
+        }
+
+        body, html {
+            margin: 0; padding: 0; width: 100%; height: 100%;
+            background: var(--bg-color);
+            color: var(--text-color);
+            font-family: ui-monospace, 'SFMono-Regular', Menlo, monospace;
+            overflow: hidden;
+            touch-action: none;
+            user-select: none;
+            -webkit-user-select: none;
+        }
+
+        canvas {
+            display: block;
+            width: 100dvw;
+            height: 100dvh;
+        }
+
+        #ui-layer {
+            position: absolute; 
+            top: 0; left: 0; right: 0; bottom: 0;
+            pointer-events: none;
+            z-index: 10;
+        }
+
+        .screen {
+            position: absolute; 
+            top: 0; left: 0; right: 0; bottom: 0;
+            display: flex; 
+            flex-direction: column;
+            justify-content: center; 
+            align-items: center;
+            background: var(--overlay-bg);
+            transition: opacity 0.3s;
+            text-align: center;
+            padding: 20px;
+            box-sizing: border-box;
+        }
+
+        .hidden {
+            opacity: 0;
+            pointer-events: none !important;
+        }
+
+        h1 { font-size: 2.2rem; margin-bottom: 0.5rem; letter-spacing: 1px; text-transform: uppercase; }
+        h2 { font-size: 2rem; margin-bottom: 0.5rem; }
+        p { font-size: 1rem; opacity: 0.8; max-width: 400px; line-height: 1.4; margin: 0.5rem 0; }
+
+        button {
+            pointer-events: auto;
+            margin-top: 2rem;
+            padding: 1rem 2.5rem;
+            font-size: 1.2rem;
+            font-family: inherit;
+            font-weight: bold;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            background: var(--text-color);
+            color: var(--bg-color);
+            border: none;
+            border-radius: 8px;
+            cursor: pointer;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+            transition: transform 0.1s;
+        }
+
+        button:active { transform: scale(0.95); }
+
+        #hud {
+            position: absolute;
+            top: env(safe-area-inset-top, 20px);
+            left: env(safe-area-inset-left, 20px);
+            right: env(safe-area-inset-right, 20px);
+            display: flex;
+            justify-content: space-between;
+            font-size: 1.5rem;
+            font-weight: bold;
+            pointer-events: none;
+            padding: 20px;
+        }
+        
+        #lives-display { letter-spacing: 2px; color: #FF4D4D; }
+    </style>
 </head>
 <body>
-
-<canvas id="game"></canvas>
-
-<div id="ui-layer">
-  <div id="hud" class="hidden">
-    <div id="score">Time: 0.0s</div>
-    <div id="streak">Streak: 0</div>
-  </div>
-  
-  <div id="start-screen" class="screen">
-    <h1>CHRONO SYNC</h1>
-    <p>Tap to keep the hourglass alive.</p>
-    <p>On-beat = +Sand</p>
-    <p>Off-beat = -Sand</p>
-    <button id="btn-start" data-smoke="start">Start Sync</button>
-  </div>
-
-  <div id="game-over-screen" class="screen hidden">
-    <h1 style="color: #ff3333; text-shadow: 0 0 10px rgba(255,51,51,0.5);">DESYNCED</h1>
-    <p>You survived <span id="final-score">0</span>s</p>
-    <button id="btn-restart" data-smoke="restart">Re-Sync</button>
-  </div>
-</div>
-
-<script>
-const canvas = document.getElementById('game');
-const ctx = canvas.getContext('2d', { alpha: false });
-const btnStart = document.getElementById('btn-start');
-const btnRestart = document.getElementById('btn-restart');
-const screenStart = document.getElementById('start-screen');
-const screenGameOver = document.getElementById('game-over-screen');
-const hud = document.getElementById('hud');
-const scoreEl = document.getElementById('score');
-const streakEl = document.getElementById('streak');
-const finalScoreEl = document.getElementById('final-score');
-
-let width, height;
-function resize() {
-    width = window.innerWidth;
-    height = window.innerHeight;
-    canvas.width = width * window.devicePixelRatio;
-    canvas.height = height * window.devicePixelRatio;
-    ctx.scale(window.devicePixelRatio, window.devicePixelRatio);
-}
-window.addEventListener('resize', resize);
-
-let colBg = '#050a10', colText = '#aaddff', colAccent = '#00eeff', colGlow = '0, 238, 255';
-let isLightMode = false;
-function updateColors() {
-    isLightMode = window.matchMedia && window.matchMedia('(prefers-color-scheme: light)').matches;
-    if (isLightMode) {
-        colBg = '#eef2f5'; colText = '#113344'; colAccent = '#ee6600'; colGlow = '238, 102, 0';
-    } else {
-        colBg = '#050a10'; colText = '#aaddff'; colAccent = '#00eeff'; colGlow = '0, 238, 255';
-    }
-}
-if (window.matchMedia) {
-    window.matchMedia('(prefers-color-scheme: light)').addEventListener('change', updateColors);
-}
-
-let state = 'INIT'; 
-let score = 0, streak = 0;
-let sand = 30, maxSand = 30;
-let gameStartTime = 0;
-let prevTime = 0;
-
-let audioCtx;
-let nextNoteTime = 0;
-let current16thNote = 0;
-let tempo = 100;
-let scheduleAheadTime = 0.1;
-let fallDuration = 1.5;
-
-let beats = [];
-let particles = [];
-let floatingTexts = [];
-let currentPattern = [];
-let cameraShakeTime = 0, hourglassGlowTime = 0, fogTime = 0;
-
-function initAudio() {
-    try {
-        if (!audioCtx) {
-            audioCtx = new (window.AudioContext || window.webkitAudioContext)();
-        }
-        if (audioCtx.state === 'suspended') audioCtx.resume();
-    } catch(e) {
-        console.warn("AudioContext init failed", e);
-    }
-}
-
-function getCurrentTime() {
-    if (audioCtx && audioCtx.state === 'running') return audioCtx.currentTime;
-    return performance.now() / 1000;
-}
-
-function playSound(type, time, perfect = false) {
-    if (!audioCtx || audioCtx.state !== 'running') return;
-    try {
-        const osc = audioCtx.createOscillator();
-        const gain = audioCtx.createGain();
-        osc.connect(gain);
-        gain.connect(audioCtx.destination);
-        
-        if (type === 'kick') {
-            osc.frequency.setValueAtTime(150, time);
-            osc.frequency.exponentialRampToValueAtTime(0.01, time + 0.5);
-            gain.gain.setValueAtTime(0.8, time);
-            gain.gain.exponentialRampToValueAtTime(0.01, time + 0.5);
-        } else if (type === 'hat') {
-            osc.type = 'square';
-            osc.frequency.setValueAtTime(4000, time);
-            gain.gain.setValueAtTime(0.2, time);
-            gain.gain.exponentialRampToValueAtTime(0.01, time + 0.05);
-        } else if (type === 'hit') {
-            osc.type = 'sine';
-            if (perfect) {
-                osc.frequency.setValueAtTime(800, time);
-                osc.frequency.linearRampToValueAtTime(1200, time + 0.1);
-                gain.gain.setValueAtTime(0.5, time);
-                gain.gain.exponentialRampToValueAtTime(0.01, time + 0.2);
-            } else {
-                osc.frequency.setValueAtTime(600, time);
-                gain.gain.setValueAtTime(0.3, time);
-                gain.gain.exponentialRampToValueAtTime(0.01, time + 0.1);
-            }
-        } else if (type === 'miss') {
-            osc.type = 'sawtooth';
-            osc.frequency.setValueAtTime(200, time);
-            osc.frequency.linearRampToValueAtTime(100, time + 0.2);
-            gain.gain.setValueAtTime(0.4, time);
-            gain.gain.linearRampToValueAtTime(0.01, time + 0.2);
-        } else if (type === 'bonus') {
-            osc.type = 'triangle';
-            osc.frequency.setValueAtTime(440, time);
-            osc.frequency.setValueAtTime(554, time + 0.1);
-            osc.frequency.setValueAtTime(659, time + 0.2);
-            gain.gain.setValueAtTime(0.5, time);
-            gain.gain.linearRampToValueAtTime(0.01, time + 0.5);
-        }
-        osc.start(time);
-        osc.stop(time + 0.5);
-    } catch(e) {}
-}
-
-function generatePattern(t) {
-    let p = [1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0, 0];
-    let density = Math.min(0.8, (t - 100) / 100); 
-    if (density < 0) density = 0;
-    for (let i = 2; i < 16; i+=4) {
-        if (Math.random() < density) p[i] = 1; 
-    }
-    if (density > 0.5) {
-        for (let i = 1; i < 16; i+=2) {
-            if (Math.random() < (density - 0.5)) p[i] = 1;
-        }
-    }
-    return p;
-}
-
-function schedule(now) {
-    while (nextNoteTime < now + scheduleAheadTime) {
-        if (currentPattern[current16thNote]) {
-            let type = current16thNote === 0 ? 'kick' : 'hat';
-            playSound(type, nextNoteTime);
-            beats.push({
-                targetTime: nextNoteTime,
-                hit: false, missed: false, type: type
-            });
-        }
-        const secondsPerBeat = 60.0 / tempo;
-        nextNoteTime += 0.25 * secondsPerBeat;
-        current16thNote++;
-        if (current16thNote === 16) {
-            current16thNote = 0;
-            tempo += 0.5;
-            if (Math.random() < 0.3) currentPattern = generatePattern(tempo);
-        }
-    }
-}
-
-function startGame() {
-    initAudio();
-    state = 'PLAYING';
-    score = 0; streak = 0; sand = 20; tempo = 100;
-    beats = []; particles = []; floatingTexts = [];
-    current16thNote = 0;
+    <canvas id="game-canvas"></canvas>
     
-    let now = getCurrentTime();
-    gameStartTime = now;
-    nextNoteTime = now + fallDuration + 0.5;
-    currentPattern = generatePattern(tempo);
-    
-    screenStart.classList.add('hidden');
-    screenGameOver.classList.add('hidden');
-    hud.classList.remove('hidden');
-    updateHUD();
-}
+    <div id="ui-layer">
+        <div id="hud" class="hidden">
+            <div id="score-display">0</div>
+            <div id="lives-display">•••</div>
+        </div>
 
-function gameOver() {
-    state = 'GAMEOVER';
-    hud.classList.add('hidden');
-    screenGameOver.classList.remove('hidden');
-    finalScoreEl.innerText = score.toFixed(1);
-}
+        <div id="title-screen" class="screen">
+            <h1>Autumn Flick</h1>
+            <p>Flick luminescent leaves into matching botanical slots.</p>
+            <p style="font-size: 0.85rem; margin-top: 1.5rem; opacity: 0.6;">Watch out for sudden offshore wind gusts.</p>
+            <button data-smoke="start" id="start-btn">Start</button>
+        </div>
 
-function spawnParticles(x, y, color, count) {
-    for (let i = 0; i < count; i++) {
-        let angle = Math.random() * Math.PI * 2;
-        let speed = 50 + Math.random() * 150;
-        particles.push({
-            x: x, y: y,
-            vx: Math.cos(angle) * speed, vy: Math.sin(angle) * speed,
-            life: 0.5 + Math.random() * 0.5, maxLife: 1.0,
-            size: 2 + Math.random() * 4, color: color
-        });
-    }
-}
+        <div id="game-over-screen" class="screen hidden">
+            <h2>Scattered</h2>
+            <p>Score: <span id="final-score">0</span></p>
+            <button data-smoke="restart" id="restart-btn">Restart</button>
+        </div>
+    </div>
 
-function spawnText(text, x, y, color) {
-    floatingTexts.push({ text: text, x: x, y: y, life: 1.0, maxLife: 1.0, color: color });
-}
+    <script>
+    (function() {
+        const canvas = document.getElementById('game-canvas');
+        const ctx = canvas.getContext('2d');
+        if (!ctx) return; // Graceful fallback if Canvas 2D is missing
 
-function updateHUD() {
-    scoreEl.innerText = `Time: ${score.toFixed(1)}s`;
-    streakEl.innerText = `Streak: ${streak}`;
-    scoreEl.style.color = (sand < 5) ? '#ff3333' : '';
-}
+        let width = window.innerWidth;
+        let height = window.innerHeight;
 
-function onPointerDown(e) {
-    if (e && e.cancelable) e.preventDefault();
-    if (state !== 'PLAYING') return;
-    
-    const now = getCurrentTime();
-    if (navigator.vibrate) { try { navigator.vibrate(10); } catch(err){} }
-    
-    let windowSec = 0.25;
-    let closestBeat = null, minDiff = Infinity;
-    
-    for (let b of beats) {
-        if (!b.hit && !b.missed) {
-            let diff = Math.abs(b.targetTime - now);
-            if (diff < minDiff && diff < windowSec) {
-                minDiff = diff; closestBeat = b;
+        const uiTitle = document.getElementById('title-screen');
+        const uiGameOver = document.getElementById('game-over-screen');
+        const uiHud = document.getElementById('hud');
+        const scoreDisplay = document.getElementById('score-display');
+        const livesDisplay = document.getElementById('lives-display');
+        const finalScoreDisplay = document.getElementById('final-score');
+
+        // Game State
+        let gameState = 'TITLE'; 
+        let score = 0;
+        let lives = 3;
+        let lastTime = performance.now();
+        let leaves = []; 
+        let targets = [];
+        let particles = [];
+        let windParticles = [];
+        let screenShake = 0;
+
+        let windState = { timer: 3, duration: 0, targetVelocity: 0, currentVelocity: 0 };
+        let audioCtx = null;
+
+        function initAudio() {
+            if (!audioCtx) {
+                try {
+                    audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+                } catch (e) {}
             }
         }
-    }
-    
-    let px = e && e.clientX ? e.clientX : width/2;
-    let py = e && e.clientY ? e.clientY : height/2;
-    
-    if (closestBeat) {
-        closestBeat.hit = true;
-        let perfect = minDiff < 0.08;
-        playSound('hit', now, perfect);
-        
-        if (perfect) {
-            streak++;
-            sand = Math.min(maxSand, sand + 1.5);
-            spawnText('PERFECT!', px, py, colAccent);
-            spawnParticles(px, py, colAccent, 10);
+
+        function playThunk() {
+            if (!audioCtx) return;
+            try {
+                if (audioCtx.state === 'suspended') audioCtx.resume();
+                let osc = audioCtx.createOscillator();
+                let gain = audioCtx.createGain();
+                osc.connect(gain);
+                gain.connect(audioCtx.destination);
+                osc.type = 'sine';
+                osc.frequency.setValueAtTime(300, audioCtx.currentTime);
+                osc.frequency.exponentialRampToValueAtTime(40, audioCtx.currentTime + 0.1);
+                gain.gain.setValueAtTime(0.5, audioCtx.currentTime);
+                gain.gain.exponentialRampToValueAtTime(0.01, audioCtx.currentTime + 0.1);
+                osc.start();
+                osc.stop(audioCtx.currentTime + 0.1);
+            } catch(e) {}
+        }
+
+        function playMiss() {
+            if (!audioCtx) return;
+            try {
+                if (audioCtx.state === 'suspended') audioCtx.resume();
+                let osc = audioCtx.createOscillator();
+                let gain = audioCtx.createGain();
+                osc.connect(gain);
+                gain.connect(audioCtx.destination);
+                osc.type = 'sawtooth';
+                osc.frequency.setValueAtTime(150, audioCtx.currentTime);
+                osc.frequency.linearRampToValueAtTime(50, audioCtx.currentTime + 0.2);
+                gain.gain.setValueAtTime(0.3, audioCtx.currentTime);
+                gain.gain.linearRampToValueAtTime(0.01, audioCtx.currentTime + 0.2);
+                osc.start();
+                osc.stop(audioCtx.currentTime + 0.2);
+            } catch(e) {}
+        }
+
+        const Shapes = {
+            MAPLE: (ctx) => {
+                ctx.beginPath();
+                ctx.moveTo(0, -35); ctx.lineTo(8, -15); ctx.lineTo(35, -20);
+                ctx.lineTo(18, 5); ctx.lineTo(30, 30); ctx.lineTo(0, 18);
+                ctx.lineTo(-30, 30); ctx.lineTo(-18, 5); ctx.lineTo(-35, -20);
+                ctx.lineTo(-8, -15); ctx.closePath();
+            },
+            OAK: (ctx) => {
+                ctx.beginPath();
+                ctx.moveTo(0, -35);
+                ctx.bezierCurveTo(15, -35, 25, -20, 12, -10);
+                ctx.bezierCurveTo(30, -5, 30, 10, 15, 12);
+                ctx.bezierCurveTo(25, 25, 15, 35, 0, 28);
+                ctx.bezierCurveTo(-15, 35, -25, 25, -15, 12);
+                ctx.bezierCurveTo(-30, 10, -30, -5, -12, -10);
+                ctx.bezierCurveTo(-25, -20, -15, -35, 0, -35);
+                ctx.closePath();
+            },
+            BIRCH: (ctx) => {
+                ctx.beginPath();
+                ctx.moveTo(0, -30);
+                ctx.bezierCurveTo(25, -10, 30, 15, 0, 35);
+                ctx.bezierCurveTo(-30, 15, -25, -10, 0, -30);
+                ctx.closePath();
+            }
+        };
+        const SHAPE_KEYS = Object.keys(Shapes);
+        const LEAF_COLORS = ['#FF4D4D', '#FFA62B', '#11E5D5', '#FFE900'];
+
+        function getColors() {
+            const dark = window.matchMedia ? window.matchMedia('(prefers-color-scheme: dark)').matches : false;
+            return {
+                slotColor: dark ? 'rgba(248, 249, 250, 0.1)' : 'rgba(30, 41, 59, 0.1)',
+                slotBorder: dark ? 'rgba(248, 249, 250, 0.3)' : 'rgba(30, 41, 59, 0.3)',
+                windColor: dark ? 'rgba(255,255,255,0.2)' : 'rgba(0,0,0,0.2)',
+                leafInner: dark ? 'rgba(0,0,0,0.3)' : 'rgba(255,255,255,0.5)'
+            };
+        }
+
+        function resize() {
+            width = window.innerWidth;
+            height = window.innerHeight;
+            const dpr = window.devicePixelRatio || 1;
+            canvas.width = width * dpr;
+            canvas.height = height * dpr;
+            ctx.scale(dpr, dpr);
             
-            if (streak > 0 && streak % 5 === 0) {
-                sand = Math.min(maxSand, sand + 5);
-                spawnText('+5 SEC BONUS!', width/2, height * 0.4, '#ffdd00');
-                playSound('bonus', now);
-                if (navigator.vibrate) { try { navigator.vibrate([30, 50, 30]); } catch(err){} }
-                hourglassGlowTime = now + 1.0;
-            }
-        } else {
-            streak = 0;
-            sand = Math.min(maxSand, sand + 0.5);
-            spawnText('GOOD', px, py, colText);
-            spawnParticles(px, py, colText, 5);
-        }
-    } else {
-        streak = 0;
-        sand = Math.max(0, sand - 2);
-        playSound('miss', now);
-        spawnText('MISS', px, py, '#ff3333');
-        if (navigator.vibrate) { try { navigator.vibrate(50); } catch(err){} }
-        cameraShakeTime = now + 0.2;
-    }
-    updateHUD();
-}
-
-canvas.addEventListener('pointerdown', onPointerDown);
-window.addEventListener('keydown', (e) => {
-    if (e.code === 'Space' || e.code === 'Enter') {
-        if (state === 'PLAYING') onPointerDown(null);
-    }
-});
-btnStart.addEventListener('click', startGame);
-btnRestart.addEventListener('click', startGame);
-
-function drawCabinet(hx, hy, hw, hh, now) {
-    ctx.strokeStyle = `rgba(${colGlow}, 0.3)`;
-    ctx.lineWidth = 2;
-    
-    let fw = hw * 1.5, fh = hh * 1.8, bw = fw * 0.7, bh = fh * 0.7, byOffset = -20;
-    ctx.strokeRect(hx - fw, hy - fh, fw * 2, fh * 2);
-    ctx.strokeRect(hx - bw, hy - bh + byOffset, bw * 2, bh * 2);
-    
-    ctx.beginPath();
-    ctx.moveTo(hx - fw, hy - fh); ctx.lineTo(hx - bw, hy - bh + byOffset);
-    ctx.moveTo(hx + fw, hy - fh); ctx.lineTo(hx + bw, hy - bh + byOffset);
-    ctx.moveTo(hx - fw, hy + fh); ctx.lineTo(hx - bw, hy + bh + byOffset);
-    ctx.moveTo(hx + fw, hy + fh); ctx.lineTo(hx + bw, hy + bh + byOffset);
-    ctx.stroke();
-    
-    let pulse = (Math.sin(now * Math.PI) + 1) / 2;
-    ctx.fillStyle = `rgba(${colGlow}, ${0.03 + 0.03 * pulse})`;
-    ctx.fillRect(hx - fw, hy - fh, fw * 2, fh * 2);
-}
-
-function draw(now, dt) {
-    fogTime += dt;
-    ctx.fillStyle = colBg;
-    ctx.fillRect(0, 0, width, height);
-
-    ctx.globalCompositeOperation = isLightMode ? 'darken' : 'screen';
-    for (let i = 0; i < 3; i++) {
-        let x = width/2 + Math.sin(fogTime * 0.5 + i * 2) * width * 0.4;
-        let y = height/2 + Math.cos(fogTime * 0.3 + i * 3) * height * 0.4;
-        let grad = ctx.createRadialGradient(x, y, 0, x, y, width * 0.5);
-        grad.addColorStop(0, `rgba(${colGlow}, 0.15)`);
-        grad.addColorStop(1, `rgba(${colGlow}, 0)`);
-        ctx.fillStyle = grad;
-        ctx.beginPath();
-        ctx.arc(x, y, width*0.5, 0, Math.PI*2);
-        ctx.fill();
-    }
-    ctx.globalCompositeOperation = 'source-over';
-
-    ctx.strokeStyle = `rgba(${colGlow}, 0.15)`;
-    ctx.lineWidth = 1;
-    let horizon = height * 0.8;
-    ctx.beginPath();
-    for (let i = -20; i <= 20; i++) {
-        let xBottom = width/2 + i * 80;
-        let xTop = width/2 + i * 10;
-        ctx.moveTo(xTop, horizon);
-        ctx.lineTo(xBottom, height);
-    }
-    let speed = 150, zOffset = (fogTime * speed) % 100;
-    for (let z = 10; z < 1000; z += 100) {
-        let realZ = z - zOffset;
-        if (realZ < 10) continue;
-        let scale = 300 / realZ;
-        let y = horizon + scale * 100;
-        if (y > height) continue;
-        ctx.moveTo(0, y);
-        ctx.lineTo(width, y);
-    }
-    ctx.stroke();
-
-    let hx = width / 2;
-    let hy = height / 2;
-    let hw = Math.min(width * 0.25, 80);
-    let hh = Math.min(height * 0.18, 120);
-    
-    if (now < cameraShakeTime) {
-        let intensity = (cameraShakeTime - now) * 20;
-        hx += (Math.random() - 0.5) * intensity;
-        hy += (Math.random() - 0.5) * intensity;
-    }
-    
-    drawCabinet(hx, hy, hw, hh, now);
-    
-    ctx.strokeStyle = colAccent;
-    ctx.lineWidth = 3;
-    if (now < hourglassGlowTime) {
-        ctx.shadowBlur = 20; ctx.shadowColor = colAccent; ctx.lineWidth = 5;
-    } else {
-        ctx.shadowBlur = 5; ctx.shadowColor = colAccent;
-    }
-
-    ctx.beginPath();
-    ctx.moveTo(hx - hw, hy - hh); ctx.lineTo(hx + hw, hy - hh);
-    ctx.lineTo(hx, hy);
-    ctx.lineTo(hx + hw, hy + hh); ctx.lineTo(hx - hw, hy + hh);
-    ctx.closePath();
-    ctx.stroke();
-    ctx.shadowBlur = 0; 
-    
-    ctx.strokeStyle = '#ffffff';
-    ctx.lineWidth = 2;
-    ctx.shadowBlur = 10; ctx.shadowColor = '#ffffff';
-    ctx.beginPath(); ctx.moveTo(hx - 20, hy); ctx.lineTo(hx + 20, hy); ctx.stroke();
-    ctx.shadowBlur = 0;
-
-    let sandRatio = Math.max(0, Math.min(1, sand / maxSand));
-    let sandH = hh * Math.sqrt(sandRatio);
-    let sandTopY = hy - sandH;
-    let sandW = hw * (sandH / hh);
-
-    ctx.fillStyle = `rgba(${colGlow}, 0.5)`;
-    ctx.beginPath();
-    ctx.moveTo(hx, hy);
-    ctx.lineTo(hx - sandW, sandTopY); ctx.lineTo(hx + sandW, sandTopY);
-    ctx.fill();
-    
-    let bottomSandH = hh * Math.sqrt(1 - sandRatio);
-    if (bottomSandH > 0) {
-        let bottomSandTopY = hy + hh - bottomSandH;
-        let bottomSandW = hw * (bottomSandH / hh);
-        ctx.beginPath();
-        ctx.moveTo(hx - hw, hy + hh); ctx.lineTo(hx + hw, hy + hh);
-        ctx.lineTo(hx + bottomSandW, bottomSandTopY); ctx.lineTo(hx - bottomSandW, bottomSandTopY);
-        ctx.fill();
-    }
-    
-    ctx.fillStyle = colAccent;
-    ctx.shadowBlur = 15; ctx.shadowColor = colAccent;
-    let startY = hy - hh - 20;
-    for (let b of beats) {
-        if (b.hit || b.missed) continue;
-        let progress = 1 - ((b.targetTime - now) / fallDuration);
-        if (progress < 0) continue; 
-        
-        let y = startY + progress * (hy - startY);
-        let currentW = hw * (1 - Math.max(0, progress - 0.2)); 
-        
-        ctx.beginPath();
-        ctx.arc(hx, y, b.type === 'kick' ? 8 : 4, 0, Math.PI*2);
-        ctx.fill();
-        
-        ctx.globalAlpha = 0.3;
-        ctx.fillRect(hx - currentW, y - 1, currentW * 2, 2);
-        ctx.globalAlpha = 1;
-    }
-    ctx.shadowBlur = 0;
-
-    for (let i = particles.length - 1; i >= 0; i--) {
-        let p = particles[i];
-        p.x += p.vx * dt; p.y += p.vy * dt; p.life -= dt;
-        if (p.life <= 0) { particles.splice(i, 1); continue; }
-        ctx.fillStyle = p.color;
-        ctx.globalAlpha = Math.max(0, p.life / p.maxLife);
-        ctx.beginPath(); ctx.arc(p.x, p.y, p.size, 0, Math.PI*2); ctx.fill();
-    }
-    ctx.globalAlpha = 1;
-
-    for (let i = floatingTexts.length - 1; i >= 0; i--) {
-        let ft = floatingTexts[i];
-        ft.y -= 40 * dt; ft.life -= dt;
-        if (ft.life <= 0) { floatingTexts.splice(i, 1); continue; }
-        ctx.fillStyle = ft.color;
-        ctx.globalAlpha = Math.max(0, ft.life / ft.maxLife);
-        ctx.font = 'bold 20px ui-monospace, sans-serif';
-        ctx.textAlign = 'center';
-        ctx.fillText(ft.text, ft.x, ft.y);
-    }
-    ctx.globalAlpha = 1;
-}
-
-function loop(timestamp) {
-    requestAnimationFrame(loop);
-    
-    if (prevTime === 0) prevTime = timestamp;
-    let dt = (timestamp - prevTime) / 1000;
-    if (dt > 0.1) dt = 0.1;
-    prevTime = timestamp;
-    
-    const now = getCurrentTime();
-    
-    if (state === 'PLAYING') {
-        schedule(now);
-        sand -= dt; score += dt;
-        
-        for (let b of beats) {
-            if (!b.hit && !b.missed && now > b.targetTime + 0.15) {
-                b.missed = true; streak = 0; sand = Math.max(0, sand - 2);
-                playSound('miss', now);
-                spawnText('MISSED', width/2, height * 0.7, '#ff3333');
-                cameraShakeTime = now + 0.2;
-                if (navigator.vibrate) { try { navigator.vibrate(50); } catch(err){} }
+            let cy = height * 0.22;
+            let spacing = Math.min(width / 3.2, 110);
+            let cx = width / 2;
+            if (targets.length === 3) {
+                targets[0].x = cx - spacing; targets[0].y = cy;
+                targets[1].x = cx;           targets[1].y = cy;
+                targets[2].x = cx + spacing; targets[2].y = cy;
             }
         }
-        beats = beats.filter(b => now < b.targetTime + 1.0);
-        if (sand <= 0) gameOver();
-    }
-    
-    updateHUD();
-    draw(now, dt);
-}
+        window.addEventListener('resize', resize);
 
-updateColors();
-resize();
-requestAnimationFrame(loop);
+        function initTargets() {
+            targets = [
+                { x: 0, y: 0, shapeType: 'MAPLE', baseScale: 1, scale: 1 },
+                { x: 0, y: 0, shapeType: 'OAK',   baseScale: 1, scale: 1 },
+                { x: 0, y: 0, shapeType: 'BIRCH', baseScale: 1, scale: 1 }
+            ];
+            let types = [...SHAPE_KEYS].sort(() => Math.random() - 0.5);
+            for (let i = 0; i < 3; i++) targets[i].shapeType = types[i];
+            resize(); // sets real coords
+        }
 
-</script>
+        function spawnNextLeaf() {
+            if (gameState !== 'PLAYING') return;
+            let leaf = new Leaf();
+            leaves.push(leaf);
+        }
+
+        function handleMiss() {
+            lives--;
+            updateLivesDisplay();
+            playMiss();
+            if (navigator.vibrate) {
+                try { navigator.vibrate(100); } catch(e){}
+            }
+            screenShake = 0.2;
+            
+            if (lives <= 0) {
+                endGame();
+            } else {
+                spawnNextLeaf();
+            }
+        }
+
+        function updateLivesDisplay() {
+            let s = '';
+            for(let i=0; i<lives; i++) s += '•'; 
+            livesDisplay.innerText = s;
+        }
+
+        function increaseDifficulty() {
+            let minScale = 0.6;
+            let newScale = Math.max(minScale, 1 - score * 0.015);
+            for (let t of targets) {
+                t.baseScale = newScale;
+                t.scale = 1.3; 
+            }
+        }
+
+        function createParticles(x, y, color) {
+            for (let i=0; i<12; i++) {
+                particles.push({
+                    x: x, y: y,
+                    vx: (Math.random()-0.5)*500,
+                    vy: (Math.random()-0.5)*500,
+                    life: 1, color: color
+                });
+            }
+        }
+
+        class Leaf {
+            constructor() {
+                this.x = width / 2;
+                this.y = height * 0.82;
+                this.vx = 0; this.vy = 0;
+                this.rotation = Math.random() * Math.PI * 2;
+                this.angularVelocity = 0;
+                this.scale = 0; 
+                this.targetScale = 1;
+                this.shapeType = SHAPE_KEYS[Math.floor(Math.random() * SHAPE_KEYS.length)];
+                this.color = LEAF_COLORS[Math.floor(Math.random() * LEAF_COLORS.length)];
+                this.state = 'SPAWNING';
+                this.alpha = 1;
+                this.idleTimer = 4; // seconds
+                this.alreadyMissed = false;
+            }
+
+            update(dt) {
+                if (this.state === 'SPAWNING') {
+                    this.scale += (this.targetScale - this.scale) * dt * 10;
+                    if (this.targetScale - this.scale < 0.01) {
+                        this.scale = this.targetScale;
+                        this.state = 'IDLE';
+                    }
+                }
+                else if (this.state === 'IDLE') {
+                    this.idleTimer -= dt;
+                    if (Math.abs(windState.currentVelocity) > 250) {
+                        this.idleTimer -= dt * 2; // wind drains patience
+                    }
+                    if (this.idleTimer <= 0) {
+                        this.state = 'AIRBORNE';
+                        this.vx = (Math.random() < 0.5 ? -1 : 1) * (400 + Math.random() * 400);
+                        this.vy = -200 - Math.random() * 300;
+                        this.angularVelocity = (Math.random() - 0.5) * 20;
+                        this.alreadyMissed = true;
+                        handleMiss();
+                    }
+                    this.y = height * 0.82 + Math.sin(performance.now() / 250) * 4;
+                }
+                else if (this.state === 'DRAGGED') {
+                    this.scale += (this.targetScale * 1.2 - this.scale) * dt * 12;
+                }
+                else if (this.state === 'AIRBORNE') {
+                    this.vy += 1500 * dt; // gravity
+                    this.vx += windState.currentVelocity * dt;
+                    this.x += this.vx * dt;
+                    this.y += this.vy * dt;
+                    this.rotation += this.angularVelocity * dt;
+
+                    let matchedTarget = null;
+                    let closestDist = Infinity;
+                    for (let t of targets) {
+                        let dist = Math.hypot(this.x - t.x, this.y - t.y);
+                        let snapRadius = 40 + 20 * t.baseScale;
+                        if (dist < snapRadius && dist < closestDist) {
+                            closestDist = dist;
+                            matchedTarget = t;
+                        }
+                    }
+
+                    if (matchedTarget && !this.alreadyMissed) {
+                        if (this.shapeType === matchedTarget.shapeType) {
+                            this.state = 'SNAPPING';
+                            this.startX = this.x; this.startY = this.y;
+                            this.targetX = matchedTarget.x; this.targetY = matchedTarget.y;
+                            this.startRot = this.rotation;
+                            this.snapTime = 0;
+                            
+                            score++;
+                            scoreDisplay.innerText = score;
+                            if (navigator.vibrate) { try{ navigator.vibrate(50); }catch(e){} }
+                            playThunk();
+                            createParticles(this.targetX, this.targetY, this.color);
+                            increaseDifficulty();
+                            matchedTarget.scale = 1.4;
+                        } else {
+                            this.vx = -this.vx * 0.5 + (Math.random()-0.5)*200;
+                            this.vy = Math.abs(this.vy) * 0.5 + 400;
+                            this.alreadyMissed = true;
+                            handleMiss();
+                        }
+                    }
+
+                    if (this.y > height + 100 || this.x < -100 || this.x > width + 100) {
+                        this.state = 'DEAD';
+                        if (!this.alreadyMissed) {
+                            this.alreadyMissed = true;
+                            handleMiss();
+                        }
+                    }
+                }
+                else if (this.state === 'SNAPPING') {
+                    this.snapTime += dt;
+                    let t = Math.min(this.snapTime / 0.15, 1);
+                    let ease = 1 - Math.pow(1 - t, 3);
+                    this.x = this.startX + (this.targetX - this.startX) * ease;
+                    this.y = this.startY + (this.targetY - this.startY) * ease;
+                    
+                    let rotDiff = (0 - this.startRot) % (Math.PI * 2);
+                    if (rotDiff > Math.PI) rotDiff -= Math.PI * 2;
+                    if (rotDiff < -Math.PI) rotDiff += Math.PI * 2;
+                    this.rotation = this.startRot + rotDiff * ease;
+
+                    if (t >= 1) {
+                        this.state = 'CAUGHT';
+                        this.rotation = 0;
+                        spawnNextLeaf();
+                    }
+                }
+                else if (this.state === 'CAUGHT') {
+                    this.alpha -= dt * 3;
+                    this.scale += dt * 0.5;
+                    if (this.alpha <= 0) this.state = 'DEAD';
+                }
+                else if (this.state === 'TITLE_FLOAT') {
+                    this.vx += windState.currentVelocity * dt * 0.5;
+                    this.x += this.vx * dt;
+                    this.y += this.vy * dt;
+                    this.rotation += this.angularVelocity * dt;
+                    if (this.y > height + 100 || this.x > width + 100 || this.x < -100) {
+                        this.state = 'DEAD';
+                    }
+                }
+            }
+
+            draw(ctx, themeColors) {
+                if (this.state === 'DEAD') return;
+                ctx.save();
+                ctx.translate(this.x, this.y);
+                ctx.rotate(this.rotation);
+                ctx.scale(this.scale, this.scale);
+                ctx.globalAlpha = this.alpha;
+                
+                ctx.fillStyle = this.color;
+                if (this.state === 'DRAGGED' || this.state === 'IDLE') {
+                    ctx.shadowBlur = 15;
+                    ctx.shadowColor = this.color;
+                } else if (this.state === 'CAUGHT' || this.state === 'SNAPPING') {
+                    ctx.shadowBlur = 25;
+                    ctx.shadowColor = this.color;
+                }
+
+                Shapes[this.shapeType](ctx);
+                ctx.fill();
+
+                ctx.strokeStyle = themeColors.leafInner;
+                ctx.lineWidth = 2;
+                ctx.beginPath();
+                ctx.moveTo(0, 0);
+                ctx.lineTo(0, this.shapeType === 'MAPLE' ? -20 : -25);
+                ctx.stroke();
+                ctx.restore();
+
+                if (this.state === 'IDLE') {
+                    ctx.save();
+                    ctx.translate(this.x, this.y + 45);
+                    ctx.fillStyle = 'rgba(150,150,150,0.3)';
+                    ctx.fillRect(-20, 0, 40, 4);
+                    let pct = Math.max(0, this.idleTimer / 4);
+                    ctx.fillStyle = pct < 0.3 ? '#FF4D4D' : 'rgba(200,200,200,0.9)';
+                    ctx.fillRect(-20, 0, 40 * pct, 4);
+                    ctx.restore();
+
+                    // Affordance ring
+                    ctx.save();
+                    ctx.translate(this.x, this.y);
+                    ctx.beginPath();
+                    ctx.arc(0, 0, 50 + Math.sin(performance.now()/150)*5, 0, Math.PI*2);
+                    ctx.strokeStyle = themeColors.windColor;
+                    ctx.lineWidth = 2;
+                    ctx.stroke();
+                    ctx.restore();
+                }
+            }
+        }
+
+        function updateWind(dt) {
+            if (windState.duration > 0) {
+                windState.duration -= dt;
+                if (windState.duration <= 0) {
+                    windState.targetVelocity = 0;
+                    windState.timer = 3 + Math.random() * 5; 
+                }
+            } else {
+                windState.timer -= dt;
+                if (windState.timer <= 0) {
+                    windState.duration = 1.5 + Math.random() * 1.5; 
+                    let dir = Math.random() < 0.5 ? -1 : 1;
+                    windState.targetVelocity = dir * (300 + Math.random() * 500 + score * 10); 
+                }
+            }
+            windState.currentVelocity += (windState.targetVelocity - windState.currentVelocity) * dt * 2.5;
+        }
+
+        function updateAndDrawWindParticles(ctx, dt, color) {
+            if (Math.abs(windState.currentVelocity) > 150 && Math.random() < 0.4) {
+                windParticles.push({
+                    x: windState.currentVelocity > 0 ? -100 : width + 100,
+                    y: Math.random() * height,
+                    length: 40 + Math.random() * 100,
+                    speed: windState.currentVelocity * (0.8 + Math.random() * 0.4),
+                    alpha: Math.random() * 0.4 + 0.1
+                });
+            }
+            
+            ctx.lineWidth = 2;
+            ctx.strokeStyle = color;
+            for (let i = windParticles.length - 1; i >= 0; i--) {
+                let p = windParticles[i];
+                p.x += p.speed * dt;
+                ctx.beginPath();
+                ctx.moveTo(p.x, p.y);
+                ctx.lineTo(p.x - p.length * Math.sign(p.speed), p.y);
+                ctx.globalAlpha = p.alpha;
+                ctx.stroke();
+                
+                if (p.speed > 0 && p.x - p.length > width + 100) windParticles.splice(i, 1);
+                else if (p.speed < 0 && p.x + p.length < -100) windParticles.splice(i, 1);
+            }
+            ctx.globalAlpha = 1;
+        }
+
+        // Input Handling
+        let isDragging = false;
+        let dragPoints = [];
+        let activeLeaf = null;
+
+        canvas.addEventListener('pointerdown', (e) => {
+            if (gameState !== 'PLAYING') return;
+            activeLeaf = leaves.find(l => l.state === 'IDLE');
+            if (!activeLeaf) return;
+
+            let dx = e.clientX - activeLeaf.x;
+            let dy = e.clientY - activeLeaf.y;
+            if (Math.hypot(dx, dy) < 90) { 
+                isDragging = true;
+                activeLeaf.state = 'DRAGGED';
+                dragPoints = [{ x: e.clientX, y: e.clientY, time: performance.now() }];
+            }
+        });
+
+        canvas.addEventListener('pointermove', (e) => {
+            if (!isDragging || !activeLeaf) return;
+            activeLeaf.x = e.clientX;
+            activeLeaf.y = e.clientY;
+            dragPoints.push({ x: e.clientX, y: e.clientY, time: performance.now() });
+            if (dragPoints.length > 8) dragPoints.shift();
+        });
+
+        canvas.addEventListener('pointerup', (e) => {
+            if (!isDragging || !activeLeaf) return;
+            isDragging = false;
+            activeLeaf.state = 'AIRBORNE';
+            
+            let now = performance.now();
+            let valid = dragPoints.filter(p => now - p.time < 120);
+            if (valid.length >= 2) {
+                let p1 = valid[0];
+                let p2 = valid[valid.length - 1];
+                let dt = (p2.time - p1.time) / 1000;
+                if (dt > 0.005) {
+                    let vx = (p2.x - p1.x) / dt;
+                    let vy = (p2.y - p1.y) / dt;
+                    let speed = Math.hypot(vx, vy);
+                    let maxSpeed = 3500;
+                    if (speed > maxSpeed) {
+                        vx = (vx / speed) * maxSpeed;
+                        vy = (vy / speed) * maxSpeed;
+                    }
+                    activeLeaf.vx = vx;
+                    activeLeaf.vy = vy;
+                    
+                    // generous upwards assist for weak flicks
+                    if (vy < -100 && speed < 1200) {
+                        activeLeaf.vy = -1400;
+                        activeLeaf.vx *= 1.5; // boost horizontal a bit too
+                    }
+                } else {
+                    activeLeaf.vx = 0; activeLeaf.vy = 0;
+                }
+            } else {
+                activeLeaf.vx = 0; activeLeaf.vy = 0;
+            }
+            activeLeaf.angularVelocity = (Math.random() - 0.5) * 15;
+            activeLeaf = null;
+        });
+
+        canvas.addEventListener('touchstart', e => e.preventDefault(), { passive: false });
+
+        function startGame() {
+            initAudio();
+            gameState = 'PLAYING';
+            score = 0;
+            lives = 3;
+            leaves = [];
+            particles = [];
+            windParticles = [];
+            windState = { timer: 4, duration: 0, targetVelocity: 0, currentVelocity: 0 };
+            screenShake = 0;
+            
+            scoreDisplay.innerText = score;
+            updateLivesDisplay();
+            initTargets();
+            
+            uiTitle.classList.add('hidden');
+            uiGameOver.classList.add('hidden');
+            uiHud.classList.remove('hidden');
+
+            spawnNextLeaf();
+        }
+
+        function endGame() {
+            gameState = 'GAME_OVER';
+            finalScoreDisplay.innerText = score;
+            uiHud.classList.add('hidden');
+            uiGameOver.classList.remove('hidden');
+        }
+
+        document.getElementById('start-btn').addEventListener('click', startGame);
+        document.getElementById('restart-btn').addEventListener('click', startGame);
+
+        function loop() {
+            let now = performance.now();
+            let dt = Math.min((now - lastTime) / 1000, 0.05);
+            lastTime = now;
+
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+            let tColors = getColors();
+
+            updateWind(dt);
+
+            ctx.save();
+            if (screenShake > 0) {
+                screenShake -= dt;
+                let amt = screenShake * 40;
+                ctx.translate((Math.random()-0.5)*amt, (Math.random()-0.5)*amt);
+            }
+
+            if (gameState === 'PLAYING') {
+                for (let t of targets) {
+                    t.scale += (t.baseScale - t.scale) * dt * 8;
+                    ctx.save();
+                    ctx.translate(t.x, t.y);
+                    ctx.scale(t.scale, t.scale);
+                    
+                    ctx.fillStyle = tColors.slotColor;
+                    Shapes[t.shapeType](ctx);
+                    ctx.fill();
+                    
+                    ctx.strokeStyle = tColors.slotBorder;
+                    ctx.setLineDash([6, 6]);
+                    ctx.lineWidth = 2;
+                    ctx.stroke();
+                    ctx.restore();
+                }
+            }
+
+            updateAndDrawWindParticles(ctx, dt, tColors.windColor);
+
+            if (gameState === 'TITLE' || gameState === 'GAME_OVER') {
+                if (Math.random() < 0.03) {
+                    let leaf = new Leaf();
+                    leaf.state = 'TITLE_FLOAT';
+                    leaf.x = Math.random() * width;
+                    leaf.y = -50;
+                    leaf.vx = (Math.random() - 0.5) * 100;
+                    leaf.vy = 80 + Math.random() * 120;
+                    leaf.angularVelocity = (Math.random() - 0.5) * 3;
+                    leaves.push(leaf);
+                }
+            }
+
+            for (let i = leaves.length - 1; i >= 0; i--) {
+                leaves[i].update(dt);
+                leaves[i].draw(ctx, tColors);
+                if (leaves[i].state === 'DEAD') {
+                    leaves.splice(i, 1);
+                }
+            }
+
+            for (let i = particles.length - 1; i >= 0; i--) {
+                let p = particles[i];
+                p.life -= dt * 1.5;
+                if (p.life <= 0) {
+                    particles.splice(i, 1);
+                    continue;
+                }
+                p.x += p.vx * dt;
+                p.y += p.vy * dt;
+                ctx.globalAlpha = p.life;
+                ctx.fillStyle = p.color;
+                ctx.beginPath();
+                ctx.arc(p.x, p.y, 4 * p.life, 0, Math.PI*2);
+                ctx.fill();
+            }
+            ctx.globalAlpha = 1;
+            ctx.restore();
+
+            requestAnimationFrame(loop);
+        }
+
+        resize();
+        requestAnimationFrame(loop);
+    })();
+    </script>
 </body>
 </html>

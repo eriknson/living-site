@@ -3,71 +3,87 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
-<title>Gutter Thoughts</title>
+<title>Context Rescue</title>
 <style>
 *,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
 :root{
-  --bg:#e8dcc8;--bg2:#d4c4a8;--ink:#3d2e1f;--ink-soft:#6b5340;
-  --water:#5a8a7a;--water-light:#7aab98;--leaf:#c45c2a;--leaf-gold:#d4a017;
-  --paper:#f5ead6;--overlay:rgba(245,234,214,.92);--btn:#3d5a4a;--btn-text:#f5ead6;
-  --hud-bg:rgba(245,234,214,.75);--drain:#2a3d35;
+  --bg:#b8c4c8;--bg2:#9aa8ae;--fog:#c8d0d4;--ink:#1a2820;--ink-soft:#4a5a52;
+  --term:#2ecc71;--term-dim:#1a8f4a;--term-glow:rgba(46,204,113,.35);
+  --warn:#e07030;--danger:#c0392b;--panel:rgba(200,208,212,.88);
+  --btn:#1a2820;--btn-text:#2ecc71;--hud:rgba(200,208,212,.82);
+  --shutter:#3d4a52;--shutter-edge:#5a6870;
 }
 @media(prefers-color-scheme:dark){
   :root{
-    --bg:#1a1610;--bg2:#252018;--ink:#d4c4a8;--ink-soft:#9a8870;
-    --water:#4a7a6a;--water-light:#6a9a88;--leaf:#e07030;--leaf-gold:#e8b830;
-    --paper:#2a2318;--overlay:rgba(26,22,16,.94);--btn:#5a8a7a;--btn-text:#f0e8d8;
-    --hud-bg:rgba(26,22,16,.8);--drain:#1a2820;
+    --bg:#1a2228;--bg2:#252e36;--fog:#2a343c;--ink:#b8c8c0;--ink-soft:#6a7a72;
+    --term:#3dff8a;--term-dim:#1a9f52;--term-glow:rgba(61,255,138,.25);
+    --warn:#ff8844;--danger:#ff5544;--panel:rgba(26,34,40,.92);
+    --btn:#3dff8a;--btn-text:#0a1218;--hud:rgba(26,34,40,.85);
+    --shutter:#1a2228;--shutter-edge:#3a4850;
   }
 }
 html,body{width:100%;height:100%;overflow:hidden;background:var(--bg);font-family:ui-monospace,'SFMono-Regular',Menlo,monospace;color:var(--ink);touch-action:none;user-select:none;-webkit-user-select:none}
 #app{position:fixed;inset:0;width:100dvw;height:100dvh;display:flex;flex-direction:column}
-#gameCanvas{display:block;width:100%;flex:1;touch-action:none;user-select:none;background:var(--paper)}
-#hud{position:absolute;top:0;left:0;right:0;padding:max(12px,env(safe-area-inset-top)) 16px 8px;display:flex;justify-content:space-between;align-items:flex-start;pointer-events:none;z-index:2}
-.hud-block{background:var(--hud-bg);padding:6px 12px;border-radius:4px;font-size:11px;letter-spacing:.05em;line-height:1.4}
-.hud-block span{display:block;font-size:18px;font-weight:600;margin-top:2px}
-#clogBar{position:absolute;bottom:max(16px,env(safe-area-inset-bottom));left:16px;right:16px;height:8px;background:var(--bg2);border-radius:4px;overflow:hidden;pointer-events:none;z-index:2;border:1px solid var(--ink-soft)}
-#clogFill{height:100%;width:0%;background:linear-gradient(90deg,var(--leaf),var(--leaf-gold));transition:width .15s;border-radius:3px}
-#boostBadge{position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);font-size:14px;letter-spacing:.15em;color:var(--water-light);opacity:0;pointer-events:none;z-index:3;transition:opacity .3s;text-shadow:0 0 20px var(--water-light)}
-#boostBadge.show{opacity:1}
-.screen{position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;z-index:10;pointer-events:none;padding:24px;text-align:center;transition:opacity .4s}
+#gameCanvas{display:block;width:100%;flex:1;touch-action:none;user-select:none;background:var(--fog)}
+#hud{position:absolute;top:0;left:0;right:0;padding:max(10px,env(safe-area-inset-top)) 14px 6px;display:flex;justify-content:space-between;align-items:flex-start;pointer-events:none;z-index:2;gap:8px}
+.hud-block{background:var(--hud);padding:5px 10px;border-radius:3px;font-size:10px;letter-spacing:.06em;line-height:1.3;border:1px solid var(--ink-soft)}
+.hud-block span{display:block;font-size:16px;font-weight:600;margin-top:1px;color:var(--term)}
+#commitWrap{position:absolute;bottom:max(14px,env(safe-area-inset-bottom));left:14px;right:14px;pointer-events:none;z-index:2}
+#commitLabel{font-size:9px;letter-spacing:.12em;color:var(--ink-soft);margin-bottom:4px;display:flex;justify-content:space-between}
+#commitBar{height:10px;background:var(--bg2);border-radius:2px;overflow:hidden;border:1px solid var(--ink-soft);position:relative}
+#commitFill{height:100%;width:0%;background:var(--term);border-radius:1px;transition:none;box-shadow:0 0 8px var(--term-glow)}
+#commitFill.snap{animation:snap .35s ease-out}
+@keyframes snap{0%{transform:scaleY(1)}40%{transform:scaleY(1.4);background:#fff}100%{transform:scaleY(1)}}
+#logPanel{position:absolute;top:max(52px,env(safe-area-inset-top));left:14px;width:min(220px,55vw);max-height:120px;overflow:hidden;pointer-events:none;z-index:2;font-size:9px;line-height:1.5;color:var(--term-dim);opacity:.85}
+.log-line{white-space:nowrap;overflow:hidden;text-overflow:ellipsis;animation:logIn .3s ease-out}
+@keyframes logIn{from{opacity:0;transform:translateX(-8px)}to{opacity:1;transform:none}}
+#slowBadge{position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);font-size:11px;letter-spacing:.2em;color:var(--term);opacity:0;pointer-events:none;z-index:3;transition:opacity .2s;text-shadow:0 0 12px var(--term-glow)}
+#slowBadge.show{opacity:.7}
+.screen{position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;z-index:10;pointer-events:none;padding:24px;text-align:center;transition:opacity .35s}
 .screen.hidden{opacity:0;visibility:hidden}
-.screen-inner{max-width:320px;pointer-events:none}
-.screen h1{font-size:clamp(22px,6vw,32px);font-weight:600;letter-spacing:.08em;margin-bottom:8px;color:var(--ink)}
-.screen .sub{font-size:12px;color:var(--ink-soft);line-height:1.6;margin-bottom:24px;letter-spacing:.03em}
-.screen .hint{font-size:10px;color:var(--ink-soft);margin-top:16px;opacity:.7}
-.btn{display:inline-block;min-width:180px;min-height:48px;padding:14px 28px;font-family:inherit;font-size:14px;font-weight:600;letter-spacing:.12em;text-transform:uppercase;background:var(--btn);color:var(--btn-text);border:none;border-radius:4px;cursor:pointer;pointer-events:auto;touch-action:manipulation;-webkit-tap-highlight-color:transparent;transition:transform .12s,opacity .12s}
-.btn:active{transform:scale(.96);opacity:.85}
-#finalScore{font-size:28px;margin:12px 0;color:var(--leaf)}
-.swipe-hint{position:absolute;bottom:max(40px,env(safe-area-inset-bottom));left:0;right:0;text-align:center;font-size:10px;color:var(--ink-soft);opacity:.5;pointer-events:none;z-index:2;letter-spacing:.1em}
+.screen-inner{max-width:340px;pointer-events:none}
+.screen h1{font-size:clamp(20px,5.5vw,30px);font-weight:600;letter-spacing:.1em;margin-bottom:6px;color:var(--term);text-shadow:0 0 20px var(--term-glow)}
+.screen .tag{font-size:10px;color:var(--ink-soft);letter-spacing:.15em;margin-bottom:14px}
+.screen .sub{font-size:11px;color:var(--ink-soft);line-height:1.65;margin-bottom:22px;letter-spacing:.02em}
+.screen .hint{font-size:9px;color:var(--ink-soft);margin-top:14px;opacity:.65;letter-spacing:.05em}
+.btn{display:inline-block;min-width:200px;min-height:48px;padding:14px 28px;font-family:inherit;font-size:13px;font-weight:600;letter-spacing:.14em;text-transform:uppercase;background:var(--btn);color:var(--btn-text);border:2px solid var(--term);border-radius:3px;cursor:pointer;pointer-events:auto;touch-action:manipulation;-webkit-tap-highlight-color:transparent;transition:transform .1s,box-shadow .1s;box-shadow:0 0 12px var(--term-glow)}
+.btn:active{transform:scale(.96)}
+#finalScore{font-size:32px;margin:10px 0;color:var(--term);text-shadow:0 0 16px var(--term-glow)}
+#commitsDone{font-size:12px;color:var(--ink-soft);margin-bottom:16px}
+.control-hint{position:absolute;bottom:max(36px,env(safe-area-inset-bottom));left:0;right:0;text-align:center;font-size:9px;color:var(--ink-soft);opacity:.45;pointer-events:none;z-index:2;letter-spacing:.08em}
 </style>
 </head>
 <body>
 <div id="app">
   <canvas id="gameCanvas"></canvas>
   <div id="hud">
-    <div class="hud-block">THOUGHTS<span id="scoreVal">0</span></div>
-    <div class="hud-block">TIME<span id="timeVal">45</span></div>
-    <div class="hud-block">COMBO<span id="comboVal">0</span></div>
+    <div class="hud-block">PACKETS<span id="scoreVal">0</span></div>
+    <div class="hud-block">TIME<span id="timeVal">50</span></div>
+    <div class="hud-block">COMMITS<span id="commitVal">0</span></div>
   </div>
-  <div id="clogBar"><div id="clogFill"></div></div>
-  <div id="boostBadge">WHOOSH — GLIDING</div>
-  <div class="swipe-hint" id="swipeHint">← SWIPE LANES →</div>
+  <div id="logPanel"></div>
+  <div id="commitWrap">
+    <div id="commitLabel"><span>micro-commit</span><span id="commitPct">0%</span></div>
+    <div id="commitBar"><div id="commitFill"></div></div>
+  </div>
+  <div id="slowBadge">◆ TIME DILATED ◆</div>
+  <div class="control-hint" id="ctrlHint">HOLD to slow · RELEASE + swipe to dash lanes</div>
   <div class="screen" id="titleScreen">
     <div class="screen-inner">
-      <h1>GUTTER THOUGHTS</h1>
-      <p class="sub">Steer your paper boat through autumn gutters. Scoop fallen leaves — half-written thoughts — before they clog the drain.</p>
-      <button class="btn" data-smoke="start" id="startBtn">Set Sail</button>
-      <p class="hint">Swipe or use ← → keys</p>
+      <h1>CONTEXT RESCUE</h1>
+      <p class="tag">clear dusk · 11°c · agents dormant</p>
+      <p class="sub">Firewall shutters descend on orphaned data. Hold to dilate time, release and swipe to dash between lanes. Scoop packets before context vanishes — each rescue writes a log line.</p>
+      <button class="btn" data-smoke="start" id="startBtn">Initialize</button>
+      <p class="hint">Hold anywhere · swipe on release · ← → keys</p>
     </div>
   </div>
   <div class="screen hidden" id="gameOverScreen">
     <div class="screen-inner">
-      <h1 id="goTitle">DRAIN CLOGGED</h1>
-      <p class="sub" id="goSub">The gutter overflowed. Your thoughts washed away.</p>
+      <h1 id="goTitle">ACCESS DENIED</h1>
+      <p class="sub" id="goSub">The firewall sealed your lane. Context lost.</p>
       <div id="finalScore">0</div>
-      <p class="sub">thoughts ferried to shore</p>
-      <button class="btn" data-smoke="restart" id="restartBtn">Try Again</button>
+      <p id="commitsDone">0 commits shipped</p>
+      <button class="btn" data-smoke="restart" id="restartBtn">Reboot</button>
     </div>
   </div>
 </div>
@@ -79,616 +95,667 @@ var canvas = document.getElementById('gameCanvas');
 var ctx = canvas && canvas.getContext ? canvas.getContext('2d') : null;
 var scoreEl = document.getElementById('scoreVal');
 var timeEl = document.getElementById('timeVal');
-var comboEl = document.getElementById('comboVal');
-var clogFill = document.getElementById('clogFill');
-var boostBadge = document.getElementById('boostBadge');
+var commitValEl = document.getElementById('commitVal');
+var commitFill = document.getElementById('commitFill');
+var commitPctEl = document.getElementById('commitPct');
+var logPanel = document.getElementById('logPanel');
+var slowBadge = document.getElementById('slowBadge');
 var titleScreen = document.getElementById('titleScreen');
 var gameOverScreen = document.getElementById('gameOverScreen');
 var finalScoreEl = document.getElementById('finalScore');
-var swipeHint = document.getElementById('swipeHint');
+var commitsDoneEl = document.getElementById('commitsDone');
+var ctrlHint = document.getElementById('ctrlHint');
 var startBtn = document.getElementById('startBtn');
 var restartBtn = document.getElementById('restartBtn');
 var goTitle = document.getElementById('goTitle');
 var goSub = document.getElementById('goSub');
 
-var W = 360, H = 640;
-var LANES = 3;
+var W = 360, H = 640, LANES = 3;
 var state = 'title';
-var lane = 1;
-var score = 0, combo = 0, maxCombo = 0;
-var timeLeft = 45;
-var clog = 0, maxClog = 100;
-var boostTimer = 0;
+var lane = 1, targetLane = 1;
+var score = 0, commits = 0, commitProg = 0;
+var timeLeft = 50;
 var gameTime = 0;
-var scrollSpeed = 90;
-var baseSpeed = 90;
-var leaves = [];
+var scrollSpeed = 110;
+var baseSpeed = 110;
+var shutters = [];
+var packets = [];
 var particles = [];
-var ripples = [];
-var rainDrops = [];
+var dashTrail = [];
 var spawnTimer = 0;
-var spawnInterval = 1.2;
-var laneWidth = 0;
-var laneOffsetX = 0;
-var boatY = 0;
-var boatTilt = 0;
-var targetTilt = 0;
+var spawnInterval = 2.4;
+var laneWidth = 0, laneOffsetX = 0;
+var playerY = 0;
+var isSlow = false;
+var slowFactor = 0.28;
+var dashTimer = 0, dashFrom = 1, dashTo = 1;
+var dashDuration = 0.14;
+var isDashing = false;
+var holdStartX = 0, holdStartY = 0;
+var pendingSwipe = 0;
 var shakeX = 0, shakeY = 0;
+var flashAlpha = 0;
 var audioCtx = null;
 var lastTs = 0;
 var animId = 0;
+var diffLevel = 0;
+var hitStop = 0;
+var bgGlyphs = [];
+
+var LOG_MSGS = [
+  'rescue ctx_0x%02x before purge',
+  'orphan packet %02x → buffer',
+  'git add packet_%02x',
+  'agent.spawn(packet_%02x)',
+  'commit -m "save ctx %02x"',
+  'flush queue[%02x] → disk',
+  'sync shard_%02x ok',
+  'checkpoint ctx_%02x written'
+];
 
 var colors = {
-  light: { paper:'#f5ead6', paper2:'#ebe0cc', water:'#7aab98', waterLight:'#9ec4b4', waterDeep:'#5a8a7a', ink:'#3d2e1f', leaf:'#c45c2a', leafGold:'#d4a017', drain:'#2a3d35' },
-  dark: { paper:'#2a2318', paper2:'#352e22', water:'#6a9a88', waterLight:'#8abbaa', waterDeep:'#4a7a6a', ink:'#d4c4a8', leaf:'#e07030', leafGold:'#e8b830', drain:'#1a2820' }
+  light: { fog:'#c8d0d4', fog2:'#b0bcc0', grid:'#a0acb0', term:'#2ecc71', termDim:'#1a8f4a', shutter:'#3d4a52', shutterEdge:'#5a6870', danger:'#c0392b', warn:'#e07030', ink:'#1a2820' },
+  dark: { fog:'#2a343c', fog2:'#1e2830', grid:'#3a444c', term:'#3dff8a', termDim:'#1a9f52', shutter:'#0e1418', shutterEdge:'#3a4850', danger:'#ff5544', warn:'#ff8844', ink:'#b8c8c0' }
 };
 
-function isDark(){ return window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches; }
+function isDark(){ try{ return window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches; }catch(e){ return false; } }
 function C(){ return isDark() ? colors.dark : colors.light; }
 
 function resize(){
   if(!canvas) return;
   var dpr = Math.min(window.devicePixelRatio || 1, 2);
   var rect = canvas.getBoundingClientRect();
-  W = rect.width || window.innerWidth;
-  H = rect.height || window.innerHeight;
+  W = rect.width || window.innerWidth || 360;
+  H = rect.height || window.innerHeight || 640;
   canvas.width = W * dpr;
   canvas.height = H * dpr;
   if(ctx) ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
-  laneWidth = W * 0.22;
+  laneWidth = W * 0.24;
   laneOffsetX = (W - laneWidth * LANES) / 2;
-  boatY = H * 0.72;
+  playerY = H * 0.78;
+  if(bgGlyphs.length === 0){
+    for(var i = 0; i < 18; i++){
+      bgGlyphs.push({ x:Math.random()*W, y:Math.random()*H, ch:String.fromCharCode(0x30+(i%16)), spd:8+Math.random()*20, a:0.03+Math.random()*0.06 });
+    }
+  }
 }
 
 function laneX(l){ return laneOffsetX + l * laneWidth + laneWidth * 0.5; }
 
 function initAudio(){
   try{
-    if(!audioCtx && typeof AudioContext !== 'undefined') audioCtx = new AudioContext();
-    else if(!audioCtx && typeof webkitAudioContext !== 'undefined') audioCtx = new webkitAudioContext();
+    if(!audioCtx){
+      if(typeof AudioContext !== 'undefined') audioCtx = new AudioContext();
+      else if(typeof webkitAudioContext !== 'undefined') audioCtx = new webkitAudioContext();
+    }
   }catch(e){}
 }
 
-function playTone(freq, dur, type, vol){
+function beep(freq, dur, vol){
   if(!audioCtx) return;
   try{
     if(audioCtx.state === 'suspended') audioCtx.resume();
-    var osc = audioCtx.createOscillator();
-    var gain = audioCtx.createGain();
-    osc.type = type || 'sine';
-    osc.frequency.value = freq;
-    gain.gain.setValueAtTime(vol || 0.08, audioCtx.currentTime);
-    gain.gain.exponentialRampToValueAtTime(0.001, audioCtx.currentTime + dur);
-    osc.connect(gain);
-    gain.connect(audioCtx.destination);
-    osc.start();
-    osc.stop(audioCtx.currentTime + dur);
+    var o = audioCtx.createOscillator();
+    var g = audioCtx.createGain();
+    o.type = 'square';
+    o.frequency.value = freq;
+    g.gain.setValueAtTime((vol || 0.08) * 0.001, audioCtx.currentTime);
+    g.gain.exponentialRampToValueAtTime((vol || 0.08) * 0.001, audioCtx.currentTime + 0.01);
+    g.gain.exponentialRampToValueAtTime(0.001, audioCtx.currentTime + dur);
+    o.connect(g); g.connect(audioCtx.destination);
+    o.start(); o.stop(audioCtx.currentTime + dur);
   }catch(e){}
 }
 
-function playCollect(gold){
-  playTone(gold ? 660 : 440, 0.12, 'sine', 0.1);
-  if(gold) setTimeout(function(){ playTone(880, 0.1, 'sine', 0.08); }, 60);
+function vibrate(ms){ try{ if(navigator.vibrate) navigator.vibrate(ms); }catch(e){} }
+
+function addLog(msg){
+  if(!logPanel) return;
+  var div = document.createElement('div');
+  div.className = 'log-line';
+  div.textContent = '> ' + msg;
+  logPanel.insertBefore(div, logPanel.firstChild);
+  while(logPanel.children.length > 6) logPanel.removeChild(logPanel.lastChild);
 }
 
-function playWhoosh(){
-  if(!audioCtx) return;
-  try{
-    if(audioCtx.state === 'suspended') audioCtx.resume();
-    var bufSize = audioCtx.sampleRate * 0.4;
-    var buf = audioCtx.createBuffer(1, bufSize, audioCtx.sampleRate);
-    var data = buf.getChannelData(0);
-    for(var i = 0; i < bufSize; i++) data[i] = (Math.random() * 2 - 1) * (1 - i / bufSize);
-    var src = audioCtx.createBufferSource();
-    var filt = audioCtx.createBiquadFilter();
-    var gain = audioCtx.createGain();
-    filt.type = 'bandpass';
-    filt.frequency.value = 800;
-    filt.Q.value = 0.5;
-    gain.gain.setValueAtTime(0.15, audioCtx.currentTime);
-    gain.gain.exponentialRampToValueAtTime(0.001, audioCtx.currentTime + 0.4);
-    src.buffer = buf;
-    src.connect(filt);
-    filt.connect(gain);
-    gain.connect(audioCtx.destination);
-    src.start();
-  }catch(e){}
-}
-
-function playGameOver(){
-  playTone(220, 0.3, 'triangle', 0.1);
-  setTimeout(function(){ playTone(165, 0.4, 'triangle', 0.08); }, 150);
-}
-
-function spawnLeaf(){
-  var l = Math.floor(Math.random() * LANES);
-  var gold = Math.random() < 0.15;
-  var wobble = Math.random() * Math.PI * 2;
-  leaves.push({ lane: l, y: -30, gold: gold, wobble: wobble, rot: Math.random() * 6.28, collected: false, missed: false });
-}
-
-function spawnRain(n){
-  for(var i = 0; i < n; i++){
-    rainDrops.push({ x: Math.random() * W, y: Math.random() * H, len: 8 + Math.random() * 12, speed: 200 + Math.random() * 150, alpha: 0.1 + Math.random() * 0.2 });
-  }
-}
-
-function addParticles(x, y, col, n){
-  for(var i = 0; i < n; i++){
+function spawnBurst(x, y, col, n){
+  for(var i = 0; i < (n || 8); i++){
     var a = Math.random() * Math.PI * 2;
-    var sp = 40 + Math.random() * 80;
-    particles.push({ x: x, y: y, vx: Math.cos(a)*sp, vy: Math.sin(a)*sp - 30, life: 0.4 + Math.random()*0.3, maxLife: 0.7, col: col, size: 2 + Math.random()*3 });
+    var s = 40 + Math.random() * 120;
+    particles.push({ x:x, y:y, vx:Math.cos(a)*s, vy:Math.sin(a)*s, life:0.4+Math.random()*0.3, col:col, size:2+Math.random()*3 });
   }
 }
 
-function addRipple(x, y){
-  ripples.push({ x: x, y: y, r: 5, maxR: 40, life: 0.6, maxLife: 0.6 });
+function spawnShutter(){
+  var gapLane = Math.floor(Math.random() * LANES);
+  var gapSize = Math.max(0.35, 0.55 - diffLevel * 0.04);
+  var hasPacket = Math.random() > 0.25;
+  var isDecoy = diffLevel > 0 && Math.random() < 0.12 + diffLevel * 0.03;
+  shutters.push({
+    y: -80,
+    gapLane: gapLane,
+    gapSize: gapSize,
+    height: 28 + Math.random() * 16,
+    passed: false,
+    id: Math.random()
+  });
+  if(hasPacket){
+    var pLane = gapLane;
+    if(Math.random() < 0.15 && diffLevel > 1) pLane = (gapLane + 1 + Math.floor(Math.random()*2)) % LANES;
+    packets.push({
+      lane: pLane,
+      y: -40,
+      decoy: isDecoy,
+      collected: false,
+      pulse: Math.random() * Math.PI * 2,
+      id: Math.random()
+    });
+  }
+}
+
+function getPlayerX(){
+  if(isDashing){
+    var t = 1 - dashTimer / dashDuration;
+    t = t < 0.5 ? 2*t*t : 1 - Math.pow(-2*t+2,2)/2;
+    return laneX(dashFrom) + (laneX(dashTo) - laneX(dashFrom)) * t;
+  }
+  return laneX(lane);
+}
+
+function tryDash(dir){
+  if(state !== 'play' || isDashing) return;
+  var nl = lane + dir;
+  if(nl < 0 || nl >= LANES) return;
+  dashFrom = lane;
+  dashTo = nl;
+  lane = nl;
+  targetLane = nl;
+  isDashing = true;
+  dashTimer = dashDuration;
+  beep(320, 0.08, 12);
+  vibrate(8);
+  var px = getPlayerX();
+  for(var i = 0; i < 5; i++) dashTrail.push({ x:px, y:playerY, life:0.2, alpha:0.6-i*0.1 });
+}
+
+function collectPacket(p){
+  if(p.collected) return;
+  p.collected = true;
+  if(p.decoy){
+    score = Math.max(0, score - 2);
+    commitProg = Math.max(0, commitProg - 15);
+    shakeX = 6; shakeY = 4;
+    beep(80, 0.2, 15);
+    vibrate(30);
+    addLog('WARN decoy packet — integrity -15%');
+    addLog('ERROR checksum fail ctx_' + Math.floor(Math.random()*99));
+    flashAlpha = 0.3;
+    spawnBurst(laneX(p.lane), p.y, C().danger, 10);
+    if(scoreEl) scoreEl.textContent = score;
+    updateCommitUI();
+    return;
+  }
+  score++;
+  commitProg += 12 + Math.floor(diffLevel * 0.5);
+  var hex = Math.floor(Math.random() * 256);
+  var tmpl = LOG_MSGS[Math.floor(Math.random() * LOG_MSGS.length)];
+  addLog(tmpl.replace(/%02x/g, hex.toString(16).padStart(2,'0')));
+  beep(520 + score * 8, 0.06, 10);
+  vibrate(12);
+  spawnBurst(laneX(p.lane), p.y, C().term, 12);
+  hitStop = 0.04;
+  if(scoreEl) scoreEl.textContent = score;
+  if(commitProg >= 100){
+    commitProg = 0;
+    commits++;
+    diffLevel = Math.min(8, diffLevel + 1);
+    baseSpeed = 110 + diffLevel * 12;
+    spawnInterval = Math.max(1.0, 2.4 - diffLevel * 0.18);
+    if(commitValEl) commitValEl.textContent = commits;
+    if(commitFill){
+      commitFill.classList.add('snap');
+      setTimeout(function(){ if(commitFill) commitFill.classList.remove('snap'); }, 350);
+    }
+    beep(880, 0.15, 18);
+    vibrate([20, 30, 20]);
+    addLog('COMMIT OK — bar snapped shut ✓');
+    flashAlpha = 0.15;
+  }
+  updateCommitUI();
+}
+
+function updateCommitUI(){
+  var p = Math.min(100, commitProg);
+  if(commitFill) commitFill.style.width = p + '%';
+  if(commitPctEl) commitPctEl.textContent = Math.floor(p) + '%';
+}
+
+function hitShutter(){
+  state = 'over';
+  shakeX = 12; shakeY = 8;
+  beep(60, 0.4, 20);
+  vibrate(80);
+  if(goTitle) goTitle.textContent = 'ACCESS DENIED';
+  if(goSub) goSub.textContent = 'Firewall shutter sealed lane ' + lane + '. Context purged.';
+  if(finalScoreEl) finalScoreEl.textContent = score;
+  if(commitsDoneEl) commitsDoneEl.textContent = commits + ' commit' + (commits !== 1 ? 's' : '') + ' shipped';
+  if(gameOverScreen) gameOverScreen.classList.remove('hidden');
+  if(ctrlHint) ctrlHint.style.opacity = '0';
+  if(slowBadge) slowBadge.classList.remove('show');
+}
+
+function winGame(){
+  state = 'over';
+  beep(660, 0.1, 15);
+  setTimeout(function(){ beep(880, 0.15, 15); }, 120);
+  vibrate([15, 20, 15]);
+  if(goTitle) goTitle.textContent = 'SESSION SHIPPED';
+  if(goSub) goSub.textContent = 'All context rescued before dusk. Agents can rest.';
+  if(finalScoreEl) finalScoreEl.textContent = score;
+  if(commitsDoneEl) commitsDoneEl.textContent = commits + ' commit' + (commits !== 1 ? 's' : '') + ' shipped';
+  if(gameOverScreen) gameOverScreen.classList.remove('hidden');
+  if(ctrlHint) ctrlHint.style.opacity = '0';
+  if(slowBadge) slowBadge.classList.remove('show');
 }
 
 function resetGame(){
-  lane = 1;
-  score = 0;
-  combo = 0;
-  maxCombo = 0;
-  timeLeft = 45;
-  clog = 0;
-  boostTimer = 0;
+  state = 'play';
+  lane = 1; targetLane = 1;
+  score = 0; commits = 0; commitProg = 0;
+  timeLeft = 50;
   gameTime = 0;
-  scrollSpeed = baseSpeed;
-  leaves = [];
-  particles = [];
-  ripples = [];
-  rainDrops = [];
-  spawnTimer = 0;
-  spawnInterval = 1.2;
-  boatTilt = 0;
-  targetTilt = 0;
-  shakeX = 0;
-  shakeY = 0;
-  updateHUD();
-  spawnRain(40);
-}
-
-function startGame(){
-  resetGame();
-  state = 'playing';
-  titleScreen.classList.add('hidden');
-  gameOverScreen.classList.add('hidden');
-  swipeHint.style.opacity = '1';
+  scrollSpeed = 110; baseSpeed = 110;
+  diffLevel = 0;
+  shutters = []; packets = []; particles = []; dashTrail = [];
+  spawnTimer = 0; spawnInterval = 2.4;
+  isSlow = false; isDashing = false; dashTimer = 0;
+  shakeX = 0; shakeY = 0; flashAlpha = 0; hitStop = 0;
+  if(scoreEl) scoreEl.textContent = '0';
+  if(timeEl) timeEl.textContent = '50';
+  if(commitValEl) commitValEl.textContent = '0';
+  if(logPanel) logPanel.innerHTML = '';
+  updateCommitUI();
+  if(titleScreen) titleScreen.classList.add('hidden');
+  if(gameOverScreen) gameOverScreen.classList.add('hidden');
+  if(ctrlHint) ctrlHint.style.opacity = '0.45';
+  addLog('sys.init — firewall scan active');
+  addLog('awaiting packet rescue...');
   initAudio();
-  lastTs = performance.now();
-  if(animId) cancelAnimationFrame(animId);
-  animId = requestAnimationFrame(loop);
-}
-
-function endGame(reason){
-  state = 'over';
-  swipeHint.style.opacity = '0';
-  playGameOver();
-  if(typeof navigator !== 'undefined' && navigator.vibrate) try{ navigator.vibrate(200); }catch(e){}
-  if(goTitle) goTitle.textContent = reason === 'time' ? 'SUNSET REACHED' : 'DRAIN CLOGGED';
-  if(goSub) goSub.textContent = reason === 'time'
-    ? 'The drizzle thins. You ferried what you could before dusk.'
-    : 'The gutter overflowed. Your thoughts washed away.';
-  finalScoreEl.textContent = String(score);
-  gameOverScreen.classList.remove('hidden');
-}
-
-function updateHUD(){
-  if(scoreEl) scoreEl.textContent = String(score);
-  if(timeEl) timeEl.textContent = String(Math.ceil(timeLeft));
-  if(comboEl) comboEl.textContent = String(combo);
-  if(clogFill) clogFill.style.width = Math.min(100, clog / maxClog * 100) + '%';
-}
-
-function triggerBoost(){
-  boostTimer = 3;
-  scrollSpeed = baseSpeed * 1.6;
-  playWhoosh();
-  if(boostBadge){ boostBadge.classList.add('show'); setTimeout(function(){ boostBadge.classList.remove('show'); }, 2500); }
-  if(typeof navigator !== 'undefined' && navigator.vibrate) try{ navigator.vibrate([30,20,50]); }catch(e){}
-  addRipple(laneX(lane), boatY);
-  clog = Math.max(0, clog - 15);
-}
-
-function switchLane(dir){
-  if(state !== 'playing') return;
-  var nl = lane + dir;
-  if(nl < 0 || nl >= LANES) return;
-  lane = nl;
-  targetTilt = dir * 0.25;
-  playTone(300 + lane * 50, 0.05, 'sine', 0.04);
-}
-
-function collectLeaf(leaf){
-  leaf.collected = true;
-  var pts = leaf.gold ? 3 : 1;
-  score += pts;
-  combo++;
-  if(combo > maxCombo) maxCombo = combo;
-  playCollect(leaf.gold);
-  addParticles(laneX(leaf.lane), leaf.y, leaf.gold ? C().leafGold : C().leaf, leaf.gold ? 12 : 6);
-  addRipple(laneX(leaf.lane), leaf.y);
-  if(typeof navigator !== 'undefined' && navigator.vibrate) try{ navigator.vibrate(15); }catch(e){}
-  if(combo > 0 && combo % 5 === 0) triggerBoost();
-  updateHUD();
-}
-
-function missLeaf(leaf){
-  leaf.missed = true;
-  combo = 0;
-  clog += leaf.gold ? 12 : 6;
-  addParticles(laneX(leaf.lane), H - 20, C().drain, 4);
-  if(clog >= maxClog) endGame('clog');
-  updateHUD();
 }
 
 function update(dt){
-  if(state !== 'playing') return;
+  if(state !== 'play') return;
+  if(hitStop > 0){ hitStop -= dt; return; }
+  var eff = isSlow ? slowFactor : 1;
   gameTime += dt;
+  timeLeft -= dt;
+  if(timeEl) timeEl.textContent = Math.max(0, Math.ceil(timeLeft));
+  if(timeLeft <= 0){ winGame(); return; }
 
-  var escalation = Math.min(gameTime / 45, 1);
-  var narrowFactor = 1 - escalation * 0.15;
-  laneWidth = (W * 0.22) * narrowFactor;
-  laneOffsetX = (W - laneWidth * LANES) / 2;
+  scrollSpeed = baseSpeed + Math.sin(gameTime * 0.3) * 8;
 
-  baseSpeed = 90 + escalation * 60;
-  if(boostTimer > 0){
-    boostTimer -= dt;
-    if(boostTimer <= 0){ boostTimer = 0; scrollSpeed = baseSpeed; }
-  } else {
-    scrollSpeed = baseSpeed;
+  if(isDashing){
+    dashTimer -= dt;
+    if(dashTimer <= 0){ isDashing = false; dashTimer = 0; }
   }
 
-  spawnInterval = Math.max(0.35, 1.2 - escalation * 0.7);
   spawnTimer += dt;
   if(spawnTimer >= spawnInterval){
     spawnTimer = 0;
-    spawnLeaf();
-    if(escalation > 0.4 && Math.random() < escalation * 0.5) spawnLeaf();
+    spawnShutter();
+    if(diffLevel > 2 && Math.random() < 0.3) spawnShutter();
   }
 
-  timeLeft -= dt;
-  if(timeLeft <= 0){ timeLeft = 0; endGame('time'); return; }
+  var spd = scrollSpeed * eff * dt;
+  var px = getPlayerX();
+  var hitR = laneWidth * 0.22;
 
-  boatTilt += (targetTilt - boatTilt) * 8 * dt;
-  targetTilt *= 0.92;
-
-  var collectZone = 36;
-  for(var i = leaves.length - 1; i >= 0; i--){
-    var lf = leaves[i];
-    if(lf.collected || lf.missed) continue;
-    lf.y += scrollSpeed * dt;
-    lf.rot += dt * (lf.gold ? 3 : 2);
-    lf.wobble += dt * 4;
-    if(lf.lane === lane && Math.abs(lf.y - boatY) < collectZone){
-      collectLeaf(lf);
-    } else if(lf.y > H + 20){
-      missLeaf(lf);
+  for(var si = shutters.length - 1; si >= 0; si--){
+    var s = shutters[si];
+    s.y += spd;
+    if(!s.passed && s.y + s.height > playerY - 20){
+      s.passed = true;
+    }
+    if(s.y > H + 40){ shutters.splice(si, 1); continue; }
+    var inY = playerY > s.y - 8 && playerY < s.y + s.height + 8;
+    if(inY){
+      for(var l = 0; l < LANES; l++){
+        if(l === s.gapLane) continue;
+        if(Math.abs(laneX(l) - px) < hitR){
+          hitShutter();
+          return;
+        }
+      }
     }
   }
-  leaves = leaves.filter(function(l){ return !l.collected && !l.missed && l.y < H + 40; });
 
-  for(var j = particles.length - 1; j >= 0; j--){
-    var p = particles[j];
-    p.life -= dt;
-    p.x += p.vx * dt;
-    p.y += p.vy * dt;
-    p.vy += 120 * dt;
-    if(p.life <= 0) particles.splice(j, 1);
+  for(var pi = packets.length - 1; pi >= 0; pi--){
+    var p = packets[pi];
+    p.y += spd;
+    p.pulse += dt * 5;
+    if(p.y > H + 30){ packets.splice(pi, 1); continue; }
+    if(!p.collected && Math.abs(laneX(p.lane) - px) < hitR && Math.abs(p.y - playerY) < 28){
+      collectPacket(p);
+      packets.splice(pi, 1);
+    }
   }
 
-  for(var k = ripples.length - 1; k >= 0; k--){
-    ripples[k].life -= dt;
-    ripples[k].r += 60 * dt;
-    if(ripples[k].life <= 0) ripples.splice(k, 1);
+  for(var i = particles.length - 1; i >= 0; i--){
+    var pt = particles[i];
+    pt.x += pt.vx * dt; pt.y += pt.vy * dt;
+    pt.vy += 80 * dt;
+    pt.life -= dt;
+    if(pt.life <= 0) particles.splice(i, 1);
   }
 
-  var rainIntensity = 0.3 + escalation * 0.7;
-  if(rainDrops.length < 80 * rainIntensity){
-    spawnRain(Math.ceil(3 * rainIntensity));
-  }
-  for(var r = rainDrops.length - 1; r >= 0; r--){
-    var rd = rainDrops[r];
-    rd.y += rd.speed * dt * rainIntensity;
-    rd.x += 15 * dt;
-    if(rd.y > H) { rd.y = -10; rd.x = Math.random() * W; }
+  for(var j = dashTrail.length - 1; j >= 0; j--){
+    dashTrail[j].life -= dt;
+    if(dashTrail[j].life <= 0) dashTrail.splice(j, 1);
   }
 
-  shakeX *= 0.85;
-  shakeY *= 0.85;
-  updateHUD();
+  shakeX *= 0.85; shakeY *= 0.85;
+  flashAlpha *= 0.88;
 }
 
-function drawPaperTexture(){
+function drawBg(){
+  if(!ctx) return;
   var c = C();
-  var grd = ctx.createLinearGradient(0, 0, W, H);
-  grd.addColorStop(0, c.paper);
-  grd.addColorStop(0.5, c.paper2);
-  grd.addColorStop(1, c.paper);
-  ctx.fillStyle = grd;
+  var g = ctx.createLinearGradient(0, 0, 0, H);
+  g.addColorStop(0, isDark() ? '#283038' : '#c8b8a0');
+  g.addColorStop(0.12, isDark() ? '#1e2830' : '#b8c8c8');
+  g.addColorStop(0.5, c.fog);
+  g.addColorStop(1, isDark() ? '#141c22' : '#98a8ac');
+  ctx.fillStyle = g;
   ctx.fillRect(0, 0, W, H);
-}
 
-function drawGutters(escalation){
-  var c = C();
-  var gutterNarrow = escalation * 0.12;
-  for(var l = 0; l <= LANES; l++){
-    var gx = laneOffsetX + l * laneWidth;
-    ctx.strokeStyle = c.ink;
-    ctx.globalAlpha = 0.08 + gutterNarrow;
-    ctx.lineWidth = 2 + gutterNarrow * 10;
-    ctx.beginPath();
-    ctx.moveTo(gx, 0);
-    ctx.lineTo(gx, H);
-    ctx.stroke();
+  var dusk = ctx.createLinearGradient(0, 0, 0, H * 0.25);
+  dusk.addColorStop(0, isDark() ? 'rgba(200,140,80,0.08)' : 'rgba(210,160,100,0.15)');
+  dusk.addColorStop(1, 'rgba(0,0,0,0)');
+  ctx.fillStyle = dusk;
+  ctx.fillRect(0, 0, W, H * 0.25);
+
+  ctx.fillStyle = c.term;
+  for(var gi = 0; gi < bgGlyphs.length; gi++){
+    var bg = bgGlyphs[gi];
+    bg.y += bg.spd * 0.016;
+    if(bg.y > H) bg.y = -10;
+    ctx.globalAlpha = bg.a;
+    ctx.font = '10px ui-monospace, monospace';
+    ctx.fillText(bg.ch, bg.x, bg.y);
   }
   ctx.globalAlpha = 1;
 
-  for(var i = 0; i < LANES; i++){
-    var cx = laneX(i);
-    var wg = ctx.createLinearGradient(cx - laneWidth*0.4, 0, cx + laneWidth*0.4, 0);
-    wg.addColorStop(0, 'rgba(0,0,0,0)');
-    wg.addColorStop(0.5, c.water);
-    wg.addColorStop(1, 'rgba(0,0,0,0)');
-    ctx.globalAlpha = 0.12 + Math.sin(gameTime * 2 + i) * 0.03;
-    ctx.fillStyle = wg;
-    ctx.fillRect(cx - laneWidth*0.45, 0, laneWidth*0.9, H);
-  }
-  ctx.globalAlpha = 1;
-}
-
-function drawDrain(){
-  var c = C();
-  var dy = H - 8;
-  var dw = W * 0.5;
-  var dx = (W - dw) / 2;
-  ctx.fillStyle = c.drain;
-  ctx.globalAlpha = 0.6;
-  ctx.beginPath();
-  ctx.ellipse(W/2, dy, dw/2, 12, 0, 0, Math.PI * 2);
-  ctx.fill();
-  ctx.globalAlpha = 0.3 + (clog/maxClog)*0.4;
-  ctx.fillStyle = c.leaf;
-  ctx.beginPath();
-  ctx.ellipse(W/2, dy, (dw/2)*(clog/maxClog), 8*(clog/maxClog), 0, 0, Math.PI * 2);
-  ctx.fill();
-  ctx.globalAlpha = 1;
-}
-
-function drawLeaf(lf){
-  var c = C();
-  var x = laneX(lf.lane) + Math.sin(lf.wobble) * 4;
-  ctx.save();
-  ctx.translate(x, lf.y);
-  ctx.rotate(lf.rot);
-  var s = lf.gold ? 14 : 11;
-  ctx.globalAlpha = 0.85;
-  ctx.fillStyle = lf.gold ? c.leafGold : c.leaf;
-  ctx.beginPath();
-  ctx.moveTo(0, -s);
-  ctx.bezierCurveTo(s*0.8, -s*0.5, s, s*0.3, 0, s);
-  ctx.bezierCurveTo(-s, s*0.3, -s*0.8, -s*0.5, 0, -s);
-  ctx.fill();
-  ctx.strokeStyle = c.ink;
-  ctx.globalAlpha = 0.3;
-  ctx.lineWidth = 0.8;
-  ctx.beginPath();
-  ctx.moveTo(0, -s*0.8);
-  ctx.lineTo(0, s*0.7);
-  ctx.stroke();
-  if(lf.gold){
-    ctx.globalAlpha = 0.5;
-    ctx.fillStyle = c.ink;
-    ctx.font = '8px monospace';
-    ctx.textAlign = 'center';
-    ctx.fillText('…', 0, 2);
-  }
-  ctx.restore();
-}
-
-function drawBoat(){
-  var c = C();
-  var x = laneX(lane);
-  var y = boatY;
-  ctx.save();
-  ctx.translate(x + shakeX, y + shakeY);
-  ctx.rotate(boatTilt);
-
+  ctx.strokeStyle = c.grid;
   ctx.globalAlpha = 0.15;
-  ctx.fillStyle = c.ink;
-  ctx.beginPath();
-  ctx.ellipse(0, 8, 22, 6, 0, 0, Math.PI*2);
-  ctx.fill();
-
-  ctx.globalAlpha = 0.9;
-  ctx.fillStyle = isDark() ? '#e8dcc8' : '#faf5eb';
-  ctx.strokeStyle = c.ink;
-  ctx.lineWidth = 1.2;
-  ctx.beginPath();
-  ctx.moveTo(-18, 0);
-  ctx.quadraticCurveTo(0, -8, 18, 0);
-  ctx.lineTo(14, 6);
-  ctx.quadraticCurveTo(0, 10, -14, 6);
-  ctx.closePath();
-  ctx.fill();
-  ctx.stroke();
-
-  ctx.globalAlpha = 0.4;
-  ctx.fillStyle = c.water;
-  ctx.beginPath();
-  ctx.moveTo(-12, 2);
-  ctx.lineTo(12, 2);
-  ctx.lineTo(10, 5);
-  ctx.lineTo(-10, 5);
-  ctx.closePath();
-  ctx.fill();
-
-  if(boostTimer > 0){
-    ctx.globalAlpha = 0.3 + Math.sin(gameTime * 12) * 0.15;
-    ctx.strokeStyle = c.waterLight;
-    ctx.lineWidth = 2;
-    ctx.beginPath();
-    ctx.moveTo(-20, 4);
-    ctx.lineTo(-30 - boostTimer*5, 6);
-    ctx.moveTo(20, 4);
-    ctx.lineTo(30 + boostTimer*5, 6);
-    ctx.stroke();
+  ctx.lineWidth = 1;
+  for(var l = 0; l <= LANES; l++){
+    var x = laneOffsetX + l * laneWidth;
+    ctx.beginPath(); ctx.moveTo(x, 0); ctx.lineTo(x, H); ctx.stroke();
   }
-  ctx.restore();
+  ctx.globalAlpha = 1;
+
+  for(var l = 0; l < LANES; l++){
+    var lx = laneX(l);
+    ctx.fillStyle = c.termDim;
+    ctx.globalAlpha = 0.04;
+    ctx.fillRect(lx - laneWidth*0.4, 0, laneWidth*0.8, H);
+    ctx.globalAlpha = 1;
+  }
 }
 
-function drawRain(intensity){
-  ctx.strokeStyle = isDark() ? 'rgba(200,200,200,' : 'rgba(60,80,70,';
-  for(var i = 0; i < rainDrops.length; i++){
-    var rd = rainDrops[i];
-    ctx.globalAlpha = rd.alpha * intensity;
-    ctx.lineWidth = 1;
-    ctx.beginPath();
-    ctx.moveTo(rd.x, rd.y);
-    ctx.lineTo(rd.x - 3, rd.y + rd.len);
-    ctx.stroke();
+function drawShutter(s){
+  if(!ctx) return;
+  var c = C();
+  var top = s.y, h = s.height;
+  var gl = s.gapLane;
+  var gs = s.gapSize;
+  var gapLeft = laneOffsetX + gl * laneWidth + laneWidth * (0.5 - gs/2);
+  var gapRight = gapLeft + laneWidth * gs;
+
+  ctx.fillStyle = c.shutter;
+  ctx.fillRect(0, top, gapLeft, h);
+  ctx.fillRect(gapRight, top, W - gapRight, h);
+
+  ctx.strokeStyle = c.shutterEdge;
+  ctx.lineWidth = 2;
+  ctx.strokeRect(0, top, gapLeft, h);
+  ctx.strokeRect(gapRight, top, W - gapRight, h);
+
+  ctx.fillStyle = c.term;
+  ctx.globalAlpha = 0.5;
+  ctx.font = '9px ui-monospace, monospace';
+  for(var i = 0; i < 3; i++){
+    var tx = (i === 0 ? gapLeft * 0.3 : (i === 1 ? (gapLeft + gapRight)/2 : gapRight + (W-gapRight)*0.3));
+    ctx.fillText('████ FW_BLOCK', tx - 30, top + h * 0.6);
   }
+  ctx.globalAlpha = 1;
+
+  ctx.fillStyle = c.term;
+  ctx.globalAlpha = 0.7;
+  ctx.fillRect(gapLeft, top, 3, h);
+  ctx.fillRect(gapRight - 3, top, 3, h);
   ctx.globalAlpha = 1;
 }
 
-function drawParticles(){
-  for(var i = 0; i < particles.length; i++){
-    var p = particles[i];
-    ctx.globalAlpha = p.life / p.maxLife;
-    ctx.fillStyle = p.col;
+function drawPacket(p){
+  if(!ctx) return;
+  var c = C();
+  var x = laneX(p.lane);
+  var pulse = 1 + Math.sin(p.pulse) * 0.12;
+  var sz = 14 * pulse;
+  var col = p.decoy ? c.warn : c.term;
+
+  ctx.save();
+  ctx.shadowColor = col;
+  ctx.shadowBlur = p.decoy ? 8 : 14;
+  ctx.fillStyle = col;
+  ctx.globalAlpha = 0.9;
+  ctx.beginPath();
+  ctx.moveTo(x, p.y - sz);
+  ctx.lineTo(x + sz * 0.7, p.y);
+  ctx.lineTo(x, p.y + sz);
+  ctx.lineTo(x - sz * 0.7, p.y);
+  ctx.closePath();
+  ctx.fill();
+  ctx.shadowBlur = 0;
+
+  ctx.fillStyle = p.decoy ? c.danger : c.termDim;
+  ctx.globalAlpha = 0.8;
+  ctx.font = '8px ui-monospace, monospace';
+  ctx.textAlign = 'center';
+  ctx.fillText(p.decoy ? '??' : '0x', x, p.y + 3);
+  ctx.textAlign = 'left';
+  ctx.globalAlpha = 1;
+  ctx.restore();
+}
+
+function drawPlayer(){
+  if(!ctx) return;
+  var c = C();
+  var x = getPlayerX();
+  var sz = laneWidth * 0.18;
+
+  for(var i = 0; i < dashTrail.length; i++){
+    var t = dashTrail[i];
+    ctx.fillStyle = c.term;
+    ctx.globalAlpha = t.alpha * (t.life / 0.2);
     ctx.beginPath();
-    ctx.arc(p.x, p.y, p.size * (p.life/p.maxLife), 0, Math.PI*2);
+    ctx.arc(t.x, t.y, sz * 0.6, 0, Math.PI * 2);
     ctx.fill();
   }
   ctx.globalAlpha = 1;
-}
 
-function drawRipples(){
-  var c = C();
-  for(var i = 0; i < ripples.length; i++){
-    var rp = ripples[i];
-    ctx.globalAlpha = (rp.life / rp.maxLife) * 0.4;
-    ctx.strokeStyle = c.waterLight;
-    ctx.lineWidth = 2;
-    ctx.beginPath();
-    ctx.arc(rp.x, rp.y, rp.r, 0, Math.PI*2);
-    ctx.stroke();
-  }
+  ctx.save();
+  ctx.shadowColor = c.term;
+  ctx.shadowBlur = isSlow ? 20 : 10;
+  ctx.fillStyle = c.term;
+  ctx.beginPath();
+  ctx.moveTo(x, playerY - sz * 1.2);
+  ctx.lineTo(x + sz, playerY + sz * 0.5);
+  ctx.lineTo(x, playerY + sz * 0.2);
+  ctx.lineTo(x - sz, playerY + sz * 0.5);
+  ctx.closePath();
+  ctx.fill();
+
+  ctx.fillStyle = c.ink;
+  ctx.globalAlpha = 0.6;
+  ctx.fillRect(x - sz * 0.3, playerY - sz * 0.3, sz * 0.6, sz * 0.4);
   ctx.globalAlpha = 1;
+  ctx.shadowBlur = 0;
+  ctx.restore();
+
+  if(isSlow){
+    ctx.strokeStyle = c.term;
+    ctx.globalAlpha = 0.3;
+    ctx.lineWidth = 1;
+    ctx.beginPath();
+    ctx.arc(x, playerY, sz * 1.8, 0, Math.PI * 2);
+    ctx.stroke();
+    ctx.globalAlpha = 1;
+  }
 }
 
 function draw(){
   if(!ctx) return;
   ctx.save();
-  ctx.clearRect(0, 0, W, H);
-  var escalation = state === 'playing' ? Math.min(gameTime / 45, 1) : 0;
+  ctx.translate(shakeX, shakeY);
+  drawBg();
 
-  drawPaperTexture();
-  drawGutters(escalation);
+  for(var i = 0; i < shutters.length; i++) drawShutter(shutters[i]);
+  for(var j = 0; j < packets.length; j++) drawPacket(packets[j]);
 
-  for(var i = 0; i < leaves.length; i++) drawLeaf(leaves[i]);
-  drawDrain();
-  drawRipples();
-  if(state === 'playing') drawBoat();
-  drawParticles();
-  drawRain(state === 'playing' ? 0.3 + escalation * 0.7 : 0.2);
+  for(var k = 0; k < particles.length; k++){
+    var pt = particles[k];
+    ctx.fillStyle = pt.col;
+    ctx.globalAlpha = Math.max(0, pt.life / 0.5);
+    ctx.fillRect(pt.x - pt.size/2, pt.y - pt.size/2, pt.size, pt.size);
+  }
+  ctx.globalAlpha = 1;
 
+  drawPlayer();
   ctx.restore();
+
+  if(isSlow && state === 'play'){
+    ctx.fillStyle = isDark() ? 'rgba(10,18,24,0.25)' : 'rgba(180,190,195,0.2)';
+    ctx.fillRect(0, 0, W, H);
+    ctx.strokeStyle = C().term;
+    ctx.globalAlpha = 0.08;
+    for(var sy = 0; sy < H; sy += 4){
+      ctx.beginPath(); ctx.moveTo(0, sy); ctx.lineTo(W, sy); ctx.stroke();
+    }
+    ctx.globalAlpha = 1;
+  }
+
+  if(flashAlpha > 0.01){
+    ctx.fillStyle = isDark() ? 'rgba(255,85,68,' + flashAlpha + ')' : 'rgba(192,57,43,' + flashAlpha + ')';
+    ctx.fillRect(0, 0, W, H);
+  }
 }
 
 function loop(ts){
-  var dt = Math.min((ts - lastTs) / 1000, 0.05);
+  var dt = Math.min(0.05, (ts - lastTs) / 1000 || 0.016);
   lastTs = ts;
-  if(state === 'playing') update(dt);
+  update(dt);
   draw();
-  if(state !== 'title') animId = requestAnimationFrame(loop);
+  animId = requestAnimationFrame(loop);
 }
 
-function idleDraw(){
-  drawPaperTexture();
-  drawGutters(0);
-  drawRain(0.15);
-  drawBoat();
+function setSlow(on){
+  if(state !== 'play') return;
+  isSlow = on;
+  if(slowBadge) slowBadge.classList.toggle('show', on);
 }
 
-/* Input */
-var touchStartX = 0, touchStartY = 0, touchStartT = 0;
+function onHoldStart(x, y){
+  if(state !== 'play') return;
+  holdStartX = x; holdStartY = y;
+  pendingSwipe = 0;
+  setSlow(true);
+}
 
-function onTouchStart(e){
-  if(e.target && (e.target.tagName === 'BUTTON' || e.target.closest('button'))) return;
-  e.preventDefault();
-  if(e.touches && e.touches[0]){
-    touchStartX = e.touches[0].clientX;
-    touchStartY = e.touches[0].clientY;
-    touchStartT = Date.now();
+function onHoldEnd(x, y){
+  if(state !== 'play'){ setSlow(false); return; }
+  setSlow(false);
+  var dx = x - holdStartX;
+  if(Math.abs(dx) > 30){
+    tryDash(dx > 0 ? 1 : -1);
+  } else if(pendingSwipe !== 0){
+    tryDash(pendingSwipe);
   }
 }
 
-function onTouchEnd(e){
-  if(e.target && (e.target.tagName === 'BUTTON' || e.target.closest('button'))) return;
-  e.preventDefault();
-  if(state !== 'playing') return;
-  if(!e.changedTouches || !e.changedTouches[0]) return;
-  var dx = e.changedTouches[0].clientX - touchStartX;
-  var dy = e.changedTouches[0].clientY - touchStartY;
-  if(Math.abs(dx) > 30 && Math.abs(dx) > Math.abs(dy)){
-    switchLane(dx > 0 ? 1 : -1);
-  }
-}
+var holding = false;
 
-function onKeyDown(e){
-  if(state === 'playing'){
-    if(e.key === 'ArrowLeft' || e.key === 'a' || e.key === 'A'){ switchLane(-1); e.preventDefault(); }
-    if(e.key === 'ArrowRight' || e.key === 'd' || e.key === 'D'){ switchLane(1); e.preventDefault(); }
-  }
-}
+function bindInput(){
+  if(!canvas) return;
 
-if(canvas){
-  canvas.addEventListener('touchstart', onTouchStart, {passive:false});
-  canvas.addEventListener('touchend', onTouchEnd, {passive:false});
-  canvas.addEventListener('mousedown', function(e){
-    if(state !== 'playing') return;
-    touchStartX = e.clientX;
-    touchStartY = e.clientY;
-    touchStartT = Date.now();
-  });
-  canvas.addEventListener('mouseup', function(e){
-    if(state !== 'playing') return;
-    var dx = e.clientX - touchStartX;
-    var dy = e.clientY - touchStartY;
-    if(Math.abs(dx) > 30 && Math.abs(dx) > Math.abs(dy)) switchLane(dx > 0 ? 1 : -1);
-  });
-}
+  canvas.addEventListener('touchstart', function(e){
+    if(e.cancelable) e.preventDefault();
+    if(!e.touches || !e.touches[0]) return;
+    holding = true;
+    onHoldStart(e.touches[0].clientX, e.touches[0].clientY);
+  }, { passive: false });
 
-document.addEventListener('keydown', onKeyDown);
+  canvas.addEventListener('touchmove', function(e){
+    if(e.cancelable) e.preventDefault();
+    if(!holding || !e.touches || !e.touches[0]) return;
+    var dx = e.touches[0].clientX - holdStartX;
+    if(Math.abs(dx) > 40) pendingSwipe = dx > 0 ? 1 : -1;
+  }, { passive: false });
 
-if(startBtn) startBtn.addEventListener('click', function(e){ e.stopPropagation(); startGame(); });
-if(restartBtn) restartBtn.addEventListener('click', function(e){ e.stopPropagation(); startGame(); });
-
-window.addEventListener('resize', function(){ resize(); if(state === 'title') idleDraw(); });
-
-if(window.matchMedia){
-  try{
-    window.matchMedia('(prefers-color-scheme: dark)').addEventListener('change', function(){ if(state !== 'playing') draw(); });
-  }catch(e){
-    try{ window.matchMedia('(prefers-color-scheme: dark)').addListener(function(){ if(state !== 'playing') draw(); }); }catch(e2){}
-  }
-}
-
-resize();
-spawnRain(30);
-idleDraw();
-animId = requestAnimationFrame(function titleLoop(ts){
-  if(state === 'title'){
-    for(var i = 0; i < rainDrops.length; i++){
-      rainDrops[i].y += rainDrops[i].speed * 0.016;
-      if(rainDrops[i].y > H){ rainDrops[i].y = -10; rainDrops[i].x = Math.random()*W; }
+  canvas.addEventListener('touchend', function(e){
+    if(e.cancelable) e.preventDefault();
+    var x = holdStartX, y = holdStartY;
+    if(e.changedTouches && e.changedTouches[0]){
+      x = e.changedTouches[0].clientX;
+      y = e.changedTouches[0].clientY;
     }
-    draw();
-    requestAnimationFrame(titleLoop);
-  }
-});
+    holding = false;
+    onHoldEnd(x, y);
+  }, { passive: false });
+
+  canvas.addEventListener('mousedown', function(e){
+    holding = true;
+    onHoldStart(e.clientX, e.clientY);
+  });
+
+  window.addEventListener('mouseup', function(e){
+    if(!holding) return;
+    holding = false;
+    onHoldEnd(e.clientX, e.clientY);
+  });
+
+  window.addEventListener('keydown', function(e){
+    if(state !== 'play') return;
+    if(e.code === 'Space'){ e.preventDefault(); setSlow(true); }
+    if(e.code === 'ArrowLeft' && !e.repeat){ e.preventDefault(); if(!isSlow) tryDash(-1); else pendingSwipe = -1; }
+    if(e.code === 'ArrowRight' && !e.repeat){ e.preventDefault(); if(!isSlow) tryDash(1); else pendingSwipe = 1; }
+  });
+
+  window.addEventListener('keyup', function(e){
+    if(e.code === 'Space'){
+      e.preventDefault();
+      if(pendingSwipe !== 0){ tryDash(pendingSwipe); pendingSwipe = 0; }
+      setSlow(false);
+    }
+  });
+}
+
+function onStart(){
+  try{
+    resetGame();
+    initAudio();
+  }catch(err){}
+}
+
+if(startBtn) startBtn.addEventListener('click', function(e){ e.stopPropagation(); onStart(); });
+if(restartBtn) restartBtn.addEventListener('click', function(e){ e.stopPropagation(); onStart(); });
+
+window.addEventListener('resize', resize);
+bindInput();
+resize();
+draw();
+animId = requestAnimationFrame(loop);
 
 })();
 </script>
