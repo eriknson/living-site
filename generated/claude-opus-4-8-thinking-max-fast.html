@@ -4,552 +4,354 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <meta name="color-scheme" content="light dark">
-<meta name="description" content="Field notes from Erik Nilsson — product designer at Cursor. A small, living notebook of writing and experiments, quietly rebuilt each day.">
-<title>Erik Nilsson — Product designer at Cursor</title>
+<meta name="description" content="Erik Nilsson — product designer at Cursor, in San Francisco. A living notebook that rebuilds itself from fresh activity data each morning.">
+<title>Erik Nilsson — Notebook</title>
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='7' fill='%23f6f1e9'/%3E%3Ccircle cx='16' cy='16' r='8' fill='%23df3b1f'/%3E%3C/svg%3E">
 <style>
-/* =========================================================
-   eriks.design — a living notebook
-   Part magazine page, part designer notebook.
-   One file. No external dependencies. No gradients.
-   ========================================================= */
-
-:root{
-  /* type */
-  --serif: "Hoefler Text", "Iowan Old Style", "Palatino Linotype", Palatino, "Book Antiqua", Georgia, Cambria, "Times New Roman", serif;
-  --mono: ui-monospace, "SF Mono", "SFMono-Regular", Menlo, "Cascadia Code", "Roboto Mono", "Liberation Mono", monospace;
-  --hand: "Snell Roundhand", "Apple Chancery", "Segoe Script", "Bradley Hand", "Brush Script MT", cursive;
-
-  /* light paper — warm, printed */
-  --bg: #f6f1e6;
-  --surface: #efe8d7;
-  --ink: #211d16;
-  --ink-soft: #6c6353;
-  --ink-faint: #b3a88f;
-  --rule: #ddd2bb;
-
-  /* accents — sRGB; upgraded to vivid Display-P3 via @supports below */
-  --red: #d2381b;
-  --blue: #2f55a0;
-  --sel: #f3d8a8;
-
-  --measure: 40rem;
-}
-
-@media (prefers-color-scheme: dark){
+  /* ============== palette & tokens ============== */
   :root{
-    --bg: #14120d;
-    --surface: #1c1912;
-    --ink: #ece4d4;
-    --ink-soft: #a89e8b;
-    --ink-faint: #564e3f;
-    --rule: #2c2718;
-    --red: #ff6a43;
-    --blue: #93afff;
-    --sel: #3a2f1b;
+    --bg:#f6f1e9;            /* warm paper */
+    --panel:#efe8db;         /* inset paper for notebook strip */
+    --ink:#1c1813;           /* warm near-black */
+    --muted:#6f685b;         /* graphite */
+    --faint:#938976;         /* light graphite */
+    --rule:rgba(28,24,19,.14);
+    --rule-strong:rgba(28,24,19,.78);
+    --accent:#df3b1f;        /* vermilion (sRGB fallback) */
+    --accent-weak:rgba(223,59,31,.5);
+    --accent-soft:rgba(223,59,31,.1);
+    --sel:rgba(223,59,31,.16);
+    --serif:"Iowan Old Style","Hoefler Text","Palatino Linotype",Palatino,"Book Antiqua",Georgia,Cambria,"Times New Roman",serif;
+    --sans:system-ui,-apple-system,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;
+    --mono:"Berkeley Mono",ui-monospace,"SF Mono",SFMono-Regular,"Cascadia Code",Menlo,Consolas,monospace;
   }
-}
-
-/* Vivid wide-gamut accents where supported (progressive, robust fallback) */
-@supports (color: color(display-p3 1 1 1)){
-  :root{
-    --red: color(display-p3 0.82 0.25 0.11);
-    --blue: color(display-p3 0.18 0.33 0.65);
-  }
-  @media (prefers-color-scheme: dark){
+  /* wide-gamut vermilion: pushes past sRGB on P3 displays */
+  @supports (color:color(display-p3 1 0 0)){
     :root{
-      --red: color(display-p3 1 0.46 0.3);
-      --blue: color(display-p3 0.6 0.69 1);
+      --accent:color(display-p3 .84 .24 .12);
+      --accent-weak:color(display-p3 .84 .24 .12 / .52);
+      --accent-soft:color(display-p3 .84 .24 .12 / .1);
+      --sel:color(display-p3 .84 .24 .12 / .16);
     }
   }
-}
 
-*,*::before,*::after{ box-sizing:border-box; }
-
-html{ -webkit-text-size-adjust:100%; }
-
-body{
-  margin:0;
-  background:var(--bg);
-  color:var(--ink);
-  font-family:var(--serif);
-  font-size:1.1875rem;
-  line-height:1.62;
-  font-feature-settings:"kern","liga","clig";
-  font-kerning:normal;
-  -webkit-font-smoothing:antialiased;
-  -moz-osx-font-smoothing:grayscale;
-  text-rendering:optimizeLegibility;
-}
-
-::selection{ background:var(--sel); color:var(--ink); }
-
-a{ color:inherit; text-decoration:none; }
-
-:focus-visible{
-  outline:2px solid var(--red);
-  outline-offset:3px;
-  border-radius:2px;
-}
-
-/* ---- the sheet: one centered page with a notebook margin rule ---- */
-.sheet{
-  position:relative;
-  max-width:var(--measure);
-  margin:0 auto;
-  padding:clamp(2.2rem,7vw,4.2rem) clamp(1.3rem,5vw,2rem) clamp(3rem,8vw,5rem) clamp(1.7rem,6vw,2.8rem);
-}
-/* faint red margin rule, like a ruled notebook */
-.sheet::before{
-  content:"";
-  position:absolute;
-  top:0; bottom:0;
-  left:clamp(0.65rem,3vw,1.3rem);
-  width:1.5px;
-  background:var(--red);
-  opacity:.2;
-  pointer-events:none;
-}
-
-/* ---- folio / running head ---- */
-.folio{
-  display:flex;
-  align-items:baseline;
-  justify-content:space-between;
-  gap:1rem;
-  flex-wrap:wrap;
-  row-gap:.3rem;
-  font-family:var(--mono);
-  font-size:.7rem;
-  letter-spacing:.14em;
-  text-transform:uppercase;
-  color:var(--ink-soft);
-  padding-bottom:.85rem;
-  margin-bottom:clamp(2.6rem,7vw,4rem);
-  border-bottom:1px solid var(--rule);
-}
-.folio a:hover{ color:var(--red); }
-.folio .dot{ color:var(--red); }
-
-/* ---- masthead ---- */
-.masthead{ position:relative; margin-bottom:clamp(2.6rem,7vw,3.6rem); }
-.kicker{
-  margin:0 0 1.1rem;
-  font-family:var(--mono);
-  font-size:.74rem;
-  letter-spacing:.26em;
-  text-transform:uppercase;
-  color:var(--ink-soft);
-}
-.nameplate{
-  margin:0;
-  font-weight:500;
-  font-size:clamp(3rem,13vw,5.6rem);
-  line-height:.92;
-  letter-spacing:-.025em;
-  text-wrap:balance;
-  padding-right:4.2rem;
-}
-.role{
-  margin:1.1rem 0 0;
-  font-style:italic;
-  font-size:1.12rem;
-  color:var(--ink-soft);
-}
-.role .ring-word{ position:relative; display:inline-block; color:var(--ink); white-space:nowrap; }
-.role .ring-word:hover{ color:var(--red); }
-.ring{
-  position:absolute;
-  left:-14%; top:-26%;
-  width:128%; height:150%;
-  color:var(--red);
-  overflow:visible;
-  pointer-events:none;
-}
-
-.dateline{
-  margin:1.5rem 0 0;
-  font-family:var(--mono);
-  font-size:.72rem;
-  letter-spacing:.1em;
-  text-transform:uppercase;
-  color:var(--ink-soft);
-  line-height:1.9;
-}
-.dateline .sep{ color:var(--red); margin:0 .2em; }
-
-/* postmark / rubber stamp */
-.stamp{
-  position:absolute;
-  top:-.4rem; right:-.3rem;
-  width:clamp(72px,15vw,116px);
-  height:clamp(72px,15vw,116px);
-  color:var(--red);
-  opacity:.52;
-  transform:rotate(-9deg);
-  pointer-events:none;
-}
-.stamp text{
-  font-family:var(--mono);
-  fill:currentColor;
-  letter-spacing:.02em;
-}
-
-/* ---- lead / standfirst ---- */
-.lead{ margin-bottom:clamp(2.4rem,6vw,3rem); }
-.lead p{ margin:0 0 1.2rem; position:relative; }
-.lede{ font-size:1.26rem; }
-
-.dropcap{
-  float:left;
-  font-size:3.45em;
-  line-height:.72;
-  font-weight:500;
-  padding:.05em .1em 0 0;
-  margin:.02em .02em 0 -.02em;
-  color:var(--red);
-}
-
-/* hand-underlined word */
-.mark{ position:relative; display:inline-block; white-space:nowrap; }
-.squiggle{
-  position:absolute;
-  left:-2%; bottom:-.42em;
-  width:104%; height:.5em;
-  color:var(--red);
-  overflow:visible;
-  pointer-events:none;
-}
-
-.today{
-  font-style:italic;
-  color:var(--ink-soft);
-  font-size:1.06rem;
-}
-
-/* ---- marginalia (handwritten pen notes) ---- */
-.anno{
-  display:block;
-  font-family:var(--hand);
-  color:var(--blue);
-  line-height:1.25;
-  font-size:1.26rem;
-  margin:.4rem 0 1.1rem 1.1rem;
-  padding-left:.9rem;
-  border-left:2px solid var(--blue);
-  max-width:24rem;
-}
-.anno a{ color:var(--blue); border-bottom:1px solid transparent; }
-.anno a:hover{ border-bottom-color:var(--blue); }
-.anno .q{ font-size:1.05em; }
-
-/* ---- hand-drawn divider ---- */
-.divider{ margin:clamp(2rem,6vw,3.2rem) 0; color:var(--ink-faint); }
-.rule-wave{ display:block; width:100%; height:12px; overflow:visible; }
-
-/* ---- index / table of contents ---- */
-.index{ position:relative; }
-.rubric{
-  margin:0 0 1.2rem;
-  font-family:var(--mono);
-  font-size:.74rem;
-  letter-spacing:.2em;
-  text-transform:uppercase;
-  color:var(--ink-soft);
-  font-weight:400;
-  display:flex;
-  align-items:baseline;
-  gap:.7rem;
-}
-.rubric .no{ color:var(--red); }
-.rubric .sub{ color:var(--ink-faint); letter-spacing:.14em; }
-
-.toc{ list-style:none; margin:0; padding:0; }
-.toc li{ border-top:1px solid var(--rule); }
-.toc li:last-child{ border-bottom:1px solid var(--rule); }
-.toc-row{
-  display:flex;
-  align-items:baseline;
-  gap:.7rem;
-  padding:.72rem .2rem;
-  transition:background-color .25s ease, padding-left .25s ease;
-}
-.toc-row:hover{ background:var(--surface); padding-left:.6rem; }
-.toc-title{ font-size:1.14rem; }
-.toc-row:hover .toc-title{
-  color:var(--red);
-  text-decoration:underline;
-  text-decoration-style:wavy;
-  text-decoration-color:var(--red);
-  text-decoration-thickness:1px;
-  text-underline-offset:.22em;
-}
-.ext{ color:var(--red); font-size:.86em; }
-.toc-lead{
-  flex:1 1 auto;
-  min-width:1.4rem;
-  align-self:center;
-  margin-bottom:.22em;
-  border-bottom:1.5px dotted var(--ink-faint);
-}
-.toc-date{
-  flex:none;
-  font-family:var(--mono);
-  font-size:.74rem;
-  letter-spacing:.04em;
-  color:var(--ink-soft);
-  text-transform:uppercase;
-  font-variant-numeric:tabular-nums;
-  white-space:nowrap;
-}
-
-/* ---- colophon / sign-off ---- */
-.colophon{ margin-top:clamp(1rem,3vw,1.6rem); }
-.find{
-  margin:0 0 2.2rem;
-  font-size:1.08rem;
-  line-height:2;
-}
-.find .label{ color:var(--ink-soft); font-style:italic; margin-right:.3em; }
-.find a{
-  border-bottom:1px solid var(--rule);
-  padding-bottom:1px;
-  transition:color .2s ease, border-color .2s ease;
-}
-.find a:hover{ color:var(--red); border-bottom-color:var(--red); }
-.find .mid{ color:var(--ink-faint); margin:0 .5em; }
-
-.signoff{ display:flex; align-items:center; gap:.2rem; margin-bottom:1.8rem; }
-.sig{
-  font-family:var(--hand);
-  font-size:2.6rem;
-  line-height:1;
-  color:var(--blue);
-  transform:rotate(-5deg);
-  transform-origin:left center;
-}
-.sig-flourish{ width:150px; height:22px; color:var(--blue); overflow:visible; margin-left:-.4rem; }
-
-.fineprint{
-  margin:0;
-  font-family:var(--mono);
-  font-size:.71rem;
-  line-height:1.8;
-  letter-spacing:.03em;
-  color:var(--ink-soft);
-  text-transform:uppercase;
-}
-
-/* ---- decorative stroke defaults ---- */
-.ink path{
-  fill:none;
-  stroke:currentColor;
-  stroke-width:2;
-  stroke-linecap:round;
-  stroke-linejoin:round;
-  stroke-dasharray:1;
-  stroke-dashoffset:0;
-  vector-effect:non-scaling-stroke;
-}
-.squiggle path, .rule-wave path{ stroke-width:2.2; }
-.ring path{ stroke-width:2; }
-.sig-flourish path{ stroke-width:2; }
-
-/* =========================================================
-   WIDE SCREENS — margin notes hang into the right margin
-   ========================================================= */
-@media (min-width:72rem){
-  .anno{
-    position:absolute;
-    top:.1em;
-    left:calc(100% + 2.4rem);
-    width:12.5rem;
-    max-width:12.5rem;
+  /* ============== base ============== */
+  *{box-sizing:border-box}
+  html{-webkit-text-size-adjust:100%;scroll-behavior:smooth}
+  html,body{overflow-x:hidden}
+  body{
     margin:0;
-    padding-left:0;
-    border-left:0;
-    transform:rotate(-1.4deg);
+    background:var(--bg);
+    color:var(--ink);
+    font-family:var(--serif);
+    font-size:17px;
+    line-height:1.66;
+    font-feature-settings:"onum" 1,"kern" 1,"liga" 1;
+    -webkit-font-smoothing:antialiased;
+    -moz-osx-font-smoothing:grayscale;
+    text-rendering:optimizeLegibility;
+    padding:clamp(30px,6vw,76px) 22px clamp(64px,11vh,128px);
   }
-  .anno::before{
-    content:"";
-    position:absolute;
-    left:-2rem; top:.55em;
-    width:1.4rem; height:1px;
-    background:var(--blue);
-    opacity:.5;
+  ::selection{background:var(--sel)}
+  a{color:inherit;text-decoration:none}
+  em{font-style:italic}
+
+  .sheet{position:relative}
+  .block{max-width:640px;margin:0 auto}
+  section.block,footer.block{margin-top:clamp(2.8rem,7.5vh,5rem)}
+  /* notebook margin rule — classic red marginal line, wide screens only */
+  @media (min-width:760px){
+    .sheet::before{content:"";position:absolute;top:2px;bottom:2px;left:calc(50% - 350px);width:1.5px;background:var(--accent-weak)}
   }
-  .anno-toc{ top:3.4rem; }
-}
 
-/* =========================================================
-   SMALL SCREENS
-   ========================================================= */
-@media (max-width:640px){
-  body{ font-size:1.125rem; line-height:1.6; }
-  .lede{ font-size:1.18rem; }
-  .nameplate{ padding-right:3.2rem; letter-spacing:-.02em; }
-  .dateline{ font-size:.68rem; }
-  .stamp{ opacity:.46; }
-  .anno{ font-size:1.18rem; }
-  .find{ font-size:1.02rem; }
-  .toc-row:hover{ padding-left:.2rem; }
-}
-@media (max-width:380px){
-  .nameplate{ font-size:2.7rem; padding-right:2.6rem; }
-  .stamp{ width:64px; height:64px; }
-}
-
-/* =========================================================
-   MOTION — opt-in; page is fully visible without it
-   ========================================================= */
-@media (prefers-reduced-motion: no-preference){
-  .js .reveal{ opacity:0; transform:translateY(14px); }
-  .js .reveal.in{
-    opacity:1;
-    transform:none;
-    transition:opacity .75s ease, transform .85s cubic-bezier(.2,.65,.2,1);
-    transition-delay:var(--d,0s);
+  /* ============== masthead ============== */
+  .masthead{position:relative;margin-bottom:clamp(1.6rem,5vh,2.8rem)}
+  .kicker{
+    font-family:var(--mono);
+    font-size:.7rem;letter-spacing:.26em;text-transform:uppercase;
+    color:var(--accent);margin:0;
   }
-  .js .reveal .ink path{ stroke-dashoffset:1; }
-  .js .reveal.in .ink path{ animation:draw 1.15s ease forwards; animation-delay:calc(var(--d,0s) + .25s); }
-  @keyframes draw{ to{ stroke-dashoffset:0; } }
+  .wordmark{
+    font-weight:500;
+    font-size:clamp(2.7rem,9vw,4.5rem);
+    line-height:.98;letter-spacing:-.02em;
+    margin:.26em 0 .38em;
+  }
+  .wordmark em{font-style:italic;font-weight:500}
+  .dateline{font-style:italic;font-size:clamp(1.02rem,2.2vw,1.16rem);color:var(--ink)}
+  .dateline .sep{font-style:normal;color:var(--faint);margin:0 .5em}
+  .meta-row{
+    font-family:var(--mono);font-size:.71rem;letter-spacing:.11em;text-transform:uppercase;
+    color:var(--muted);margin-top:1.05rem;
+  }
+  .stamp{
+    position:absolute;top:.1rem;right:-.1rem;transform:rotate(5.5deg);
+    font-family:var(--mono);font-size:.6rem;letter-spacing:.2em;text-transform:uppercase;
+    color:var(--accent);border:1.5px solid var(--accent);
+    padding:.5em .62em;border-radius:3px;line-height:1.3;text-align:center;opacity:.92;
+  }
+  .stamp b{display:block;font-weight:400;font-size:.92em;letter-spacing:.16em}
 
-  .js .reveal .sig{ opacity:0; }
-  .js .reveal.in .sig{ opacity:1; transition:opacity .6s ease .35s; }
-}
+  .rule-ox{height:4px;margin-top:1.5rem;border-top:1.5px solid var(--rule-strong);border-bottom:1px solid var(--rule)}
+
+  /* ============== lede ============== */
+  .lede{margin-top:clamp(1.8rem,5vh,2.6rem)}
+  .lede-text{font-size:clamp(1.2rem,2.5vw,1.46rem);line-height:1.5;margin:0;text-wrap:pretty}
+  .dropcap{
+    float:left;font-weight:600;color:var(--accent);
+    font-size:3.5em;line-height:.66;padding:.06em .1em 0 0;margin:.02em .04em 0 0;
+  }
+  .lede-text em{font-style:italic;white-space:nowrap}
+
+  /* ============== section eyebrow ============== */
+  .eyebrow{
+    font-family:var(--mono);font-size:.73rem;letter-spacing:.14em;text-transform:uppercase;
+    color:var(--ink);margin:0 0 1.4rem;display:flex;align-items:baseline;gap:.75ch;flex-wrap:wrap;
+  }
+  .sec-no{color:var(--accent)}
+  .eyebrow-sub{font-family:var(--serif);font-style:italic;text-transform:none;letter-spacing:0;color:var(--muted);font-size:.98rem}
+
+  /* ============== today / field notes ============== */
+  .field-wrap{
+    background:var(--panel);
+    border:1px solid var(--rule);
+    border-radius:6px;
+    padding:clamp(1.3rem,3.5vw,1.9rem) clamp(1.3rem,4vw,2.1rem);
+    position:relative;
+  }
+  .notes-list{list-style:none;margin:0;padding:0;font-size:1.07rem;line-height:1.5}
+  .notes-list li{position:relative;padding-left:1.5em;margin:.46em 0}
+  .notes-list li::before{content:"—";position:absolute;left:0;color:var(--accent)}
+  .lately{font-style:italic;color:var(--muted);font-size:1rem;margin:1.5rem 0 0}
+  .lately a{font-style:normal}
+
+  /* ============== writing index ============== */
+  .index{list-style:none;margin:0;padding:0}
+  .entry{border-top:1px solid var(--rule)}
+  .entry:last-of-type{border-bottom:1px solid var(--rule)}
+  .entry > a{
+    display:grid;grid-template-columns:3.1em 1fr auto;align-items:baseline;gap:1.1em;
+    padding:.98rem .15rem .9rem;position:relative;
+  }
+  .yr{font-family:var(--mono);font-size:.76rem;letter-spacing:.03em;color:var(--muted);transition:color .3s ease}
+  .ttl{font-size:clamp(1.14rem,2.4vw,1.28rem);line-height:1.2;position:relative;width:fit-content;transition:color .3s ease}
+  .ttl .ext{color:var(--accent);font-family:var(--mono);font-size:.72em;margin-left:.15em;vertical-align:.08em}
+  .ttl::after{
+    content:"";position:absolute;left:0;right:0;bottom:-3px;height:1.5px;background:var(--accent);
+    transform:scaleX(0);transform-origin:left;transition:transform .42s cubic-bezier(.6,.03,.28,.98);
+  }
+  .rt{font-family:var(--mono);font-size:.71rem;letter-spacing:.05em;color:var(--faint);white-space:nowrap}
+  .entry > a:hover .ttl,.entry > a:focus-visible .ttl{color:var(--accent)}
+  .entry > a:hover .ttl::after,.entry > a:focus-visible .ttl::after{transform:scaleX(1)}
+  .entry > a:hover .yr,.entry > a:focus-visible .yr{color:var(--accent)}
+  .entry-note{
+    font-style:italic;color:var(--muted);font-size:.95rem;line-height:1.4;
+    padding:0 .15rem .95rem;margin-top:-.35rem;
+  }
+  .entry-note::before{content:"\21B3";color:var(--accent);font-style:normal;margin-right:.45ch}
+
+  /* ============== colophon ============== */
+  .sign-off{font-size:1.16rem;margin:1.5rem 0 1.15rem}
+  .say{font-style:italic;color:var(--muted)}
+  .links{
+    display:flex;flex-wrap:wrap;gap:.9rem 1.5rem;margin:0 0 1.7rem;
+    font-family:var(--mono);font-size:.82rem;letter-spacing:.04em;
+  }
+  .links a{position:relative;padding-bottom:3px}
+  .links a::after{
+    content:"";position:absolute;left:0;bottom:0;width:100%;height:1.5px;background:var(--accent);
+    transform:scaleX(0);transform-origin:left;transition:transform .35s cubic-bezier(.6,.03,.28,.98);
+  }
+  .links a:hover,.links a:focus-visible{color:var(--accent)}
+  .links a:hover::after,.links a:focus-visible::after{transform:scaleX(1)}
+  .colo-note{font-style:italic;color:var(--muted);font-size:.99rem;margin:0 0 1.6rem}
+  .folio{
+    font-family:var(--mono);font-size:.67rem;letter-spacing:.16em;text-transform:uppercase;
+    color:var(--faint);margin:0;
+  }
+
+  /* inline links in prose */
+  .lk{
+    color:var(--ink);text-decoration:underline;text-decoration-color:var(--accent-weak);
+    text-underline-offset:.22em;text-decoration-thickness:1.5px;
+    transition:text-decoration-color .25s ease,color .25s ease;
+  }
+  .lk:hover,.lk:focus-visible{color:var(--accent);text-decoration-color:var(--accent)}
+
+  /* ============== live dot ============== */
+  .live{
+    display:inline-block;width:7px;height:7px;border-radius:50%;background:var(--accent);
+    vertical-align:middle;margin-right:.6ch;position:relative;top:-1px;
+  }
+  @keyframes pulse{
+    0%{box-shadow:0 0 0 0 var(--accent-weak)}
+    70%{box-shadow:0 0 0 8px transparent}
+    100%{box-shadow:0 0 0 0 transparent}
+  }
+
+  /* ============== marginalia ============== */
+  .note{
+    font-style:italic;color:var(--muted);font-size:.95rem;line-height:1.46;
+    border-left:2px solid var(--accent);padding:.1rem 0 .1rem .95rem;margin:1.3rem 0;
+  }
+
+  /* ============== hand-drawn ink ============== */
+  .mark-circle{position:relative;white-space:nowrap}
+  .ink{position:absolute;overflow:visible;pointer-events:none}
+  .mark-circle .ink{left:-13%;top:-46%;width:126%;height:196%}
+  .ink path{
+    fill:none;stroke:var(--accent);stroke-width:2;stroke-linecap:round;stroke-linejoin:round;
+    vector-effect:non-scaling-stroke;filter:url(#rough);
+  }
+
+  /* ============== motion — pure CSS; safe-visible default; runs in iframe AND shadow DOM ============== */
+  @keyframes rise{from{opacity:0;transform:translateY(12px)}to{opacity:1;transform:none}}
+  @keyframes draw{from{stroke-dashoffset:1}to{stroke-dashoffset:0}}
+  @media (prefers-reduced-motion:no-preference){
+    [data-rise]{animation:rise .85s cubic-bezier(.2,.65,.3,1) both}
+    .ink path{stroke-dasharray:1;animation:draw 1.2s cubic-bezier(.6,.03,.3,1) .9s both}
+    .live{animation:pulse 2.8s ease-out infinite}
+  }
+
+  /* ============== responsive ============== */
+  @media (min-width:1120px){
+    .note.right{float:right;clear:right;width:188px;margin:.5rem -216px 1rem 0;border-left:2px solid var(--accent);padding-left:.95rem}
+    .note.left{float:left;clear:left;width:188px;margin:.5rem 0 1rem -216px;text-align:right;border-left:0;border-right:2px solid var(--accent);padding:.1rem .95rem .1rem 0}
+  }
+  @media (max-width:640px){
+    body{padding-left:19px;padding-right:19px}
+    .wordmark{font-size:clamp(2.35rem,12.5vw,3.1rem)}
+    .stamp{display:none}
+    .entry > a{grid-template-columns:2.7em 1fr auto;gap:.75em}
+    .eyebrow{gap:.6ch}
+  }
+  @media (max-width:420px){
+    .entry > a{grid-template-columns:1fr auto;row-gap:.1em}
+    .yr{grid-column:1;font-size:.72rem}
+    .rt{grid-column:2;text-align:right}
+    .ttl{grid-column:1 / -1;order:3;margin-top:.1em}
+  }
+  @media (prefers-reduced-motion:reduce){
+    html{scroll-behavior:auto}
+  }
+
+  /* ============== dark mode (kept LAST, compact, bg is dark) ============== */
+  @media (prefers-color-scheme:dark){
+    :root{
+      --bg:#15120d;
+      --panel:#1d1912;
+      --ink:#ece4d6;
+      --muted:#a0978a;
+      --faint:#7b7161;
+      --rule:rgba(236,228,214,.14);
+      --rule-strong:rgba(236,228,214,.8);
+      --accent:#ff6a4d;
+      --accent-weak:rgba(255,106,77,.58);
+      --accent-soft:rgba(255,106,77,.12);
+      --sel:rgba(255,106,77,.22);
+    }
+  }
+  @supports (color:color(display-p3 1 0 0)){@media (prefers-color-scheme:dark){
+    :root{--accent:color(display-p3 1 .46 .32);--accent-weak:color(display-p3 1 .46 .32 / .6);--accent-soft:color(display-p3 1 .46 .32 / .14);--sel:color(display-p3 1 .46 .32 / .24)}
+  }}
 </style>
 </head>
 <body>
-<div class="sheet">
+<!-- hand-drawn ink filter -->
+<svg width="0" height="0" style="position:absolute" aria-hidden="true" focusable="false"><defs>
+  <filter id="rough" x="-25%" y="-45%" width="150%" height="190%">
+    <feTurbulence type="fractalNoise" baseFrequency="0.014 0.02" numOctaves="2" seed="11" result="t"/>
+    <feDisplacementMap in="SourceGraphic" in2="t" scale="2.6"/>
+  </filter>
+</defs></svg>
 
-  <header class="folio reveal">
-    <span>eriks.design</span>
-    <span>No.&nbsp;22<span class="dot">·</span>10 <span class="dot">—</span> rebuilt daily</span>
+<main class="sheet">
+
+  <header class="block masthead">
+    <p class="kicker" data-rise style="animation-delay:.02s">A living site — rebuilt each morning</p>
+    <h1 class="wordmark" data-rise style="animation-delay:.08s">Erik <em>Nilsson</em></h1>
+    <p class="dateline" data-rise style="animation-delay:.18s">Product Designer at Cursor<span class="sep">/</span>San Francisco</p>
+    <p class="meta-row" data-rise style="animation-delay:.28s"><span class="live" aria-hidden="true"></span>Autumn 2026 &nbsp;·&nbsp; Fri 23 Oct &nbsp;·&nbsp; Clear, 11°</p>
+    <div class="stamp" aria-hidden="true" data-rise style="animation-delay:.36s">Issue<b>23·10·26</b></div>
+    <div class="rule-ox" data-rise style="animation-delay:.42s"></div>
   </header>
 
-  <section class="masthead reveal" style="--d:.04s">
-    <p class="kicker">A living notebook</p>
-    <h1 class="nameplate">Erik Nilsson</h1>
-    <p class="role">Product designer at
-      <a class="ring-word" href="https://cursor.com" target="_blank" rel="noopener">Cursor<svg class="ink ring" viewBox="0 0 140 60" preserveAspectRatio="none" aria-hidden="true"><path pathLength="1" d="M70 6 C104 5 132 16 128 30 C124 47 92 55 64 53 C30 52 10 41 12 28 C14 12 45 6 80 7"/></svg></a>
+  <section class="block lede" data-rise style="animation-delay:.42s">
+    <aside class="note right">This very page, too — set by software while the city sleeps, and new again by sunrise.</aside>
+    <p class="lede-text">
+      <span class="dropcap">P</span>roduct designer at Cursor — I work on how people build software with AI. Off-hours, I'm tinkering with <em>living-site</em>: agents that rebuild this corner of the web from fresh activity data <span class="mark-circle">each day<svg class="ink" viewBox="0 0 240 90" preserveAspectRatio="none" aria-hidden="true"><path pathLength="1" d="M48,22 C18,30 9,54 40,68 C82,84 186,81 213,62 C237,46 229,22 194,15 C146,5 70,10 43,23"/></svg></span>.
     </p>
-    <p class="dateline">San&nbsp;Francisco <span class="sep">·</span> Autumn <span class="sep">·</span> Heavy&nbsp;drizzle,&nbsp;15° <span class="sep">·</span> Thu,&nbsp;Oct&nbsp;22&nbsp;2026</p>
-
-    <svg class="stamp" viewBox="0 0 120 120" aria-hidden="true">
-      <defs>
-        <path id="arc" d="M60 60 m-43 0 a43 43 0 1 1 86 0 a43 43 0 1 1 -86 0"/>
-      </defs>
-      <circle cx="60" cy="60" r="55" fill="none" stroke="currentColor" stroke-width="2"/>
-      <circle cx="60" cy="60" r="47" fill="none" stroke="currentColor" stroke-width="1"/>
-      <text font-size="8.4"><textPath href="#arc" startOffset="2%">· SAN FRANCISCO · REBUILT BY AGENTS AT DAWN </textPath></text>
-      <text x="60" y="52" text-anchor="middle" font-size="8">OCT</text>
-      <text x="60" y="72" text-anchor="middle" font-size="20" letter-spacing="1">22</text>
-      <text x="60" y="84" text-anchor="middle" font-size="7.5">’26</text>
-    </svg>
   </section>
 
-  <section class="lead reveal" style="--d:.1s">
-    <p class="lede">
-      <span class="dropcap">T</span>he short version: I design how people build software with AI at Cursor — chasing the
-      <span class="mark">craft<svg class="ink squiggle" viewBox="0 0 120 12" preserveAspectRatio="none" aria-hidden="true"><path pathLength="1" d="M2 7 Q14 2 26 7 T50 7 T74 7 T98 7 T118 6"/></svg></span>
-      in the details, the part that makes work feel built rather than generated.
-    </p>
-    <p>
-      Off-hours, I tinker. This page is one of those experiments — a notebook that rewrites itself each morning from yesterday's weather, code, and noise.
-      <span class="anno" aria-hidden="true">yes — including this very sentence <span class="q">↖</span></span>
-    </p>
-    <p class="today">Filed today under heavy drizzle, the October light thinning toward winter.</p>
-  </section>
-
-  <div class="divider reveal" aria-hidden="true" style="--d:.06s">
-    <svg class="ink rule-wave" viewBox="0 0 600 12" preserveAspectRatio="none"><path pathLength="1" d="M0 7 Q20 2 40 7 T80 7 T120 7 T160 7 T200 7 T240 7 T280 7 T320 7 T360 7 T400 7 T440 7 T480 7 T520 7 T560 7 T600 7"/></svg>
-  </div>
-
-  <section class="index reveal" style="--d:.06s">
-    <h2 class="rubric"><span class="no">§</span> Index <span class="sub">— selected writing</span></h2>
-    <ul class="toc">
-      <li><a class="toc-row" href="https://cursor.com/blog/design-mode" target="_blank" rel="noopener">
-        <span class="toc-title">Directing agents visually <span class="ext" aria-hidden="true">↗</span></span>
-        <span class="toc-lead" aria-hidden="true"></span>
-        <span class="toc-date">Jun 2026</span>
-      </a></li>
-      <li><a class="toc-row" href="https://eriks.design/posts/a-living-site">
-        <span class="toc-title">A living site</span>
-        <span class="toc-lead" aria-hidden="true"></span>
-        <span class="toc-date">Dec 2025</span>
-      </a></li>
-      <li><a class="toc-row" href="https://eriks.design/posts/surgical-edits">
-        <span class="toc-title">Surgical edits</span>
-        <span class="toc-lead" aria-hidden="true"></span>
-        <span class="toc-date">Nov 2025</span>
-      </a></li>
-      <li><a class="toc-row" href="https://eriks.design/posts/familiar-differentiation">
-        <span class="toc-title">Familiar differentiation</span>
-        <span class="toc-lead" aria-hidden="true"></span>
-        <span class="toc-date">Nov 2024</span>
-      </a></li>
-      <li><a class="toc-row" href="https://eriks.design/posts/hackathon-energy-but-add-users">
-        <span class="toc-title">Hackathon energy, but add users</span>
-        <span class="toc-lead" aria-hidden="true"></span>
-        <span class="toc-date">Oct 2022</span>
-      </a></li>
-      <li><a class="toc-row" href="https://uu.diva-portal.org/smash/record.jsf?pid=diva2:1453018" target="_blank" rel="noopener">
-        <span class="toc-title">Go with the flow <span class="ext" aria-hidden="true">↗</span></span>
-        <span class="toc-lead" aria-hidden="true"></span>
-        <span class="toc-date">Aug 2020</span>
-      </a></li>
-    </ul>
-
-    <aside class="anno anno-toc">
-      <span class="q">“</span>shipping by sunrise<span class="q">”</span><br>
-      — a note to self, <a href="https://x.com/flowstated/status/2000889983562080578" target="_blank" rel="noopener">Dec&nbsp;’25 ↗</a>
-    </aside>
-  </section>
-
-  <div class="divider reveal" aria-hidden="true" style="--d:.04s">
-    <svg class="ink rule-wave" viewBox="0 0 600 12" preserveAspectRatio="none"><path pathLength="1" d="M0 7 Q20 2 40 7 T80 7 T120 7 T160 7 T200 7 T240 7 T280 7 T320 7 T360 7 T400 7 T440 7 T480 7 T520 7 T560 7 T600 7"/></svg>
-  </div>
-
-  <footer class="colophon reveal" style="--d:.06s">
-    <p class="find">
-      <span class="label">Find me —</span>
-      <a href="https://cursor.com" target="_blank" rel="noopener">Cursor</a><span class="mid">·</span>
-      <a href="https://x.com/flowstated" target="_blank" rel="noopener">X</a><span class="mid">·</span>
-      <a href="https://github.com/eriknson" target="_blank" rel="noopener">GitHub</a><span class="mid">·</span>
-      <a href="https://linkedin.com/in/eriknson" target="_blank" rel="noopener">LinkedIn</a><span class="mid">·</span>
-      <a href="mailto:contact@eriks.design">Email</a>
-    </p>
-
-    <div class="signoff" aria-label="Signed, Erik">
-      <span class="sig" aria-hidden="true">Erik</span>
-      <svg class="ink sig-flourish" viewBox="0 0 180 24" preserveAspectRatio="none" aria-hidden="true"><path pathLength="1" d="M3 16 C36 4 70 4 104 12 C138 20 160 18 177 7"/></svg>
+  <section class="block field" data-rise>
+    <p class="eyebrow"><span class="sec-no">§1</span> Today <span class="eyebrow-sub">— field notes, 23 Oct</span></p>
+    <div class="field-wrap">
+      <ul class="notes-list">
+        <li>Clear eleven-degree dusk over San Francisco.</li>
+        <li>October light draining before seven.</li>
+        <li>A quieter coding week — repos sit untouched.</li>
+        <li>Agents spinning up from a pocket phone.</li>
+      </ul>
+      <p class="lately">Lately on <a class="lk" href="https://x.com/flowstated" target="_blank" rel="noopener">X</a> — <a class="lk" href="https://x.com/flowstated/status/2002167999353241901" target="_blank" rel="noopener">imagine 2026</a> · <a class="lk" href="https://x.com/flowstated/status/2000889983562080578" target="_blank" rel="noopener">shipping by sunrise</a> · <a class="lk" href="https://x.com/flowstated/status/2000691637190861180" target="_blank" rel="noopener">agents from a pocket phone</a>.</p>
     </div>
+  </section>
 
-    <p class="fineprint">
-      Set in Hoefler Text &amp; SF&nbsp;Mono · San Francisco, California<br>
-      Rewritten each morning by agents from fresh activity data · No trackers, no cookies
-    </p>
+  <section class="block writing" data-rise>
+    <p class="eyebrow"><span class="sec-no">§2</span> Writing <span class="eyebrow-sub">— five pieces, newest first</span></p>
+    <ol class="index">
+      <li class="entry">
+        <a href="https://cursor.com/blog/design-mode" target="_blank" rel="noopener">
+          <span class="yr">2026</span>
+          <span class="ttl">Directing agents visually<span class="ext" title="Reads on the Cursor blog">↗</span></span>
+          <span class="rt">6 min</span>
+        </a>
+      </li>
+      <li class="entry">
+        <a href="https://eriks.design/posts/a-living-site">
+          <span class="yr">2025</span>
+          <span class="ttl">A living site</span>
+          <span class="rt">7 min</span>
+        </a>
+        <p class="entry-note">how this very page rebuilds itself</p>
+      </li>
+      <li class="entry">
+        <a href="https://eriks.design/posts/surgical-edits">
+          <span class="yr">2025</span>
+          <span class="ttl">Surgical edits</span>
+          <span class="rt">4 min</span>
+        </a>
+      </li>
+      <li class="entry">
+        <a href="https://eriks.design/posts/familiar-differentiation">
+          <span class="yr">2024</span>
+          <span class="ttl">Familiar differentiation</span>
+          <span class="rt">5 min</span>
+        </a>
+      </li>
+      <li class="entry">
+        <a href="https://eriks.design/posts/hackathon-energy-but-add-users">
+          <span class="yr">2022</span>
+          <span class="ttl">Hackathon energy, but add users</span>
+          <span class="rt">4 min</span>
+        </a>
+      </li>
+    </ol>
+  </section>
+
+  <footer class="block colophon" data-rise>
+    <div class="rule-ox"></div>
+    <p class="sign-off">Thanks for reading. <span class="say">Say hello —</span></p>
+    <nav class="links" aria-label="Elsewhere">
+      <a href="https://cursor.com" target="_blank" rel="noopener">Cursor</a>
+      <a href="https://x.com/flowstated" target="_blank" rel="noopener">X</a>
+      <a href="https://github.com/eriknson" target="_blank" rel="noopener">GitHub</a>
+      <a href="https://linkedin.com/in/eriknson" target="_blank" rel="noopener">LinkedIn</a>
+      <a href="mailto:contact@eriks.design">Email</a>
+    </nav>
+    <p class="colo-note"><span class="live" aria-hidden="true"></span>Set by software and rebuilt overnight. <a class="lk" href="https://eriks.design/posts/a-living-site">Read how it works ↗</a></p>
+    <p class="folio">Erik Nilsson · eriks.design · Autumn 2026</p>
   </footer>
 
-</div>
-
-<script>
-(function(){
-  var root = document.documentElement;
-  root.classList.add('js');
-  var reduce = false;
-  try { reduce = window.matchMedia('(prefers-reduced-motion: reduce)').matches; } catch(e){}
-  var els = document.querySelectorAll('.reveal');
-  if (reduce || !('IntersectionObserver' in window)){
-    els.forEach(function(el){ el.classList.add('in'); });
-    return;
-  }
-  var io = new IntersectionObserver(function(entries){
-    entries.forEach(function(en){
-      if (en.isIntersecting){ en.target.classList.add('in'); io.unobserve(en.target); }
-    });
-  }, { rootMargin:'0px 0px -8% 0px', threshold:0.08 });
-  els.forEach(function(el){ io.observe(el); });
-})();
-</script>
+</main>
 </body>
 </html>

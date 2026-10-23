@@ -1,0 +1,376 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="color-scheme" content="light dark">
+<meta name="description" content="Erik Nilsson — product designer at Cursor, in San Francisco. A living notebook that rebuilds itself from fresh activity data each morning.">
+<title>Erik Nilsson — Notebook</title>
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='7' fill='%23f6f1e9'/%3E%3Ccircle cx='16' cy='16' r='8' fill='%23df3b1f'/%3E%3C/svg%3E">
+<style>
+  /* ============== palette & tokens ============== */
+  :root{
+    --bg:#f6f1e9;            /* warm paper */
+    --panel:#efe8db;         /* inset paper for notebook strip */
+    --ink:#1c1813;           /* warm near-black */
+    --muted:#6f685b;         /* graphite */
+    --faint:#938976;         /* light graphite */
+    --rule:rgba(28,24,19,.14);
+    --rule-strong:rgba(28,24,19,.78);
+    --accent:#df3b1f;        /* vermilion (sRGB fallback) */
+    --accent-weak:rgba(223,59,31,.5);
+    --accent-soft:rgba(223,59,31,.1);
+    --sel:rgba(223,59,31,.16);
+    --serif:"Iowan Old Style","Hoefler Text","Palatino Linotype",Palatino,"Book Antiqua",Georgia,Cambria,"Times New Roman",serif;
+    --sans:system-ui,-apple-system,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;
+    --mono:"Berkeley Mono",ui-monospace,"SF Mono",SFMono-Regular,"Cascadia Code",Menlo,Consolas,monospace;
+  }
+  /* wide-gamut vermilion: pushes past sRGB on P3 displays */
+  @supports (color:color(display-p3 1 0 0)){
+    :root{
+      --accent:color(display-p3 .84 .24 .12);
+      --accent-weak:color(display-p3 .84 .24 .12 / .52);
+      --accent-soft:color(display-p3 .84 .24 .12 / .1);
+      --sel:color(display-p3 .84 .24 .12 / .16);
+    }
+  }
+
+  /* ============== base ============== */
+  *{box-sizing:border-box}
+  html{-webkit-text-size-adjust:100%;scroll-behavior:smooth}
+  html,body{overflow-x:hidden}
+  body{
+    margin:0;
+    background:var(--bg);
+    color:var(--ink);
+    font-family:var(--serif);
+    font-size:17px;
+    line-height:1.66;
+    font-feature-settings:"onum" 1,"kern" 1,"liga" 1;
+    -webkit-font-smoothing:antialiased;
+    -moz-osx-font-smoothing:grayscale;
+    text-rendering:optimizeLegibility;
+    padding:clamp(30px,6vw,76px) 22px clamp(64px,11vh,128px);
+  }
+  ::selection{background:var(--sel)}
+  a{color:inherit;text-decoration:none}
+  em{font-style:italic}
+
+  .sheet{position:relative}
+  .block{max-width:640px;margin:0 auto}
+  section.block,footer.block{margin-top:clamp(2.8rem,7.5vh,5rem)}
+  /* notebook margin rule — classic red marginal line, wide screens only */
+  @media (min-width:760px){
+    .sheet::before{content:"";position:absolute;top:2px;bottom:2px;left:calc(50% - 350px);width:1.5px;background:var(--accent-weak)}
+  }
+
+  /* ============== masthead ============== */
+  .masthead{position:relative;margin-bottom:clamp(1.6rem,5vh,2.8rem)}
+  .kicker{
+    font-family:var(--mono);
+    font-size:.7rem;letter-spacing:.26em;text-transform:uppercase;
+    color:var(--accent);margin:0;
+  }
+  .wordmark{
+    font-weight:500;
+    font-size:clamp(2.7rem,9vw,4.5rem);
+    line-height:.98;letter-spacing:-.02em;
+    margin:.26em 0 .38em;
+  }
+  .wordmark em{font-style:italic;font-weight:500}
+  .dateline{font-style:italic;font-size:clamp(1.02rem,2.2vw,1.16rem);color:var(--ink)}
+  .dateline .sep{font-style:normal;color:var(--faint);margin:0 .5em}
+  .meta-row{
+    font-family:var(--mono);font-size:.71rem;letter-spacing:.11em;text-transform:uppercase;
+    color:var(--muted);margin-top:1.05rem;
+  }
+  .stamp{
+    position:absolute;top:.1rem;right:-.1rem;transform:rotate(5.5deg);
+    font-family:var(--mono);font-size:.6rem;letter-spacing:.2em;text-transform:uppercase;
+    color:var(--accent);border:1.5px solid var(--accent);
+    padding:.5em .62em;border-radius:3px;line-height:1.3;text-align:center;opacity:.92;
+  }
+  .stamp b{display:block;font-weight:400;font-size:.92em;letter-spacing:.16em}
+
+  .rule-ox{height:4px;margin-top:1.5rem;border-top:1.5px solid var(--rule-strong);border-bottom:1px solid var(--rule)}
+
+  /* ============== lede ============== */
+  .lede{margin-top:clamp(1.8rem,5vh,2.6rem)}
+  .lede-text{font-size:clamp(1.2rem,2.5vw,1.46rem);line-height:1.5;margin:0;text-wrap:pretty}
+  .dropcap{
+    float:left;font-weight:600;color:var(--accent);
+    font-size:3.5em;line-height:.66;padding:.06em .1em 0 0;margin:.02em .04em 0 0;
+  }
+  .lede-text em{font-style:italic;white-space:nowrap}
+
+  /* ============== section eyebrow ============== */
+  .eyebrow{
+    font-family:var(--mono);font-size:.73rem;letter-spacing:.14em;text-transform:uppercase;
+    color:var(--ink);margin:0 0 1.4rem;display:flex;align-items:baseline;gap:.75ch;flex-wrap:wrap;
+  }
+  .sec-no{color:var(--accent)}
+  .eyebrow-sub{font-family:var(--serif);font-style:italic;text-transform:none;letter-spacing:0;color:var(--muted);font-size:.98rem}
+
+  /* ============== today / field notes ============== */
+  .field-wrap{
+    background:var(--panel);
+    border:1px solid var(--rule);
+    border-radius:6px;
+    padding:clamp(1.3rem,3.5vw,1.9rem) clamp(1.3rem,4vw,2.1rem);
+    position:relative;
+  }
+  .notes-list{list-style:none;margin:0;padding:0;font-size:1.07rem;line-height:1.5}
+  .notes-list li{position:relative;padding-left:1.5em;margin:.46em 0}
+  .notes-list li::before{content:"—";position:absolute;left:0;color:var(--accent)}
+  .lately{font-style:italic;color:var(--muted);font-size:1rem;margin:1.5rem 0 0}
+  .lately a{font-style:normal}
+
+  /* ============== writing index ============== */
+  .index{list-style:none;margin:0;padding:0}
+  .entry{border-top:1px solid var(--rule)}
+  .entry:last-of-type{border-bottom:1px solid var(--rule)}
+  .entry > a{
+    display:grid;grid-template-columns:3.1em 1fr auto;align-items:baseline;gap:1.1em;
+    padding:.98rem .15rem .9rem;position:relative;
+  }
+  .yr{font-family:var(--mono);font-size:.76rem;letter-spacing:.03em;color:var(--muted);transition:color .3s ease}
+  .ttl{font-size:clamp(1.14rem,2.4vw,1.28rem);line-height:1.2;position:relative;width:fit-content;transition:color .3s ease}
+  .ttl .ext{color:var(--accent);font-family:var(--mono);font-size:.72em;margin-left:.15em;vertical-align:.08em}
+  .ttl::after{
+    content:"";position:absolute;left:0;right:0;bottom:-3px;height:1.5px;background:var(--accent);
+    transform:scaleX(0);transform-origin:left;transition:transform .42s cubic-bezier(.6,.03,.28,.98);
+  }
+  .rt{font-family:var(--mono);font-size:.71rem;letter-spacing:.05em;color:var(--faint);white-space:nowrap}
+  .entry > a:hover .ttl,.entry > a:focus-visible .ttl{color:var(--accent)}
+  .entry > a:hover .ttl::after,.entry > a:focus-visible .ttl::after{transform:scaleX(1)}
+  .entry > a:hover .yr,.entry > a:focus-visible .yr{color:var(--accent)}
+  .entry-note{
+    font-style:italic;color:var(--muted);font-size:.95rem;line-height:1.4;
+    padding:0 .15rem .95rem;margin-top:-.35rem;
+  }
+  .entry-note::before{content:"\21B3";color:var(--accent);font-style:normal;margin-right:.45ch}
+
+  /* ============== colophon ============== */
+  .sign-off{font-size:1.16rem;margin:1.5rem 0 1.15rem}
+  .say{font-style:italic;color:var(--muted)}
+  .links{
+    display:flex;flex-wrap:wrap;gap:.9rem 1.5rem;margin:0 0 1.7rem;
+    font-family:var(--mono);font-size:.82rem;letter-spacing:.04em;
+  }
+  .links a{position:relative;padding-bottom:3px}
+  .links a::after{
+    content:"";position:absolute;left:0;bottom:0;width:100%;height:1.5px;background:var(--accent);
+    transform:scaleX(0);transform-origin:left;transition:transform .35s cubic-bezier(.6,.03,.28,.98);
+  }
+  .links a:hover,.links a:focus-visible{color:var(--accent)}
+  .links a:hover::after,.links a:focus-visible::after{transform:scaleX(1)}
+  .colo-note{font-style:italic;color:var(--muted);font-size:.99rem;margin:0 0 1.6rem}
+  .folio{
+    font-family:var(--mono);font-size:.67rem;letter-spacing:.16em;text-transform:uppercase;
+    color:var(--faint);margin:0;
+  }
+
+  /* inline links in prose */
+  .lk{
+    color:var(--ink);text-decoration:underline;text-decoration-color:var(--accent-weak);
+    text-underline-offset:.22em;text-decoration-thickness:1.5px;
+    transition:text-decoration-color .25s ease,color .25s ease;
+  }
+  .lk:hover,.lk:focus-visible{color:var(--accent);text-decoration-color:var(--accent)}
+
+  /* ============== live dot ============== */
+  .live{
+    display:inline-block;width:7px;height:7px;border-radius:50%;background:var(--accent);
+    vertical-align:middle;margin-right:.6ch;position:relative;top:-1px;
+  }
+  @keyframes pulse{
+    0%{box-shadow:0 0 0 0 var(--accent-weak)}
+    70%{box-shadow:0 0 0 8px transparent}
+    100%{box-shadow:0 0 0 0 transparent}
+  }
+
+  /* ============== marginalia ============== */
+  .note{
+    font-style:italic;color:var(--muted);font-size:.95rem;line-height:1.46;
+    border-left:2px solid var(--accent);padding:.1rem 0 .1rem .95rem;margin:1.3rem 0;
+  }
+
+  /* ============== hand-drawn ink ============== */
+  .mark-circle{position:relative;white-space:nowrap}
+  .ink{position:absolute;overflow:visible;pointer-events:none}
+  .mark-circle .ink{left:-13%;top:-46%;width:126%;height:196%}
+  .ink path{
+    fill:none;stroke:var(--accent);stroke-width:2;stroke-linecap:round;stroke-linejoin:round;
+    vector-effect:non-scaling-stroke;filter:url(#rough);
+  }
+
+  /* ============== motion — pure CSS; safe-visible default; runs in iframe AND shadow DOM ============== */
+  @keyframes rise{from{opacity:0;transform:translateY(12px)}to{opacity:1;transform:none}}
+  @keyframes draw{from{stroke-dashoffset:1}to{stroke-dashoffset:0}}
+  @media (prefers-reduced-motion:no-preference){
+    [data-rise]{animation:rise .85s cubic-bezier(.2,.65,.3,1) both}
+    .ink path{stroke-dasharray:1;animation:draw 1.2s cubic-bezier(.6,.03,.3,1) .9s both}
+    .live{animation:pulse 2.8s ease-out infinite}
+  }
+
+  /* ============== responsive ============== */
+  @media (min-width:1120px){
+    .note.right{float:right;clear:right;width:188px;margin:.5rem -216px 1rem 0;border-left:2px solid var(--accent);padding-left:.95rem}
+    .note.left{float:left;clear:left;width:188px;margin:.5rem 0 1rem -216px;text-align:right;border-left:0;border-right:2px solid var(--accent);padding:.1rem .95rem .1rem 0}
+  }
+  @media (max-width:640px){
+    body{padding-left:19px;padding-right:19px}
+    .wordmark{font-size:clamp(2.35rem,12.5vw,3.1rem)}
+    .stamp{display:none}
+    .entry > a{grid-template-columns:2.7em 1fr auto;gap:.75em}
+    .eyebrow{gap:.6ch}
+  }
+  @media (max-width:420px){
+    .entry > a{grid-template-columns:1fr auto;row-gap:.1em}
+    .yr{grid-column:1;font-size:.72rem}
+    .rt{grid-column:2;text-align:right}
+    .ttl{grid-column:1 / -1;order:3;margin-top:.1em}
+  }
+  @media (prefers-reduced-motion:reduce){
+    html{scroll-behavior:auto}
+  }
+
+  /* ============== dark mode (kept LAST, compact, bg is dark) ============== */
+  @media (prefers-color-scheme:dark){
+    :root{
+      --bg:#15120d;
+      --panel:#1d1912;
+      --ink:#ece4d6;
+      --muted:#a0978a;
+      --faint:#7b7161;
+      --rule:rgba(236,228,214,.14);
+      --rule-strong:rgba(236,228,214,.8);
+      --accent:#ff6a4d;
+      --accent-weak:rgba(255,106,77,.58);
+      --accent-soft:rgba(255,106,77,.12);
+      --sel:rgba(255,106,77,.22);
+    }
+  }
+  @supports (color:color(display-p3 1 0 0)){@media (prefers-color-scheme:dark){
+    :root{--accent:color(display-p3 1 .46 .32);--accent-weak:color(display-p3 1 .46 .32 / .6);--accent-soft:color(display-p3 1 .46 .32 / .14);--sel:color(display-p3 1 .46 .32 / .24)}
+  }}
+</style>
+
+<style id="__living_site_scroll_guard">
+  /* Scroll guard injected at build time to ensure generated pages remain scrollable in iframes. */
+  html, body {
+    height: auto !important;
+    min-height: 100% !important;
+    max-height: none !important;
+    overflow-y: auto !important;
+    overflow-x: hidden !important;
+    position: static !important;
+    -webkit-overflow-scrolling: touch !important;
+    touch-action: pan-y !important;
+    overscroll-behavior-y: contain !important;
+  }
+  /* Avoid accidental fixed full-screen traps that break scrolling on mobile. */
+  body {
+    inset: auto !important;
+  }
+</style>
+</head>
+<body>
+<!-- hand-drawn ink filter -->
+<svg width="0" height="0" style="position:absolute" aria-hidden="true" focusable="false"><defs>
+  <filter id="rough" x="-25%" y="-45%" width="150%" height="190%">
+    <feTurbulence type="fractalNoise" baseFrequency="0.014 0.02" numOctaves="2" seed="11" result="t"/>
+    <feDisplacementMap in="SourceGraphic" in2="t" scale="2.6"/>
+  </filter>
+</defs></svg>
+
+<main class="sheet">
+
+  <header class="block masthead">
+    <p class="kicker" data-rise style="animation-delay:.02s">A living site — rebuilt each morning</p>
+    <h1 class="wordmark" data-rise style="animation-delay:.08s">Erik <em>Nilsson</em></h1>
+    <p class="dateline" data-rise style="animation-delay:.18s">Product Designer at Cursor<span class="sep">/</span>San Francisco</p>
+    <p class="meta-row" data-rise style="animation-delay:.28s"><span class="live" aria-hidden="true"></span>Autumn 2026 &nbsp;·&nbsp; Fri 23 Oct &nbsp;·&nbsp; Clear, 11°</p>
+    <div class="stamp" aria-hidden="true" data-rise style="animation-delay:.36s">Issue<b>23·10·26</b></div>
+    <div class="rule-ox" data-rise style="animation-delay:.42s"></div>
+  </header>
+
+  <section class="block lede" data-rise style="animation-delay:.42s">
+    <aside class="note right">This very page, too — set by software while the city sleeps, and new again by sunrise.</aside>
+    <p class="lede-text">
+      <span class="dropcap">P</span>roduct designer at Cursor — I work on how people build software with AI. Off-hours, I'm tinkering with <em>living-site</em>: agents that rebuild this corner of the web from fresh activity data <span class="mark-circle">each day<svg class="ink" viewBox="0 0 240 90" preserveAspectRatio="none" aria-hidden="true"><path pathLength="1" d="M48,22 C18,30 9,54 40,68 C82,84 186,81 213,62 C237,46 229,22 194,15 C146,5 70,10 43,23"/></svg></span>.
+    </p>
+  </section>
+
+  <section class="block field" data-rise>
+    <p class="eyebrow"><span class="sec-no">§1</span> Today <span class="eyebrow-sub">— field notes, 23 Oct</span></p>
+    <div class="field-wrap">
+      <ul class="notes-list">
+        <li>Clear eleven-degree dusk over San Francisco.</li>
+        <li>October light draining before seven.</li>
+        <li>A quieter coding week — repos sit untouched.</li>
+        <li>Agents spinning up from a pocket phone.</li>
+      </ul>
+      <p class="lately">Lately on <a class="lk" href="https://x.com/flowstated" target="_blank" rel="noopener">X</a> — <a class="lk" href="https://x.com/flowstated/status/2002167999353241901" target="_blank" rel="noopener">imagine 2026</a> · <a class="lk" href="https://x.com/flowstated/status/2000889983562080578" target="_blank" rel="noopener">shipping by sunrise</a> · <a class="lk" href="https://x.com/flowstated/status/2000691637190861180" target="_blank" rel="noopener">agents from a pocket phone</a>.</p>
+    </div>
+  </section>
+
+  <section class="block writing" data-rise>
+    <p class="eyebrow"><span class="sec-no">§2</span> Writing <span class="eyebrow-sub">— five pieces, newest first</span></p>
+    <ol class="index">
+      <li class="entry">
+        <a href="https://cursor.com/blog/design-mode" target="_blank" rel="noopener">
+          <span class="yr">2026</span>
+          <span class="ttl">Directing agents visually<span class="ext" title="Reads on the Cursor blog">↗</span></span>
+          <span class="rt">6 min</span>
+        </a>
+      </li>
+      <li class="entry">
+        <a href="https://eriks.design/posts/a-living-site">
+          <span class="yr">2025</span>
+          <span class="ttl">A living site</span>
+          <span class="rt">7 min</span>
+        </a>
+        <p class="entry-note">how this very page rebuilds itself</p>
+      </li>
+      <li class="entry">
+        <a href="https://eriks.design/posts/surgical-edits">
+          <span class="yr">2025</span>
+          <span class="ttl">Surgical edits</span>
+          <span class="rt">4 min</span>
+        </a>
+      </li>
+      <li class="entry">
+        <a href="https://eriks.design/posts/familiar-differentiation">
+          <span class="yr">2024</span>
+          <span class="ttl">Familiar differentiation</span>
+          <span class="rt">5 min</span>
+        </a>
+      </li>
+      <li class="entry">
+        <a href="https://eriks.design/posts/hackathon-energy-but-add-users">
+          <span class="yr">2022</span>
+          <span class="ttl">Hackathon energy, but add users</span>
+          <span class="rt">4 min</span>
+        </a>
+      </li>
+    </ol>
+  </section>
+
+  <footer class="block colophon" data-rise>
+    <div class="rule-ox"></div>
+    <p class="sign-off">Thanks for reading. <span class="say">Say hello —</span></p>
+    <nav class="links" aria-label="Elsewhere">
+      <a href="https://cursor.com" target="_blank" rel="noopener">Cursor</a>
+      <a href="https://x.com/flowstated" target="_blank" rel="noopener">X</a>
+      <a href="https://github.com/eriknson" target="_blank" rel="noopener">GitHub</a>
+      <a href="https://linkedin.com/in/eriknson" target="_blank" rel="noopener">LinkedIn</a>
+      <a href="mailto:contact@eriks.design">Email</a>
+    </nav>
+    <p class="colo-note"><span class="live" aria-hidden="true"></span>Set by software and rebuilt overnight. <a class="lk" href="https://eriks.design/posts/a-living-site">Read how it works ↗</a></p>
+    <p class="folio">Erik Nilsson · eriks.design · Autumn 2026</p>
+  </footer>
+
+</main>
+</body>
+</html>
