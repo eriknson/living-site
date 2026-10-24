@@ -1,0 +1,989 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="description" content="Erik Nilsson — product designer at Cursor. Notes, writing, and a living site rebuilt daily.">
+<title>Erik Nilsson — eriks.design</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Caveat:wght@400;500&family=Fraunces:ital,opsz,wght@0,9..144,400;0,9..144,500;1,9..144,400&family=Source+Serif+4:ital,opsz,wght@0,8..60,400;0,8..60,500;1,8..60,400&display=swap" rel="stylesheet">
+<style>
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+
+:root{
+  --paper: #f0e9df;
+  --ink: #181512;
+  --ink-soft: #564f48;
+  --ink-faint: #948b82;
+  --rule: rgba(24,21,18,.09);
+  --margin-line: rgba(210,72,52,.30);
+  --accent: #d24834;
+  --amber: #c87828;
+  --dusk: #4a5a6a;
+  --phosphor: #2a9460;
+  --violet: #6a5098;
+  --serif: "Source Serif 4", "Iowan Old Style", "Palatino Linotype", Palatino, Georgia, serif;
+  --display: "Fraunces", "Source Serif 4", Georgia, serif;
+  --hand: "Caveat", "Segoe Print", cursive;
+  --ease: cubic-bezier(.22,1,.36,1);
+  --gutter: clamp(2.5rem, 6.5vw, 4rem);
+}
+
+@supports (color: color(display-p3 1 1 1)){
+  :root{
+    --paper: color(display-p3 0.938 0.914 0.878);
+    --ink: color(display-p3 0.092 0.082 0.072);
+    --ink-soft: color(display-p3 0.330 0.310 0.285);
+    --ink-faint: color(display-p3 0.570 0.545 0.515);
+    --margin-line: color(display-p3 0.820 0.320 0.240 / 0.30);
+    --accent: color(display-p3 0.820 0.320 0.240);
+    --amber: color(display-p3 0.780 0.500 0.220);
+    --dusk: color(display-p3 0.320 0.360 0.420);
+    --phosphor: color(display-p3 0.240 0.580 0.400);
+    --violet: color(display-p3 0.420 0.320 0.590);
+  }
+}
+
+html{
+  font-size: clamp(16px, 1.05vw + 14px, 19px);
+  scroll-behavior: smooth;
+  -webkit-font-smoothing: antialiased;
+  color-scheme: light;
+}
+
+::selection{
+  background: var(--margin-line);
+  color: var(--ink);
+}
+
+body{
+  font-family: var(--serif);
+  background: var(--paper);
+  color: var(--ink);
+  line-height: 1.55;
+  min-height: 100vh;
+  overflow-x: hidden;
+}
+
+body::after{
+  content:"";
+  position: fixed;
+  inset: 0;
+  pointer-events: none;
+  z-index: 0;
+  opacity: .035;
+  background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
+}
+
+/* ── notebook shell ── */
+.notebook{
+  position: relative;
+  z-index: 1;
+  max-width: 40rem;
+  margin: 0 auto;
+  padding: clamp(2rem, 5vw, 4.5rem) clamp(1.25rem, 4vw, 3rem) clamp(3rem, 6vw, 5rem);
+}
+
+.notebook::before{
+  content:"";
+  position: absolute;
+  left: calc(var(--gutter) - 1.35rem);
+  top: clamp(2rem, 5vw, 4.5rem);
+  bottom: clamp(3rem, 6vw, 5rem);
+  width: 1px;
+  background: var(--margin-line);
+}
+
+.notebook__holes{
+  position: absolute;
+  left: calc(var(--gutter) - 2.15rem);
+  top: clamp(3.5rem, 8vw, 5.5rem);
+  bottom: clamp(4rem, 9vw, 6rem);
+  width: .85rem;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  pointer-events: none;
+}
+
+.notebook__holes span{
+  display: block;
+  width: .85rem;
+  height: .85rem;
+  border: 1px solid var(--rule);
+  border-radius: 50%;
+  background: var(--paper);
+  box-shadow: inset 0 1px 2px rgba(24,21,18,.06);
+}
+
+.notebook__content{
+  padding-left: var(--gutter);
+  position: relative;
+}
+
+/* stars — clear autumn night */
+.stars{
+  position: absolute;
+  right: -.75rem;
+  top: 6rem;
+  width: 3.5rem;
+  height: 5rem;
+  pointer-events: none;
+  opacity: .38;
+}
+
+.stars circle{ fill: var(--dusk); }
+.stars circle:nth-child(2){ fill: var(--amber); opacity: .7; }
+.stars circle:nth-child(4){ fill: var(--phosphor); opacity: .55; }
+
+@media (max-width: 540px){
+  .notebook::before{ left: 1.1rem; }
+  .notebook__holes{ left: .35rem; }
+  .notebook__content{ padding-left: 2rem; }
+  .stars{ right: 0; top: 4rem; width: 2.5rem; opacity: .28; }
+}
+
+/* ── masthead ── */
+.masthead{
+  display: grid;
+  grid-template-columns: 1fr auto;
+  gap: 1rem 2rem;
+  align-items: end;
+  padding-bottom: 1.35rem;
+  border-bottom: 1.5px solid var(--ink);
+  animation: rise .85s var(--ease) both;
+  position: relative;
+}
+
+.masthead__reg{
+  position: absolute;
+  top: 0;
+  right: 0;
+  width: 1.1rem;
+  height: 1.1rem;
+  opacity: .32;
+  pointer-events: none;
+}
+
+.masthead__brand{
+  font-family: var(--display);
+  font-size: clamp(1.05rem, 2vw, 1.28rem);
+  font-weight: 400;
+  letter-spacing: -.015em;
+}
+
+.masthead__issue{
+  font-size: .64rem;
+  letter-spacing: .14em;
+  text-transform: uppercase;
+  color: var(--ink-faint);
+  margin-top: .35rem;
+}
+
+.masthead__meta{
+  font-size: .68rem;
+  letter-spacing: .1em;
+  text-transform: uppercase;
+  color: var(--ink-soft);
+  text-align: right;
+  line-height: 1.75;
+}
+
+.masthead__weather{
+  color: var(--amber);
+  font-style: italic;
+  letter-spacing: .05em;
+  text-transform: none;
+}
+
+.masthead__stamp{
+  position: absolute;
+  top: -.35rem;
+  right: 2.5rem;
+  font-family: var(--hand);
+  font-size: 1.55rem;
+  color: var(--accent);
+  transform: rotate(-12deg);
+  opacity: .72;
+  pointer-events: none;
+  border: 2px solid var(--accent);
+  border-radius: 50%;
+  width: 2.6rem;
+  height: 2.6rem;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  line-height: 1;
+}
+
+@media (max-width: 540px){
+  .masthead__stamp{ right: 1.5rem; font-size: 1.3rem; width: 2.2rem; height: 2.2rem; }
+}
+
+/* ── hero spread ── */
+.spread{
+  display: grid;
+  grid-template-columns: minmax(0, 1.15fr) minmax(0, .85fr);
+  gap: clamp(2rem, 5vw, 3.5rem);
+  margin-top: clamp(2.25rem, 5.5vw, 3.75rem);
+  position: relative;
+}
+
+.spread::after{
+  content:"";
+  position: absolute;
+  left: 58%;
+  top: -.25rem;
+  bottom: 0;
+  width: 1px;
+  background: var(--rule);
+}
+
+@media (max-width: 780px){
+  .spread{ grid-template-columns: 1fr; }
+  .spread::after{ display: none; }
+}
+
+.hero{
+  animation: rise .85s var(--ease) .07s both;
+  position: relative;
+}
+
+.hero__name{
+  font-family: var(--display);
+  font-size: clamp(2.75rem, 8.5vw, 5.1rem);
+  font-weight: 400;
+  line-height: .94;
+  letter-spacing: -.035em;
+  text-wrap: balance;
+  margin-bottom: .75rem;
+}
+
+.hero__name em{
+  font-style: italic;
+  font-weight: 400;
+  color: var(--accent);
+}
+
+.hero__role{
+  font-size: clamp(1rem, 2.1vw, 1.16rem);
+  color: var(--ink-soft);
+  max-width: 30ch;
+  margin-bottom: 1.55rem;
+  line-height: 1.45;
+}
+
+.hero__role a{
+  color: inherit;
+  text-decoration: none;
+  font-style: italic;
+  border-bottom: 1px solid var(--rule);
+  transition: border-color .3s, color .3s;
+}
+
+.hero__role a:hover{
+  color: var(--ink);
+  border-color: var(--accent);
+}
+
+.hero__lede{
+  font-size: 1.03rem;
+  max-width: 36ch;
+  color: var(--ink);
+  line-height: 1.58;
+}
+
+.hero__lede + .hero__lede{
+  margin-top: .75rem;
+  color: var(--ink-soft);
+  font-size: .97rem;
+}
+
+.dropcap{
+  font-family: var(--display);
+  font-size: 3.05em;
+  float: left;
+  line-height: .76;
+  margin: .06em .14em 0 0;
+  color: var(--accent);
+}
+
+/* handwritten annotations */
+.annot{
+  position: relative;
+  display: inline-block;
+}
+
+.annot__hand{
+  font-family: var(--hand);
+  font-size: 1.28em;
+  position: absolute;
+  white-space: nowrap;
+  pointer-events: none;
+  line-height: 1;
+}
+
+.annot--role .annot__hand{
+  top: -.15em;
+  right: -5.2em;
+  color: var(--phosphor);
+  transform: rotate(-6deg);
+}
+
+.annot--living .annot__hand{
+  bottom: -.55em;
+  left: -.05em;
+  color: var(--amber);
+  transform: rotate(-2deg);
+}
+
+@media (max-width: 780px){
+  .annot--role .annot__hand{
+    position: static;
+    display: block;
+    margin-top: .2rem;
+    transform: rotate(-1deg);
+  }
+}
+
+/* margin doodle — phantom cite crossed out */
+.doodle{
+  position: absolute;
+  left: -.5rem;
+  bottom: -1.5rem;
+  width: 5rem;
+  opacity: .38;
+  pointer-events: none;
+}
+
+@media (max-width: 780px){
+  .doodle{
+    left: auto;
+    right: 0;
+    bottom: -2rem;
+    width: 4rem;
+  }
+}
+
+/* ── field notes column ── */
+.aside-col{
+  padding-top: .25rem;
+  animation: rise .85s var(--ease) .14s both;
+}
+
+.aside-col__label{
+  font-size: .64rem;
+  letter-spacing: .15em;
+  text-transform: uppercase;
+  color: var(--ink-faint);
+  margin-bottom: 1.1rem;
+  display: flex;
+  align-items: center;
+  gap: .5rem;
+}
+
+.aside-col__label svg{
+  flex-shrink: 0;
+  opacity: .6;
+  color: var(--dusk);
+}
+
+.field-notes{
+  list-style: none;
+  display: flex;
+  flex-direction: column;
+  gap: .8rem;
+}
+
+.field-notes li{
+  font-size: .86rem;
+  color: var(--ink-soft);
+  padding-left: 1rem;
+  position: relative;
+  line-height: 1.42;
+}
+
+.field-notes li::before{
+  content:"";
+  position: absolute;
+  left: 0;
+  top: .55em;
+  width: .35rem;
+  height: 1px;
+  background: var(--accent);
+}
+
+.field-notes li:first-child{
+  font-style: italic;
+  color: var(--dusk);
+  font-size: .92rem;
+}
+
+/* ── scraps / tweets ── */
+.marginalia{
+  margin-top: clamp(2.75rem, 6.5vw, 4.5rem);
+  animation: rise .85s var(--ease) .21s both;
+}
+
+.marginalia__head{
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 1rem;
+  margin-bottom: 1.3rem;
+  padding-bottom: .5rem;
+  border-bottom: 1px solid var(--rule);
+}
+
+.marginalia__title{
+  font-family: var(--display);
+  font-size: 1.26rem;
+  font-weight: 400;
+  letter-spacing: -.01em;
+}
+
+.marginalia__note{
+  font-family: var(--hand);
+  font-size: 1.1rem;
+  color: var(--violet);
+  transform: rotate(-2deg);
+}
+
+.fragments{
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: clamp(.85rem, 2.5vw, 1.55rem);
+}
+
+@media (max-width: 680px){
+  .fragments{ grid-template-columns: 1fr; }
+}
+
+.fragment{
+  position: relative;
+  padding: 1.05rem .9rem .9rem;
+  border: 1px solid var(--rule);
+  background: rgba(255,255,255,.44);
+  transition: border-color .35s var(--ease), transform .4s var(--ease);
+}
+
+@supports (color: color(display-p3 1 1 1)){
+  .fragment{
+    background: color(display-p3 1 1 1 / 0.44);
+  }
+}
+
+.fragment:nth-child(1){ transform: rotate(-.6deg); }
+.fragment:nth-child(2){ transform: rotate(.4deg); margin-top: .35rem; }
+.fragment:nth-child(3){ transform: rotate(-.3deg); }
+
+.fragment:hover{
+  border-color: var(--margin-line);
+  transform: translateY(-2px) rotate(0deg) !important;
+}
+
+.fragment__num{
+  font-family: var(--hand);
+  font-size: 1.42rem;
+  color: var(--accent);
+  line-height: 1;
+  margin-bottom: .4rem;
+}
+
+.fragment__text{
+  font-size: .85rem;
+  line-height: 1.48;
+  color: var(--ink);
+  white-space: pre-line;
+}
+
+.fragment__link{
+  display: inline-flex;
+  align-items: center;
+  gap: .28rem;
+  margin-top: .65rem;
+  font-size: .64rem;
+  letter-spacing: .09em;
+  text-transform: uppercase;
+  color: var(--ink-faint);
+  text-decoration: none;
+  transition: color .25s;
+}
+
+.fragment__link:hover{ color: var(--accent); }
+
+.fragment__link svg{
+  width: .68rem;
+  height: .68rem;
+  transition: transform .25s var(--ease);
+}
+
+.fragment__link:hover svg{ transform: translate(2px, -2px); }
+
+/* ── writing index — contents page with dot leaders ── */
+.writing{
+  margin-top: clamp(3.25rem, 7.5vw, 5.5rem);
+  animation: rise .85s var(--ease) .28s both;
+}
+
+.writing__header{
+  display: grid;
+  grid-template-columns: 1fr auto;
+  align-items: end;
+  gap: 1rem;
+  margin-bottom: 1.45rem;
+}
+
+.writing__title{
+  font-family: var(--display);
+  font-size: clamp(1.72rem, 4vw, 2.2rem);
+  font-weight: 400;
+  letter-spacing: -.025em;
+}
+
+.writing__count{
+  font-family: var(--hand);
+  font-size: 1.18rem;
+  color: var(--phosphor);
+  transform: rotate(2deg);
+}
+
+.index{
+  list-style: none;
+  border-top: 1.5px solid var(--ink);
+}
+
+.index__item{
+  border-bottom: 1px solid var(--rule);
+}
+
+.index__link{
+  display: flex;
+  align-items: baseline;
+  gap: .75rem;
+  padding: .9rem 0;
+  text-decoration: none;
+  color: inherit;
+  transition: padding-left .35s var(--ease);
+}
+
+.index__link:hover{
+  padding-left: .4rem;
+}
+
+.index__link:hover .index__title{
+  color: var(--accent);
+}
+
+.index__link:hover .index__arrow{
+  opacity: 1;
+  transform: translateX(0);
+}
+
+.index__num{
+  font-family: var(--hand);
+  font-size: 1.12rem;
+  color: var(--ink-faint);
+  flex-shrink: 0;
+  width: 1.75rem;
+  text-align: right;
+}
+
+.index__body{
+  flex: 1;
+  display: flex;
+  align-items: baseline;
+  gap: .35rem;
+  min-width: 0;
+}
+
+.index__title{
+  font-size: clamp(.96rem, 2vw, 1.06rem);
+  transition: color .25s;
+  flex-shrink: 0;
+}
+
+.index__leaders{
+  flex: 1;
+  min-width: 1rem;
+  border-bottom: 1px dotted var(--ink-faint);
+  opacity: .45;
+  margin: 0 .15rem;
+  transform: translateY(-.15em);
+}
+
+.index__date{
+  font-size: .68rem;
+  letter-spacing: .06em;
+  color: var(--ink-faint);
+  white-space: nowrap;
+  flex-shrink: 0;
+}
+
+.index__arrow{
+  opacity: 0;
+  transform: translateX(-4px);
+  transition: opacity .25s, transform .35s var(--ease);
+  color: var(--accent);
+  font-size: .88rem;
+  flex-shrink: 0;
+  margin-left: .25rem;
+}
+
+@media (max-width: 540px){
+  .index__leaders{ display: none; }
+  .index__body{ flex-wrap: wrap; gap: .15rem .5rem; }
+  .index__date{ margin-left: auto; }
+}
+
+/* ── footer ── */
+.footer{
+  margin-top: clamp(3rem, 7vw, 5rem);
+  padding-top: 1.5rem;
+  border-top: 1px solid var(--rule);
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1.25rem;
+  animation: rise .85s var(--ease) .35s both;
+}
+
+.footer__links{
+  display: flex;
+  flex-wrap: wrap;
+  gap: .3rem 1.1rem;
+  list-style: none;
+}
+
+.footer__links a{
+  font-size: .75rem;
+  letter-spacing: .04em;
+  color: var(--ink-soft);
+  text-decoration: none;
+  position: relative;
+  padding-bottom: 2px;
+}
+
+.footer__links a::after{
+  content:"";
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  height: 1px;
+  background: var(--accent);
+  transform: scaleX(0);
+  transform-origin: left;
+  transition: transform .35s var(--ease);
+}
+
+.footer__links a:hover{
+  color: var(--ink);
+}
+
+.footer__links a:hover::after,
+.footer__links a:focus-visible::after{
+  transform: scaleX(1);
+}
+
+.footer__links a:focus-visible,
+.index__link:focus-visible,
+.fragment__link:focus-visible{
+  outline: 2px solid var(--accent);
+  outline-offset: 3px;
+}
+
+.hero a:focus-visible{
+  outline: 2px solid var(--phosphor);
+  outline-offset: 2px;
+}
+
+.footer__stamp{
+  font-family: var(--hand);
+  font-size: 1.02rem;
+  color: var(--dusk);
+  transform: rotate(-2.5deg);
+}
+
+.footer__folio{
+  position: absolute;
+  left: 50%;
+  bottom: clamp(1.5rem, 3vw, 2.5rem);
+  transform: translateX(-50%);
+  font-size: .62rem;
+  letter-spacing: .12em;
+  text-transform: uppercase;
+  color: var(--ink-faint);
+  pointer-events: none;
+}
+
+@keyframes rise{
+  from{ opacity: 0; transform: translateY(12px); }
+  to{ opacity: 1; transform: translateY(0); }
+}
+
+@media (prefers-color-scheme: dark){
+  :root{
+    --paper: #161412;
+    --ink: #e4e0d8;
+    --ink-soft: #a6a098;
+    --ink-faint: #6b6560;
+    --rule: rgba(228,224,216,.09);
+    --margin-line: rgba(228,100,78,.32);
+    --accent: #e06850;
+    --amber: #e09848;
+    --phosphor: #50b870;
+    --dusk: #8898a8;
+    --violet: #9888c0;
+  }
+
+  @supports (color: color(display-p3 1 1 1)){
+    :root{
+      --paper: color(display-p3 0.086 0.078 0.072);
+      --ink: color(display-p3 0.892 0.878 0.850);
+      --accent: color(display-p3 0.880 0.460 0.360);
+      --amber: color(display-p3 0.880 0.620 0.320);
+      --phosphor: color(display-p3 0.380 0.720 0.480);
+      --violet: color(display-p3 0.580 0.540 0.760);
+    }
+  }
+
+  html{ color-scheme: dark; }
+
+  .fragment{
+    background: rgba(255,255,255,.045);
+  }
+
+  .notebook__holes span{
+    background: var(--paper);
+    box-shadow: inset 0 1px 2px rgba(0,0,0,.25);
+  }
+}
+
+@media (prefers-reduced-motion: reduce){
+  *,*::before,*::after{
+    animation-duration: .01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: .01ms !important;
+  }
+  html{ scroll-behavior: auto; }
+}
+</style>
+
+<style id="__living_site_scroll_guard">
+  /* Scroll guard injected at build time to ensure generated pages remain scrollable in iframes. */
+  html, body {
+    height: auto !important;
+    min-height: 100% !important;
+    max-height: none !important;
+    overflow-y: auto !important;
+    overflow-x: hidden !important;
+    position: static !important;
+    -webkit-overflow-scrolling: touch !important;
+    touch-action: pan-y !important;
+    overscroll-behavior-y: contain !important;
+  }
+  /* Avoid accidental fixed full-screen traps that break scrolling on mobile. */
+  body {
+    inset: auto !important;
+  }
+</style>
+</head>
+<body>
+<div class="notebook">
+  <div class="notebook__holes" aria-hidden="true">
+    <span></span><span></span><span></span><span></span><span></span>
+  </div>
+
+  <div class="notebook__content">
+
+    <svg class="stars" viewBox="0 0 56 80" aria-hidden="true">
+      <circle cx="12" cy="8" r="1.2"/>
+      <circle cx="44" cy="18" r="1"/>
+      <circle cx="28" cy="32" r="1.4"/>
+      <circle cx="8" cy="48" r=".9"/>
+      <circle cx="48" cy="56" r="1.1"/>
+      <circle cx="22" cy="68" r="1"/>
+    </svg>
+
+    <header class="masthead">
+      <svg class="masthead__reg" viewBox="0 0 18 18" fill="none" aria-hidden="true">
+        <path d="M9 1v16M1 9h16" stroke="var(--ink-faint)" stroke-width=".6"/>
+        <circle cx="9" cy="9" r="3" stroke="var(--accent)" stroke-width=".6"/>
+      </svg>
+      <span class="masthead__stamp" aria-hidden="true">24</span>
+      <div>
+        <div class="masthead__brand">eriks.design</div>
+        <div class="masthead__issue">Vol. daily · autumn 2026</div>
+      </div>
+      <div class="masthead__meta">
+        <span>Sat · Oct 24, 2026</span><br>
+        <span>San Francisco</span><br>
+        <span class="masthead__weather">11° · clear night</span>
+      </div>
+    </header>
+
+    <div class="spread">
+      <section class="hero">
+        <h1 class="hero__name">Erik <em>Nilsson</em></h1>
+        <p class="hero__role">
+          Product designer at
+          <span class="annot annot--role">
+            <a href="https://cursor.com">Cursor</a>
+            <span class="annot__hand" aria-hidden="true">building w/ AI →</span>
+          </span>
+        </p>
+        <p class="hero__lede"><span class="dropcap">W</span>orking on how people build software with AI.</p>
+        <p class="hero__lede">
+          Off-hours, a
+          <span class="annot annot--living">
+            <em>living site</em>
+            <span class="annot__hand" aria-hidden="true">rebuilt each dawn</span>
+          </span>
+          — agents refresh this corner of the web from daily activity.
+        </p>
+
+        <svg class="doodle" viewBox="0 0 80 48" fill="none" aria-hidden="true">
+          <text x="4" y="22" font-family="Georgia, serif" font-size="14" fill="var(--ink-faint)" opacity=".8">[?]</text>
+          <path d="M2 26 L38 18" stroke="var(--accent)" stroke-width="1.4" stroke-linecap="round"/>
+          <text x="42" y="16" font-family="Georgia, serif" font-size="11" fill="var(--ink-faint)" opacity=".55">cite</text>
+          <path d="M8 38 Q28 30 52 36" stroke="var(--dusk)" stroke-width=".8" stroke-dasharray="2 3" fill="none"/>
+        </svg>
+      </section>
+
+      <aside class="aside-col">
+        <div class="aside-col__label">
+          <svg width="16" height="16" viewBox="0 0 16 16" fill="none" aria-hidden="true">
+            <circle cx="8" cy="8" r="6.5" stroke="currentColor" stroke-width=".75"/>
+            <path d="M8 4.5v3.5l2 2" stroke="currentColor" stroke-width=".75" stroke-linecap="round"/>
+          </svg>
+          Field notes · autumn
+        </div>
+        <ul class="field-notes">
+          <li>Clear autumn night over San Francisco, eleven degrees and still</li>
+          <li>Phantom citations multiplying in AI-assisted research papers</li>
+          <li>Tinkerers slipping through forgotten ports in old TV firmware</li>
+          <li>Satellite links steadying after bandwidth throttling</li>
+          <li>Parallel agents sketching different futures in the same chat</li>
+        </ul>
+      </aside>
+    </div>
+
+    <section class="marginalia" aria-labelledby="marginalia-heading">
+      <div class="marginalia__head">
+        <h2 class="marginalia__title" id="marginalia-heading">Scraps</h2>
+        <span class="marginalia__note" aria-hidden="true">from the feed</span>
+      </div>
+      <div class="fragments">
+        <article class="fragment">
+          <div class="fragment__num">a</div>
+          <p class="fragment__text">imagine 2026</p>
+          <a class="fragment__link" href="https://x.com/flowstated/status/2002167999353241901" target="_blank" rel="noopener">
+            Dec 20
+            <svg viewBox="0 0 12 12" fill="none" aria-hidden="true"><path d="M3 9L9 3M9 3H4M9 3v5" stroke="currentColor" stroke-width="1.2" stroke-linecap="round"/></svg>
+          </a>
+        </article>
+        <article class="fragment">
+          <div class="fragment__num">b</div>
+          <p class="fragment__text">shipping by sunrise</p>
+          <a class="fragment__link" href="https://x.com/flowstated/status/2000889983562080578" target="_blank" rel="noopener">
+            Dec 16
+            <svg viewBox="0 0 12 12" fill="none" aria-hidden="true"><path d="M3 9L9 3M9 3H4M9 3v5" stroke="currentColor" stroke-width="1.2" stroke-linecap="round"/></svg>
+          </a>
+        </article>
+        <article class="fragment">
+          <div class="fragment__num">c</div>
+          <p class="fragment__text">exploring ways to spin up agents from my phone
+
+iOS shortcuts × github actions × cursor cli</p>
+          <a class="fragment__link" href="https://x.com/flowstated/status/2000691637190861180" target="_blank" rel="noopener">
+            Dec 15
+            <svg viewBox="0 0 12 12" fill="none" aria-hidden="true"><path d="M3 9L9 3M9 3H4M9 3v5" stroke="currentColor" stroke-width="1.2" stroke-linecap="round"/></svg>
+          </a>
+        </article>
+      </div>
+    </section>
+
+    <section class="writing" aria-labelledby="writing-heading">
+      <div class="writing__header">
+        <h2 class="writing__title" id="writing-heading">Writing</h2>
+        <span class="writing__count" aria-hidden="true">five pieces</span>
+      </div>
+      <ol class="index">
+        <li class="index__item">
+          <a class="index__link" href="https://cursor.com/blog/design-mode">
+            <span class="index__num">01</span>
+            <span class="index__body">
+              <span class="index__title">Directing agents visually</span>
+              <span class="index__leaders" aria-hidden="true"></span>
+              <span class="index__date">Jun 2026</span>
+            </span>
+            <span class="index__arrow" aria-hidden="true">↗</span>
+          </a>
+        </li>
+        <li class="index__item">
+          <a class="index__link" href="/posts/a-living-site">
+            <span class="index__num">02</span>
+            <span class="index__body">
+              <span class="index__title">A living site</span>
+              <span class="index__leaders" aria-hidden="true"></span>
+              <span class="index__date">Dec 2025</span>
+            </span>
+            <span class="index__arrow" aria-hidden="true">→</span>
+          </a>
+        </li>
+        <li class="index__item">
+          <a class="index__link" href="/posts/surgical-edits">
+            <span class="index__num">03</span>
+            <span class="index__body">
+              <span class="index__title">Surgical edits</span>
+              <span class="index__leaders" aria-hidden="true"></span>
+              <span class="index__date">Nov 2025</span>
+            </span>
+            <span class="index__arrow" aria-hidden="true">→</span>
+          </a>
+        </li>
+        <li class="index__item">
+          <a class="index__link" href="/posts/familiar-differentiation">
+            <span class="index__num">04</span>
+            <span class="index__body">
+              <span class="index__title">Familiar differentiation</span>
+              <span class="index__leaders" aria-hidden="true"></span>
+              <span class="index__date">Nov 2024</span>
+            </span>
+            <span class="index__arrow" aria-hidden="true">→</span>
+          </a>
+        </li>
+        <li class="index__item">
+          <a class="index__link" href="/posts/hackathon-energy-but-add-users">
+            <span class="index__num">05</span>
+            <span class="index__body">
+              <span class="index__title">Hackathon energy, but add users</span>
+              <span class="index__leaders" aria-hidden="true"></span>
+              <span class="index__date">Oct 2022</span>
+            </span>
+            <span class="index__arrow" aria-hidden="true">→</span>
+          </a>
+        </li>
+      </ol>
+    </section>
+
+    <footer class="footer">
+      <ul class="footer__links">
+        <li><a href="https://cursor.com">Cursor</a></li>
+        <li><a href="https://x.com/flowstated">X</a></li>
+        <li><a href="https://github.com/eriknson">GitHub</a></li>
+        <li><a href="https://linkedin.com/in/eriknson">LinkedIn</a></li>
+        <li><a href="mailto:contact@eriks.design">Email</a></li>
+      </ul>
+      <span class="footer__stamp" aria-hidden="true">living notebook · v Oct 24</span>
+    </footer>
+
+  </div>
+
+  <span class="footer__folio" aria-hidden="true">folio 24 · sat</span>
+</div>
+</body>
+</html>

@@ -12,34 +12,36 @@
 *,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
 
 :root{
-  --paper: #f2ece2;
-  --ink: #1a1714;
-  --ink-soft: #5a534c;
-  --ink-faint: #968e84;
-  --rule: rgba(26,23,20,.08);
-  --margin-line: rgba(196,82,58,.28);
-  --accent: #c4523a;
-  --amber: #c47a2e;
-  --dusk: #5a6878;
-  --phosphor: #3a9a62;
+  --paper: #f0e9df;
+  --ink: #181512;
+  --ink-soft: #564f48;
+  --ink-faint: #948b82;
+  --rule: rgba(24,21,18,.09);
+  --margin-line: rgba(210,72,52,.30);
+  --accent: #d24834;
+  --amber: #c87828;
+  --dusk: #4a5a6a;
+  --phosphor: #2a9460;
+  --violet: #6a5098;
   --serif: "Source Serif 4", "Iowan Old Style", "Palatino Linotype", Palatino, Georgia, serif;
   --display: "Fraunces", "Source Serif 4", Georgia, serif;
   --hand: "Caveat", "Segoe Print", cursive;
   --ease: cubic-bezier(.22,1,.36,1);
-  --gutter: clamp(2.75rem, 7vw, 4.25rem);
+  --gutter: clamp(2.5rem, 6.5vw, 4rem);
 }
 
 @supports (color: color(display-p3 1 1 1)){
   :root{
-    --paper: color(display-p3 0.948 0.925 0.890);
-    --ink: color(display-p3 0.098 0.090 0.082);
-    --ink-soft: color(display-p3 0.345 0.325 0.300);
-    --ink-faint: color(display-p3 0.575 0.553 0.522);
-    --margin-line: color(display-p3 0.780 0.350 0.260 / 0.28);
-    --accent: color(display-p3 0.780 0.350 0.260);
+    --paper: color(display-p3 0.938 0.914 0.878);
+    --ink: color(display-p3 0.092 0.082 0.072);
+    --ink-soft: color(display-p3 0.330 0.310 0.285);
+    --ink-faint: color(display-p3 0.570 0.545 0.515);
+    --margin-line: color(display-p3 0.820 0.320 0.240 / 0.30);
+    --accent: color(display-p3 0.820 0.320 0.240);
     --amber: color(display-p3 0.780 0.500 0.220);
-    --dusk: color(display-p3 0.365 0.410 0.470);
-    --phosphor: color(display-p3 0.280 0.610 0.420);
+    --dusk: color(display-p3 0.320 0.360 0.420);
+    --phosphor: color(display-p3 0.240 0.580 0.400);
+    --violet: color(display-p3 0.420 0.320 0.590);
   }
 }
 
@@ -70,11 +72,11 @@ body::after{
   inset: 0;
   pointer-events: none;
   z-index: 0;
-  opacity: .04;
-  background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
+  opacity: .035;
+  background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
 }
 
-/* notebook gutter */
+/* ── notebook shell ── */
 .notebook{
   position: relative;
   z-index: 1;
@@ -112,26 +114,43 @@ body::after{
   border: 1px solid var(--rule);
   border-radius: 50%;
   background: var(--paper);
-  box-shadow: inset 0 1px 2px rgba(26,23,20,.06);
+  box-shadow: inset 0 1px 2px rgba(24,21,18,.06);
 }
 
 .notebook__content{
   padding-left: var(--gutter);
+  position: relative;
 }
+
+/* stars — clear autumn night */
+.stars{
+  position: absolute;
+  right: -.75rem;
+  top: 6rem;
+  width: 3.5rem;
+  height: 5rem;
+  pointer-events: none;
+  opacity: .38;
+}
+
+.stars circle{ fill: var(--dusk); }
+.stars circle:nth-child(2){ fill: var(--amber); opacity: .7; }
+.stars circle:nth-child(4){ fill: var(--phosphor); opacity: .55; }
 
 @media (max-width: 540px){
   .notebook::before{ left: 1.1rem; }
   .notebook__holes{ left: .35rem; }
   .notebook__content{ padding-left: 2rem; }
+  .stars{ right: 0; top: 4rem; width: 2.5rem; opacity: .28; }
 }
 
-/* masthead */
+/* ── masthead ── */
 .masthead{
   display: grid;
   grid-template-columns: 1fr auto;
   gap: 1rem 2rem;
   align-items: end;
-  padding-bottom: 1.5rem;
+  padding-bottom: 1.35rem;
   border-bottom: 1.5px solid var(--ink);
   animation: rise .85s var(--ease) both;
   position: relative;
@@ -143,19 +162,19 @@ body::after{
   right: 0;
   width: 1.1rem;
   height: 1.1rem;
-  opacity: .35;
+  opacity: .32;
   pointer-events: none;
 }
 
 .masthead__brand{
   font-family: var(--display);
-  font-size: clamp(1.05rem, 2vw, 1.3rem);
+  font-size: clamp(1.05rem, 2vw, 1.28rem);
   font-weight: 400;
   letter-spacing: -.015em;
 }
 
 .masthead__issue{
-  font-size: .65rem;
+  font-size: .64rem;
   letter-spacing: .14em;
   text-transform: uppercase;
   color: var(--ink-faint);
@@ -163,7 +182,7 @@ body::after{
 }
 
 .masthead__meta{
-  font-size: .7rem;
+  font-size: .68rem;
   letter-spacing: .1em;
   text-transform: uppercase;
   color: var(--ink-soft);
@@ -174,15 +193,39 @@ body::after{
 .masthead__weather{
   color: var(--amber);
   font-style: italic;
-  letter-spacing: .06em;
+  letter-spacing: .05em;
   text-transform: none;
 }
 
-/* hero spread */
+.masthead__stamp{
+  position: absolute;
+  top: -.35rem;
+  right: 2.5rem;
+  font-family: var(--hand);
+  font-size: 1.55rem;
+  color: var(--accent);
+  transform: rotate(-12deg);
+  opacity: .72;
+  pointer-events: none;
+  border: 2px solid var(--accent);
+  border-radius: 50%;
+  width: 2.6rem;
+  height: 2.6rem;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  line-height: 1;
+}
+
+@media (max-width: 540px){
+  .masthead__stamp{ right: 1.5rem; font-size: 1.3rem; width: 2.2rem; height: 2.2rem; }
+}
+
+/* ── hero spread ── */
 .spread{
   display: grid;
-  grid-template-columns: minmax(0, 1.2fr) minmax(0, .8fr);
-  gap: clamp(2rem, 5vw, 3.75rem);
+  grid-template-columns: minmax(0, 1.15fr) minmax(0, .85fr);
+  gap: clamp(2rem, 5vw, 3.5rem);
   margin-top: clamp(2.25rem, 5.5vw, 3.75rem);
   position: relative;
 }
@@ -190,7 +233,7 @@ body::after{
 .spread::after{
   content:"";
   position: absolute;
-  left: 60%;
+  left: 58%;
   top: -.25rem;
   bottom: 0;
   width: 1px;
@@ -204,11 +247,12 @@ body::after{
 
 .hero{
   animation: rise .85s var(--ease) .07s both;
+  position: relative;
 }
 
 .hero__name{
   font-family: var(--display);
-  font-size: clamp(2.85rem, 8.5vw, 5.25rem);
+  font-size: clamp(2.75rem, 8.5vw, 5.1rem);
   font-weight: 400;
   line-height: .94;
   letter-spacing: -.035em;
@@ -223,10 +267,10 @@ body::after{
 }
 
 .hero__role{
-  font-size: clamp(1rem, 2.1vw, 1.18rem);
+  font-size: clamp(1rem, 2.1vw, 1.16rem);
   color: var(--ink-soft);
   max-width: 30ch;
-  margin-bottom: 1.65rem;
+  margin-bottom: 1.55rem;
   line-height: 1.45;
 }
 
@@ -244,21 +288,21 @@ body::after{
 }
 
 .hero__lede{
-  font-size: 1.04rem;
+  font-size: 1.03rem;
   max-width: 36ch;
   color: var(--ink);
   line-height: 1.58;
 }
 
 .hero__lede + .hero__lede{
-  margin-top: .8rem;
+  margin-top: .75rem;
   color: var(--ink-soft);
-  font-size: .98rem;
+  font-size: .97rem;
 }
 
 .dropcap{
   font-family: var(--display);
-  font-size: 3.1em;
+  font-size: 3.05em;
   float: left;
   line-height: .76;
   margin: .06em .14em 0 0;
@@ -273,7 +317,7 @@ body::after{
 
 .annot__hand{
   font-family: var(--hand);
-  font-size: 1.32em;
+  font-size: 1.28em;
   position: absolute;
   white-space: nowrap;
   pointer-events: none;
@@ -281,15 +325,15 @@ body::after{
 }
 
 .annot--role .annot__hand{
-  top: -.2em;
-  right: -5em;
+  top: -.15em;
+  right: -5.2em;
   color: var(--phosphor);
-  transform: rotate(-7deg);
+  transform: rotate(-6deg);
 }
 
 .annot--living .annot__hand{
-  bottom: -.6em;
-  left: -.1em;
+  bottom: -.55em;
+  left: -.05em;
   color: var(--amber);
   transform: rotate(-2deg);
 }
@@ -303,26 +347,45 @@ body::after{
   }
 }
 
-/* field notes column */
+/* margin doodle — phantom cite crossed out */
+.doodle{
+  position: absolute;
+  left: -.5rem;
+  bottom: -1.5rem;
+  width: 5rem;
+  opacity: .38;
+  pointer-events: none;
+}
+
+@media (max-width: 780px){
+  .doodle{
+    left: auto;
+    right: 0;
+    bottom: -2rem;
+    width: 4rem;
+  }
+}
+
+/* ── field notes column ── */
 .aside-col{
-  padding-top: .35rem;
+  padding-top: .25rem;
   animation: rise .85s var(--ease) .14s both;
 }
 
 .aside-col__label{
-  font-size: .66rem;
+  font-size: .64rem;
   letter-spacing: .15em;
   text-transform: uppercase;
   color: var(--ink-faint);
-  margin-bottom: 1.15rem;
+  margin-bottom: 1.1rem;
   display: flex;
   align-items: center;
-  gap: .55rem;
+  gap: .5rem;
 }
 
 .aside-col__label svg{
   flex-shrink: 0;
-  opacity: .65;
+  opacity: .6;
   color: var(--dusk);
 }
 
@@ -330,11 +393,11 @@ body::after{
   list-style: none;
   display: flex;
   flex-direction: column;
-  gap: .85rem;
+  gap: .8rem;
 }
 
 .field-notes li{
-  font-size: .88rem;
+  font-size: .86rem;
   color: var(--ink-soft);
   padding-left: 1rem;
   position: relative;
@@ -354,10 +417,10 @@ body::after{
 .field-notes li:first-child{
   font-style: italic;
   color: var(--dusk);
-  font-size: .94rem;
+  font-size: .92rem;
 }
 
-/* scraps / tweets */
+/* ── scraps / tweets ── */
 .marginalia{
   margin-top: clamp(2.75rem, 6.5vw, 4.5rem);
   animation: rise .85s var(--ease) .21s both;
@@ -368,29 +431,29 @@ body::after{
   align-items: baseline;
   justify-content: space-between;
   gap: 1rem;
-  margin-bottom: 1.35rem;
-  padding-bottom: .55rem;
+  margin-bottom: 1.3rem;
+  padding-bottom: .5rem;
   border-bottom: 1px solid var(--rule);
 }
 
 .marginalia__title{
   font-family: var(--display);
-  font-size: 1.28rem;
+  font-size: 1.26rem;
   font-weight: 400;
   letter-spacing: -.01em;
 }
 
 .marginalia__note{
   font-family: var(--hand);
-  font-size: 1.12rem;
-  color: var(--amber);
-  transform: rotate(-2.5deg);
+  font-size: 1.1rem;
+  color: var(--violet);
+  transform: rotate(-2deg);
 }
 
 .fragments{
   display: grid;
   grid-template-columns: repeat(3, minmax(0, 1fr));
-  gap: clamp(.85rem, 2.5vw, 1.65rem);
+  gap: clamp(.85rem, 2.5vw, 1.55rem);
 }
 
 @media (max-width: 680px){
@@ -399,21 +462,21 @@ body::after{
 
 .fragment{
   position: relative;
-  padding: 1.1rem .95rem .95rem;
+  padding: 1.05rem .9rem .9rem;
   border: 1px solid var(--rule);
-  background: rgba(255,255,255,.42);
+  background: rgba(255,255,255,.44);
   transition: border-color .35s var(--ease), transform .4s var(--ease);
 }
 
 @supports (color: color(display-p3 1 1 1)){
   .fragment{
-    background: color(display-p3 1 1 1 / 0.42);
+    background: color(display-p3 1 1 1 / 0.44);
   }
 }
 
-.fragment:nth-child(1){ transform: rotate(-.55deg); }
-.fragment:nth-child(2){ transform: rotate(.35deg); margin-top: .3rem; }
-.fragment:nth-child(3){ transform: rotate(-.25deg); }
+.fragment:nth-child(1){ transform: rotate(-.6deg); }
+.fragment:nth-child(2){ transform: rotate(.4deg); margin-top: .35rem; }
+.fragment:nth-child(3){ transform: rotate(-.3deg); }
 
 .fragment:hover{
   border-color: var(--margin-line);
@@ -422,14 +485,14 @@ body::after{
 
 .fragment__num{
   font-family: var(--hand);
-  font-size: 1.45rem;
+  font-size: 1.42rem;
   color: var(--accent);
   line-height: 1;
-  margin-bottom: .45rem;
+  margin-bottom: .4rem;
 }
 
 .fragment__text{
-  font-size: .86rem;
+  font-size: .85rem;
   line-height: 1.48;
   color: var(--ink);
   white-space: pre-line;
@@ -438,9 +501,9 @@ body::after{
 .fragment__link{
   display: inline-flex;
   align-items: center;
-  gap: .3rem;
-  margin-top: .7rem;
-  font-size: .66rem;
+  gap: .28rem;
+  margin-top: .65rem;
+  font-size: .64rem;
   letter-spacing: .09em;
   text-transform: uppercase;
   color: var(--ink-faint);
@@ -451,14 +514,14 @@ body::after{
 .fragment__link:hover{ color: var(--accent); }
 
 .fragment__link svg{
-  width: .7rem;
-  height: .7rem;
+  width: .68rem;
+  height: .68rem;
   transition: transform .25s var(--ease);
 }
 
 .fragment__link:hover svg{ transform: translate(2px, -2px); }
 
-/* writing index */
+/* ── writing index — contents page with dot leaders ── */
 .writing{
   margin-top: clamp(3.25rem, 7.5vw, 5.5rem);
   animation: rise .85s var(--ease) .28s both;
@@ -469,21 +532,21 @@ body::after{
   grid-template-columns: 1fr auto;
   align-items: end;
   gap: 1rem;
-  margin-bottom: 1.5rem;
+  margin-bottom: 1.45rem;
 }
 
 .writing__title{
   font-family: var(--display);
-  font-size: clamp(1.75rem, 4vw, 2.25rem);
+  font-size: clamp(1.72rem, 4vw, 2.2rem);
   font-weight: 400;
   letter-spacing: -.025em;
 }
 
 .writing__count{
   font-family: var(--hand);
-  font-size: 1.2rem;
+  font-size: 1.18rem;
   color: var(--phosphor);
-  transform: rotate(2.5deg);
+  transform: rotate(2deg);
 }
 
 .index{
@@ -496,18 +559,17 @@ body::after{
 }
 
 .index__link{
-  display: grid;
-  grid-template-columns: 2.75rem 1fr auto auto;
-  gap: clamp(.65rem, 2vw, 1.35rem);
+  display: flex;
   align-items: baseline;
-  padding: .95rem 0;
+  gap: .75rem;
+  padding: .9rem 0;
   text-decoration: none;
   color: inherit;
   transition: padding-left .35s var(--ease);
 }
 
 .index__link:hover{
-  padding-left: .45rem;
+  padding-left: .4rem;
 }
 
 .index__link:hover .index__title{
@@ -521,64 +583,82 @@ body::after{
 
 .index__num{
   font-family: var(--hand);
-  font-size: 1.15rem;
+  font-size: 1.12rem;
   color: var(--ink-faint);
+  flex-shrink: 0;
+  width: 1.75rem;
   text-align: right;
 }
 
+.index__body{
+  flex: 1;
+  display: flex;
+  align-items: baseline;
+  gap: .35rem;
+  min-width: 0;
+}
+
 .index__title{
-  font-size: clamp(.98rem, 2vw, 1.08rem);
+  font-size: clamp(.96rem, 2vw, 1.06rem);
   transition: color .25s;
+  flex-shrink: 0;
+}
+
+.index__leaders{
+  flex: 1;
+  min-width: 1rem;
+  border-bottom: 1px dotted var(--ink-faint);
+  opacity: .45;
+  margin: 0 .15rem;
+  transform: translateY(-.15em);
 }
 
 .index__date{
-  font-size: .7rem;
+  font-size: .68rem;
   letter-spacing: .06em;
   color: var(--ink-faint);
   white-space: nowrap;
+  flex-shrink: 0;
 }
 
 .index__arrow{
   opacity: 0;
-  transform: translateX(-5px);
+  transform: translateX(-4px);
   transition: opacity .25s, transform .35s var(--ease);
   color: var(--accent);
-  font-size: .9rem;
+  font-size: .88rem;
+  flex-shrink: 0;
+  margin-left: .25rem;
 }
 
 @media (max-width: 540px){
-  .index__link{
-    grid-template-columns: 2.25rem 1fr;
-  }
-  .index__date{
-    grid-column: 2;
-    margin-top: -.3rem;
-  }
-  .index__arrow{ display: none; }
+  .index__leaders{ display: none; }
+  .index__body{ flex-wrap: wrap; gap: .15rem .5rem; }
+  .index__date{ margin-left: auto; }
 }
 
-/* footer */
+/* ── footer ── */
 .footer{
-  margin-top: clamp(3.75rem, 8.5vw, 6rem);
-  padding-top: 1.35rem;
+  margin-top: clamp(3rem, 7vw, 5rem);
+  padding-top: 1.5rem;
   border-top: 1px solid var(--rule);
   display: flex;
   flex-wrap: wrap;
   align-items: center;
   justify-content: space-between;
-  gap: 1.15rem 1.75rem;
+  gap: 1.25rem;
   animation: rise .85s var(--ease) .35s both;
 }
 
 .footer__links{
   display: flex;
   flex-wrap: wrap;
-  gap: .3rem 1.15rem;
+  gap: .3rem 1.1rem;
   list-style: none;
 }
 
 .footer__links a{
-  font-size: .76rem;
+  font-size: .75rem;
   letter-spacing: .04em;
   color: var(--ink-soft);
   text-decoration: none;
@@ -622,29 +702,21 @@ body::after{
 
 .footer__stamp{
   font-family: var(--hand);
-  font-size: 1.05rem;
+  font-size: 1.02rem;
   color: var(--dusk);
-  transform: rotate(-3deg);
+  transform: rotate(-2.5deg);
 }
 
-/* dusk doodle — sailboat at clear evening */
-.doodle{
+.footer__folio{
   position: absolute;
-  right: -.5rem;
-  top: 11rem;
-  width: 4rem;
-  opacity: .42;
+  left: 50%;
+  bottom: clamp(1.5rem, 3vw, 2.5rem);
+  transform: translateX(-50%);
+  font-size: .62rem;
+  letter-spacing: .12em;
+  text-transform: uppercase;
+  color: var(--ink-faint);
   pointer-events: none;
-  animation: drift 14s ease-in-out infinite;
-}
-
-@media (max-width: 780px){
-  .doodle{
-    right: .5rem;
-    top: auto;
-    bottom: -1.5rem;
-    width: 3.25rem;
-  }
 }
 
 @keyframes rise{
@@ -652,32 +724,29 @@ body::after{
   to{ opacity: 1; transform: translateY(0); }
 }
 
-@keyframes drift{
-  0%, 100%{ transform: translateY(0) rotate(-1.5deg); }
-  50%{ transform: translateY(-5px) rotate(1deg); }
-}
-
 @media (prefers-color-scheme: dark){
   :root{
-    --paper: #181614;
-    --ink: #e6e2da;
-    --ink-soft: #a8a199;
-    --ink-faint: #6d6760;
-    --rule: rgba(230,226,218,.09);
-    --margin-line: rgba(220,110,90,.32);
-    --accent: #e07058;
+    --paper: #161412;
+    --ink: #e4e0d8;
+    --ink-soft: #a6a098;
+    --ink-faint: #6b6560;
+    --rule: rgba(228,224,216,.09);
+    --margin-line: rgba(228,100,78,.32);
+    --accent: #e06850;
     --amber: #e09848;
-    --phosphor: #52b878;
+    --phosphor: #50b870;
     --dusk: #8898a8;
+    --violet: #9888c0;
   }
 
   @supports (color: color(display-p3 1 1 1)){
     :root{
-      --paper: color(display-p3 0.092 0.086 0.078);
-      --ink: color(display-p3 0.898 0.886 0.855);
-      --accent: color(display-p3 0.880 0.480 0.380);
+      --paper: color(display-p3 0.086 0.078 0.072);
+      --ink: color(display-p3 0.892 0.878 0.850);
+      --accent: color(display-p3 0.880 0.460 0.360);
       --amber: color(display-p3 0.880 0.620 0.320);
-      --phosphor: color(display-p3 0.380 0.720 0.500);
+      --phosphor: color(display-p3 0.380 0.720 0.480);
+      --violet: color(display-p3 0.580 0.540 0.760);
     }
   }
 
@@ -711,19 +780,29 @@ body::after{
 
   <div class="notebook__content">
 
+    <svg class="stars" viewBox="0 0 56 80" aria-hidden="true">
+      <circle cx="12" cy="8" r="1.2"/>
+      <circle cx="44" cy="18" r="1"/>
+      <circle cx="28" cy="32" r="1.4"/>
+      <circle cx="8" cy="48" r=".9"/>
+      <circle cx="48" cy="56" r="1.1"/>
+      <circle cx="22" cy="68" r="1"/>
+    </svg>
+
     <header class="masthead">
       <svg class="masthead__reg" viewBox="0 0 18 18" fill="none" aria-hidden="true">
         <path d="M9 1v16M1 9h16" stroke="var(--ink-faint)" stroke-width=".6"/>
         <circle cx="9" cy="9" r="3" stroke="var(--accent)" stroke-width=".6"/>
       </svg>
+      <span class="masthead__stamp" aria-hidden="true">24</span>
       <div>
         <div class="masthead__brand">eriks.design</div>
         <div class="masthead__issue">Vol. daily · autumn 2026</div>
       </div>
       <div class="masthead__meta">
-        <span>Fri · Oct 23, 2026</span><br>
+        <span>Sat · Oct 24, 2026</span><br>
         <span>San Francisco</span><br>
-        <span class="masthead__weather">11° · clear dusk</span>
+        <span class="masthead__weather">11° · clear night</span>
       </div>
     </header>
 
@@ -747,10 +826,11 @@ body::after{
           — agents refresh this corner of the web from daily activity.
         </p>
 
-        <svg class="doodle" viewBox="0 0 72 52" fill="none" aria-hidden="true">
-          <path d="M6 38 Q36 24 66 38 L62 44 Q36 32 10 44 Z" stroke="var(--dusk)" stroke-width="1.1" fill="rgba(90,104,120,.1)"/>
-          <path d="M36 24 L36 14 M32 18 L36 14 L40 18" stroke="var(--dusk)" stroke-width=".9" stroke-linecap="round"/>
-          <circle cx="58" cy="12" r="5" fill="var(--amber)" opacity=".55"/>
+        <svg class="doodle" viewBox="0 0 80 48" fill="none" aria-hidden="true">
+          <text x="4" y="22" font-family="Georgia, serif" font-size="14" fill="var(--ink-faint)" opacity=".8">[?]</text>
+          <path d="M2 26 L38 18" stroke="var(--accent)" stroke-width="1.4" stroke-linecap="round"/>
+          <text x="42" y="16" font-family="Georgia, serif" font-size="11" fill="var(--ink-faint)" opacity=".55">cite</text>
+          <path d="M8 38 Q28 30 52 36" stroke="var(--dusk)" stroke-width=".8" stroke-dasharray="2 3" fill="none"/>
         </svg>
       </section>
 
@@ -763,12 +843,11 @@ body::after{
           Field notes · autumn
         </div>
         <ul class="field-notes">
-          <li>Clear eleven-degree dusk over San Francisco</li>
-          <li>October light draining before seven</li>
-          <li>Institutional doors quietly closing on conversational AI assistants</li>
-          <li>Cyber intrusions settling into background static rather than shock</li>
-          <li>Agents spinning up from a pocket phone</li>
-          <li>A quieter coding week, repos untouched</li>
+          <li>Clear autumn night over San Francisco, eleven degrees and still</li>
+          <li>Phantom citations multiplying in AI-assisted research papers</li>
+          <li>Tinkerers slipping through forgotten ports in old TV firmware</li>
+          <li>Satellite links steadying after bandwidth throttling</li>
+          <li>Parallel agents sketching different futures in the same chat</li>
         </ul>
       </aside>
     </div>
@@ -817,40 +896,55 @@ iOS shortcuts × github actions × cursor cli</p>
         <li class="index__item">
           <a class="index__link" href="https://cursor.com/blog/design-mode">
             <span class="index__num">01</span>
-            <span class="index__title">Directing agents visually</span>
-            <span class="index__date">Jun 2026</span>
+            <span class="index__body">
+              <span class="index__title">Directing agents visually</span>
+              <span class="index__leaders" aria-hidden="true"></span>
+              <span class="index__date">Jun 2026</span>
+            </span>
             <span class="index__arrow" aria-hidden="true">↗</span>
           </a>
         </li>
         <li class="index__item">
           <a class="index__link" href="/posts/a-living-site">
             <span class="index__num">02</span>
-            <span class="index__title">A living site</span>
-            <span class="index__date">Dec 2025</span>
+            <span class="index__body">
+              <span class="index__title">A living site</span>
+              <span class="index__leaders" aria-hidden="true"></span>
+              <span class="index__date">Dec 2025</span>
+            </span>
             <span class="index__arrow" aria-hidden="true">→</span>
           </a>
         </li>
         <li class="index__item">
           <a class="index__link" href="/posts/surgical-edits">
             <span class="index__num">03</span>
-            <span class="index__title">Surgical edits</span>
-            <span class="index__date">Nov 2025</span>
+            <span class="index__body">
+              <span class="index__title">Surgical edits</span>
+              <span class="index__leaders" aria-hidden="true"></span>
+              <span class="index__date">Nov 2025</span>
+            </span>
             <span class="index__arrow" aria-hidden="true">→</span>
           </a>
         </li>
         <li class="index__item">
           <a class="index__link" href="/posts/familiar-differentiation">
             <span class="index__num">04</span>
-            <span class="index__title">Familiar differentiation</span>
-            <span class="index__date">Nov 2024</span>
+            <span class="index__body">
+              <span class="index__title">Familiar differentiation</span>
+              <span class="index__leaders" aria-hidden="true"></span>
+              <span class="index__date">Nov 2024</span>
+            </span>
             <span class="index__arrow" aria-hidden="true">→</span>
           </a>
         </li>
         <li class="index__item">
           <a class="index__link" href="/posts/hackathon-energy-but-add-users">
             <span class="index__num">05</span>
-            <span class="index__title">Hackathon energy, but add users</span>
-            <span class="index__date">Oct 2022</span>
+            <span class="index__body">
+              <span class="index__title">Hackathon energy, but add users</span>
+              <span class="index__leaders" aria-hidden="true"></span>
+              <span class="index__date">Oct 2022</span>
+            </span>
             <span class="index__arrow" aria-hidden="true">→</span>
           </a>
         </li>
@@ -865,10 +959,12 @@ iOS shortcuts × github actions × cursor cli</p>
         <li><a href="https://linkedin.com/in/eriknson">LinkedIn</a></li>
         <li><a href="mailto:contact@eriks.design">Email</a></li>
       </ul>
-      <span class="footer__stamp" aria-hidden="true">living notebook · v Oct 23</span>
+      <span class="footer__stamp" aria-hidden="true">living notebook · v Oct 24</span>
     </footer>
 
   </div>
+
+  <span class="footer__folio" aria-hidden="true">folio 24 · sat</span>
 </div>
 </body>
 </html>

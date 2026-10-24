@@ -3,591 +3,457 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Erik Nilsson — Product Designer</title>
-  
-  <link rel="preconnect" href="https://fonts.googleapis.com">
-  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=Caveat:wght@500&family=Instrument+Serif:ital@0;1&family=Inter:wght@400;500&display=swap" rel="stylesheet">
-  
+  <title>Erik Nilsson — Design</title>
   <style>
+    @import url('https://fonts.googleapis.com/css2?family=Caveat:wght@500&family=Instrument+Serif:ital@0;1&family=Inter:wght@400;500&family=Newsreader:ital,opsz,wght@0,6..72,200..800;1,6..72,200..800&display=swap');
+
     :root {
-      --bg: #F4F2EE;
-      --text: #161615;
-      --text-muted: #6B6A65;
-      --border: #D1CFC7;
-      
-      --pen-blue: #0A32FF;
-      --highlighter: #D4FF00;
-      --red-accent: #FF2E00;
+      --bg: #EAE8E0;
+      --page-bg: #F8F7F4;
+      --text: #171614;
+      --text-muted: #6E6D68;
+      --line: #D6D4C9;
+      --red: #D73A27;
+      --blue: #2A56DE;
+      --marker: #F9E267;
     }
 
-    @supports (color: color(display-p3 1 1 1)) {
+    @media (color-gamut: p3) {
       :root {
-        --bg: color(display-p3 0.96 0.95 0.93);
-        --pen-blue: color(display-p3 0.04 0.19 1);
-        --highlighter: color(display-p3 0.85 1 0);
-        --red-accent: color(display-p3 1 0.1 0);
+        --red: color(display-p3 0.89 0.17 0.11);
+        --blue: color(display-p3 0.11 0.31 0.94);
+        --marker: color(display-p3 0.99 0.9 0.3);
       }
     }
 
     @media (prefers-color-scheme: dark) {
       :root {
         --bg: #1a1a1a;
+        --page-bg: #222220;
         --text: #e0e0e0;
         --text-muted: #9a9994;
-        --border: #3d3d3a;
+        --line: #3a3a36;
       }
     }
 
     * { box-sizing: border-box; }
-    
+
     body {
+      margin: 0;
       background-color: var(--bg);
       color: var(--text);
-      font-family: 'Inter', sans-serif;
-      margin: 0;
-      padding: 0;
-      min-height: 100vh;
+      font-family: 'Newsreader', serif;
       -webkit-font-smoothing: antialiased;
       -moz-osx-font-smoothing: grayscale;
+      padding: 3vw;
+      min-height: 100vh;
+      display: flex;
+      align-items: center;
+      justify-content: center;
     }
 
-    /* SVG Definitions */
-    .sr-only {
-      position: absolute;
-      width: 1px;
-      height: 1px;
-      padding: 0;
-      margin: -1px;
-      overflow: hidden;
-      clip: rect(0, 0, 0, 0);
-      white-space: nowrap;
-      border-width: 0;
-    }
-
-    .page-container {
+    .frame {
+      width: 100%;
       max-width: 40rem;
       margin: 0 auto;
-      padding: 4rem 4vw;
+      background-color: var(--page-bg);
+      border: 1px solid var(--line);
+      box-shadow: 0 10px 40px rgba(0,0,0,0.03);
+      position: relative;
     }
 
-    /* Masthead */
-    .masthead {
+    /* Typography Classes */
+    .serif-display { font-family: 'Instrument Serif', serif; }
+    .sans-mono {
+      font-family: 'Inter', sans-serif;
+      font-size: 0.75rem;
+      text-transform: uppercase;
+      letter-spacing: 0.06em;
+    }
+    .handwriting {
+      font-family: 'Caveat', cursive;
+      line-height: 1.1;
+    }
+    .hw-red { color: var(--red); }
+    .hw-blue { color: var(--blue); }
+
+    a { text-decoration: none; color: inherit; }
+    ul { list-style: none; padding: 0; margin: 0; }
+
+    /* Layout */
+    header {
+      padding: 3rem 4rem 4rem;
+      border-bottom: 1px solid var(--line);
+      position: relative;
+    }
+
+    .masthead-top {
       display: grid;
-      grid-template-columns: 2fr 5fr 3fr;
-      gap: 4vw;
-      align-items: end;
-      border-bottom: 1.5px solid var(--text);
-      padding-bottom: 1.5rem;
+      grid-template-columns: 1fr 1fr 1fr;
       margin-bottom: 5rem;
+      color: var(--text-muted);
     }
+    .text-center { text-align: center; }
+    .text-right { text-align: right; }
 
-    .masthead .name {
-      grid-column: 1 / 3;
-      font-family: 'Instrument Serif', serif;
-      font-size: clamp(4rem, 8vw, 7.5rem);
-      font-weight: 400;
-      line-height: 0.85;
+    .site-title {
+      font-size: clamp(4rem, 9vw, 8.5rem);
+      text-align: center;
+      font-style: italic;
       letter-spacing: -0.02em;
       margin: 0;
+      line-height: 0.9;
     }
-
-    .masthead .name em {
-      font-style: italic;
-      padding-right: 0.1em;
-    }
-
-    .masthead .meta-right {
-      grid-column: 3 / 4;
-      font-size: 0.75rem;
-      text-transform: uppercase;
-      letter-spacing: 0.05em;
-      line-height: 1.5;
-    }
-
-    /* Content Grid */
-    .content-grid {
-      display: grid;
-      grid-template-columns: 2fr 5fr 3fr;
-      gap: 4vw;
-    }
-
-    /* Left Aside */
-    .meta-aside {
-      grid-column: 1 / 2;
-    }
-
-    .meta-block {
-      margin-bottom: 2.5rem;
-      font-size: 0.75rem;
-      text-transform: uppercase;
-      letter-spacing: 0.05em;
-    }
-
-    .meta-block .label {
-      display: block;
+    .site-subtitle {
+      text-align: center;
+      margin-top: 1.5rem;
       color: var(--text-muted);
-      margin-bottom: 0.25rem;
     }
 
-    .meta-block .value {
-      display: block;
-      font-weight: 500;
-      line-height: 1.4;
-    }
-
-    /* Main Content */
-    .main-content {
-      grid-column: 2 / 3;
-    }
-
-    .bio {
-      font-family: 'Instrument Serif', serif;
-      font-size: clamp(2rem, 3.5vw, 2.75rem);
-      line-height: 1.15;
-      margin: 0 0 5rem 0;
-      font-weight: 400;
-      letter-spacing: -0.01em;
-    }
-
-    .bio p {
-      margin: 0;
-    }
-
-    .link-highlight {
-      position: relative;
-      text-decoration: none;
-      color: inherit;
-      white-space: nowrap;
-    }
-
-    .link-highlight::after {
-      content: '';
+    .stamp {
       position: absolute;
-      bottom: 0.1em;
-      left: -0.1em;
-      right: -0.1em;
-      height: 0.4em;
-      background-color: var(--highlighter);
-      z-index: -1;
-      transform: rotate(-1deg) scaleX(0);
-      transform-origin: left;
-      animation: highlightSwipe 0.6s cubic-bezier(0.22, 1, 0.36, 1) forwards;
-      animation-delay: 1.2s;
+      top: 3rem;
+      right: 4rem;
+      border: 2px solid var(--red);
+      color: var(--red);
+      padding: 0.4rem 0.8rem;
+      border-radius: 4px;
+      transform: rotate(8deg);
+      font-size: 1.2rem;
+      text-align: center;
+      opacity: 0.9;
     }
 
-    @keyframes highlightSwipe {
-      from { transform: rotate(-1deg) scaleX(0); }
-      to { transform: rotate(-1deg) scaleX(1); }
+    .grid {
+      display: grid;
+      grid-template-columns: repeat(12, 1fr);
     }
 
-    .mark-wrapper {
+    .sidebar-left {
+      grid-column: 1 / 4;
+      border-right: 1px solid var(--line);
+      padding: 4rem 3rem;
+      display: flex;
+      flex-direction: column;
+    }
+
+    .content-main {
+      grid-column: 4 / 10;
+      padding: 5rem 4rem;
+    }
+
+    .sidebar-right {
+      grid-column: 10 / 13;
+      border-left: 1px solid var(--line);
+      padding: 4rem 3rem;
+      display: flex;
+      flex-direction: column;
+    }
+
+    /* Content Styling */
+    .meta-block {
+      border-top: 1px solid var(--line);
+      padding-top: 1rem;
+      margin-bottom: 2.5rem;
+    }
+    .meta-label { color: var(--text-muted); margin-bottom: 0.5rem; }
+    .meta-value { font-size: 1.15rem; line-height: 1.4; }
+
+    .links-list li { margin-bottom: 0.75rem; }
+    .links-list a {
+      font-size: 1.05rem;
+      transition: color 0.2s;
+    }
+    .links-list a:hover { color: var(--red); }
+
+    .lead-text {
+      font-size: 2.2rem;
+      line-height: 1.35;
+      letter-spacing: -0.01em;
+      font-weight: 300;
+      margin: 0 0 2.5rem 0;
+    }
+    .body-text {
+      font-size: 1.35rem;
+      line-height: 1.5;
+      color: var(--text-muted);
+      margin: 0;
+      max-width: 95%;
+    }
+
+    .hover-red {
+      color: var(--text);
+      border-bottom: 1px solid var(--line);
+      transition: all 0.2s;
+    }
+    .hover-red:hover {
+      color: var(--red);
+      border-bottom-color: var(--red);
+    }
+
+    .underline-wrapper {
       position: relative;
       display: inline-block;
-      font-style: italic;
+      white-space: nowrap;
+      color: var(--text);
     }
-
-    .hand-circle {
+    .svg-underline {
       position: absolute;
-      top: 50%;
-      left: 50%;
-      width: 120%;
-      height: 140%;
-      transform: translate(-50%, -50%);
-      pointer-events: none;
+      bottom: -4px;
+      left: 0;
+      width: 100%;
+      height: 10px;
+      z-index: -1;
       overflow: visible;
     }
-
-    .hand-circle path {
-      stroke-dasharray: 1;
-      stroke-dashoffset: 1;
-      animation: drawCircle 0.8s cubic-bezier(0.4, 0, 0.2, 1) forwards;
-      animation-delay: 0.8s;
+    .svg-underline path {
+      stroke: var(--blue);
+      stroke-width: 2.5;
+      fill: none;
+      stroke-linecap: round;
     }
 
-    @keyframes drawCircle {
-      to { stroke-dashoffset: 0; }
+    .annotation-float {
+      position: absolute;
+      top: -24px;
+      right: -50px;
+      font-size: 1.5rem;
+      transform: rotate(5deg);
     }
 
-    /* Index Section */
     .section-title {
-      font-size: 0.75rem;
-      font-weight: 500;
-      text-transform: uppercase;
-      letter-spacing: 0.1em;
-      border-bottom: 1px solid var(--border);
-      padding-bottom: 0.75rem;
-      margin-bottom: 1.5rem;
+      margin: 0 0 2rem 0;
+    }
+
+    .index-list {
+      display: flex;
+      flex-direction: column;
+      gap: 1.5rem;
+    }
+    .index-item a {
+      display: inline-block;
+      font-size: 1.35rem;
+      line-height: 1.3;
+      margin-bottom: 0.4rem;
+      position: relative;
+      z-index: 1;
+    }
+    .index-item a::after {
+      content: '';
+      position: absolute;
+      bottom: 2px;
+      left: -4px;
+      right: -4px;
+      height: 0.35em;
+      background: var(--marker);
+      z-index: -1;
+      transform: scaleX(0);
+      transform-origin: left;
+      transition: transform 0.2s cubic-bezier(0.2, 0.8, 0.2, 1);
+    }
+    .index-item a:hover::after { transform: scaleX(1); }
+    
+    .index-item .date {
+      display: block;
+      color: var(--text-muted);
+    }
+
+    .signal-list {
+      display: flex;
+      flex-direction: column;
+      gap: 1.25rem;
+    }
+    .signal-item {
+      font-size: 1.15rem;
+      line-height: 1.4;
+      color: var(--text-muted);
+      position: relative;
+      padding-left: 1rem;
+    }
+    .signal-item::before {
+      content: '—';
+      position: absolute;
+      left: 0;
+      color: var(--line);
+    }
+
+    .scribble-note {
+      margin-top: 3.5rem;
+      transform: rotate(2deg);
+      font-size: 1.55rem;
+      padding-left: 1.5rem;
+      position: relative;
+    }
+    .scribble-note .arrow {
+      position: absolute;
+      left: -0.5rem;
+      top: -0.2rem;
+    }
+
+    .footer-edge {
+      border-top: 1px solid var(--line);
+      padding: 1.5rem 4rem;
       display: flex;
       justify-content: space-between;
       color: var(--text-muted);
     }
 
-    .index-list {
-      list-style: none;
-      padding: 0;
-      margin: 0 0 5rem 0;
-    }
-
-    .index-list li {
-      display: flex;
-      align-items: baseline;
-      padding: 1.25rem 0;
-      border-bottom: 1px dashed var(--border);
-      position: relative;
-    }
-
-    .index-list li:hover {
-      border-bottom-style: solid;
-      border-bottom-color: var(--text);
-    }
-
-    .index-date {
-      font-size: 0.75rem;
-      color: var(--text-muted);
-      width: 5rem;
-      flex-shrink: 0;
-      text-transform: uppercase;
-      letter-spacing: 0.05em;
-    }
-
-    .index-link {
-      font-family: 'Instrument Serif', serif;
-      font-size: clamp(1.5rem, 2.5vw, 1.75rem);
-      color: var(--text);
-      text-decoration: none;
-      flex-grow: 1;
-      transition: color 0.2s;
-    }
-
-    .index-list li:hover .index-link {
-      color: var(--pen-blue);
-    }
-
-    .index-arrow {
-      opacity: 0;
-      transform: translateX(-10px);
-      transition: all 0.2s;
-      color: var(--pen-blue);
-      font-family: 'Inter', sans-serif;
-    }
-
-    .index-list li:hover .index-arrow {
-      opacity: 1;
-      transform: translateX(0);
-    }
-
-    /* Footer Links */
-    .links-footer {
-      display: flex;
-      gap: 2rem;
-      flex-wrap: wrap;
-      border-top: 1px solid var(--text);
-      padding-top: 1.5rem;
-      position: relative;
-    }
-
-    .links-footer a {
-      font-size: 0.75rem;
-      text-transform: uppercase;
-      letter-spacing: 0.05em;
-      color: var(--text);
-      text-decoration: none;
-      font-weight: 500;
-    }
-
-    .links-footer a:hover {
-      color: var(--pen-blue);
-    }
-
-    .github-link-wrapper {
-      position: relative;
-    }
-
-    .github-note {
-      position: absolute;
-      top: 2.2rem;
-      left: -2rem;
-      width: 14rem;
-      font-family: 'Caveat', cursive;
-      font-size: 1.25rem;
-      color: var(--pen-blue);
-      line-height: 1.1;
-      transform: rotate(-3deg);
-      pointer-events: none;
-      opacity: 0;
-      animation: fadeIn 0.5s ease-out forwards;
-      animation-delay: 2s;
-    }
-
-    .arrow-curve {
-      position: absolute;
-      top: -20px;
-      left: 20px;
-      width: 40px;
-      height: 40px;
-      overflow: visible;
-    }
-
-    .arrow-curve path {
-      stroke-dasharray: 1;
-      stroke-dashoffset: 1;
-      animation: drawCircle 0.5s ease-out forwards;
-      animation-delay: 2s;
-    }
-
-    @keyframes fadeIn {
-      to { opacity: 1; }
-    }
-
-    /* Right Annotations Aside */
-    .annotations-aside {
-      grid-column: 3 / 4;
-      padding-top: 1rem;
-    }
-
-    .annotation-block {
-      margin-bottom: 4rem;
-    }
-
-    .pull-quote {
-      font-family: 'Instrument Serif', serif;
-      font-size: clamp(1.5rem, 2.5vw, 1.8rem);
-      font-style: italic;
-      line-height: 1.1;
-      color: var(--text);
-      margin-bottom: 0.75rem;
-    }
-
-    .quote-caption {
-      font-size: 0.7rem;
-      text-transform: uppercase;
-      letter-spacing: 0.05em;
-      color: var(--text-muted);
-    }
-
-    .hand-note {
-      font-family: 'Caveat', cursive;
-      font-size: 1.5rem;
-      color: var(--red-accent);
-      line-height: 1.2;
-      transform: rotate(-3deg);
-      position: relative;
-      padding-left: 2.5rem;
-    }
-
-    .hand-star {
-      position: absolute;
-      left: -5px;
-      top: 0px;
-      width: 28px;
-      height: 28px;
-    }
-
-    .hand-star path {
-      stroke-dasharray: 1;
-      stroke-dashoffset: 1;
-      animation: drawCircle 1s ease-out forwards;
-      animation-delay: 1.5s;
-    }
-
-    /* Media Queries */
-    @media (max-width: 1024px) {
-      .masthead, .content-grid {
-        grid-template-columns: 2fr 5fr;
-      }
-      .masthead .name {
-        grid-column: 1 / 3;
-      }
-      .masthead .meta-right {
-        grid-column: 1 / 3;
-        display: flex;
-        justify-content: space-between;
-      }
-      .annotations-aside {
-        grid-column: 2 / 3;
-        display: flex;
-        flex-direction: column;
-        gap: 3rem;
-        margin-top: 2rem;
-        padding-top: 3rem;
-        border-top: 1px dashed var(--border);
-      }
-      .annotation-block {
-        margin-bottom: 0;
-      }
-      .github-note {
-        display: none;
-      }
-    }
-
-    @media (max-width: 768px) {
-      .masthead, .content-grid {
-        grid-template-columns: 1fr;
-      }
-      .masthead .meta-right {
-        flex-direction: column;
-        gap: 0.5rem;
-      }
-      .meta-aside {
-        display: flex;
-        justify-content: flex-start;
-        flex-wrap: wrap;
-        gap: 2rem;
-        border-bottom: 1px solid var(--border);
-        padding-bottom: 1.5rem;
-        margin-bottom: 2.5rem;
-      }
-      .meta-block {
-        margin-bottom: 0;
-      }
-      .annotations-aside {
-        grid-column: 1 / 2;
-        flex-direction: column;
-        gap: 3rem;
-      }
-      .index-list li {
-        flex-direction: column;
-        gap: 0.5rem;
-        padding: 1rem 0;
-      }
-      .index-date {
-        width: auto;
-      }
-      .index-arrow {
-        display: none;
-      }
+    /* Responsive */
+    @media (max-width: 1200px) {
+      .sidebar-left, .sidebar-right { padding: 3rem 2rem; }
+      .content-main { padding: 4rem 3rem; }
     }
 
     @media (max-width: 640px) {
-      .page-container {
-        padding: 2rem 1.25rem;
-      }
-      .masthead .name {
-        font-size: clamp(2.5rem, 12vw, 4rem);
-      }
-      .bio {
-        font-size: clamp(1.5rem, 6vw, 2rem);
+      body { padding: 1rem; }
+      header { padding: 1.5rem 1.5rem 2rem; }
+      .site-title { font-size: clamp(2.5rem, 12vw, 4rem); }
+      .lead-text { font-size: 1.6rem; }
+      .body-text { font-size: 1.15rem; }
+      .sidebar-left, .sidebar-right, .content-main { padding: 2rem 1.5rem; }
+      .footer-edge { padding: 1.5rem 1.5rem; }
+    }
+
+    @media (max-width: 900px) {
+      body { padding: 0; }
+      .frame { border: none; box-shadow: none; }
+      .grid { grid-template-columns: 1fr; }
+      header { padding: 2rem 2rem 3rem; }
+      .masthead-top {
+        grid-template-columns: 1fr;
+        gap: 0.5rem;
         margin-bottom: 3rem;
+      }
+      .text-right { text-align: center; }
+      .stamp { top: 1rem; right: 1rem; font-size: 1rem; }
+      
+      .sidebar-left {
+        grid-column: 1;
+        border-right: none;
+        border-bottom: 1px solid var(--line);
+        padding: 3rem 2rem;
+      }
+      .content-main {
+        grid-column: 1;
+        padding: 3rem 2rem;
+      }
+      .sidebar-right {
+        grid-column: 1;
+        border-left: none;
+        border-top: 1px solid var(--line);
+        padding: 3rem 2rem;
+      }
+      .footer-edge { padding: 1.5rem 2rem; }
+      .annotation-float {
+        position: static;
+        display: inline-block;
+        margin-left: 0.5rem;
+        transform: none;
       }
     }
   </style>
 </head>
 <body>
-
-  <!-- Reusable SVG Definitions -->
-  <svg class="sr-only">
-    <defs>
-      <marker id="arrowhead" markerWidth="6" markerHeight="6" refX="5" refY="3" orient="auto">
-        <path d="M0,0 L6,3 L0,6" fill="var(--pen-blue)" />
-      </marker>
-    </defs>
-  </svg>
-
-  <div class="page-container">
-    <header class="masthead">
-      <h1 class="name">Erik <em>Nilsson</em></h1>
-      <div class="meta-right">
-        Vol. 1 — 2026<br>
-        San Francisco, CA
+  <div class="frame">
+    <header>
+      <div class="masthead-top sans-mono">
+        <div>Vol. 1</div>
+        <div class="text-center">San Francisco, CA</div>
+        <div class="text-right">Sat, Oct 24 2026</div>
+      </div>
+      
+      <h1 class="site-title serif-display">Erik Nilsson</h1>
+      <div class="site-subtitle sans-mono">Product Designer</div>
+      
+      <div class="stamp handwriting hw-red">
+        Updated<br>Today
       </div>
     </header>
+    
+    <div class="grid">
+      <aside class="sidebar-left">
+        <div class="meta-block">
+          <div class="meta-label sans-mono">Location</div>
+          <div class="meta-value">San Francisco, CA</div>
+        </div>
+        
+        <div class="meta-block">
+          <div class="meta-label sans-mono">Conditions</div>
+          <div class="meta-value">11°C, clear autumn night</div>
+        </div>
+        
+        <div class="meta-block">
+          <div class="meta-label sans-mono">Network</div>
+          <ul class="links-list meta-value">
+            <li><a href="https://cursor.com">Cursor</a></li>
+            <li><a href="https://x.com/flowstated">X (Twitter)</a></li>
+            <li><a href="https://github.com/eriknson">GitHub</a></li>
+            <li><a href="https://linkedin.com/in/eriknson">LinkedIn</a></li>
+            <li><a href="mailto:contact@eriks.design">Email</a></li>
+          </ul>
+        </div>
 
-    <div class="content-grid">
-      
-      <aside class="meta-aside">
-        <div class="meta-block">
-          <span class="label">Date</span>
-          <span class="value">Oct 23, 2026</span>
-        </div>
-        <div class="meta-block">
-          <span class="label">Weather</span>
-          <span class="value">11°C, Clear<br>Dusk</span>
-        </div>
-        <div class="meta-block">
-          <span class="label">Role</span>
-          <span class="value">Product Designer<br>at Cursor</span>
+        <div class="handwriting hw-blue" style="margin-top: auto; padding-top: 3rem; transform: rotate(-3deg); font-size: 1.5rem;">
+          * GitHub repos are side projects.<br>Not my main job.
         </div>
       </aside>
 
-      <main class="main-content">
-        <div class="bio">
-          <p>I'm a product designer at <a href="https://cursor.com" class="link-highlight" target="_blank">Cursor</a>, working on how people build software with AI. Off-hours, I'm tinkering with <span class="mark-wrapper">living-site<svg class="hand-circle" viewBox="0 0 100 40" preserveAspectRatio="none"><path d="M8,30 Q45,-5 90,15 Q105,35 60,40 Q20,40 10,25" fill="none" stroke="var(--red-accent)" stroke-width="2" stroke-linecap="round" pathLength="1" /></svg></span> — agents rebuild this corner of the web from fresh activity data each day.</p>
-        </div>
+      <main class="content-main">
+        <p class="lead-text">
+          I'm a product designer at <a href="https://cursor.com" class="hover-red">Cursor</a>, working on how people build software with AI.
+        </p>
+        <p class="body-text">
+          Off-hours, I'm tinkering with 
+          <span class="underline-wrapper">
+            <em>living-site</em>
+            <svg class="svg-underline" viewBox="0 0 100 10" preserveAspectRatio="none">
+              <path d="M1,8 Q30,2 60,6 T98,7" />
+            </svg>
+            <span class="handwriting hw-blue annotation-float">Rebuilt daily</span>
+          </span> 
+          — agents rebuild this corner of the web from fresh activity data each day.
+        </p>
 
-        <div class="index-section">
-          <div class="section-title">
-            <span>Notebook Index</span>
-            <span class="count">03</span>
-          </div>
+        <div style="margin-top: 6rem;">
+          <h2 class="section-title sans-mono">Index</h2>
           <ul class="index-list">
-            <li>
-              <span class="index-date">Dec 20</span>
-              <a href="https://x.com/flowstated/status/2002167999353241901" target="_blank" class="index-link">imagine 2026</a>
-              <span class="index-arrow">↗</span>
+            <li class="index-item">
+              <a href="https://x.com/flowstated/status/2002167999353241901">Imagine 2026</a>
+              <span class="date sans-mono">Dec 20, 2025</span>
             </li>
-            <li>
-              <span class="index-date">Dec 16</span>
-              <a href="https://x.com/flowstated/status/2000889983562080578" target="_blank" class="index-link">shipping by sunrise</a>
-              <span class="index-arrow">↗</span>
+            <li class="index-item">
+              <a href="https://x.com/flowstated/status/2000889983562080578">Shipping by sunrise</a>
+              <span class="date sans-mono">Dec 16, 2025</span>
             </li>
-            <li>
-              <span class="index-date">Dec 15</span>
-              <a href="https://x.com/flowstated/status/2000691637190861180" target="_blank" class="index-link">exploring ways to spin up agents from my phone</a>
-              <span class="index-arrow">↗</span>
+            <li class="index-item">
+              <a href="https://x.com/flowstated/status/2000691637190861180">Exploring ways to spin up agents from my phone</a>
+              <span class="date sans-mono">Dec 15, 2025</span>
             </li>
           </ul>
         </div>
-        
-        <footer class="links-footer">
-          <a href="https://eriks.design" target="_blank">Site</a>
-          <a href="https://x.com/flowstated" target="_blank">X (Twitter)</a>
-          
-          <div class="github-link-wrapper">
-            <a href="https://github.com/eriknson" target="_blank">GitHub</a>
-            <div class="github-note">
-              <svg class="arrow-curve" viewBox="0 0 40 40" preserveAspectRatio="none">
-                <path d="M10,0 Q35,5 25,30" fill="none" stroke="var(--pen-blue)" stroke-width="1.5" stroke-linecap="round" marker-end="url(#arrowhead)" pathLength="1"/>
-              </svg>
-              Mostly side projects & experiments.
-            </div>
-          </div>
-          
-          <a href="https://linkedin.com/in/eriknson" target="_blank">LinkedIn</a>
-          <a href="mailto:contact@eriks.design">Email</a>
-        </footer>
       </main>
 
-      <aside class="annotations-aside">
-        <div class="annotation-block">
-          <div class="pull-quote">
-            “October light draining before seven.”
-          </div>
-          <div class="quote-caption">World signal / Autumn</div>
+      <aside class="sidebar-right">
+        <div class="meta-block">
+          <div class="meta-label sans-mono">Field Notes</div>
+          <ul class="signal-list meta-value" style="margin-top: 1rem;">
+            <li class="signal-item">Phantom citations multiplying in AI-assisted research papers</li>
+            <li class="signal-item">Tinkerers slipping through forgotten ports in old TV firmware</li>
+            <li class="signal-item">Satellite links steadying after bandwidth throttling</li>
+          </ul>
         </div>
-
-        <div class="annotation-block">
-          <div class="quote-caption" style="margin-bottom: 0.5rem; color: var(--pen-blue);">Game Concept: gemini-3.1-pro</div>
-          <div class="hand-note" style="font-size: 1.25rem; transform: rotate(1deg); color: var(--text); padding-left: 0; line-height: 1.2;">
-            Flick luminescent autumn leaves into matching silhouette slots before an offshore wind gust scatters the pile.
-            <div style="margin-top: 0.5rem; color: var(--pen-blue); font-size: 1.15rem; transform: rotate(-1deg);">
-              * satisfying nest-in-slot thunk when opacity and shape align.
-            </div>
-          </div>
-        </div>
-
-        <div class="annotation-block">
-          <div class="hand-note">
-            <svg class="hand-star" viewBox="0 0 24 24" preserveAspectRatio="none">
-              <path d="M12 2 L14 9 L21 9 L15 14 L17 21 L12 17 L7 21 L9 14 L3 9 L10 9 Z" fill="none" stroke="var(--red-accent)" stroke-width="1.5" stroke-linejoin="round" pathLength="1"/>
-            </svg>
-            A quieter coding week, repos untouched.
-          </div>
+        
+        <div class="handwriting hw-red scribble-note">
+          <span class="arrow">↳</span>
+          Game prototype: Flick Tcl tokens through a lattice of hidden TV menu ports. Amber phosphor text.
         </div>
       </aside>
-
+    </div>
+    
+    <div class="footer-edge sans-mono">
+      <span>eriks.design</span>
+      <span>Draft / Vol. 1</span>
     </div>
   </div>
-
 </body>
 </html>
