@@ -1,0 +1,678 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Phantom Cite</title>
+<style>
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+html,body{width:100%;height:100%;overflow:hidden;touch-action:none;user-select:none;-webkit-user-select:none}
+body{font-family:ui-monospace,'SFMono-Regular',Menlo,monospace;background:#1a1a18;color:#e8e4dc}
+@media(prefers-color-scheme:dark){
+  body{background:#1a1a18;color:#e8e4dc}
+  #bloom-fill{background:#c0392b}
+  .overlay-bg{background:rgba(0,0,0,.55)}
+  .btn-start{background:#c0392b;color:#fff}
+  .btn-restart{background:#2ecc71;color:#1a1a18}
+}
+@media(prefers-color-scheme:light){
+  body{background:#f4f0e6;color:#2a2820}
+}
+#wrap{position:fixed;inset:0;width:100dvw;height:100dvh;display:flex;flex-direction:column}
+#canvas{flex:1;width:100%;display:block;touch-action:none}
+#hud{position:absolute;top:0;left:0;right:0;padding:max(12px,env(safe-area-inset-top)) 16px 8px;display:flex;justify-content:space-between;align-items:flex-start;pointer-events:none;z-index:2}
+.hud-block{display:flex;flex-direction:column;gap:2px}
+.hud-label{font-size:10px;letter-spacing:.12em;opacity:.55;text-transform:uppercase}
+.hud-value{font-size:18px;font-weight:600;letter-spacing:-.02em}
+#bloom-bar{position:absolute;top:max(52px,env(safe-area-inset-top));left:16px;right:16px;height:4px;background:rgba(128,128,128,.2);border-radius:2px;pointer-events:none;z-index:2;overflow:hidden}
+#bloom-fill{height:100%;width:0%;background:#c0392b;border-radius:2px;transition:width .15s ease}
+@media(prefers-color-scheme:light){#bloom-fill{background:#b91c1c}}
+.overlay{position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;z-index:10;pointer-events:none;padding:24px;text-align:center}
+.overlay.hidden{display:none}
+.overlay-bg{position:absolute;inset:0;background:rgba(0,0,0,.55);backdrop-filter:blur(4px);-webkit-backdrop-filter:blur(4px)}
+@media(prefers-color-scheme:light){.overlay-bg{background:rgba(244,240,230,.82)}}
+.overlay-content{position:relative;z-index:1;max-width:340px;display:flex;flex-direction:column;align-items:center;gap:20px}
+.title{font-size:clamp(28px,7vw,42px);font-weight:700;letter-spacing:-.03em;line-height:1.1}
+.subtitle{font-size:13px;line-height:1.6;opacity:.7;max-width:280px}
+.btn{pointer-events:auto;min-height:48px;min-width:160px;padding:14px 32px;font-family:inherit;font-size:15px;font-weight:600;letter-spacing:.06em;text-transform:uppercase;border:none;border-radius:6px;cursor:pointer;transition:transform .12s ease,opacity .12s ease}
+.btn:active{transform:scale(.96)}
+.btn-start{background:#c0392b;color:#fff}
+.btn-restart{background:#2ecc71;color:#1a1a18}
+@media(prefers-color-scheme:light){
+  .btn-start{background:#b91c1c;color:#fff}
+  .btn-restart{background:#16a34a;color:#fff}
+}
+.hint{font-size:11px;opacity:.45;letter-spacing:.04em}
+#combo-flash{position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);font-size:clamp(20px,5vw,32px);font-weight:700;color:#f1c40f;opacity:0;pointer-events:none;z-index:5;text-shadow:0 0 20px rgba(241,196,15,.6);transition:opacity .2s}
+.score-final{font-size:36px;font-weight:700}
+.score-label{font-size:11px;opacity:.55;letter-spacing:.1em;text-transform:uppercase}
+</style>
+</head>
+<body>
+<div id="wrap">
+  <canvas id="canvas"></canvas>
+  <div id="hud">
+    <div class="hud-block"><span class="hud-label">Score</span><span class="hud-value" id="score">0</span></div>
+    <div class="hud-block" style="align-items:center"><span class="hud-label">Time</span><span class="hud-value" id="timer">45</span></div>
+    <div class="hud-block" style="align-items:flex-end"><span class="hud-label">Chain</span><span class="hud-value" id="combo">×1</span></div>
+  </div>
+  <div id="bloom-bar"><div id="bloom-fill"></div></div>
+  <div id="combo-flash"></div>
+  <div class="overlay" id="title-screen">
+    <div class="overlay-bg"></div>
+    <div class="overlay-content">
+      <div class="title">Phantom Cite</div>
+      <div class="subtitle">Stamp out ghost footnotes before they fork. Chain reactions reward last-second intercepts.</div>
+      <button class="btn btn-start" data-smoke="start" id="btn-start">Begin Draft</button>
+      <div class="hint">Tap red phantoms · avoid gray citations</div>
+    </div>
+  </div>
+  <div class="overlay hidden" id="gameover-screen">
+    <div class="overlay-bg"></div>
+    <div class="overlay-content">
+      <div class="title" style="font-size:clamp(22px,5vw,32px)">Bibliography Bloomed</div>
+      <div class="score-label">Final Score</div>
+      <div class="score-final" id="final-score">0</div>
+      <div class="subtitle" id="gameover-msg">Fiction multiplied unchecked.</div>
+      <button class="btn btn-restart" data-smoke="restart" id="btn-restart">Revise Draft</button>
+    </div>
+  </div>
+</div>
+<script>
+(function(){
+'use strict';
+
+var canvas = document.getElementById('canvas');
+var ctx = canvas && canvas.getContext ? canvas.getContext('2d') : null;
+var scoreEl = document.getElementById('score');
+var timerEl = document.getElementById('timer');
+var comboEl = document.getElementById('combo');
+var bloomFill = document.getElementById('bloom-fill');
+var comboFlash = document.getElementById('combo-flash');
+var titleScreen = document.getElementById('title-screen');
+var gameoverScreen = document.getElementById('gameover-screen');
+var finalScoreEl = document.getElementById('final-score');
+var gameoverMsg = document.getElementById('gameover-msg');
+var btnStart = document.getElementById('btn-start');
+var btnRestart = document.getElementById('btn-restart');
+
+var W = 0, H = 0, dpr = 1;
+var state = 'title';
+var score = 0, combo = 1, maxCombo = 1;
+var timeLeft = 45;
+var bloom = 0;
+var citations = [];
+var particles = [];
+var stamps = [];
+var floatTexts = [];
+var spawnTimer = 0;
+var spawnInterval = 1.8;
+var elapsed = 0;
+var nextId = 1;
+var legitNumbers = ['Smith et al.', 'Jones, 2024', 'Lee & Park', 'Nguyen', 'Chen, 2023', 'Williams', 'García', 'Okonkwo', 'Patel', 'Kim'];
+var audioCtx = null;
+var darkMode = true;
+var animId = 0;
+var lastTs = 0;
+var flashTimer = 0;
+var shakeTimer = 0;
+var chalkLines = [];
+var manuscriptSnips = [];
+
+function checkDark(){
+  try{
+    darkMode = !window.matchMedia || window.matchMedia('(prefers-color-scheme: light)').matches ? false : true;
+  }catch(e){ darkMode = true; }
+}
+
+function resize(){
+  if(!canvas) return;
+  dpr = Math.min(window.devicePixelRatio || 1, 2);
+  W = window.innerWidth || 360;
+  H = window.innerHeight || 640;
+  canvas.width = W * dpr;
+  canvas.height = H * dpr;
+  canvas.style.width = W + 'px';
+  canvas.style.height = H + 'px';
+  if(ctx) ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+  chalkLines = [];
+  for(var i = 0; i < 30; i++){
+    chalkLines.push({ y: (i / 30) * H + (Math.sin(i * 1.7) * 3), drift: rand(-1, 1) });
+  }
+  manuscriptSnips = [];
+  var snippets = ['...as shown in prior work [?]', 'cf. phantom ref.', 'ibid.', 'et al., forthcoming', 'unpublished manuscript'];
+  for(var t = 0; t < 6; t++){
+    manuscriptSnips.push({ text: snippets[t % snippets.length], x: rand(20, Math.max(40, W-180)), y: rand(90, Math.max(120, H-40)) });
+  }
+}
+
+function initAudio(){
+  try{
+    var AC = window.AudioContext || window.webkitAudioContext;
+    if(AC) audioCtx = new AC();
+  }catch(e){ audioCtx = null; }
+}
+
+function playTone(freq, dur, vol, type){
+  if(!audioCtx) return;
+  try{
+    if(audioCtx.state === 'suspended') audioCtx.resume();
+    var o = audioCtx.createOscillator();
+    var g = audioCtx.createGain();
+    o.type = type || 'sine';
+    o.frequency.value = freq;
+    g.gain.setValueAtTime(vol || 0.08, audioCtx.currentTime);
+    g.gain.exponentialRampToValueAtTime(0.001, audioCtx.currentTime + dur);
+    o.connect(g); g.connect(audioCtx.destination);
+    o.start(); o.stop(audioCtx.currentTime + dur);
+  }catch(e){}
+}
+
+function vibrate(ms){
+  try{ if(navigator.vibrate) navigator.vibrate(ms); }catch(e){}
+}
+
+function rand(a,b){ return a + Math.random()*(b-a); }
+function randInt(a,b){ return Math.floor(rand(a,b+1)); }
+
+function spawnCitation(forcePhantom){
+  var margin = 60;
+  var hudH = 70;
+  var x = rand(margin, W - margin);
+  var y = rand(hudH + margin, H - margin);
+  var phantom = forcePhantom !== undefined ? forcePhantom : Math.random() < Math.min(0.35 + elapsed * 0.008, 0.75);
+  var hideBehind = phantom && elapsed > 12 && Math.random() < Math.min(0.15 + elapsed * 0.01, 0.55);
+  var forkTime = Math.max(1.8 - elapsed * 0.025, 0.55);
+  var c = {
+    id: nextId++,
+    x: x, y: y,
+    phantom: phantom,
+    hideBehind: hideBehind,
+    forkTimer: forkTime,
+    maxFork: forkTime,
+    r: phantom ? rand(22, 28) : rand(18, 24),
+    num: randInt(1, 99),
+    label: legitNumbers[randInt(0, legitNumbers.length - 1)],
+    pulse: Math.random() * Math.PI * 2,
+    alive: true,
+    spawnScale: 0,
+    stampT: -1
+  };
+  if(hideBehind){
+    var legit = {
+      id: nextId++,
+      x: x + rand(-8, 8), y: y + rand(-8, 8),
+      phantom: false,
+      hideBehind: false,
+      forkTimer: 999,
+      maxFork: 999,
+      r: rand(20, 26),
+      num: randInt(1, 99),
+      label: legitNumbers[randInt(0, legitNumbers.length - 1)],
+      pulse: 0,
+      alive: true,
+      spawnScale: 0,
+      stampT: -1,
+      decoy: true
+    };
+    citations.push(legit);
+  }
+  citations.push(c);
+}
+
+function forkCitation(c){
+  if(!c || !c.alive) return;
+  c.alive = false;
+  bloom = Math.min(100, bloom + 12);
+  shakeTimer = 0.25;
+  playTone(120, 0.3, 0.12, 'sawtooth');
+  vibrate(80);
+  combo = 1;
+  updateHUD();
+  for(var i = 0; i < 2; i++){
+    var angle = Math.random() * Math.PI * 2;
+    var dist = c.r * 1.2;
+    citations.push({
+      id: nextId++,
+      x: Math.max(40, Math.min(W-40, c.x + Math.cos(angle)*dist)),
+      y: Math.max(80, Math.min(H-40, c.y + Math.sin(angle)*dist)),
+      phantom: true,
+      hideBehind: false,
+      forkTimer: c.maxFork * 0.85,
+      maxFork: c.maxFork * 0.85,
+      r: c.r * 0.75,
+      num: randInt(1, 99),
+      label: '',
+      pulse: Math.random() * Math.PI * 2,
+      alive: true,
+      spawnScale: 0,
+      stampT: -1,
+      forked: true
+    });
+  }
+  for(var p = 0; p < 8; p++){
+    particles.push({
+      x: c.x, y: c.y,
+      vx: rand(-120, 120), vy: rand(-120, 120),
+      life: rand(0.3, 0.6), maxLife: 0.6,
+      color: '#e74c3c', size: rand(2, 5)
+    });
+  }
+}
+
+function stampCitation(c, chain){
+  if(!c || !c.alive || c.stampT >= 0) return;
+  c.stampT = 0;
+  var nearFork = c.phantom && c.forkTimer / c.maxFork < 0.2;
+  if(c.phantom){
+    var pts = nearFork ? Math.floor(15 * combo) : 5;
+    score += pts;
+    if(nearFork){
+      combo = Math.min(combo + 1, 12);
+      maxCombo = Math.max(maxCombo, combo);
+      showFlash('CHAIN ×' + combo);
+      playTone(440 + combo * 30, 0.15, 0.1, 'square');
+      vibrate(30);
+      for(var i = citations.length - 1; i >= 0; i--){
+        var o = citations[i];
+        if(o.alive && o.phantom && o.id !== c.id){
+          var dx = o.x - c.x, dy = o.y - c.y;
+          if(dx*dx + dy*dy < 9000){
+            o.stampT = 0;
+            o.alive = false;
+            score += 8;
+            spawnParticles(o.x, o.y, '#f1c40f', 4);
+          }
+        }
+      }
+    } else {
+      playTone(330, 0.1, 0.07, 'sine');
+      vibrate(15);
+    }
+    bloom = Math.max(0, bloom - 3);
+    spawnParticles(c.x, c.y, '#e74c3c', 6);
+    spawnStamp(c.x, c.y);
+    floatTexts.push({ x: c.x, y: c.y - 20, text: nearFork ? '+' + Math.floor(15 * combo) + ' CHAIN' : '+5', life: 0.7, maxLife: 0.7, color: nearFork ? '#f1c40f' : '#2ecc71' });
+  } else {
+    score = Math.max(0, score - 8);
+    combo = 1;
+    bloom = Math.min(100, bloom + 6);
+    playTone(180, 0.2, 0.08, 'triangle');
+    vibrate(50);
+    spawnParticles(c.x, c.y, '#95a5a6', 4);
+    floatTexts.push({ x: c.x, y: c.y - 20, text: '-8', life: 0.6, maxLife: 0.6, color: '#95a5a6' });
+  }
+  setTimeout(function(){
+    c.alive = false;
+  }, nearFork ? 100 : 200);
+  updateHUD();
+}
+
+function spawnParticles(x, y, col, n){
+  for(var i = 0; i < n; i++){
+    particles.push({
+      x: x, y: y,
+      vx: rand(-100, 100), vy: rand(-100, 100),
+      life: rand(0.2, 0.5), maxLife: 0.5,
+      color: col, size: rand(2, 4)
+    });
+  }
+}
+
+function spawnStamp(x, y){
+  stamps.push({ x: x, y: y, life: 0.4, maxLife: 0.4, rot: rand(-0.3, 0.3) });
+}
+
+function showFlash(text){
+  if(!comboFlash) return;
+  comboFlash.textContent = text;
+  comboFlash.style.opacity = '1';
+  flashTimer = 0.6;
+}
+
+function updateHUD(){
+  if(scoreEl) scoreEl.textContent = score;
+  if(timerEl) timerEl.textContent = Math.ceil(Math.max(0, timeLeft));
+  if(comboEl) comboEl.textContent = '×' + combo;
+  if(bloomFill) bloomFill.style.width = bloom + '%';
+}
+
+function getCitationAt(px, py){
+  var hit = null, bestR = 0;
+  for(var i = citations.length - 1; i >= 0; i--){
+    var c = citations[i];
+    if(!c.alive || c.stampT >= 0) continue;
+    var dx = px - c.x, dy = py - c.y;
+    var hr = c.r + 12;
+    if(dx*dx + dy*dy < hr*hr && c.r >= bestR){
+      hit = c;
+      bestR = c.r;
+    }
+  }
+  return hit;
+}
+
+function handleTap(clientX, clientY){
+  if(state !== 'playing' || !canvas) return;
+  var rect = canvas.getBoundingClientRect();
+  var px = clientX - rect.left;
+  var py = clientY - rect.top;
+  var c = getCitationAt(px, py);
+  if(c) stampCitation(c);
+}
+
+function endGame(reason){
+  state = 'gameover';
+  if(gameoverScreen) gameoverScreen.classList.remove('hidden');
+  if(finalScoreEl) finalScoreEl.textContent = score;
+  if(gameoverMsg){
+    if(reason === 'bloom') gameoverMsg.textContent = 'Phantom citations overran the bibliography.';
+    else if(reason === 'time') gameoverMsg.textContent = 'Draft survived the night. Well cited.';
+    else gameoverMsg.textContent = 'Fiction multiplied unchecked.';
+  }
+  playTone(220, 0.4, 0.08, 'sine');
+}
+
+function startGame(){
+  state = 'playing';
+  score = 0; combo = 1; maxCombo = 1;
+  timeLeft = 45; bloom = 0; elapsed = 0;
+  spawnTimer = 0; spawnInterval = 1.8;
+  citations = []; particles = []; stamps = []; floatTexts = [];
+  if(titleScreen) titleScreen.classList.add('hidden');
+  if(gameoverScreen) gameoverScreen.classList.add('hidden');
+  updateHUD();
+  initAudio();
+  playTone(280, 0.12, 0.06, 'sine');
+}
+
+function update(dt){
+  if(state !== 'playing') return;
+  elapsed += dt;
+  timeLeft -= dt;
+  spawnTimer -= dt;
+
+  if(spawnTimer <= 0){
+    spawnCitation();
+    spawnInterval = Math.max(0.45, 1.8 - elapsed * 0.04);
+    spawnTimer = spawnInterval;
+  }
+
+  if(elapsed > 8 && Math.random() < dt * 0.08) spawnCitation(true);
+
+  bloom = Math.max(0, bloom - dt * 1.5);
+
+  for(var i = citations.length - 1; i >= 0; i--){
+    var c = citations[i];
+    if(!c.alive) continue;
+    c.pulse += dt * 3;
+    c.spawnScale = Math.min(1, c.spawnScale + dt * 4);
+    if(c.phantom && c.stampT < 0){
+      c.forkTimer -= dt;
+      if(c.forkTimer <= 0) forkCitation(c);
+    }
+    if(c.stampT >= 0) c.stampT += dt;
+  }
+
+  citations = citations.filter(function(c){ return c.alive || c.stampT < 0.35; });
+
+  for(var j = particles.length - 1; j >= 0; j--){
+    var p = particles[j];
+    p.life -= dt;
+    p.x += p.vx * dt;
+    p.y += p.vy * dt;
+    p.vy += 200 * dt;
+    if(p.life <= 0) particles.splice(j, 1);
+  }
+
+  for(var s = stamps.length - 1; s >= 0; s--){
+    stamps[s].life -= dt;
+    if(stamps[s].life <= 0) stamps.splice(s, 1);
+  }
+
+  for(var f = floatTexts.length - 1; f >= 0; f--){
+    floatTexts[f].life -= dt;
+    floatTexts[f].y -= 40 * dt;
+    if(floatTexts[f].life <= 0) floatTexts.splice(f, 1);
+  }
+
+  if(flashTimer > 0){
+    flashTimer -= dt;
+    if(flashTimer <= 0 && comboFlash) comboFlash.style.opacity = '0';
+  }
+  if(shakeTimer > 0) shakeTimer -= dt;
+
+  if(bloom >= 100) endGame('bloom');
+  else if(timeLeft <= 0) endGame('time');
+
+  updateHUD();
+}
+
+function drawChalkboard(){
+  if(!ctx) return;
+  checkDark();
+  var bg = darkMode ? '#1a1a18' : '#f4f0e6';
+  ctx.fillStyle = bg;
+  ctx.fillRect(0, 0, W, H);
+
+  ctx.save();
+  ctx.globalAlpha = darkMode ? 0.04 : 0.06;
+  for(var i = 0; i < chalkLines.length; i++){
+    ctx.strokeStyle = darkMode ? '#fff' : '#000';
+    ctx.lineWidth = 1;
+    ctx.beginPath();
+    ctx.moveTo(0, chalkLines[i].y);
+    ctx.lineTo(W, chalkLines[i].y + chalkLines[i].drift);
+    ctx.stroke();
+  }
+  ctx.restore();
+
+  ctx.save();
+  ctx.globalAlpha = darkMode ? 0.03 : 0.04;
+  ctx.font = '11px ui-monospace, monospace';
+  ctx.fillStyle = darkMode ? '#ccc' : '#666';
+  for(var t = 0; t < manuscriptSnips.length; t++){
+    ctx.fillText(manuscriptSnips[t].text, manuscriptSnips[t].x, manuscriptSnips[t].y);
+  }
+  ctx.restore();
+}
+
+function drawCitation(c){
+  if(!ctx || !c.alive) return;
+  var scale = c.spawnScale;
+  var sx = c.x, sy = c.y;
+  if(shakeTimer > 0 && c.phantom){
+    sx += Math.sin(c.pulse * 8) * 2;
+  }
+
+  ctx.save();
+  ctx.translate(sx, sy);
+  ctx.scale(scale, scale);
+
+  if(c.phantom){
+    var urgency = 1 - c.forkTimer / c.maxFork;
+    var glow = 0.5 + Math.sin(c.pulse) * 0.2 + urgency * 0.3;
+    ctx.shadowColor = '#e74c3c';
+    ctx.shadowBlur = 12 + urgency * 10;
+
+    ctx.beginPath();
+    ctx.arc(0, 0, c.r, 0, Math.PI * 2);
+    ctx.fillStyle = darkMode ? 'rgba(231,76,60,' + (0.25 + glow * 0.2) + ')' : 'rgba(185,28,28,' + (0.2 + glow * 0.2) + ')';
+    ctx.fill();
+
+    if(c.forkTimer > 0){
+      ctx.beginPath();
+      ctx.arc(0, 0, c.r + 4, -Math.PI/2, -Math.PI/2 + (1 - c.forkTimer/c.maxFork) * Math.PI * 2);
+      ctx.strokeStyle = '#e74c3c';
+      ctx.lineWidth = 2.5;
+      ctx.shadowBlur = 0;
+      ctx.stroke();
+    }
+
+    ctx.shadowBlur = 0;
+    ctx.fillStyle = '#e74c3c';
+    ctx.font = 'bold ' + Math.floor(c.r * 0.7) + 'px ui-monospace, monospace';
+    ctx.textAlign = 'center';
+    ctx.textBaseline = 'middle';
+    ctx.fillText('[' + c.num + ']', 0, 1);
+
+    if(c.forkTimer / c.maxFork < 0.2){
+      ctx.font = '9px ui-monospace, monospace';
+      ctx.fillStyle = '#f1c40f';
+      ctx.fillText('FORK', 0, c.r + 12);
+    }
+  } else {
+    ctx.shadowBlur = 0;
+    ctx.beginPath();
+    ctx.arc(0, 0, c.r, 0, Math.PI * 2);
+    ctx.fillStyle = darkMode ? 'rgba(200,200,190,0.12)' : 'rgba(100,100,90,0.1)';
+    ctx.fill();
+    ctx.strokeStyle = darkMode ? 'rgba(200,200,190,0.35)' : 'rgba(80,80,70,0.35)';
+    ctx.lineWidth = 1.5;
+    ctx.stroke();
+
+    ctx.fillStyle = darkMode ? 'rgba(200,200,190,0.7)' : 'rgba(60,60,50,0.7)';
+    ctx.font = Math.floor(c.r * 0.55) + 'px ui-monospace, monospace';
+    ctx.textAlign = 'center';
+    ctx.textBaseline = 'middle';
+    ctx.fillText('[' + c.num + ']', 0, 0);
+
+    ctx.font = '8px ui-monospace, monospace';
+    ctx.globalAlpha = 0.5;
+    ctx.fillText(c.label, 0, c.r + 10);
+    ctx.globalAlpha = 1;
+  }
+
+  if(c.stampT >= 0){
+    var st = c.stampT / 0.35;
+    ctx.globalAlpha = 1 - st;
+    ctx.strokeStyle = '#2ecc71';
+    ctx.lineWidth = 3;
+    var sz = c.r * 0.6;
+    ctx.beginPath();
+    ctx.moveTo(-sz, -sz); ctx.lineTo(sz, sz);
+    ctx.moveTo(sz, -sz); ctx.lineTo(-sz, sz);
+    ctx.stroke();
+    ctx.globalAlpha = 1;
+  }
+
+  ctx.restore();
+}
+
+function drawStamp(s){
+  if(!ctx) return;
+  var t = 1 - s.life / s.maxLife;
+  ctx.save();
+  ctx.translate(s.x, s.y);
+  ctx.rotate(s.rot);
+  ctx.globalAlpha = 1 - t;
+  var sz = 18 + t * 8;
+  ctx.strokeStyle = '#2ecc71';
+  ctx.lineWidth = 3;
+  ctx.beginPath();
+  ctx.moveTo(-sz, -sz); ctx.lineTo(sz, sz);
+  ctx.moveTo(sz, -sz); ctx.lineTo(-sz, sz);
+  ctx.stroke();
+  ctx.font = 'bold 10px ui-monospace, monospace';
+  ctx.fillStyle = '#2ecc71';
+  ctx.textAlign = 'center';
+  ctx.fillText('STAMPED', 0, sz + 12);
+  ctx.restore();
+}
+
+function drawParticles(){
+  if(!ctx) return;
+  for(var i = 0; i < particles.length; i++){
+    var p = particles[i];
+    ctx.globalAlpha = p.life / p.maxLife;
+    ctx.fillStyle = p.color;
+    ctx.beginPath();
+    ctx.arc(p.x, p.y, p.size, 0, Math.PI * 2);
+    ctx.fill();
+  }
+  ctx.globalAlpha = 1;
+}
+
+function drawFloatTexts(){
+  if(!ctx) return;
+  ctx.font = 'bold 13px ui-monospace, monospace';
+  ctx.textAlign = 'center';
+  for(var i = 0; i < floatTexts.length; i++){
+    var f = floatTexts[i];
+    ctx.globalAlpha = f.life / f.maxLife;
+    ctx.fillStyle = f.color;
+    ctx.fillText(f.text, f.x, f.y);
+  }
+  ctx.globalAlpha = 1;
+}
+
+function render(){
+  drawChalkboard();
+  citations.sort(function(a,b){
+    if(a.phantom !== b.phantom) return a.phantom ? 1 : -1;
+    return 0;
+  });
+  for(var i = 0; i < citations.length; i++) drawCitation(citations[i]);
+  for(var j = 0; j < stamps.length; j++) drawStamp(stamps[j]);
+  drawParticles();
+  drawFloatTexts();
+}
+
+function loop(ts){
+  var dt = Math.min(0.05, (ts - lastTs) / 1000 || 0.016);
+  lastTs = ts;
+  update(dt);
+  render();
+  animId = requestAnimationFrame(loop);
+}
+
+function onPointerDown(e){
+  if(e && e.preventDefault) e.preventDefault();
+  var x, y;
+  if(e.changedTouches && e.changedTouches.length){
+    x = e.changedTouches[0].clientX;
+    y = e.changedTouches[0].clientY;
+  } else {
+    x = e.clientX;
+    y = e.clientY;
+  }
+  handleTap(x, y);
+}
+
+function setupEvents(){
+  window.addEventListener('resize', resize);
+  if(canvas){
+    canvas.addEventListener('touchstart', onPointerDown, {passive: false});
+    canvas.addEventListener('mousedown', onPointerDown);
+  }
+  if(btnStart) btnStart.addEventListener('click', function(e){
+    if(e && e.stopPropagation) e.stopPropagation();
+    startGame();
+  });
+  if(btnRestart) btnRestart.addEventListener('click', function(e){
+    if(e && e.stopPropagation) e.stopPropagation();
+    startGame();
+  });
+  window.addEventListener('keydown', function(e){
+    if(!e || !e.key) return;
+    var k = e.key;
+    if(state === 'title' && (k === 'Enter' || k === ' ')){
+      if(e.preventDefault) e.preventDefault();
+      startGame();
+    } else if(state === 'gameover' && (k === 'Enter' || k === ' ' || k === 'r' || k === 'R')){
+      if(e.preventDefault) e.preventDefault();
+      startGame();
+    }
+  });
+}
+
+resize();
+setupEvents();
+updateHUD();
+render();
+animId = requestAnimationFrame(loop);
+
+})();
+</script>
+</body>
+</html>

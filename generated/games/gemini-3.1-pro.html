@@ -1,727 +1,651 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
-    <title>Autumn Flick</title>
-    <style>
-        :root {
-            --bg-color: #F8F9FA;
-            --text-color: #1E293B;
-            --overlay-bg: rgba(248, 249, 250, 0.85);
-        }
-
-        @media (prefers-color-scheme: dark) {
-            :root {
-                --bg-color: #0A1128;
-                --text-color: #F8F9FA;
-                --overlay-bg: rgba(10, 17, 40, 0.85);
-            }
-        }
-
-        body, html {
-            margin: 0; padding: 0; width: 100%; height: 100%;
-            background: var(--bg-color);
-            color: var(--text-color);
-            font-family: ui-monospace, 'SFMono-Regular', Menlo, monospace;
-            overflow: hidden;
-            touch-action: none;
-            user-select: none;
-            -webkit-user-select: none;
-        }
-
-        canvas {
-            display: block;
-            width: 100dvw;
-            height: 100dvh;
-        }
-
-        #ui-layer {
-            position: absolute; 
-            top: 0; left: 0; right: 0; bottom: 0;
-            pointer-events: none;
-            z-index: 10;
-        }
-
-        .screen {
-            position: absolute; 
-            top: 0; left: 0; right: 0; bottom: 0;
-            display: flex; 
-            flex-direction: column;
-            justify-content: center; 
-            align-items: center;
-            background: var(--overlay-bg);
-            transition: opacity 0.3s;
-            text-align: center;
-            padding: 20px;
-            box-sizing: border-box;
-        }
-
-        .hidden {
-            opacity: 0;
-            pointer-events: none !important;
-        }
-
-        h1 { font-size: 2.2rem; margin-bottom: 0.5rem; letter-spacing: 1px; text-transform: uppercase; }
-        h2 { font-size: 2rem; margin-bottom: 0.5rem; }
-        p { font-size: 1rem; opacity: 0.8; max-width: 400px; line-height: 1.4; margin: 0.5rem 0; }
-
-        button {
-            pointer-events: auto;
-            margin-top: 2rem;
-            padding: 1rem 2.5rem;
-            font-size: 1.2rem;
-            font-family: inherit;
-            font-weight: bold;
-            text-transform: uppercase;
-            letter-spacing: 1px;
-            background: var(--text-color);
-            color: var(--bg-color);
-            border: none;
-            border-radius: 8px;
-            cursor: pointer;
-            box-shadow: 0 4px 12px rgba(0,0,0,0.15);
-            transition: transform 0.1s;
-        }
-
-        button:active { transform: scale(0.95); }
-
-        #hud {
-            position: absolute;
-            top: env(safe-area-inset-top, 20px);
-            left: env(safe-area-inset-left, 20px);
-            right: env(safe-area-inset-right, 20px);
-            display: flex;
-            justify-content: space-between;
-            font-size: 1.5rem;
-            font-weight: bold;
-            pointer-events: none;
-            padding: 20px;
-        }
-        
-        #lives-display { letter-spacing: 2px; color: #FF4D4D; }
-    </style>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <title>Firmware.TCL</title>
+  <style>
+    :root {
+      --bg: #0a0800;
+      --fg: #ffb000;
+      --dim: #885500;
+      --scanline: rgba(0, 0, 0, 0.4);
+    }
+    @media (prefers-color-scheme: dark) {
+      :root {
+        --bg: #0a0800;
+        --fg: #ffb000;
+        --dim: #885500;
+        --scanline: rgba(0, 0, 0, 0.4);
+      }
+    }
+    @media (prefers-color-scheme: light) {
+      :root {
+        --bg: #f4f0e8;
+        --fg: #a64d00;
+        --dim: #d99c5c;
+        --scanline: rgba(0, 0, 0, 0.1);
+      }
+    }
+    body, html {
+      margin: 0; padding: 0;
+      width: 100dvw; height: 100dvh;
+      overflow: hidden;
+      background-color: var(--bg);
+      color: var(--fg);
+      font-family: ui-monospace, 'SFMono-Regular', Menlo, monospace;
+      touch-action: none;
+      user-select: none;
+      -webkit-user-select: none;
+    }
+    canvas {
+      display: block;
+    }
+    #scanlines {
+      position: absolute; inset: 0;
+      background: linear-gradient(transparent 50%, var(--scanline) 50%);
+      background-size: 100% 4px;
+      pointer-events: none;
+      z-index: 10;
+    }
+    #ui-layer {
+      position: absolute; inset: 0;
+      pointer-events: none;
+      display: flex; flex-direction: column; align-items: center; justify-content: center;
+      z-index: 20;
+    }
+    .screen {
+      background: var(--bg);
+      border: 2px solid var(--fg);
+      padding: 40px 30px;
+      text-align: center;
+      pointer-events: auto;
+      box-shadow: 0 0 20px var(--dim);
+      max-width: 80%;
+    }
+    h1, h2 {
+      margin: 0 0 15px 0;
+      font-size: 1.8rem;
+      letter-spacing: 2px;
+      text-shadow: 0 0 10px var(--dim);
+    }
+    p {
+      margin: 0 0 25px 0;
+      font-size: 1.1rem;
+      color: var(--dim);
+    }
+    button {
+      background: var(--fg);
+      color: var(--bg);
+      border: none;
+      padding: 15px 30px;
+      font-family: inherit;
+      font-size: 1.2rem;
+      font-weight: bold;
+      cursor: pointer;
+      pointer-events: auto;
+      text-transform: uppercase;
+      transition: transform 0.1s, background 0.1s;
+      box-shadow: 0 0 10px var(--dim);
+    }
+    button:active {
+      transform: scale(0.95);
+      background: var(--dim);
+    }
+    #hud {
+      position: absolute; inset: 0;
+      pointer-events: none;
+      width: 100%; height: 100%;
+    }
+    .hud-text {
+      position: absolute;
+      font-size: 1.2rem;
+      font-weight: bold;
+      color: var(--fg);
+      text-shadow: 0 0 5px var(--dim);
+    }
+  </style>
 </head>
 <body>
-    <canvas id="game-canvas"></canvas>
-    
-    <div id="ui-layer">
-        <div id="hud" class="hidden">
-            <div id="score-display">0</div>
-            <div id="lives-display">•••</div>
-        </div>
-
-        <div id="title-screen" class="screen">
-            <h1>Autumn Flick</h1>
-            <p>Flick luminescent leaves into matching botanical slots.</p>
-            <p style="font-size: 0.85rem; margin-top: 1.5rem; opacity: 0.6;">Watch out for sudden offshore wind gusts.</p>
-            <button data-smoke="start" id="start-btn">Start</button>
-        </div>
-
-        <div id="game-over-screen" class="screen hidden">
-            <h2>Scattered</h2>
-            <p>Score: <span id="final-score">0</span></p>
-            <button data-smoke="restart" id="restart-btn">Restart</button>
-        </div>
+  <div id="scanlines"></div>
+  <canvas id="game"></canvas>
+  <div id="ui-layer">
+    <div id="hud" style="display:none;">
+      <div class="hud-text" style="top: 20px; left: 20px;">LAYER <span id="layer-display">01</span></div>
+      <div class="hud-text" style="top: 20px; right: 20px;">TOKENS: <span id="tokens-display">5</span></div>
     </div>
+    <div id="title-screen" class="screen">
+      <h1>FIRMWARE.TCL</h1>
+      <p>DRAG TO FLICK TOKEN<br>BREACH THE CORE</p>
+      <button data-smoke="start">INITIALIZE</button>
+    </div>
+    <div id="game-over-screen" class="screen" style="display:none;">
+      <h2>CONNECTION LOST</h2>
+      <p id="final-score">REACHED LAYER 1</p>
+      <button data-smoke="restart">REBOOT</button>
+    </div>
+  </div>
 
-    <script>
-    (function() {
-        const canvas = document.getElementById('game-canvas');
-        const ctx = canvas.getContext('2d');
-        if (!ctx) return; // Graceful fallback if Canvas 2D is missing
+  <script>
+    const canvas = document.getElementById('game');
+    const ctx = canvas.getContext('2d');
+    
+    let width, height, cx, cy;
+    let colors = {};
+    
+    function updateColors() {
+      const isLight = window.matchMedia && window.matchMedia('(prefers-color-scheme: light)').matches;
+      colors = {
+        bg: isLight ? '#f4f0e8' : '#0a0800',
+        fg: isLight ? '#a64d00' : '#ffb000',
+        dim: isLight ? '#d99c5c' : '#885500'
+      };
+    }
+    updateColors();
+    if (window.matchMedia) {
+      window.matchMedia('(prefers-color-scheme: light)').addEventListener('change', updateColors);
+    }
 
-        let width = window.innerWidth;
-        let height = window.innerHeight;
+    function resize() {
+      width = window.innerWidth;
+      height = window.innerHeight;
+      canvas.width = width;
+      canvas.height = height;
+      cx = width / 2;
+      cy = height * 0.35;
+    }
+    window.addEventListener('resize', resize);
+    resize();
 
-        const uiTitle = document.getElementById('title-screen');
-        const uiGameOver = document.getElementById('game-over-screen');
-        const uiHud = document.getElementById('hud');
-        const scoreDisplay = document.getElementById('score-display');
-        const livesDisplay = document.getElementById('lives-display');
-        const finalScoreDisplay = document.getElementById('final-score');
+    // Audio
+    const AudioContext = window.AudioContext || window.webkitAudioContext;
+    let audioCtx;
+    function initAudio() {
+      if (!audioCtx && AudioContext) {
+        audioCtx = new AudioContext();
+      }
+    }
+    function playTone(freq, type, duration, vol=0.1) {
+      if (!audioCtx) return;
+      try {
+        let osc = audioCtx.createOscillator();
+        let gain = audioCtx.createGain();
+        osc.type = type;
+        osc.frequency.setValueAtTime(freq, audioCtx.currentTime);
+        gain.gain.setValueAtTime(vol, audioCtx.currentTime);
+        gain.gain.exponentialRampToValueAtTime(0.001, audioCtx.currentTime + duration);
+        osc.connect(gain);
+        gain.connect(audioCtx.destination);
+        osc.start();
+        osc.stop(audioCtx.currentTime + duration);
+      } catch(e) {}
+    }
+    function playBounce() { 
+      playTone(400, 'square', 0.1, 0.05); 
+      if(navigator.vibrate) try { navigator.vibrate(15); } catch(e){} 
+    }
+    function playShoot() { 
+      playTone(200, 'triangle', 0.2, 0.1); 
+    }
+    function playWin() { 
+      playTone(800, 'square', 0.3, 0.1); 
+      setTimeout(()=>playTone(1200, 'square', 0.4, 0.1), 150); 
+      if(navigator.vibrate) try { navigator.vibrate([30, 50, 50]); } catch(e){} 
+    }
+    function playLose() { 
+      playTone(150, 'sawtooth', 0.5, 0.1); 
+      if(navigator.vibrate) try { navigator.vibrate(100); } catch(e){} 
+    }
 
-        // Game State
-        let gameState = 'TITLE'; 
-        let score = 0;
-        let lives = 3;
-        let lastTime = performance.now();
-        let leaves = []; 
-        let targets = [];
-        let particles = [];
-        let windParticles = [];
-        let screenShake = 0;
+    // Game State
+    let gameState = 'TITLE'; // TITLE, PLAYING, TRANSITION, GAMEOVER
+    let level = 1;
+    let tokens = 5;
+    let rings = [];
+    let particles = [];
+    let shake = 0;
+    let transitionTimer = 0;
+    let hitCore = false;
 
-        let windState = { timer: 3, duration: 0, targetVelocity: 0, currentVelocity: 0 };
-        let audioCtx = null;
+    const token = {
+      x: 0, y: 0, vx: 0, vy: 0, radius: 6,
+      wasMoving: false, trail: []
+    };
 
-        function initAudio() {
-            if (!audioCtx) {
-                try {
-                    audioCtx = new (window.AudioContext || window.webkitAudioContext)();
-                } catch (e) {}
-            }
-        }
+    const uiTitle = document.getElementById('title-screen');
+    const uiGameOver = document.getElementById('game-over-screen');
+    const uiHUD = document.getElementById('hud');
+    const layerDisplay = document.getElementById('layer-display');
+    const tokensDisplay = document.getElementById('tokens-display');
 
-        function playThunk() {
-            if (!audioCtx) return;
-            try {
-                if (audioCtx.state === 'suspended') audioCtx.resume();
-                let osc = audioCtx.createOscillator();
-                let gain = audioCtx.createGain();
-                osc.connect(gain);
-                gain.connect(audioCtx.destination);
-                osc.type = 'sine';
-                osc.frequency.setValueAtTime(300, audioCtx.currentTime);
-                osc.frequency.exponentialRampToValueAtTime(40, audioCtx.currentTime + 0.1);
-                gain.gain.setValueAtTime(0.5, audioCtx.currentTime);
-                gain.gain.exponentialRampToValueAtTime(0.01, audioCtx.currentTime + 0.1);
-                osc.start();
-                osc.stop(audioCtx.currentTime + 0.1);
-            } catch(e) {}
-        }
+    document.querySelector('[data-smoke="start"]').addEventListener('click', () => {
+      initAudio();
+      uiTitle.style.display = 'none';
+      uiHUD.style.display = 'block';
+      startGame();
+    });
 
-        function playMiss() {
-            if (!audioCtx) return;
-            try {
-                if (audioCtx.state === 'suspended') audioCtx.resume();
-                let osc = audioCtx.createOscillator();
-                let gain = audioCtx.createGain();
-                osc.connect(gain);
-                gain.connect(audioCtx.destination);
-                osc.type = 'sawtooth';
-                osc.frequency.setValueAtTime(150, audioCtx.currentTime);
-                osc.frequency.linearRampToValueAtTime(50, audioCtx.currentTime + 0.2);
-                gain.gain.setValueAtTime(0.3, audioCtx.currentTime);
-                gain.gain.linearRampToValueAtTime(0.01, audioCtx.currentTime + 0.2);
-                osc.start();
-                osc.stop(audioCtx.currentTime + 0.2);
-            } catch(e) {}
-        }
+    document.querySelector('[data-smoke="restart"]').addEventListener('click', () => {
+      initAudio();
+      uiGameOver.style.display = 'none';
+      startGame();
+    });
 
-        const Shapes = {
-            MAPLE: (ctx) => {
-                ctx.beginPath();
-                ctx.moveTo(0, -35); ctx.lineTo(8, -15); ctx.lineTo(35, -20);
-                ctx.lineTo(18, 5); ctx.lineTo(30, 30); ctx.lineTo(0, 18);
-                ctx.lineTo(-30, 30); ctx.lineTo(-18, 5); ctx.lineTo(-35, -20);
-                ctx.lineTo(-8, -15); ctx.closePath();
-            },
-            OAK: (ctx) => {
-                ctx.beginPath();
-                ctx.moveTo(0, -35);
-                ctx.bezierCurveTo(15, -35, 25, -20, 12, -10);
-                ctx.bezierCurveTo(30, -5, 30, 10, 15, 12);
-                ctx.bezierCurveTo(25, 25, 15, 35, 0, 28);
-                ctx.bezierCurveTo(-15, 35, -25, 25, -15, 12);
-                ctx.bezierCurveTo(-30, 10, -30, -5, -12, -10);
-                ctx.bezierCurveTo(-25, -20, -15, -35, 0, -35);
-                ctx.closePath();
-            },
-            BIRCH: (ctx) => {
-                ctx.beginPath();
-                ctx.moveTo(0, -30);
-                ctx.bezierCurveTo(25, -10, 30, 15, 0, 35);
-                ctx.bezierCurveTo(-30, 15, -25, -10, 0, -30);
-                ctx.closePath();
-            }
-        };
-        const SHAPE_KEYS = Object.keys(Shapes);
-        const LEAF_COLORS = ['#FF4D4D', '#FFA62B', '#11E5D5', '#FFE900'];
+    function updateHUD() {
+      layerDisplay.innerText = level.toString().padStart(2, '0');
+      tokensDisplay.innerText = tokens;
+    }
 
-        function getColors() {
-            const dark = window.matchMedia ? window.matchMedia('(prefers-color-scheme: dark)').matches : false;
-            return {
-                slotColor: dark ? 'rgba(248, 249, 250, 0.1)' : 'rgba(30, 41, 59, 0.1)',
-                slotBorder: dark ? 'rgba(248, 249, 250, 0.3)' : 'rgba(30, 41, 59, 0.3)',
-                windColor: dark ? 'rgba(255,255,255,0.2)' : 'rgba(0,0,0,0.2)',
-                leafInner: dark ? 'rgba(0,0,0,0.3)' : 'rgba(255,255,255,0.5)'
-            };
-        }
+    function startGame() {
+      level = 1;
+      tokens = 5;
+      updateHUD();
+      generateLevel(level);
+      gameState = 'PLAYING';
+    }
 
-        function resize() {
-            width = window.innerWidth;
-            height = window.innerHeight;
-            const dpr = window.devicePixelRatio || 1;
-            canvas.width = width * dpr;
-            canvas.height = height * dpr;
-            ctx.scale(dpr, dpr);
-            
-            let cy = height * 0.22;
-            let spacing = Math.min(width / 3.2, 110);
-            let cx = width / 2;
-            if (targets.length === 3) {
-                targets[0].x = cx - spacing; targets[0].y = cy;
-                targets[1].x = cx;           targets[1].y = cy;
-                targets[2].x = cx + spacing; targets[2].y = cy;
-            }
-        }
-        window.addEventListener('resize', resize);
+    function generateLevel(l) {
+      rings = [];
+      particles = [];
+      transitionTimer = 0;
+      hitCore = false;
+      
+      let numRings = Math.min(l, 7);
+      let maxRadius = Math.min(width/2 - 20, height * 0.45);
+      let minRadius = 40;
+      let radiusStep = (maxRadius - minRadius) / 7;
 
-        function initTargets() {
-            targets = [
-                { x: 0, y: 0, shapeType: 'MAPLE', baseScale: 1, scale: 1 },
-                { x: 0, y: 0, shapeType: 'OAK',   baseScale: 1, scale: 1 },
-                { x: 0, y: 0, shapeType: 'BIRCH', baseScale: 1, scale: 1 }
-            ];
-            let types = [...SHAPE_KEYS].sort(() => Math.random() - 0.5);
-            for (let i = 0; i < 3; i++) targets[i].shapeType = types[i];
-            resize(); // sets real coords
-        }
-
-        function spawnNextLeaf() {
-            if (gameState !== 'PLAYING') return;
-            let leaf = new Leaf();
-            leaves.push(leaf);
-        }
-
-        function handleMiss() {
-            lives--;
-            updateLivesDisplay();
-            playMiss();
-            if (navigator.vibrate) {
-                try { navigator.vibrate(100); } catch(e){}
-            }
-            screenShake = 0.2;
-            
-            if (lives <= 0) {
-                endGame();
-            } else {
-                spawnNextLeaf();
-            }
-        }
-
-        function updateLivesDisplay() {
-            let s = '';
-            for(let i=0; i<lives; i++) s += '•'; 
-            livesDisplay.innerText = s;
-        }
-
-        function increaseDifficulty() {
-            let minScale = 0.6;
-            let newScale = Math.max(minScale, 1 - score * 0.015);
-            for (let t of targets) {
-                t.baseScale = newScale;
-                t.scale = 1.3; 
-            }
-        }
-
-        function createParticles(x, y, color) {
-            for (let i=0; i<12; i++) {
-                particles.push({
-                    x: x, y: y,
-                    vx: (Math.random()-0.5)*500,
-                    vy: (Math.random()-0.5)*500,
-                    life: 1, color: color
-                });
-            }
-        }
-
-        class Leaf {
-            constructor() {
-                this.x = width / 2;
-                this.y = height * 0.82;
-                this.vx = 0; this.vy = 0;
-                this.rotation = Math.random() * Math.PI * 2;
-                this.angularVelocity = 0;
-                this.scale = 0; 
-                this.targetScale = 1;
-                this.shapeType = SHAPE_KEYS[Math.floor(Math.random() * SHAPE_KEYS.length)];
-                this.color = LEAF_COLORS[Math.floor(Math.random() * LEAF_COLORS.length)];
-                this.state = 'SPAWNING';
-                this.alpha = 1;
-                this.idleTimer = 4; // seconds
-                this.alreadyMissed = false;
-            }
-
-            update(dt) {
-                if (this.state === 'SPAWNING') {
-                    this.scale += (this.targetScale - this.scale) * dt * 10;
-                    if (this.targetScale - this.scale < 0.01) {
-                        this.scale = this.targetScale;
-                        this.state = 'IDLE';
-                    }
-                }
-                else if (this.state === 'IDLE') {
-                    this.idleTimer -= dt;
-                    if (Math.abs(windState.currentVelocity) > 250) {
-                        this.idleTimer -= dt * 2; // wind drains patience
-                    }
-                    if (this.idleTimer <= 0) {
-                        this.state = 'AIRBORNE';
-                        this.vx = (Math.random() < 0.5 ? -1 : 1) * (400 + Math.random() * 400);
-                        this.vy = -200 - Math.random() * 300;
-                        this.angularVelocity = (Math.random() - 0.5) * 20;
-                        this.alreadyMissed = true;
-                        handleMiss();
-                    }
-                    this.y = height * 0.82 + Math.sin(performance.now() / 250) * 4;
-                }
-                else if (this.state === 'DRAGGED') {
-                    this.scale += (this.targetScale * 1.2 - this.scale) * dt * 12;
-                }
-                else if (this.state === 'AIRBORNE') {
-                    this.vy += 1500 * dt; // gravity
-                    this.vx += windState.currentVelocity * dt;
-                    this.x += this.vx * dt;
-                    this.y += this.vy * dt;
-                    this.rotation += this.angularVelocity * dt;
-
-                    let matchedTarget = null;
-                    let closestDist = Infinity;
-                    for (let t of targets) {
-                        let dist = Math.hypot(this.x - t.x, this.y - t.y);
-                        let snapRadius = 40 + 20 * t.baseScale;
-                        if (dist < snapRadius && dist < closestDist) {
-                            closestDist = dist;
-                            matchedTarget = t;
-                        }
-                    }
-
-                    if (matchedTarget && !this.alreadyMissed) {
-                        if (this.shapeType === matchedTarget.shapeType) {
-                            this.state = 'SNAPPING';
-                            this.startX = this.x; this.startY = this.y;
-                            this.targetX = matchedTarget.x; this.targetY = matchedTarget.y;
-                            this.startRot = this.rotation;
-                            this.snapTime = 0;
-                            
-                            score++;
-                            scoreDisplay.innerText = score;
-                            if (navigator.vibrate) { try{ navigator.vibrate(50); }catch(e){} }
-                            playThunk();
-                            createParticles(this.targetX, this.targetY, this.color);
-                            increaseDifficulty();
-                            matchedTarget.scale = 1.4;
-                        } else {
-                            this.vx = -this.vx * 0.5 + (Math.random()-0.5)*200;
-                            this.vy = Math.abs(this.vy) * 0.5 + 400;
-                            this.alreadyMissed = true;
-                            handleMiss();
-                        }
-                    }
-
-                    if (this.y > height + 100 || this.x < -100 || this.x > width + 100) {
-                        this.state = 'DEAD';
-                        if (!this.alreadyMissed) {
-                            this.alreadyMissed = true;
-                            handleMiss();
-                        }
-                    }
-                }
-                else if (this.state === 'SNAPPING') {
-                    this.snapTime += dt;
-                    let t = Math.min(this.snapTime / 0.15, 1);
-                    let ease = 1 - Math.pow(1 - t, 3);
-                    this.x = this.startX + (this.targetX - this.startX) * ease;
-                    this.y = this.startY + (this.targetY - this.startY) * ease;
-                    
-                    let rotDiff = (0 - this.startRot) % (Math.PI * 2);
-                    if (rotDiff > Math.PI) rotDiff -= Math.PI * 2;
-                    if (rotDiff < -Math.PI) rotDiff += Math.PI * 2;
-                    this.rotation = this.startRot + rotDiff * ease;
-
-                    if (t >= 1) {
-                        this.state = 'CAUGHT';
-                        this.rotation = 0;
-                        spawnNextLeaf();
-                    }
-                }
-                else if (this.state === 'CAUGHT') {
-                    this.alpha -= dt * 3;
-                    this.scale += dt * 0.5;
-                    if (this.alpha <= 0) this.state = 'DEAD';
-                }
-                else if (this.state === 'TITLE_FLOAT') {
-                    this.vx += windState.currentVelocity * dt * 0.5;
-                    this.x += this.vx * dt;
-                    this.y += this.vy * dt;
-                    this.rotation += this.angularVelocity * dt;
-                    if (this.y > height + 100 || this.x > width + 100 || this.x < -100) {
-                        this.state = 'DEAD';
-                    }
-                }
-            }
-
-            draw(ctx, themeColors) {
-                if (this.state === 'DEAD') return;
-                ctx.save();
-                ctx.translate(this.x, this.y);
-                ctx.rotate(this.rotation);
-                ctx.scale(this.scale, this.scale);
-                ctx.globalAlpha = this.alpha;
-                
-                ctx.fillStyle = this.color;
-                if (this.state === 'DRAGGED' || this.state === 'IDLE') {
-                    ctx.shadowBlur = 15;
-                    ctx.shadowColor = this.color;
-                } else if (this.state === 'CAUGHT' || this.state === 'SNAPPING') {
-                    ctx.shadowBlur = 25;
-                    ctx.shadowColor = this.color;
-                }
-
-                Shapes[this.shapeType](ctx);
-                ctx.fill();
-
-                ctx.strokeStyle = themeColors.leafInner;
-                ctx.lineWidth = 2;
-                ctx.beginPath();
-                ctx.moveTo(0, 0);
-                ctx.lineTo(0, this.shapeType === 'MAPLE' ? -20 : -25);
-                ctx.stroke();
-                ctx.restore();
-
-                if (this.state === 'IDLE') {
-                    ctx.save();
-                    ctx.translate(this.x, this.y + 45);
-                    ctx.fillStyle = 'rgba(150,150,150,0.3)';
-                    ctx.fillRect(-20, 0, 40, 4);
-                    let pct = Math.max(0, this.idleTimer / 4);
-                    ctx.fillStyle = pct < 0.3 ? '#FF4D4D' : 'rgba(200,200,200,0.9)';
-                    ctx.fillRect(-20, 0, 40 * pct, 4);
-                    ctx.restore();
-
-                    // Affordance ring
-                    ctx.save();
-                    ctx.translate(this.x, this.y);
-                    ctx.beginPath();
-                    ctx.arc(0, 0, 50 + Math.sin(performance.now()/150)*5, 0, Math.PI*2);
-                    ctx.strokeStyle = themeColors.windColor;
-                    ctx.lineWidth = 2;
-                    ctx.stroke();
-                    ctx.restore();
-                }
-            }
-        }
-
-        function updateWind(dt) {
-            if (windState.duration > 0) {
-                windState.duration -= dt;
-                if (windState.duration <= 0) {
-                    windState.targetVelocity = 0;
-                    windState.timer = 3 + Math.random() * 5; 
-                }
-            } else {
-                windState.timer -= dt;
-                if (windState.timer <= 0) {
-                    windState.duration = 1.5 + Math.random() * 1.5; 
-                    let dir = Math.random() < 0.5 ? -1 : 1;
-                    windState.targetVelocity = dir * (300 + Math.random() * 500 + score * 10); 
-                }
-            }
-            windState.currentVelocity += (windState.targetVelocity - windState.currentVelocity) * dt * 2.5;
-        }
-
-        function updateAndDrawWindParticles(ctx, dt, color) {
-            if (Math.abs(windState.currentVelocity) > 150 && Math.random() < 0.4) {
-                windParticles.push({
-                    x: windState.currentVelocity > 0 ? -100 : width + 100,
-                    y: Math.random() * height,
-                    length: 40 + Math.random() * 100,
-                    speed: windState.currentVelocity * (0.8 + Math.random() * 0.4),
-                    alpha: Math.random() * 0.4 + 0.1
-                });
-            }
-            
-            ctx.lineWidth = 2;
-            ctx.strokeStyle = color;
-            for (let i = windParticles.length - 1; i >= 0; i--) {
-                let p = windParticles[i];
-                p.x += p.speed * dt;
-                ctx.beginPath();
-                ctx.moveTo(p.x, p.y);
-                ctx.lineTo(p.x - p.length * Math.sign(p.speed), p.y);
-                ctx.globalAlpha = p.alpha;
-                ctx.stroke();
-                
-                if (p.speed > 0 && p.x - p.length > width + 100) windParticles.splice(i, 1);
-                else if (p.speed < 0 && p.x + p.length < -100) windParticles.splice(i, 1);
-            }
-            ctx.globalAlpha = 1;
-        }
-
-        // Input Handling
-        let isDragging = false;
-        let dragPoints = [];
-        let activeLeaf = null;
-
-        canvas.addEventListener('pointerdown', (e) => {
-            if (gameState !== 'PLAYING') return;
-            activeLeaf = leaves.find(l => l.state === 'IDLE');
-            if (!activeLeaf) return;
-
-            let dx = e.clientX - activeLeaf.x;
-            let dy = e.clientY - activeLeaf.y;
-            if (Math.hypot(dx, dy) < 90) { 
-                isDragging = true;
-                activeLeaf.state = 'DRAGGED';
-                dragPoints = [{ x: e.clientX, y: e.clientY, time: performance.now() }];
-            }
+      for(let i=0; i<numRings; i++) {
+        let r = minRadius + (i + 1) * radiusStep;
+        let speed = (0.005 + l * 0.001 + Math.random() * 0.005);
+        if (i % 2 === 1) speed *= -1;
+        let gapSize = Math.max(0.3, 1.2 - l * 0.1);
+        rings.push({
+          radius: r,
+          angle: Math.random() * Math.PI * 2,
+          gap: gapSize,
+          speed: speed
         });
+      }
 
-        canvas.addEventListener('pointermove', (e) => {
-            if (!isDragging || !activeLeaf) return;
-            activeLeaf.x = e.clientX;
-            activeLeaf.y = e.clientY;
-            dragPoints.push({ x: e.clientX, y: e.clientY, time: performance.now() });
-            if (dragPoints.length > 8) dragPoints.shift();
+      token.x = cx;
+      token.y = height - 60;
+      token.vx = 0;
+      token.vy = 0;
+      token.wasMoving = false;
+      token.trail = [];
+    }
+
+    function spawnParticles(x, y, count) {
+      for(let i=0; i<count; i++) {
+        particles.push({
+          x: x, y: y,
+          vx: (Math.random()-0.5)*6,
+          vy: (Math.random()-0.5)*6,
+          life: 1.0
         });
+      }
+    }
 
-        canvas.addEventListener('pointerup', (e) => {
-            if (!isDragging || !activeLeaf) return;
-            isDragging = false;
-            activeLeaf.state = 'AIRBORNE';
-            
-            let now = performance.now();
-            let valid = dragPoints.filter(p => now - p.time < 120);
-            if (valid.length >= 2) {
-                let p1 = valid[0];
-                let p2 = valid[valid.length - 1];
-                let dt = (p2.time - p1.time) / 1000;
-                if (dt > 0.005) {
-                    let vx = (p2.x - p1.x) / dt;
-                    let vy = (p2.y - p1.y) / dt;
-                    let speed = Math.hypot(vx, vy);
-                    let maxSpeed = 3500;
-                    if (speed > maxSpeed) {
-                        vx = (vx / speed) * maxSpeed;
-                        vy = (vy / speed) * maxSpeed;
-                    }
-                    activeLeaf.vx = vx;
-                    activeLeaf.vy = vy;
-                    
-                    // generous upwards assist for weak flicks
-                    if (vy < -100 && speed < 1200) {
-                        activeLeaf.vy = -1400;
-                        activeLeaf.vx *= 1.5; // boost horizontal a bit too
-                    }
-                } else {
-                    activeLeaf.vx = 0; activeLeaf.vy = 0;
-                }
-            } else {
-                activeLeaf.vx = 0; activeLeaf.vy = 0;
+    function inGap(angle, start, gapSize) {
+      let a = angle % (Math.PI * 2);
+      if (a < 0) a += Math.PI * 2;
+      let s = start % (Math.PI * 2);
+      if (s < 0) s += Math.PI * 2;
+      let e = (s + gapSize) % (Math.PI * 2);
+      if (e < 0) e += Math.PI * 2;
+
+      if (s < e) return a >= s && a <= e;
+      return a >= s || a <= e;
+    }
+
+    function updatePhysics() {
+      const steps = 4;
+      for(let i=0; i<steps; i++) {
+        token.vx *= 0.995;
+        token.vy *= 0.995;
+
+        let prevX = token.x;
+        let prevY = token.y;
+        token.x += token.vx / steps;
+        token.y += token.vy / steps;
+
+        let dPrev = Math.hypot(prevX - cx, prevY - cy);
+        let dNew = Math.hypot(token.x - cx, token.y - cy);
+
+        // Ring collisions
+        for(let ring of rings) {
+          let R = ring.radius;
+          let r = token.radius;
+          let goingIn = dPrev > dNew;
+          let R_eff = goingIn ? R + r : R - r;
+
+          if ((dPrev - R_eff) * (dNew - R_eff) <= 0) {
+            let t = (R_eff - dPrev) / (dNew - dPrev);
+            if (isNaN(t)) t = 0;
+            let crossX = prevX + (token.x - prevX) * t;
+            let crossY = prevY + (token.y - prevY) * t;
+            let angle = Math.atan2(crossY - cy, crossX - cx);
+
+            if (!inGap(angle, ring.angle, ring.gap)) {
+              let nx = Math.cos(angle);
+              let ny = Math.sin(angle);
+              if (!goingIn) { nx = -nx; ny = -ny; }
+
+              let dot = token.vx * nx + token.vy * ny;
+              if (dot < 0) {
+                token.vx = token.vx - 2 * dot * nx;
+                token.vy = token.vy - 2 * dot * ny;
+                token.vx *= 0.8;
+                token.vy *= 0.8;
+              }
+
+              let pushDir = goingIn ? 1 : -1;
+              let newDist = R_eff + pushDir * 0.5;
+              token.x = cx + Math.cos(angle) * newDist;
+              token.y = cy + Math.sin(angle) * newDist;
+              dNew = Math.hypot(token.x - cx, token.y - cy);
+
+              shake = 4;
+              spawnParticles(crossX, crossY, 6);
+              playBounce();
             }
-            activeLeaf.angularVelocity = (Math.random() - 0.5) * 15;
-            activeLeaf = null;
-        });
+          }
+        }
 
-        canvas.addEventListener('touchstart', e => e.preventDefault(), { passive: false });
+        // Screen bounds
+        if (token.x - token.radius < 0) { token.x = token.radius; token.vx *= -0.8; playBounce(); }
+        if (token.x + token.radius > width) { token.x = width - token.radius; token.vx *= -0.8; playBounce(); }
+        if (token.y - token.radius < 0) { token.y = token.radius; token.vy *= -0.8; playBounce(); }
+        if (token.y + token.radius > height) { token.y = height - token.radius; token.vy *= -0.8; playBounce(); }
 
-        function startGame() {
-            initAudio();
+        // Core collision
+        if (!hitCore && Math.hypot(token.x - cx, token.y - cy) < 20 + token.radius) {
+          hitCore = true;
+          gameState = 'TRANSITION';
+          level++;
+          tokens = Math.min(5, tokens + 1);
+          updateHUD();
+          playWin();
+          shake = 10;
+          setTimeout(() => {
+            generateLevel(level);
             gameState = 'PLAYING';
-            score = 0;
-            lives = 3;
-            leaves = [];
-            particles = [];
-            windParticles = [];
-            windState = { timer: 4, duration: 0, targetVelocity: 0, currentVelocity: 0 };
-            screenShake = 0;
-            
-            scoreDisplay.innerText = score;
-            updateLivesDisplay();
-            initTargets();
-            
-            uiTitle.classList.add('hidden');
-            uiGameOver.classList.add('hidden');
-            uiHud.classList.remove('hidden');
-
-            spawnNextLeaf();
+          }, 1200);
+          break;
         }
+      }
 
-        function endGame() {
-            gameState = 'GAME_OVER';
-            finalScoreDisplay.innerText = score;
-            uiHud.classList.add('hidden');
-            uiGameOver.classList.remove('hidden');
+      let speed = Math.hypot(token.vx, token.vy);
+      if (speed < 0.5 && !hitCore) {
+        if (token.wasMoving) {
+          token.vx = 0;
+          token.vy = 0;
+          token.wasMoving = false;
+          if (tokens <= 0) {
+            gameState = 'GAMEOVER';
+            playLose();
+            document.getElementById('game-over-screen').style.display = 'block';
+            document.getElementById('final-score').innerText = `REACHED LAYER ${level}`;
+          }
         }
-
-        document.getElementById('start-btn').addEventListener('click', startGame);
-        document.getElementById('restart-btn').addEventListener('click', startGame);
-
-        function loop() {
-            let now = performance.now();
-            let dt = Math.min((now - lastTime) / 1000, 0.05);
-            lastTime = now;
-
-            ctx.clearRect(0, 0, canvas.width, canvas.height);
-            let tColors = getColors();
-
-            updateWind(dt);
-
-            ctx.save();
-            if (screenShake > 0) {
-                screenShake -= dt;
-                let amt = screenShake * 40;
-                ctx.translate((Math.random()-0.5)*amt, (Math.random()-0.5)*amt);
-            }
-
-            if (gameState === 'PLAYING') {
-                for (let t of targets) {
-                    t.scale += (t.baseScale - t.scale) * dt * 8;
-                    ctx.save();
-                    ctx.translate(t.x, t.y);
-                    ctx.scale(t.scale, t.scale);
-                    
-                    ctx.fillStyle = tColors.slotColor;
-                    Shapes[t.shapeType](ctx);
-                    ctx.fill();
-                    
-                    ctx.strokeStyle = tColors.slotBorder;
-                    ctx.setLineDash([6, 6]);
-                    ctx.lineWidth = 2;
-                    ctx.stroke();
-                    ctx.restore();
-                }
-            }
-
-            updateAndDrawWindParticles(ctx, dt, tColors.windColor);
-
-            if (gameState === 'TITLE' || gameState === 'GAME_OVER') {
-                if (Math.random() < 0.03) {
-                    let leaf = new Leaf();
-                    leaf.state = 'TITLE_FLOAT';
-                    leaf.x = Math.random() * width;
-                    leaf.y = -50;
-                    leaf.vx = (Math.random() - 0.5) * 100;
-                    leaf.vy = 80 + Math.random() * 120;
-                    leaf.angularVelocity = (Math.random() - 0.5) * 3;
-                    leaves.push(leaf);
-                }
-            }
-
-            for (let i = leaves.length - 1; i >= 0; i--) {
-                leaves[i].update(dt);
-                leaves[i].draw(ctx, tColors);
-                if (leaves[i].state === 'DEAD') {
-                    leaves.splice(i, 1);
-                }
-            }
-
-            for (let i = particles.length - 1; i >= 0; i--) {
-                let p = particles[i];
-                p.life -= dt * 1.5;
-                if (p.life <= 0) {
-                    particles.splice(i, 1);
-                    continue;
-                }
-                p.x += p.vx * dt;
-                p.y += p.vy * dt;
-                ctx.globalAlpha = p.life;
-                ctx.fillStyle = p.color;
-                ctx.beginPath();
-                ctx.arc(p.x, p.y, 4 * p.life, 0, Math.PI*2);
-                ctx.fill();
-            }
-            ctx.globalAlpha = 1;
-            ctx.restore();
-
-            requestAnimationFrame(loop);
+      } else if (speed >= 0.5) {
+        token.wasMoving = true;
+        if (Math.random() < 0.2) {
+          token.trail.push({x: token.x, y: token.y});
+          if (token.trail.length > 12) token.trail.shift();
         }
+      }
+    }
 
-        resize();
-        requestAnimationFrame(loop);
-    })();
-    </script>
+    // Input
+    let aiming = false;
+    let dragStartX = 0, dragStartY = 0;
+    let dragCurrentX = 0, dragCurrentY = 0;
+
+    function handleStart(e) {
+      if (gameState !== 'PLAYING' || token.wasMoving) return;
+      if (e.target.tagName === 'BUTTON') return;
+      e.preventDefault();
+      aiming = true;
+      let pt = e.touches ? e.touches[0] : e;
+      dragStartX = dragCurrentX = pt.clientX;
+      dragStartY = dragCurrentY = pt.clientY;
+    }
+
+    function handleMove(e) {
+      if (!aiming) return;
+      e.preventDefault();
+      let pt = e.touches ? e.touches[0] : e;
+      dragCurrentX = pt.clientX;
+      dragCurrentY = pt.clientY;
+    }
+
+    function handleEnd(e) {
+      if (!aiming) return;
+      e.preventDefault();
+      aiming = false;
+
+      let dx = dragStartX - dragCurrentX;
+      let dy = dragStartY - dragCurrentY;
+      let pow = 0.12;
+      let vx = dx * pow;
+      let vy = dy * pow;
+      let speed = Math.hypot(vx, vy);
+
+      if (speed > 2) {
+        let maxV = 28;
+        if (speed > maxV) {
+          vx = (vx / speed) * maxV;
+          vy = (vy / speed) * maxV;
+        }
+        token.vx = vx;
+        token.vy = vy;
+        tokens--;
+        updateHUD();
+        token.wasMoving = true;
+        token.trail = [];
+        playShoot();
+      }
+    }
+
+    canvas.addEventListener('touchstart', handleStart, {passive: false});
+    canvas.addEventListener('touchmove', handleMove, {passive: false});
+    canvas.addEventListener('touchend', handleEnd, {passive: false});
+    canvas.addEventListener('mousedown', handleStart);
+    canvas.addEventListener('mousemove', handleMove);
+    window.addEventListener('mouseup', handleEnd);
+
+    function getTokenClientPos() {
+      const rect = canvas.getBoundingClientRect();
+      return { x: rect.left + token.x, y: rect.top + token.y };
+    }
+
+    function handleKeyDown(e) {
+      if (e.target.tagName === 'BUTTON') return;
+
+      if (gameState === 'TITLE' && (e.code === 'Enter' || e.code === 'Space')) {
+        e.preventDefault();
+        document.querySelector('[data-smoke="start"]').click();
+        return;
+      }
+
+      if (gameState === 'GAMEOVER' && (e.code === 'Enter' || e.code === 'Space')) {
+        e.preventDefault();
+        document.querySelector('[data-smoke="restart"]').click();
+        return;
+      }
+
+      if (gameState !== 'PLAYING' || token.wasMoving) return;
+
+      if (e.code === 'Space' && !aiming) {
+        e.preventDefault();
+        aiming = true;
+        const pos = getTokenClientPos();
+        dragStartX = pos.x;
+        dragStartY = pos.y;
+        dragCurrentX = pos.x;
+        dragCurrentY = pos.y - 60;
+        return;
+      }
+
+      if (aiming) {
+        const step = 10;
+        if (e.code === 'ArrowUp' || e.code === 'KeyW') { e.preventDefault(); dragCurrentY -= step; }
+        if (e.code === 'ArrowDown' || e.code === 'KeyS') { e.preventDefault(); dragCurrentY += step; }
+        if (e.code === 'ArrowLeft' || e.code === 'KeyA') { e.preventDefault(); dragCurrentX -= step; }
+        if (e.code === 'ArrowRight' || e.code === 'KeyD') { e.preventDefault(); dragCurrentX += step; }
+        if (e.code === 'Enter' || e.code === 'Space') {
+          e.preventDefault();
+          handleEnd(e);
+        }
+      }
+    }
+
+    function handleKeyUp(e) {
+      if (e.code === 'Space' || e.code === 'Enter') e.preventDefault();
+    }
+
+    document.addEventListener('keydown', handleKeyDown);
+    document.addEventListener('keyup', handleKeyUp);
+
+    // Rendering
+    function drawGlow(drawFn, thick, thin) {
+      ctx.globalAlpha = 0.25;
+      ctx.lineWidth = thick;
+      drawFn();
+      ctx.globalAlpha = 1.0;
+      ctx.lineWidth = thin;
+      drawFn();
+    }
+
+    function loop() {
+      requestAnimationFrame(loop);
+
+      ctx.fillStyle = colors.bg;
+      ctx.fillRect(0, 0, width, height);
+
+      ctx.save();
+      if (shake > 0) {
+        ctx.translate((Math.random()-0.5)*shake, (Math.random()-0.5)*shake);
+        shake *= 0.9;
+        if (shake < 0.5) shake = 0;
+      }
+
+      // Draw Rings
+      ctx.strokeStyle = colors.fg;
+      for(let ring of rings) {
+        if (gameState === 'PLAYING') {
+          ring.angle = (ring.angle + ring.speed) % (Math.PI * 2);
+        }
+        const drawR = () => {
+          ctx.setLineDash([6, 10]);
+          ctx.beginPath();
+          ctx.arc(cx, cy, ring.radius, ring.angle + ring.gap, ring.angle + Math.PI * 2);
+          ctx.stroke();
+          ctx.setLineDash([]);
+          ctx.beginPath();
+          ctx.arc(cx, cy, ring.radius, ring.angle + ring.gap, ring.angle + ring.gap + 0.08);
+          ctx.stroke();
+          ctx.beginPath();
+          ctx.arc(cx, cy, ring.radius, ring.angle - 0.08, ring.angle);
+          ctx.stroke();
+        };
+        drawGlow(drawR, 6, 2);
+      }
+
+      // Draw Core
+      const drawC = () => {
+        ctx.beginPath();
+        ctx.arc(cx, cy, 20, 0, Math.PI*2);
+        ctx.stroke();
+      };
+      drawGlow(drawC, 6, 2);
+      ctx.fillStyle = colors.bg;
+      ctx.fill();
+      ctx.fillStyle = colors.fg;
+      ctx.font = '12px monospace';
+      ctx.textAlign = 'center';
+      ctx.textBaseline = 'middle';
+      ctx.fillText('ROOT', cx, cy);
+
+      // Transition effect
+      if (gameState === 'TRANSITION') {
+        transitionTimer++;
+        ctx.beginPath();
+        ctx.arc(cx, cy, 20 + transitionTimer * 4, 0, Math.PI*2);
+        ctx.strokeStyle = colors.fg;
+        ctx.lineWidth = Math.max(0, 6 - transitionTimer/10);
+        if (ctx.lineWidth > 0) ctx.stroke();
+      }
+
+      // Physics update
+      if (gameState === 'PLAYING') {
+        updatePhysics();
+      }
+
+      // Draw Particles
+      for(let i=particles.length-1; i>=0; i--) {
+        let p = particles[i];
+        p.x += p.vx;
+        p.y += p.vy;
+        p.life -= 0.04;
+        if (p.life <= 0) { particles.splice(i, 1); continue; }
+        ctx.fillStyle = colors.fg;
+        ctx.globalAlpha = p.life;
+        ctx.fillRect(p.x - 2, p.y - 2, 4, 4);
+      }
+      ctx.globalAlpha = 1.0;
+
+      // Draw Token
+      if (gameState !== 'TRANSITION') {
+        if (token.trail.length > 0) {
+          ctx.beginPath();
+          for(let i=0; i<token.trail.length; i++) {
+            let pt = token.trail[i];
+            if (i === 0) ctx.moveTo(pt.x, pt.y);
+            else ctx.lineTo(pt.x, pt.y);
+          }
+          ctx.strokeStyle = colors.dim;
+          ctx.lineWidth = token.radius * 1.2;
+          ctx.lineCap = 'round';
+          ctx.lineJoin = 'round';
+          ctx.stroke();
+        }
+        ctx.fillStyle = colors.fg;
+        ctx.beginPath();
+        ctx.arc(token.x, token.y, token.radius, 0, Math.PI*2);
+        ctx.fill();
+      }
+
+      // Draw Aiming Line
+      if (aiming && gameState === 'PLAYING' && !token.wasMoving) {
+        let dx = dragStartX - dragCurrentX;
+        let dy = dragStartY - dragCurrentY;
+        let vx = dx * 0.12;
+        let vy = dy * 0.12;
+        if (Math.hypot(vx, vy) > 2) {
+          let speed = Math.hypot(vx, vy);
+          if (speed > 28) { vx = (vx/speed)*28; vy = (vy/speed)*28; }
+          ctx.setLineDash([4, 6]);
+          ctx.strokeStyle = colors.dim;
+          ctx.lineWidth = 2;
+          ctx.beginPath();
+          ctx.moveTo(token.x, token.y);
+          ctx.lineTo(token.x + vx * 8, token.y + vy * 8);
+          ctx.stroke();
+          ctx.setLineDash([]);
+          ctx.fillStyle = colors.dim;
+          ctx.beginPath();
+          ctx.arc(token.x + vx * 8, token.y + vy * 8, 3, 0, Math.PI*2);
+          ctx.fill();
+        }
+      }
+
+      ctx.restore();
+    }
+    
+    requestAnimationFrame(loop);
+  </script>
 </body>
 </html>

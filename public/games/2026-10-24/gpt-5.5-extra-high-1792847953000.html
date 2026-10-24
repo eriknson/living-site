@@ -1,0 +1,544 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <meta name="color-scheme" content="light dark">
+  <title>Karl's Last Match</title>
+  <style>
+    :root{
+      color-scheme:light dark;
+      --ink:#fff4dc;
+      --muted:hsla(39,75%,92%,.72);
+      --panel:hsla(210,46%,9%,.64);
+      --line:hsla(36,92%,76%,.2);
+      --hot:#ffd079;
+      --hot-ink:#171209;
+      --warn:#ff744e;
+      --mono:ui-monospace,"SFMono-Regular",Menlo,Consolas,monospace;
+      --sans:ui-sans-serif,system-ui,-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;
+    }
+    @media (prefers-color-scheme:light){
+      :root{
+        --ink:#132436;
+        --muted:hsla(207,45%,18%,.66);
+        --panel:hsla(42,88%,93%,.74);
+        --line:hsla(25,70%,36%,.18);
+        --hot:#17344b;
+        --hot-ink:#fff1d8;
+        --warn:#b93c21;
+      }
+    }
+    @media (prefers-color-scheme:dark){
+      :root{--ink:#fff4dc;--muted:hsla(39,75%,92%,.72)}
+    }
+    *{box-sizing:border-box}
+    html,body{margin:0;width:100%;min-height:100%;overflow:hidden;background:#08131f;color:var(--ink);font-family:var(--sans)}
+    body{min-height:100dvh}
+    #game{
+      position:fixed;inset:0;width:100dvw;height:100dvh;min-height:100dvh;overflow:hidden;
+      user-select:none;-webkit-user-select:none;touch-action:none;
+      background:
+        radial-gradient(circle at 50% 76%,hsla(35,100%,62%,.22),transparent 32%),
+        linear-gradient(180deg,hsl(211,62%,7%) 0%,hsl(201,53%,14%) 55%,hsl(158,22%,15%) 100%);
+    }
+    @media (prefers-color-scheme:light){
+      html,body{background:#f7ead3}
+      #game{
+        background:
+          radial-gradient(circle at 50% 76%,hsla(34,100%,58%,.28),transparent 34%),
+          linear-gradient(180deg,hsl(191,46%,89%) 0%,hsl(37,82%,78%) 58%,hsl(41,100%,92%) 100%);
+      }
+    }
+    canvas{position:absolute;inset:0;width:100%;height:100%;display:block;touch-action:none}
+    .hud{
+      position:absolute;z-index:6;top:max(14px,env(safe-area-inset-top));left:max(14px,env(safe-area-inset-left));right:max(14px,env(safe-area-inset-right));
+      display:flex;align-items:flex-start;justify-content:space-between;gap:10px;
+      pointer-events:none;font:700 12px/1.25 var(--mono);letter-spacing:.08em;text-transform:uppercase;
+    }
+    .stack{display:flex;flex-direction:column;gap:8px;min-width:0}
+    .pill{
+      width:max-content;max-width:calc(100dvw - 114px);min-height:34px;padding:8px 11px;border-radius:999px;
+      border:1px solid var(--line);background:var(--panel);color:var(--ink);
+      box-shadow:0 16px 42px hsla(0,0%,0%,.15);backdrop-filter:blur(14px);-webkit-backdrop-filter:blur(14px);
+      white-space:nowrap;overflow:hidden;text-overflow:ellipsis;
+    }
+    #hint{color:var(--muted);font-weight:650}
+    #restartBtn{
+      position:absolute;z-index:13;display:none;align-items:center;justify-content:center;
+      min-width:44px;min-height:44px;border:0;border-radius:999px;padding:0 17px;cursor:pointer;
+      background:hsla(39,92%,90%,.12);color:var(--ink);
+      box-shadow:inset 0 0 0 1px var(--line),0 14px 38px hsla(0,0%,0%,.15);
+      backdrop-filter:blur(14px);-webkit-backdrop-filter:blur(14px);
+      font:800 12px/1 var(--mono);letter-spacing:.09em;text-transform:uppercase;pointer-events:auto;
+      transition:transform .2s ease,background .2s ease,color .2s ease,opacity .2s ease;
+    }
+    .playing #restartBtn{display:inline-flex;top:max(14px,env(safe-area-inset-top));right:max(14px,env(safe-area-inset-right))}
+    .gameover #restartBtn{
+      display:inline-flex;left:50%;bottom:max(34px,calc(env(safe-area-inset-bottom) + 7dvh));transform:translateX(-50%);
+      min-width:min(76dvw,290px);min-height:58px;background:var(--hot);color:var(--hot-ink);box-shadow:0 20px 54px hsla(31,92%,50%,.28);
+    }
+    #restartBtn:active,#startBtn:active{transform:translateY(1px) scale(.985)}
+    .gameover #restartBtn:active{transform:translateX(-50%) translateY(1px) scale(.985)}
+    .overlay{
+      position:absolute;z-index:10;inset:0;display:grid;place-items:center;text-align:center;
+      padding:max(22px,env(safe-area-inset-top)) 20px max(28px,env(safe-area-inset-bottom));
+      pointer-events:none;transition:opacity .25s ease,transform .25s ease;
+    }
+    .playing .overlay{opacity:0;transform:translateY(8px)}
+    .panel{
+      width:min(530px,92dvw);border:1px solid var(--line);border-radius:30px;padding:clamp(22px,5dvw,38px);
+      background:var(--panel);box-shadow:0 30px 90px hsla(0,0%,0%,.26);
+      backdrop-filter:blur(18px);-webkit-backdrop-filter:blur(18px);
+    }
+    .eyebrow{margin:0 0 13px;color:var(--muted);font:800 11px/1.35 var(--mono);letter-spacing:.16em;text-transform:uppercase}
+    h1{margin:0;font-size:clamp(42px,13dvw,78px);line-height:.88;letter-spacing:-.075em;font-weight:850}
+    p{margin:18px auto 0;max-width:35em;color:var(--muted);font-size:clamp(15px,3.8dvw,18px);line-height:1.5}
+    #startBtn{
+      pointer-events:auto;min-width:min(76dvw,300px);min-height:58px;margin-top:26px;border:0;border-radius:999px;
+      background:var(--hot);color:var(--hot-ink);box-shadow:0 20px 54px hsla(31,92%,50%,.28);
+      font:900 13px/1 var(--mono);letter-spacing:.12em;text-transform:uppercase;cursor:pointer;
+    }
+    .gameover #startBtn{display:none}
+    .meter{
+      position:absolute;z-index:5;left:50%;bottom:max(16px,env(safe-area-inset-bottom));transform:translateX(-50%);
+      width:min(76dvw,330px);height:12px;border-radius:999px;padding:2px;border:1px solid var(--line);
+      background:hsla(210,35%,8%,.36);box-shadow:0 12px 35px hsla(0,0%,0%,.16);pointer-events:none;overflow:hidden;
+    }
+    .gameover .meter,.title .meter{opacity:0}
+    #warm{height:100%;width:100%;border-radius:999px;background:linear-gradient(90deg,hsl(12,94%,58%),hsl(37,100%,62%),hsl(49,96%,75%));transform-origin:left center}
+    .sr{position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0,0,0,0)}
+  </style>
+</head>
+<body>
+  <main id="game" class="title" aria-label="Karl's Last Match">
+    <canvas id="scene" aria-hidden="true"></canvas>
+    <section class="hud" aria-hidden="true">
+      <div class="stack">
+        <div class="pill" id="score">00.0 SEC</div>
+        <div class="pill" id="hint">Hold through fog. Release to breathe.</div>
+      </div>
+      <div class="pill" id="flame">FLAME 100%</div>
+    </section>
+    <button id="restartBtn" data-smoke="restart" type="button">Restart</button>
+    <div class="meter" aria-hidden="true"><div id="warm"></div></div>
+    <section class="overlay" id="overlay">
+      <div class="panel">
+        <p class="eyebrow" id="eyebrow">Clear autumn night, 11°C</p>
+        <h1 id="title">Karl's Last Match</h1>
+        <p id="copy">Shield one amber flame while Karl the fog rolls through San Francisco. Hold to cup the match during gusts, release in the clear so it can breathe.</p>
+        <button id="startBtn" data-smoke="start" type="button">Begin the walk</button>
+      </div>
+    </section>
+    <div class="sr" aria-live="polite" id="live">Ready.</div>
+  </main>
+  <script>
+  (() => {
+    "use strict";
+    const root = document.getElementById("game");
+    const canvas = document.getElementById("scene");
+    const ctx = canvas && canvas.getContext ? canvas.getContext("2d", { alpha: false }) : null;
+    const startBtn = document.getElementById("startBtn");
+    const restartBtn = document.getElementById("restartBtn");
+    const overlay = document.getElementById("overlay");
+    const titleEl = document.getElementById("title");
+    const copyEl = document.getElementById("copy");
+    const eyebrowEl = document.getElementById("eyebrow");
+    const scoreEl = document.getElementById("score");
+    const flameEl = document.getElementById("flame");
+    const hintEl = document.getElementById("hint");
+    const warmEl = document.getElementById("warm");
+    const liveEl = document.getElementById("live");
+    if (!root || !canvas || !ctx || !startBtn || !restartBtn || !overlay) return;
+
+    let W = 1, H = 1, DPR = 1, last = 0;
+    let mode = "title", holding = false, pointer = null, won = false;
+    let t = 0, warmth = 100, oxygen = 100, score = 0, combo = 0, holdTime = 0;
+    let nextGust = 1, windDir = -1, seed = 41357, fogNow = 0, shake = 0, flash = 0, releaseGlow = 0;
+    let gusts = [], sparks = [], skyline = [], stars = [], motes = [];
+    let audio = null;
+
+    const clamp = (v,a,b) => Math.max(a, Math.min(b, v));
+    const rnd = () => ((seed = (seed * 1664525 + 1013904223) >>> 0) / 4294967296);
+    const lightMode = () => window.matchMedia && window.matchMedia("(prefers-color-scheme: light)").matches;
+    const vibrate = (n) => { try { if (navigator.vibrate) navigator.vibrate(n); } catch (_) {} };
+
+    function tone(freq, dur, type, gain) {
+      try {
+        const AC = window.AudioContext || window.webkitAudioContext;
+        if (!AC) return;
+        if (!audio) audio = new AC();
+        if (audio.state === "suspended") audio.resume().catch(() => {});
+        const o = audio.createOscillator(), g = audio.createGain();
+        o.type = type || "sine"; o.frequency.value = freq;
+        g.gain.setValueAtTime(0.0001, audio.currentTime);
+        g.gain.exponentialRampToValueAtTime(gain || 0.035, audio.currentTime + 0.015);
+        g.gain.exponentialRampToValueAtTime(0.0001, audio.currentTime + dur);
+        o.connect(g); g.connect(audio.destination); o.start(); o.stop(audio.currentTime + dur + 0.02);
+      } catch (_) {}
+    }
+
+    function resize() {
+      DPR = Math.min(2, window.devicePixelRatio || 1);
+      W = Math.max(1, Math.floor(window.innerWidth || 1));
+      H = Math.max(1, Math.floor(window.innerHeight || 1));
+      canvas.width = Math.floor(W * DPR);
+      canvas.height = Math.floor(H * DPR);
+      canvas.style.width = W + "px";
+      canvas.style.height = H + "px";
+      ctx.setTransform(DPR, 0, 0, DPR, 0, 0);
+      buildBackdrop();
+    }
+
+    function buildBackdrop() {
+      skyline = [];
+      const n = Math.max(10, Math.round(W / 42));
+      for (let i = 0; i < n; i++) {
+        const bw = W / n * (0.75 + rnd() * 0.9);
+        skyline.push({ x: i * W / n - bw * .15, w: bw, h: H * (.08 + rnd() * .16), a: .32 + rnd() * .36 });
+      }
+      stars = [];
+      for (let i = 0; i < 58; i++) stars.push({ x: rnd()*W, y: rnd()*H*.48, r: .4+rnd()*1.2, a: .18+rnd()*.6 });
+      motes = [];
+      for (let i = 0; i < 34; i++) motes.push({ x:rnd()*W, y:H*.45+rnd()*H*.35, s:.25+rnd()*.75, v:.08+rnd()*.22, p:rnd()*7 });
+    }
+
+    function reset() {
+      seed = 41357 + Math.floor(Date.now() % 97);
+      t = 0; warmth = 100; oxygen = 100; score = 0; combo = 0; holdTime = 0;
+      nextGust = .95; windDir = rnd() > .5 ? 1 : -1; fogNow = 0; shake = 0; flash = 0; releaseGlow = 0;
+      gusts = []; sparks = []; won = false; holding = false; pointer = null;
+      buildBackdrop();
+      setHud("Hold when fog hits. Release in clear air.");
+    }
+
+    function startGame() {
+      reset();
+      mode = "playing";
+      root.className = "playing";
+      overlay.setAttribute("aria-hidden", "true");
+      liveEl.textContent = "Game started. Hold to shield the flame.";
+      tone(392, .11, "sine", .03); setTimeout(() => tone(587, .13, "triangle", .025), 70);
+    }
+
+    function endGame(didWin) {
+      if (mode !== "playing") return;
+      mode = "over"; won = !!didWin; holding = false; pointer = null;
+      root.className = "gameover";
+      overlay.removeAttribute("aria-hidden");
+      eyebrowEl.textContent = won ? "Sunrise found the match still burning" : "Karl swallowed the ember";
+      titleEl.textContent = won ? "You carried dawn." : "The light went out.";
+      copyEl.textContent = won
+        ? "A clean walk through shifting fog. The narrow escapes became a little private sunrise."
+        : "Score: " + Math.floor(score) + " warm steps. Hold only for the gusts, then let the flame breathe.";
+      liveEl.textContent = titleEl.textContent;
+      vibrate(won ? [30, 40, 30] : 40);
+      tone(won ? 660 : 146, won ? .22 : .34, won ? "triangle" : "sawtooth", won ? .04 : .025);
+    }
+
+    function setHud(msg) {
+      if (hintEl) hintEl.textContent = msg;
+    }
+
+    function spawnGust() {
+      const level = Math.min(1, t / 55);
+      windDir *= -1;
+      const width = W * (.22 + rnd()*.13);
+      const speed = W * (.28 + level*.25 + rnd()*.08);
+      gusts.push({
+        x: windDir < 0 ? W + width : -width,
+        dir: windDir,
+        width,
+        speed,
+        power: .75 + level*.62 + rnd()*.22,
+        phase: rnd()*9,
+        life: 0
+      });
+      nextGust = Math.max(.72, 2.45 - t*.028 + rnd()*.75);
+      setHud(windDir > 0 ? "Fog from the west. Cup the flame." : "Fog from the bay. Cup the flame.");
+    }
+
+    function addSparks(x, y, n, hot) {
+      for (let i = 0; i < n; i++) {
+        sparks.push({
+          x, y, vx:(rnd()-.5)*(hot?150:80), vy:-(45+rnd()*(hot?150:90)),
+          r:(hot?1.5:1)+rnd()*(hot?3:2), life:.38+rnd()*(hot?.55:.35), age:0, hot:!!hot
+        });
+      }
+    }
+
+    function setHolding(v) {
+      if (mode !== "playing") return;
+      if (holding === v) return;
+      holding = v;
+      if (v) {
+        holdTime = 0;
+        setHud("Shield up. Release before it starves.");
+        tone(196, .05, "sine", .018);
+      } else {
+        if (holdTime > .18 && fogNow < .28 && oxygen > 18) {
+          const bonus = Math.min(14, 4 + holdTime * 6);
+          warmth = clamp(warmth + bonus, 0, 100);
+          combo = clamp(combo + 1, 0, 9);
+          score += bonus * .65 + combo;
+          releaseGlow = 1;
+          addSparks(W/2, H*.72, 18 + combo*2, true);
+          setHud(combo > 2 ? "Clean breath. Combo x" + combo + "." : "Good breath. Flame grows.");
+          tone(392 + combo*44, .1, "triangle", .028);
+        } else {
+          combo = Math.max(0, combo - 1);
+          setHud(fogNow > .35 ? "Too soon. The fog bites." : "Breathe between gusts.");
+        }
+      }
+    }
+
+    function update(dt) {
+      if (mode !== "playing") return;
+      dt = Math.min(dt, .033);
+      t += dt; score += dt * (10 + combo * .7);
+      nextGust -= dt;
+      if (nextGust <= 0) spawnGust();
+      fogNow = 0;
+      const fx = W / 2;
+      for (let i = gusts.length - 1; i >= 0; i--) {
+        const g = gusts[i];
+        g.life += dt; g.x += g.dir * g.speed * dt;
+        const d = Math.abs(g.x - fx);
+        const local = clamp(1 - d / g.width, 0, 1) * g.power;
+        fogNow += local;
+        if ((g.dir > 0 && g.x > W + g.width*1.4) || (g.dir < 0 && g.x < -g.width*1.4)) gusts.splice(i, 1);
+      }
+      fogNow = clamp(fogNow, 0, 1.55);
+      const level = Math.min(1.4, t / 55);
+      if (holding) {
+        holdTime += dt;
+        oxygen -= (17 + level*9 + fogNow*14) * dt;
+        const shield = clamp(oxygen / 32, 0, 1);
+        warmth -= (1.3 + level*.7) * dt;
+        warmth -= fogNow * (5 + level*4) * (1 - shield*.88) * dt;
+        if (oxygen < 8) warmth -= (9 + level*8) * dt;
+        if (fogNow > .74 && shield > .5) {
+          score += dt * 16;
+          if (warmth < 24 && flash <= 0) {
+            flash = 1; addSparks(W/2, H*.72, 26, true); vibrate(18); tone(740, .09, "triangle", .025);
+            setHud("Narrow escape. Keep breathing.");
+          }
+        }
+      } else {
+        oxygen += (26 + (fogNow < .2 ? 12 : 0)) * dt;
+        warmth += (fogNow < .18 ? 6.4 + combo*.55 : 0) * dt;
+        warmth -= fogNow * (19 + level*8) * dt;
+        if (fogNow > .52) combo = 0;
+      }
+      oxygen = clamp(oxygen, 0, 100);
+      const cap = 104 - Math.min(26, t * .42);
+      if (warmth > cap) warmth -= (warmth - cap) * dt * .9;
+      warmth = clamp(warmth, 0, 105);
+      shake = Math.max(0, shake - dt*2.8);
+      flash = Math.max(0, flash - dt*1.9);
+      releaseGlow = Math.max(0, releaseGlow - dt*2.2);
+      for (let i = sparks.length - 1; i >= 0; i--) {
+        const p = sparks[i];
+        p.age += dt; p.x += p.vx*dt; p.y += p.vy*dt; p.vy += 170*dt; p.vx *= .985;
+        if (p.age > p.life) sparks.splice(i, 1);
+      }
+      if (fogNow > .88 && !holding) shake = Math.max(shake, .28);
+      if (warmth <= 0) endGame(false);
+      if (t >= 60) endGame(true);
+      updateHud();
+    }
+
+    function updateHud() {
+      scoreEl.textContent = String(Math.floor(t)).padStart(2, "0") + "." + Math.floor((t%1)*10) + " SEC";
+      flameEl.textContent = "FLAME " + Math.max(0, Math.round(warmth)) + "%";
+      warmEl.style.transform = "scaleX(" + clamp(warmth/100,0,1).toFixed(3) + ")";
+      if (!holding && fogNow < .18 && mode === "playing" && t > 1 && t % 5 < .04) setHud("Clear air. Release to feed the flame.");
+    }
+
+    function drawBackground(now) {
+      const light = lightMode();
+      const sky = ctx.createLinearGradient(0, 0, 0, H);
+      if (light) {
+        sky.addColorStop(0, "hsl(193,48%,90%)");
+        sky.addColorStop(.6, "hsl(38,78%,79%)");
+        sky.addColorStop(1, "hsl(42,88%,91%)");
+      } else {
+        sky.addColorStop(0, "hsl(213,62%,7%)");
+        sky.addColorStop(.58, "hsl(201,52%,14%)");
+        sky.addColorStop(1, "hsl(158,23%,14%)");
+      }
+      ctx.fillStyle = sky; ctx.fillRect(0,0,W,H);
+      if (!light) {
+        ctx.save();
+        for (const s of stars) {
+          ctx.globalAlpha = s.a * (.7 + Math.sin(now*.001+s.x)*.3);
+          ctx.fillStyle = "hsl(43,88%,90%)"; ctx.beginPath(); ctx.arc(s.x,s.y,s.r,0,Math.PI*2); ctx.fill();
+        }
+        ctx.restore();
+      }
+      ctx.save();
+      const hill = ctx.createLinearGradient(0, H*.48, 0, H);
+      hill.addColorStop(0, light ? "hsla(181,24%,58%,.3)" : "hsla(185,40%,19%,.46)");
+      hill.addColorStop(1, light ? "hsla(43,45%,48%,.32)" : "hsla(154,30%,9%,.66)");
+      ctx.fillStyle = hill;
+      ctx.beginPath(); ctx.moveTo(0,H*.61);
+      for (let x=0; x<=W; x+=W/9) ctx.lineTo(x, H*.58 + Math.sin(x*.014+now*.00025)*H*.028);
+      ctx.lineTo(W,H); ctx.lineTo(0,H); ctx.closePath(); ctx.fill();
+      ctx.fillStyle = light ? "hsla(203,33%,27%,.34)" : "hsla(211,54%,5%,.58)";
+      for (const b of skyline) ctx.fillRect(b.x, H*.64-b.h, b.w, b.h);
+      drawBridge(light);
+      ctx.restore();
+      ctx.save();
+      for (const m of motes) {
+        const x = (m.x + now*.01*m.v) % (W+60) - 30;
+        const y = m.y + Math.sin(now*.0008 + m.p) * 10;
+        ctx.globalAlpha = light ? .10 : .13;
+        ctx.fillStyle = light ? "hsl(190,50%,98%)" : "hsl(190,56%,78%)";
+        ctx.beginPath(); ctx.ellipse(x,y,48*m.s,13*m.s,Math.sin(m.p)*.35,0,Math.PI*2); ctx.fill();
+      }
+      ctx.restore();
+    }
+
+    function drawBridge(light) {
+      const y = H*.61, left = W*.14, right = W*.86;
+      ctx.strokeStyle = light ? "hsla(17,62%,35%,.36)" : "hsla(18,76%,54%,.4)";
+      ctx.lineWidth = 2;
+      ctx.beginPath(); ctx.moveTo(left,y); ctx.bezierCurveTo(W*.33,y-H*.075,W*.67,y-H*.075,right,y); ctx.stroke();
+      ctx.lineWidth = 4; ctx.beginPath(); ctx.moveTo(left,y+8); ctx.lineTo(right,y+8); ctx.stroke();
+      for (const x of [W*.29,W*.71]) {
+        ctx.lineWidth = 5; ctx.beginPath(); ctx.moveTo(x,y+9); ctx.lineTo(x,y-H*.12); ctx.stroke();
+        ctx.lineWidth = 1.5;
+        for(let i=0;i<5;i++){ctx.beginPath();ctx.moveTo(x-18+i*9,y+6);ctx.lineTo(x-18+i*9,y-H*.075);ctx.stroke();}
+      }
+    }
+
+    function drawGusts(now) {
+      ctx.save();
+      for (const g of gusts) {
+        const near = clamp(1 - Math.abs(g.x - W/2) / g.width, 0, 1);
+        const alpha = .15 + near*.32;
+        for (let i=0;i<9;i++) {
+          const yy = H*(.38 + i*.055) + Math.sin(now*.0014 + g.phase + i)*18;
+          const xx = g.x + Math.sin(now*.0018 + i)*g.width*.22;
+          ctx.globalAlpha = alpha * (1 - i*.045);
+          ctx.fillStyle = lightMode() ? "hsl(188,55%,96%)" : "hsl(190,52%,80%)";
+          ctx.beginPath(); ctx.ellipse(xx, yy, g.width*(.6+i*.08), 22+i*3, g.dir*.08, 0, Math.PI*2); ctx.fill();
+        }
+      }
+      ctx.restore();
+    }
+
+    function drawFlame(now) {
+      const baseX = W/2, baseY = H*.735;
+      const s = Math.min(W,H) / 390;
+      const wobble = Math.sin(now*.014) * (holding ? 1.2 : 3.2) + (rnd()-.5)*(fogNow>0?.8:0);
+      const size = (42 + warmth*.46) * s * (holding ? .88 : 1) * (1 + releaseGlow*.12);
+      const ox = (100-oxygen)/100;
+      ctx.save();
+      if (shake) ctx.translate((rnd()-.5)*shake*11, (rnd()-.5)*shake*8);
+      const glow = ctx.createRadialGradient(baseX,baseY-size*.25,3,baseX,baseY-size*.2,size*2.8);
+      glow.addColorStop(0, "hsla(38,100%,70%," + (.42 + warmth/310 + releaseGlow*.18) + ")");
+      glow.addColorStop(.45, "hsla(31,100%,56%," + (.15 + releaseGlow*.08) + ")");
+      glow.addColorStop(1, "hsla(35,100%,50%,0)");
+      ctx.fillStyle = glow; ctx.beginPath(); ctx.arc(baseX, baseY-size*.22, size*2.4, 0, Math.PI*2); ctx.fill();
+      if (holding) drawHands(baseX, baseY, size, ox);
+      ctx.fillStyle = "hsla(28,43%,13%,.95)";
+      ctx.fillRect(baseX-4*s, baseY-3*s, 8*s, H*.23);
+      ctx.fillStyle = "hsl(38,80%,75%)";
+      ctx.fillRect(baseX-3*s, baseY, 6*s, H*.2);
+      ctx.save();
+      ctx.translate(baseX + wobble, baseY - size*.1);
+      drawFlameShape(size, warmth, oxygen, false);
+      drawFlameShape(size*.57, warmth, oxygen, true);
+      ctx.restore();
+      for (const p of sparks) {
+        const a = 1 - p.age / p.life;
+        ctx.globalAlpha = a;
+        ctx.fillStyle = p.hot ? "hsl(42,100%,70%)" : "hsl(25,94%,63%)";
+        ctx.beginPath(); ctx.arc(p.x,p.y,p.r*a,0,Math.PI*2); ctx.fill();
+      }
+      if (flash > 0) {
+        ctx.globalAlpha = flash*.35;
+        ctx.strokeStyle = "hsl(45,100%,76%)"; ctx.lineWidth = 2;
+        ctx.beginPath(); ctx.arc(baseX, baseY-size*.35, size*(1.5+flash), 0, Math.PI*2); ctx.stroke();
+      }
+      ctx.restore();
+    }
+
+    function drawHands(x, y, size, soot) {
+      ctx.save();
+      ctx.globalAlpha = .9;
+      ctx.fillStyle = lightMode() ? "hsla(28,55%,77%,.58)" : "hsla(27,45%,19%,.74)";
+      ctx.strokeStyle = lightMode() ? "hsla(25,42%,42%,.38)" : "hsla(35,80%,76%,.16)";
+      ctx.lineWidth = 1.5;
+      for (const side of [-1,1]) {
+        ctx.beginPath();
+        ctx.ellipse(x + side*size*.62, y-size*.22, size*.55, size*.9, side*.38, 0, Math.PI*2);
+        ctx.fill(); ctx.stroke();
+      }
+      ctx.globalAlpha = .18 + soot*.22;
+      ctx.fillStyle = "hsl(22,35%,8%)";
+      ctx.beginPath(); ctx.ellipse(x, y-size*.37, size*.72, size*.35, 0, 0, Math.PI*2); ctx.fill();
+      ctx.restore();
+    }
+
+    function drawFlameShape(size, heat, air, inner) {
+      const h = size * (inner ? .75 : 1) * clamp(.58 + heat/120, .45, 1.18);
+      const w = size * (inner ? .24 : .43) * clamp(.65 + air/140, .5, 1.1);
+      ctx.beginPath();
+      ctx.moveTo(0, -h);
+      ctx.bezierCurveTo(w*.9, -h*.55, w*.72, -h*.12, 0, 0);
+      ctx.bezierCurveTo(-w*.78, -h*.17, -w*.65, -h*.64, 0, -h);
+      ctx.closePath();
+      ctx.fillStyle = inner ? "hsl(50,100%,82%)" : (air < 12 ? "hsl(18,82%,51%)" : "hsl(30,100%,58%)");
+      ctx.fill();
+    }
+
+    function render(now) {
+      drawBackground(now);
+      drawGusts(now);
+      if (mode === "title") {
+        ctx.save(); ctx.globalAlpha = .85; drawFlame(now); ctx.restore();
+      } else {
+        drawFlame(now);
+      }
+      if (mode === "over") {
+        ctx.save(); ctx.globalAlpha = .28; ctx.fillStyle = won ? "hsl(39,90%,74%)" : "hsl(203,42%,7%)"; ctx.fillRect(0,0,W,H); ctx.restore();
+      }
+    }
+
+    function loop(now) {
+      const dt = last ? (now-last)/1000 : 0;
+      last = now;
+      update(dt);
+      render(now);
+      requestAnimationFrame(loop);
+    }
+
+    function prevent(e) { if (e && e.cancelable) e.preventDefault(); }
+    canvas.addEventListener("pointerdown", e => { prevent(e); pointer = e.pointerId; try { canvas.setPointerCapture(pointer); } catch (_) {} setHolding(true); }, { passive:false });
+    canvas.addEventListener("pointermove", prevent, { passive:false });
+    canvas.addEventListener("pointerup", e => { prevent(e); if (pointer === null || e.pointerId === pointer) { pointer = null; setHolding(false); } }, { passive:false });
+    canvas.addEventListener("pointercancel", e => { prevent(e); pointer = null; setHolding(false); }, { passive:false });
+    window.addEventListener("keydown", e => {
+      if ((e.code === "Space" || e.code === "ArrowDown") && mode === "playing") { prevent(e); setHolding(true); }
+      if (e.code === "Enter" && mode === "title") startGame();
+      if (e.code === "KeyR" && mode !== "title") startGame();
+    });
+    window.addEventListener("keyup", e => {
+      if ((e.code === "Space" || e.code === "ArrowDown") && mode === "playing") { prevent(e); setHolding(false); }
+    });
+    startBtn.addEventListener("click", e => { prevent(e); startGame(); });
+    restartBtn.addEventListener("click", e => { prevent(e); startGame(); });
+    window.addEventListener("resize", resize);
+    try {
+      if (window.visualViewport) window.visualViewport.addEventListener("resize", resize);
+    } catch (_) {}
+
+    resize();
+    updateHud();
+    requestAnimationFrame(loop);
+  })();
+  </script>
+</body>
+</html>
