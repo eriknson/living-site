@@ -4,54 +4,34 @@
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <meta name="color-scheme" content="light dark">
-  <title>Erik Nilsson - Editorial Notebook</title>
-  <meta name="description" content="A quiet editorial notebook for Erik Nilsson, product designer at Cursor.">
+  <title>Erik Nilsson - eriks.design</title>
+  <meta name="description" content="A polished editorial notebook for Erik Nilsson, product designer at Cursor.">
   <style>
     :root {
-      --paper: color(display-p3 0.982 0.957 0.902);
-      --paper-deep: color(display-p3 0.942 0.902 0.81);
-      --ink: color(display-p3 0.095 0.085 0.071);
-      --muted: color(display-p3 0.42 0.37 0.31);
-      --soft: color(display-p3 0.69 0.61 0.5);
-      --hairline: color(display-p3 0.77 0.69 0.56);
-      --blue: color(display-p3 0.02 0.17 0.86);
-      --red: color(display-p3 0.9 0.12 0.07);
-      --green: color(display-p3 0.04 0.48 0.29);
-      --amber: color(display-p3 0.96 0.58 0.05);
-      --violet: color(display-p3 0.44 0.18 0.82);
-      --shadow: color(display-p3 0.25 0.17 0.08 / 0.13);
-      --serif: "Iowan Old Style", "Palatino Linotype", Palatino, "Book Antiqua", Georgia, serif;
-      --sans: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
-      --mono: "SFMono-Regular", "Berkeley Mono", "Cascadia Code", Consolas, monospace;
-      --hand: "Bradley Hand", "Segoe Print", "Marker Felt", "Comic Sans MS", cursive;
+      color-scheme: light dark;
+      --paper: #fbf7ef;
+      --paper-raised: #fffdf8;
+      --ink: #17130f;
+      --muted: #665c51;
+      --faint: #a69a8a;
+      --hairline: #d8cbbb;
+      --accent: #ff4d2e;
+      --accent-dark: #c92d18;
+      --blue: #1f57ff;
+      --green: #117a55;
+      --shadow: rgba(58, 38, 21, .11);
+      --font-serif: ui-serif, "Iowan Old Style", "Palatino Linotype", Palatino, Georgia, serif;
+      --font-sans: ui-sans-serif, -apple-system, BlinkMacSystemFont, "Segoe UI", Inter, Helvetica, Arial, sans-serif;
+      --font-mono: ui-monospace, SFMono-Regular, "SF Mono", Consolas, "Liberation Mono", Menlo, monospace;
+      --font-note: "Bradley Hand", "Segoe Print", "Comic Sans MS", cursive;
     }
 
-    @supports not (color: color(display-p3 1 1 1)) {
+    @supports (color: color(display-p3 1 0.29 0.17)) {
       :root {
-        --paper: #fbf2e2;
-        --paper-deep: #efe2c9;
-        --ink: #17130f;
-        --muted: #6a5d4e;
-        --soft: #aa9980;
-        --hairline: #c8b58f;
-        --blue: #0733df;
-        --red: #e61f12;
-        --green: #137548;
-        --amber: #f1910b;
-        --violet: #6b2ad0;
-        --shadow: rgb(80 50 20 / 0.13);
-      }
-    }
-
-    @media (prefers-color-scheme: dark) {
-      :root {
-        --paper: #1a1714;
-        --paper-deep: #221e1a;
-        --ink: #e0dbd2;
-        --muted: #9a9085;
-        --soft: #7a7268;
-        --hairline: #4a443c;
-        --shadow: rgb(0 0 0 / 0.35);
+        --accent: color(display-p3 1 .245 .12);
+        --accent-dark: color(display-p3 .77 .135 .07);
+        --blue: color(display-p3 .06 .28 1);
+        --green: color(display-p3 .02 .48 .31);
       }
     }
 
@@ -60,913 +40,826 @@
     }
 
     html {
+      min-height: 100%;
+      background: var(--paper);
       scroll-behavior: smooth;
     }
 
     body {
       margin: 0;
+      min-height: 100%;
       background: var(--paper);
       color: var(--ink);
-      font-family: var(--sans);
+      font-family: var(--font-sans);
       -webkit-font-smoothing: antialiased;
-      text-rendering: optimizeLegibility;
-    }
-
-    body::before {
-      content: "";
-      position: fixed;
-      inset: 12px;
-      border: 1px solid color-mix(in oklab, var(--hairline) 64%, transparent);
-      pointer-events: none;
-      z-index: 20;
+      text-rendering: geometricPrecision;
     }
 
     ::selection {
-      background: color-mix(in oklab, var(--amber) 35%, white);
-      color: var(--ink);
+      background: var(--accent);
+      color: var(--paper-raised);
     }
 
     a {
       color: inherit;
+      text-decoration-thickness: .08em;
+      text-underline-offset: .18em;
+      transition: color .18s ease, text-decoration-color .18s ease, transform .18s ease, background-color .18s ease;
+    }
+
+    a:hover {
+      color: var(--accent-dark);
+    }
+
+    a:focus-visible,
+    button:focus-visible {
+      outline: 2px solid var(--blue);
+      outline-offset: 4px;
+      border-radius: 4px;
+    }
+
+    .skip {
+      position: fixed;
+      left: 1rem;
+      top: 1rem;
+      z-index: 20;
+      transform: translateY(-150%);
+      background: var(--ink);
+      color: var(--paper-raised);
+      padding: .6rem .8rem;
+      border-radius: 999px;
+      font: 700 .72rem/1 var(--font-sans);
+      letter-spacing: .08em;
+      text-transform: uppercase;
       text-decoration: none;
     }
 
-    .shell {
-      max-width: 640px;
-      width: min(100% - 34px, 640px);
+    .skip:focus {
+      transform: translateY(0);
+    }
+
+    .page {
+      width: min(100%, 1480px);
       margin: 0 auto;
-      padding: 22px 0 54px;
+      padding: clamp(18px, 3vw, 44px);
     }
 
-    .masthead {
-      display: grid;
-      grid-template-columns: 1fr auto 1fr;
-      gap: 18px;
+    .sheet {
+      position: relative;
+      min-height: calc(100vh - clamp(36px, 6vw, 88px));
+      background: var(--paper-raised);
+      border: 1px solid var(--hairline);
+      box-shadow: 0 30px 90px var(--shadow);
+      overflow: hidden;
+      isolation: isolate;
+    }
+
+    .sheet::before,
+    .sheet::after {
+      content: "";
+      position: absolute;
+      pointer-events: none;
+      z-index: -1;
+    }
+
+    .sheet::before {
+      inset: 0 auto 0 clamp(22px, 4vw, 70px);
+      width: 1px;
+      background: #edd0c6;
+    }
+
+    .sheet::after {
+      inset: clamp(18px, 2.6vw, 34px);
+      border: 1px solid rgba(216, 203, 187, .55);
+    }
+
+    .topbar {
+      display: flex;
       align-items: center;
-      min-height: 58px;
-      border-bottom: 1px solid var(--hairline);
-      font-size: 12px;
-      letter-spacing: 0.11em;
+      justify-content: space-between;
+      gap: 1.5rem;
+      padding: clamp(18px, 2.5vw, 34px) clamp(22px, 4vw, 70px) 0;
+      font-family: var(--font-mono);
+      font-size: clamp(.68rem, .74vw, .82rem);
+      letter-spacing: .06em;
       text-transform: uppercase;
-    }
-
-    .masthead a,
-    .masthead span {
       color: var(--muted);
     }
 
-    .masthead a {
-      transition: color 180ms ease;
+    .site-mark {
+      display: inline-flex;
+      align-items: center;
+      gap: .65rem;
+      text-decoration: none;
     }
 
-    .masthead a:hover {
-      color: var(--red);
-    }
-
-    .masthead__center {
-      position: relative;
-      font-family: var(--serif);
-      font-size: clamp(26px, 4vw, 46px);
-      font-style: italic;
-      letter-spacing: -0.04em;
-      text-transform: none;
-      color: var(--ink);
-    }
-
-    .masthead__center::after {
+    .site-mark::before {
       content: "";
-      position: absolute;
-      left: -10%;
-      right: -11%;
-      bottom: 0.08em;
-      height: 0.12em;
-      border-bottom: 2px solid var(--red);
-      transform: rotate(-1.2deg);
-      opacity: 0.8;
+      width: .72rem;
+      height: .72rem;
+      border: 1px solid currentColor;
+      border-radius: 50%;
+      box-shadow: inset 0 0 0 3px var(--paper-raised);
+      background: var(--accent);
     }
 
-    .masthead__right {
-      justify-self: end;
-      text-align: right;
+    .nav {
+      display: flex;
+      flex-wrap: wrap;
+      justify-content: flex-end;
+      gap: .4rem .9rem;
+    }
+
+    .nav a {
+      text-decoration-color: transparent;
+    }
+
+    .nav a:hover {
+      text-decoration-color: currentColor;
+    }
+
+    main {
+      padding: clamp(44px, 7vw, 112px) clamp(22px, 4vw, 70px) clamp(30px, 4.5vw, 74px);
     }
 
     .hero {
       display: grid;
-      grid-template-columns: minmax(0, 1.08fr) minmax(280px, 0.62fr);
-      gap: clamp(28px, 6vw, 76px);
-      padding: clamp(44px, 8vw, 98px) 0 42px;
-      border-bottom: 1px solid var(--hairline);
+      grid-template-columns: minmax(0, 1.05fr) minmax(260px, .42fr);
+      gap: clamp(34px, 5vw, 80px);
+      align-items: start;
+      max-width: 1240px;
     }
 
-    .hero__eyebrow {
-      display: flex;
-      gap: 10px;
+    .eyebrow {
+      display: inline-flex;
       align-items: center;
-      margin: 0 0 18px;
+      gap: .7rem;
+      margin: 0 0 clamp(22px, 3vw, 42px);
       color: var(--muted);
-      font-size: 12px;
-      letter-spacing: 0.13em;
+      font-family: var(--font-mono);
+      font-size: .72rem;
+      letter-spacing: .11em;
+      line-height: 1.4;
       text-transform: uppercase;
     }
 
-    .hero__eyebrow::before {
+    .eyebrow::after {
       content: "";
-      width: 38px;
+      width: min(18vw, 170px);
       height: 1px;
-      background: var(--red);
+      background: var(--hairline);
     }
 
     h1 {
-      max-width: 860px;
+      max-width: 920px;
       margin: 0;
-      font-family: var(--serif);
-      font-size: clamp(56px, 11vw, 156px);
-      font-weight: 500;
-      line-height: 0.84;
-      letter-spacing: -0.075em;
+      font-family: var(--font-serif);
+      font-size: clamp(3.5rem, 10.8vw, 11.2rem);
+      font-weight: 520;
+      letter-spacing: -.075em;
+      line-height: .84;
     }
 
-    .hero__deck {
-      max-width: 610px;
-      margin: 28px 0 0;
-      font-family: var(--serif);
-      font-size: clamp(22px, 3.2vw, 39px);
-      line-height: 1.08;
-      letter-spacing: -0.036em;
+    .h1-tight {
+      letter-spacing: -.088em;
     }
 
-    .hero__deck a {
-      color: var(--blue);
-      border-bottom: 1px solid currentColor;
-    }
-
-    .hero__deck a:hover {
-      color: var(--red);
-    }
-
-    .hero__meta {
+    .lede-row {
       display: grid;
-      grid-template-columns: repeat(3, minmax(0, 1fr));
-      gap: 1px;
-      margin-top: clamp(28px, 5vw, 56px);
-      background: var(--hairline);
-      border: 1px solid var(--hairline);
+      grid-template-columns: minmax(0, 520px) minmax(180px, 250px);
+      gap: clamp(24px, 4vw, 56px);
+      align-items: start;
+      margin-top: clamp(24px, 4vw, 58px);
     }
 
-    .datum {
-      min-height: 96px;
-      padding: 16px 14px;
-      background: var(--paper);
-    }
-
-    .datum b {
-      display: block;
-      margin-bottom: 12px;
-      font: 11px/1 var(--mono);
-      letter-spacing: 0.09em;
-      text-transform: uppercase;
-      color: var(--muted);
-    }
-
-    .datum span {
-      display: block;
-      font-family: var(--serif);
-      font-size: clamp(18px, 2vw, 24px);
-      line-height: 1.06;
-      letter-spacing: -0.03em;
-    }
-
-    .side-note {
-      position: relative;
-      align-self: start;
-      min-height: 530px;
-      border-left: 1px solid var(--hairline);
-      padding-left: clamp(22px, 4vw, 42px);
-    }
-
-    .notebook-card {
-      position: sticky;
-      top: 22px;
-      padding: clamp(24px, 4vw, 36px);
-      background: color-mix(in oklab, var(--paper) 82%, white);
-      border: 1px solid var(--ink);
-      box-shadow: 10px 10px 0 var(--shadow);
-      transform: rotate(0.4deg);
-    }
-
-    .notebook-card::before {
-      content: "margin";
-      position: absolute;
-      top: -19px;
-      right: 18px;
-      padding: 2px 10px 3px;
-      background: var(--paper);
-      border: 1px solid var(--ink);
-      font-family: var(--hand);
-      font-size: 16px;
-      color: var(--red);
-      transform: rotate(4deg);
-    }
-
-    .notebook-card p {
+    .lede {
       margin: 0;
-      font-family: var(--serif);
-      font-size: clamp(24px, 3vw, 34px);
-      line-height: 1.05;
-      letter-spacing: -0.04em;
-    }
-
-    .notebook-card .scribble {
-      display: inline-block;
-      position: relative;
-      color: var(--green);
-    }
-
-    .notebook-card .scribble::after {
-      content: "";
-      position: absolute;
-      left: -0.12em;
-      right: -0.12em;
-      bottom: -0.04em;
-      border-bottom: 2px solid var(--green);
-      transform: rotate(-1.8deg);
-    }
-
-    .notebook-card small {
-      display: block;
-      margin-top: 24px;
-      font: 12px/1.55 var(--mono);
-      color: var(--muted);
-    }
-
-    .notebook-card .pin {
-      width: 13px;
-      height: 13px;
-      margin: 0 0 22px;
-      border-radius: 50%;
-      background: var(--red);
-      box-shadow: 0 0 0 5px color-mix(in oklab, var(--red) 14%, transparent);
-    }
-
-    .field {
-      display: grid;
-      grid-template-columns: minmax(0, 0.9fr) minmax(300px, 1.1fr);
-      gap: clamp(34px, 7vw, 88px);
-      padding: clamp(42px, 7vw, 78px) 0;
-      border-bottom: 1px solid var(--hairline);
-    }
-
-    .section-kicker {
-      margin: 0 0 18px;
-      color: var(--red);
-      font: 12px/1 var(--mono);
-      letter-spacing: 0.12em;
-      text-transform: uppercase;
-    }
-
-    h2 {
-      max-width: 520px;
-      margin: 0;
-      font-family: var(--serif);
-      font-size: clamp(34px, 5vw, 72px);
-      font-weight: 500;
-      line-height: 0.93;
-      letter-spacing: -0.06em;
-    }
-
-    .copy {
-      max-width: 610px;
-      margin: 0;
-      font-size: clamp(17px, 1.6vw, 21px);
-      line-height: 1.55;
-      color: color-mix(in oklab, var(--ink) 84%, var(--muted));
-    }
-
-    .copy + .copy {
-      margin-top: 18px;
-    }
-
-    .copy strong {
       color: var(--ink);
-      font-weight: 620;
+      font-family: var(--font-serif);
+      font-size: clamp(1.32rem, 2.4vw, 2.35rem);
+      line-height: 1.1;
+      letter-spacing: -.035em;
     }
 
-    .inline-mark {
+    .microbio {
+      margin: .25rem 0 0;
+      color: var(--muted);
+      font-size: clamp(.98rem, 1.1vw, 1.08rem);
+      line-height: 1.65;
+    }
+
+    .microbio a {
+      color: var(--ink);
+    }
+
+    .margin-note {
       position: relative;
-      white-space: nowrap;
+      margin: .2rem 0 0;
+      padding: 1.1rem 1rem 1rem;
+      border: 1px solid var(--hairline);
+      color: var(--muted);
+      font-family: var(--font-note);
+      font-size: clamp(.98rem, 1.45vw, 1.22rem);
+      line-height: 1.32;
+      transform: rotate(-1.2deg);
+      background: #fffaf1;
     }
 
-    .inline-mark::after {
-      content: "";
+    .margin-note::before {
+      content: "today";
       position: absolute;
-      left: -0.06em;
-      right: -0.06em;
-      bottom: 0.06em;
-      height: 0.42em;
-      background: color-mix(in oklab, var(--amber) 30%, transparent);
-      z-index: -1;
-      transform: rotate(-0.5deg);
+      left: .85rem;
+      top: -.72rem;
+      padding: .12rem .34rem;
+      background: var(--paper-raised);
+      color: var(--accent-dark);
+      font-family: var(--font-mono);
+      font-size: .58rem;
+      letter-spacing: .16em;
+      text-transform: uppercase;
     }
 
-    .signals {
+    .today {
+      border-top: 1px solid var(--hairline);
+      margin-top: clamp(44px, 7vw, 110px);
+      padding-top: clamp(28px, 4vw, 56px);
       display: grid;
-      gap: 13px;
-      margin-top: 32px;
+      grid-template-columns: minmax(0, .56fr) minmax(0, .44fr);
+      gap: clamp(26px, 5vw, 72px);
+      max-width: 1180px;
+    }
+
+    .section-label {
+      margin: 0 0 1.1rem;
+      font-family: var(--font-mono);
+      color: var(--muted);
+      font-size: .72rem;
+      letter-spacing: .11em;
+      line-height: 1.35;
+      text-transform: uppercase;
+    }
+
+    .today-copy {
+      margin: 0;
+      max-width: 640px;
+      color: var(--ink);
+      font-family: var(--font-serif);
+      font-size: clamp(1.65rem, 3.2vw, 3.4rem);
+      line-height: 1.02;
+      letter-spacing: -.055em;
+    }
+
+    .today-copy em {
+      color: var(--accent-dark);
+      font-style: italic;
+      font-weight: 520;
+    }
+
+    .signal-board {
+      display: grid;
+      gap: .7rem;
+      margin-top: .15rem;
       padding: 0;
       list-style: none;
     }
 
-    .signals li {
+    .signal-board li {
       display: grid;
-      grid-template-columns: 26px minmax(0, 1fr);
-      gap: 12px;
-      align-items: baseline;
-      padding-top: 13px;
-      border-top: 1px solid color-mix(in oklab, var(--hairline) 68%, transparent);
+      grid-template-columns: 3.2rem minmax(0, 1fr);
+      gap: 1rem;
+      align-items: start;
+      min-height: 4.2rem;
+      padding: .9rem 0;
+      border-bottom: 1px solid var(--hairline);
       color: var(--muted);
-      font-size: 14px;
-      line-height: 1.35;
+      line-height: 1.45;
     }
 
-    .signals span {
-      color: var(--red);
-      font: 11px/1 var(--mono);
+    .signal-board li:first-child {
+      border-top: 1px solid var(--hairline);
+    }
+
+    .signal-board strong {
+      color: var(--ink);
+      font-family: var(--font-mono);
+      font-size: .68rem;
+      font-weight: 700;
+      letter-spacing: .08em;
+      line-height: 1.35;
+      text-transform: uppercase;
     }
 
     .writing {
-      padding: clamp(48px, 7vw, 86px) 0;
-      border-bottom: 1px solid var(--hairline);
-    }
-
-    .writing__header {
+      position: relative;
+      margin-top: clamp(54px, 9vw, 136px);
       display: grid;
-      grid-template-columns: minmax(0, 0.8fr) minmax(300px, 1.2fr);
-      gap: clamp(30px, 6vw, 72px);
-      align-items: end;
-      margin-bottom: clamp(28px, 5vw, 52px);
+      grid-template-columns: minmax(190px, .28fr) minmax(0, .72fr);
+      gap: clamp(30px, 5vw, 74px);
+      max-width: 1140px;
     }
 
-    .writing__intro {
-      max-width: 520px;
+    .writing-intro {
+      position: sticky;
+      top: 2rem;
+      align-self: start;
+    }
+
+    .writing-intro p {
       margin: 0;
       color: var(--muted);
-      font-size: 16px;
+      font-size: .98rem;
       line-height: 1.55;
     }
 
+    .scribble {
+      display: inline-block;
+      margin-top: 1.2rem;
+      color: var(--blue);
+      font-family: var(--font-note);
+      font-size: 1.04rem;
+      line-height: 1.25;
+      transform: rotate(-2deg);
+    }
+
     .writing-list {
-      counter-reset: writing;
       margin: 0;
       padding: 0;
       list-style: none;
-      border-top: 2px solid var(--ink);
+      border-top: 1px solid var(--ink);
     }
 
     .writing-list li {
-      counter-increment: writing;
       position: relative;
       border-bottom: 1px solid var(--hairline);
     }
 
     .writing-list a {
       display: grid;
-      grid-template-columns: 62px minmax(0, 1fr) auto;
-      gap: clamp(14px, 3vw, 32px);
+      grid-template-columns: minmax(0, 1fr) auto;
+      gap: 1rem;
       align-items: baseline;
-      padding: clamp(18px, 3.2vw, 31px) 0;
-      transition: color 180ms ease, padding-left 180ms ease;
+      padding: clamp(16px, 2.4vw, 26px) 0;
+      text-decoration: none;
     }
 
     .writing-list a::before {
-      content: counter(writing, decimal-leading-zero);
-      color: var(--soft);
-      font: 13px/1 var(--mono);
-      letter-spacing: 0.08em;
+      content: "";
+      position: absolute;
+      left: -.75rem;
+      top: 50%;
+      width: .32rem;
+      height: .32rem;
+      border-radius: 50%;
+      background: var(--accent);
+      opacity: 0;
+      transform: translateY(-50%) scale(.4);
+      transition: opacity .18s ease, transform .18s ease;
     }
 
-    .writing-list a:hover,
-    .writing-list a:focus-visible {
-      color: var(--blue);
-      padding-left: 11px;
-      outline: none;
-    }
-
-    .writing-list a:hover .arrow,
-    .writing-list a:focus-visible .arrow {
-      transform: translate(5px, -5px) rotate(-8deg);
-      color: var(--red);
+    .writing-list a:hover::before {
+      opacity: 1;
+      transform: translateY(-50%) scale(1);
     }
 
     .writing-title {
-      font-family: var(--serif);
-      font-size: clamp(28px, 4.8vw, 62px);
-      line-height: 0.95;
-      letter-spacing: -0.055em;
+      font-family: var(--font-serif);
+      font-size: clamp(1.45rem, 2.4vw, 2.65rem);
+      letter-spacing: -.045em;
+      line-height: 1;
     }
 
     .writing-meta {
-      justify-self: end;
       color: var(--muted);
-      font: 12px/1.4 var(--mono);
-      text-align: right;
+      font-family: var(--font-mono);
+      font-size: .7rem;
+      letter-spacing: .08em;
       text-transform: uppercase;
-      letter-spacing: 0.07em;
+      white-space: nowrap;
     }
 
-    .arrow {
-      display: inline-block;
-      color: var(--muted);
-      font-size: 28px;
-      line-height: 1;
-      transition: transform 180ms ease, color 180ms ease;
-    }
-
-    .scraps {
+    .quote-strip {
       display: grid;
-      grid-template-columns: minmax(0, 1fr) minmax(280px, 0.72fr);
-      gap: clamp(32px, 7vw, 90px);
-      padding: clamp(48px, 7vw, 82px) 0 clamp(34px, 6vw, 66px);
-      border-bottom: 1px solid var(--hairline);
-    }
-
-    .scrap-board {
-      position: relative;
-      min-height: 390px;
-    }
-
-    .scrap {
-      position: absolute;
-      max-width: 270px;
-      padding: 18px 19px;
-      background: color-mix(in oklab, var(--paper) 72%, white);
-      border: 1px solid var(--ink);
-      box-shadow: 7px 7px 0 var(--shadow);
-      font-family: var(--hand);
-      font-size: 19px;
-      line-height: 1.22;
-      transition: transform 200ms ease, color 180ms ease;
-    }
-
-    .scrap:hover {
-      color: var(--blue);
-      transform: translateY(-3px) rotate(0deg);
-    }
-
-    .scrap--one {
-      top: 6px;
-      left: 2%;
-      transform: rotate(-3deg);
-      color: var(--red);
-    }
-
-    .scrap--two {
-      top: 112px;
-      left: 35%;
-      transform: rotate(2.2deg);
-      color: var(--green);
-    }
-
-    .scrap--three {
-      top: 238px;
-      left: 14%;
-      max-width: 330px;
-      transform: rotate(-1.1deg);
-      color: var(--violet);
-    }
-
-    .scrap time {
-      display: block;
-      margin-top: 13px;
-      color: var(--muted);
-      font: 11px/1 var(--mono);
-      letter-spacing: 0.08em;
-      text-transform: uppercase;
-    }
-
-    .today-note {
-      align-self: center;
-      padding: 26px 0 0;
-      border-top: 2px solid var(--ink);
-    }
-
-    .today-note p {
-      margin: 0;
-      color: var(--muted);
-      font-size: 16px;
-      line-height: 1.58;
-    }
-
-    .today-note p + p {
-      margin-top: 16px;
-    }
-
-    .today-note strong {
-      color: var(--ink);
-      font-weight: 610;
-    }
-
-    .contact {
-      display: grid;
-      grid-template-columns: minmax(0, 1fr) auto;
-      gap: 28px;
-      align-items: end;
-      padding-top: clamp(34px, 6vw, 58px);
-    }
-
-    .contact h2 {
-      max-width: 760px;
-    }
-
-    .links {
-      display: flex;
-      flex-wrap: wrap;
-      gap: 10px;
-      justify-content: flex-end;
-      max-width: 430px;
-    }
-
-    .links a {
-      display: inline-flex;
-      align-items: center;
-      min-height: 38px;
-      padding: 0 13px;
+      grid-template-columns: repeat(3, minmax(0, 1fr));
+      gap: 1px;
+      margin-top: clamp(50px, 8vw, 120px);
+      background: var(--hairline);
       border: 1px solid var(--hairline);
-      border-radius: 999px;
-      color: var(--muted);
-      font-size: 13px;
-      transition: border-color 170ms ease, color 170ms ease, transform 170ms ease;
+      max-width: 1180px;
     }
 
-    .links a:hover,
-    .links a:focus-visible {
-      border-color: var(--ink);
+    .quote-strip a {
+      display: flex;
+      min-height: clamp(130px, 16vw, 220px);
+      padding: clamp(18px, 2.6vw, 32px);
+      background: var(--paper-raised);
+      text-decoration: none;
       color: var(--ink);
-      transform: translateY(-2px);
-      outline: none;
+    }
+
+    .quote-strip a:nth-child(2) {
+      background: #fff9ed;
+    }
+
+    .quote-strip a:hover {
+      color: var(--ink);
+      background: #fff4e7;
+    }
+
+    .quote-strip blockquote {
+      display: flex;
+      flex-direction: column;
+      justify-content: space-between;
+      gap: 1.5rem;
+      margin: 0;
+      width: 100%;
+    }
+
+    .quote-strip p {
+      margin: 0;
+      font-family: var(--font-serif);
+      font-size: clamp(1.35rem, 2vw, 2.35rem);
+      letter-spacing: -.05em;
+      line-height: .98;
+    }
+
+    .quote-strip cite {
+      color: var(--muted);
+      font-family: var(--font-mono);
+      font-size: .68rem;
+      font-style: normal;
+      letter-spacing: .08em;
+      text-transform: uppercase;
     }
 
     .footer {
+      display: grid;
+      grid-template-columns: minmax(0, 1fr) auto;
+      gap: 1rem;
+      align-items: end;
+      margin-top: clamp(48px, 7vw, 110px);
+      padding-top: 1.25rem;
+      border-top: 1px solid var(--hairline);
+      color: var(--muted);
+      font-size: .9rem;
+    }
+
+    .footer p {
+      margin: 0;
+      line-height: 1.5;
+    }
+
+    .footer-links {
       display: flex;
-      justify-content: space-between;
-      gap: 22px;
-      padding: 40px 0 0;
-      color: var(--soft);
-      font: 11px/1.5 var(--mono);
-      letter-spacing: 0.08em;
+      flex-wrap: wrap;
+      justify-content: flex-end;
+      gap: .6rem 1rem;
+      font-family: var(--font-mono);
+      font-size: .7rem;
+      letter-spacing: .08em;
       text-transform: uppercase;
     }
 
-    .stamp {
-      display: inline-block;
-      padding: 5px 9px;
-      border: 1px solid currentColor;
-      transform: rotate(-2deg);
-      color: var(--red);
+    .footer-links a {
+      text-decoration-color: transparent;
     }
 
-    @media (prefers-reduced-motion: no-preference) {
-      .notebook-card {
-        animation: settle 760ms cubic-bezier(.2, .8, .2, 1) both;
+    .footer-links a:hover {
+      text-decoration-color: currentColor;
+    }
+
+    .rule-note {
+      position: absolute;
+      right: clamp(20px, 4vw, 70px);
+      top: clamp(72px, 8vw, 120px);
+      color: var(--green);
+      font-family: var(--font-note);
+      font-size: clamp(.92rem, 1.25vw, 1.18rem);
+      line-height: 1.22;
+      max-width: 13rem;
+      transform: rotate(3deg);
+    }
+
+    .rule-note::after {
+      content: "";
+      display: block;
+      width: 4.6rem;
+      height: 1px;
+      margin-top: .55rem;
+      background: currentColor;
+      transform: rotate(-8deg);
+      transform-origin: left center;
+    }
+
+    .print-mark {
+      position: absolute;
+      right: clamp(20px, 4vw, 70px);
+      bottom: clamp(20px, 4vw, 70px);
+      color: rgba(102, 92, 81, .32);
+      font-family: var(--font-mono);
+      font-size: .66rem;
+      letter-spacing: .16em;
+      text-transform: uppercase;
+      writing-mode: vertical-rl;
+    }
+
+    @media (prefers-color-scheme: dark) {
+      :root {
+        color-scheme: dark;
+        --paper: #1a1714;
+        --paper-raised: #221e1a;
+        --ink: #e8e4dc;
+        --muted: #a69a8a;
+        --faint: #665c51;
+        --hairline: #3a342c;
+        --shadow: rgba(0, 0, 0, .35);
       }
 
-      .hero__deck,
-      h1 {
-        animation: rise 680ms cubic-bezier(.2, .8, .2, 1) both;
+      .margin-note {
+        background: #2a261e;
       }
 
-      .hero__deck {
-        animation-delay: 90ms;
+      .quote-strip a:nth-child(2) {
+        background: #2a281e;
       }
 
-      .scrap {
-        animation: breathe 4.8s ease-in-out infinite;
+      .quote-strip a:hover {
+        background: #322e22;
       }
 
-      .scrap--two {
-        animation-delay: 600ms;
+      .sheet::before {
+        background: #4a3a32;
       }
 
-      .scrap--three {
-        animation-delay: 1100ms;
+      .sheet::after {
+        border-color: rgba(58, 52, 44, .55);
       }
     }
 
-    @keyframes rise {
-      from {
-        opacity: 0;
-        transform: translateY(18px);
-      }
-      to {
-        opacity: 1;
-        transform: translateY(0);
-      }
-    }
-
-    @keyframes settle {
-      from {
-        opacity: 0;
-        transform: translateY(12px) rotate(1.6deg);
-      }
-      to {
-        opacity: 1;
-        transform: translateY(0) rotate(0.4deg);
+    @media (prefers-reduced-motion: reduce) {
+      *,
+      *::before,
+      *::after {
+        animation-duration: .001ms !important;
+        animation-iteration-count: 1 !important;
+        scroll-behavior: auto !important;
+        transition-duration: .001ms !important;
       }
     }
 
-    @keyframes breathe {
-      0%, 100% {
-        margin-top: 0;
-      }
-      50% {
-        margin-top: -4px;
-      }
-    }
-
-    @media (max-width: 880px) {
-      body::before {
-        inset: 8px;
-      }
-
-      .masthead {
-        grid-template-columns: 1fr;
-        gap: 9px;
-        padding-bottom: 18px;
-        text-align: left;
-      }
-
-      .masthead__center {
-        justify-self: start;
-        order: -1;
-      }
-
-      .masthead__right {
-        justify-self: start;
-        text-align: left;
-      }
-
+    @media (max-width: 1060px) {
       .hero,
-      .field,
-      .writing__header,
-      .scraps,
-      .contact {
+      .today,
+      .writing {
         grid-template-columns: 1fr;
       }
 
-      .side-note {
-        min-height: 0;
-        border-left: 0;
-        padding-left: 0;
+      .lede-row {
+        grid-template-columns: minmax(0, 1fr);
       }
 
-      .notebook-card {
-        position: relative;
-        top: auto;
+      .margin-note {
+        max-width: 420px;
       }
 
-      .hero__meta {
-        grid-template-columns: 1fr;
+      .writing-intro {
+        position: static;
+        max-width: 500px;
       }
 
-      .writing-list a {
-        grid-template-columns: 44px minmax(0, 1fr);
-      }
-
-      .writing-meta {
-        grid-column: 2;
-        justify-self: start;
-        text-align: left;
-      }
-
-      .arrow {
+      .rule-note {
         display: none;
       }
+    }
 
-      .scrap-board {
-        min-height: 520px;
+    @media (max-width: 760px) {
+      .page {
+        padding: 0;
       }
 
-      .scrap--one,
-      .scrap--two,
-      .scrap--three {
-        left: auto;
-        right: auto;
+      .sheet {
+        min-height: 100vh;
+        border-width: 0;
+        box-shadow: none;
       }
 
-      .scrap--one {
-        top: 0;
+      .sheet::before {
+        left: 16px;
       }
 
-      .scrap--two {
-        top: 156px;
-        left: 13%;
+      .sheet::after {
+        inset: 12px;
       }
 
-      .scrap--three {
-        top: 326px;
-        left: 2%;
+      .topbar {
+        align-items: flex-start;
+        flex-direction: column;
       }
 
-      .links {
+      .nav {
         justify-content: flex-start;
       }
 
-      .footer {
-        display: grid;
-      }
-    }
-
-    @media (max-width: 520px) {
-      .shell {
-        width: min(100% - 24px, 640px);
-        padding-top: 15px;
+      main {
+        padding-top: 56px;
       }
 
       h1 {
-        font-size: clamp(48px, 19vw, 82px);
-      }
-
-      .datum {
-        min-height: 80px;
+        font-size: clamp(4rem, 19vw, 7rem);
       }
 
       .writing-list a {
         grid-template-columns: 1fr;
-        gap: 8px;
+        gap: .55rem;
       }
 
-      .writing-list a::before,
       .writing-meta {
-        grid-column: auto;
+        white-space: normal;
       }
 
-      .scrap {
-        max-width: calc(100vw - 64px);
+      .quote-strip {
+        grid-template-columns: 1fr;
+      }
+
+      .quote-strip a {
+        min-height: 132px;
+      }
+
+      .footer {
+        grid-template-columns: 1fr;
+      }
+
+      .footer-links {
+        justify-content: flex-start;
+      }
+
+      .print-mark {
+        display: none;
+      }
+    }
+
+    @media (max-width: 470px) {
+      .topbar,
+      main {
+        padding-left: 24px;
+        padding-right: 24px;
+      }
+
+      .eyebrow::after {
+        width: 4.4rem;
+      }
+
+      .signal-board li {
+        grid-template-columns: 1fr;
+        gap: .35rem;
+      }
+
+      .quote-strip p {
+        font-size: 1.55rem;
       }
     }
   </style>
 </head>
 <body>
-  <main class="shell" aria-label="Editorial notebook for Erik Nilsson">
-    <header class="masthead">
-      <a href="https://eriks.design" aria-label="Visit eriks.design">eriks.design</a>
-      <div class="masthead__center">Erik Nilsson</div>
-      <span class="masthead__right">San Francisco &middot; clear autumn night</span>
-    </header>
+  <a class="skip" href="#content">Skip to content</a>
 
-    <section class="hero" aria-labelledby="intro-title">
-      <div>
-        <p class="hero__eyebrow">Product designer at Cursor</p>
-        <h1 id="intro-title">Notes for building in flow.</h1>
-        <p class="hero__deck">
-          Erik designs software with AI at <a href="https://cursor.com">Cursor</a>, then lets this corner of the web rebuild from fresh activity data.
-        </p>
+  <div class="page">
+    <div class="sheet">
+      <div class="rule-note" aria-hidden="true">keep the page spare, but let it think out loud</div>
+      <div class="print-mark" aria-hidden="true">eriks.design / autumn edition</div>
 
-        <div class="hero__meta" aria-label="Current context">
-          <div class="datum">
-            <b>Today</b>
-            <span>Oct 24, 2026</span>
-          </div>
-          <div class="datum">
-            <b>Weather</b>
-            <span>11 C, clear</span>
-          </div>
-          <div class="datum">
-            <b>Mood</b>
-            <span>quiet signal, sharp tools</span>
-          </div>
-        </div>
-      </div>
+      <header class="topbar" aria-label="Site header">
+        <a class="site-mark" href="https://eriks.design" aria-label="eriks.design home">eriks.design</a>
+        <nav class="nav" aria-label="Primary links">
+          <a href="https://cursor.com">Cursor</a>
+          <a href="https://x.com/flowstated">X</a>
+          <a href="https://github.com/eriknson">GitHub</a>
+          <a href="mailto:contact@eriks.design">Email</a>
+        </nav>
+      </header>
 
-      <aside class="side-note" aria-label="Notebook margin note">
-        <div class="notebook-card">
-          <div class="pin" aria-hidden="true"></div>
+      <main id="content">
+        <section class="hero" aria-labelledby="intro-title">
+          <div>
+            <p class="eyebrow">Erik Nilsson / Product Designer / San Francisco</p>
+            <h1 id="intro-title"><span class="h1-tight">Designing</span> software that helps people think.</h1>
+
+            <div class="lede-row">
+              <p class="lede">Product designer at Cursor, working on how people build software with AI.</p>
+              <p class="microbio">
+                Off hours, Erik keeps this living site in motion: agents rebuild a corner of the web from fresh activity data each day.
+              </p>
+            </div>
+          </div>
+
+          <aside class="margin-note" aria-label="Today note">
+            Clear autumn night over San Francisco. Ten degrees, still air, a notebook page rebuilt by agents.
+          </aside>
+        </section>
+
+        <section class="today" aria-labelledby="today-title">
+          <div>
+            <p class="section-label" id="today-title">Today / October 25, 2026</p>
+            <p class="today-copy">
+              A quiet page for a dormant week: no noise, just a few <em>signals</em> taped to the desk.
+            </p>
+          </div>
+
+          <ul class="signal-board" aria-label="Signals from today's brief">
+            <li>
+              <strong>01</strong>
+              <span>Open-source wizards rebuilding a classic turn-based strategy engine from scratch.</span>
+            </li>
+            <li>
+              <strong>02</strong>
+              <span>Living room screens running tiny vision models frame by frame.</span>
+            </li>
+            <li>
+              <strong>03</strong>
+              <span>DNS switches waiting on the edge of the internet.</span>
+            </li>
+            <li>
+              <strong>04</strong>
+              <span>Agents spun up from a phone shortcut before sunrise.</span>
+            </li>
+          </ul>
+        </section>
+
+        <section class="writing" aria-labelledby="writing-title">
+          <div class="writing-intro">
+            <p class="section-label" id="writing-title">Writing Index</p>
+            <p>
+              Notes on design tools, agents, interfaces, and the odd mechanics of making a website that keeps rewriting itself.
+            </p>
+            <span class="scribble" aria-hidden="true">small index, real links</span>
+          </div>
+
+          <ol class="writing-list">
+            <li>
+              <a href="https://cursor.com/blog/design-mode">
+                <span class="writing-title">Directing agents visually</span>
+                <span class="writing-meta">Cursor blog / Jun 2026</span>
+              </a>
+            </li>
+            <li>
+              <a href="/posts/a-living-site">
+                <span class="writing-title">A living site</span>
+                <span class="writing-meta">eriks.design / Dec 2025</span>
+              </a>
+            </li>
+            <li>
+              <a href="/posts/surgical-edits">
+                <span class="writing-title">Surgical edits</span>
+                <span class="writing-meta">eriks.design / Nov 2025</span>
+              </a>
+            </li>
+            <li>
+              <a href="/posts/familiar-differentiation">
+                <span class="writing-title">Familiar differentiation</span>
+                <span class="writing-meta">eriks.design / Nov 2024</span>
+              </a>
+            </li>
+            <li>
+              <a href="/posts/hackathon-energy-but-add-users">
+                <span class="writing-title">Hackathon energy, but add users</span>
+                <span class="writing-meta">eriks.design / Oct 2022</span>
+              </a>
+            </li>
+          </ol>
+        </section>
+
+        <section class="quote-strip" aria-label="Recent short notes from X">
+          <a href="https://x.com/flowstated/status/2002167999353241901">
+            <blockquote>
+              <p>imagine 2026</p>
+              <cite>posted Dec 20, 2025</cite>
+            </blockquote>
+          </a>
+          <a href="https://x.com/flowstated/status/2000889983562080578">
+            <blockquote>
+              <p>shipping by sunrise</p>
+              <cite>posted Dec 16, 2025</cite>
+            </blockquote>
+          </a>
+          <a href="https://x.com/flowstated/status/2000691637190861180">
+            <blockquote>
+              <p>iOS shortcuts x GitHub Actions x Cursor CLI</p>
+              <cite>posted Dec 15, 2025</cite>
+            </blockquote>
+          </a>
+        </section>
+
+        <footer class="footer">
           <p>
-            Keep the page <span class="scribble">alive</span>, but keep the voice calm.
+            Erik Nilsson is a product designer at Cursor. GitHub is mostly side projects and experiments.
           </p>
-          <small>
-            Filed from San Francisco. Side projects are experiments, not the whole job. The important part is the feel: simple, iterative, and human at the edges.
-          </small>
-        </div>
-      </aside>
-    </section>
-
-    <section class="field" aria-labelledby="current-note">
-      <div>
-        <p class="section-kicker">Current note</p>
-        <h2 id="current-note">A designer notebook with the confidence to leave space.</h2>
-      </div>
-      <div>
-        <p class="copy">
-          This page is an edited snapshot rather than a biography. Erik is working on how people build software with AI: how ideas become interfaces, how agents stay in context, and how small surgical moves can feel more powerful than sweeping rewrites.
-        </p>
-        <p class="copy">
-          The site itself is part of the experiment. Agents rebuild it from fresh inputs, but the goal is not novelty for its own sake. It is <span class="inline-mark">taste under automation</span>: a system that can change daily without losing its eye.
-        </p>
-
-        <ul class="signals" aria-label="Signals from the current brief">
-          <li><span>01</span>phantom citations multiplying in AI-assisted research papers</li>
-          <li><span>02</span>tinkerers slipping through forgotten ports in old TV firmware</li>
-          <li><span>03</span>satellite links steadying after bandwidth throttling</li>
-          <li><span>04</span>parallel agents sketching different futures in the same chat</li>
-        </ul>
-      </div>
-    </section>
-
-    <section class="writing" aria-labelledby="writing-title">
-      <div class="writing__header">
-        <div>
-          <p class="section-kicker">Writing index</p>
-          <h2 id="writing-title">Five published notes, no display case.</h2>
-        </div>
-        <p class="writing__intro">
-          Short pieces on design tools, living websites, and the craft of steering software into shape.
-        </p>
-      </div>
-
-      <ol class="writing-list">
-        <li>
-          <a href="https://cursor.com/blog/design-mode">
-            <span class="writing-title">Directing agents visually</span>
-            <span class="writing-meta">Jun 05, 2026 &middot; Cursor</span>
-            <span class="arrow" aria-hidden="true">&rarr;</span>
-          </a>
-        </li>
-        <li>
-          <a href="/posts/a-living-site">
-            <span class="writing-title">A living site</span>
-            <span class="writing-meta">Dec 26, 2025</span>
-            <span class="arrow" aria-hidden="true">&rarr;</span>
-          </a>
-        </li>
-        <li>
-          <a href="/posts/surgical-edits">
-            <span class="writing-title">Surgical edits</span>
-            <span class="writing-meta">Nov 23, 2025</span>
-            <span class="arrow" aria-hidden="true">&rarr;</span>
-          </a>
-        </li>
-        <li>
-          <a href="/posts/familiar-differentiation">
-            <span class="writing-title">Familiar differentiation</span>
-            <span class="writing-meta">Nov 15, 2024</span>
-            <span class="arrow" aria-hidden="true">&rarr;</span>
-          </a>
-        </li>
-        <li>
-          <a href="/posts/hackathon-energy-but-add-users">
-            <span class="writing-title">Hackathon energy, but add users</span>
-            <span class="writing-meta">Oct 15, 2022</span>
-            <span class="arrow" aria-hidden="true">&rarr;</span>
-          </a>
-        </li>
-      </ol>
-    </section>
-
-    <section class="scraps" aria-labelledby="scraps-title">
-      <div>
-        <p class="section-kicker">Recent scraps</p>
-        <h2 id="scraps-title">Small public notes, left in the margins.</h2>
-        <div class="scrap-board" aria-label="Recent short posts">
-          <a class="scrap scrap--one" href="https://x.com/flowstated/status/2002167999353241901">
-            imagine 2026
-            <time datetime="2025-12-20">Dec 20</time>
-          </a>
-          <a class="scrap scrap--two" href="https://x.com/flowstated/status/2000889983562080578">
-            shipping by sunrise
-            <time datetime="2025-12-16">Dec 16</time>
-          </a>
-          <a class="scrap scrap--three" href="https://x.com/flowstated/status/2000691637190861180">
-            exploring agents from a phone: iOS shortcuts x GitHub Actions x Cursor CLI
-            <time datetime="2025-12-15">Dec 15</time>
-          </a>
-        </div>
-      </div>
-
-      <aside class="today-note">
-        <p>
-          <strong>Today's edition:</strong> a clear eleven-degree night, public activity quiet, and a brief full of odd little futures.
-        </p>
-        <p>
-          The useful tension is right there: calm surface, active machinery underneath. Magazine page on top, designer notebook underneath.
-        </p>
-      </aside>
-    </section>
-
-    <section class="contact" aria-labelledby="contact-title">
-      <h2 id="contact-title">Simple tools, careful taste, a little edge.</h2>
-      <nav class="links" aria-label="Erik Nilsson links">
-        <a href="mailto:contact@eriks.design">email</a>
-        <a href="https://x.com/flowstated">x</a>
-        <a href="https://github.com/eriknson">github</a>
-        <a href="https://linkedin.com/in/eriknson">linkedin</a>
-        <a href="https://cursor.com">cursor</a>
-      </nav>
-    </section>
-
-    <footer class="footer">
-      <span>Built from identity.json and brief.json</span>
-      <span class="stamp">notebook edition</span>
-    </footer>
-  </main>
+          <div class="footer-links" aria-label="Contact links">
+            <a href="https://linkedin.com/in/eriknson">LinkedIn</a>
+            <a href="https://github.com/eriknson">GitHub</a>
+            <a href="mailto:contact@eriks.design">contact@eriks.design</a>
+          </div>
+        </footer>
+      </main>
+    </div>
+  </div>
 </body>
 </html>

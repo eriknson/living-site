@@ -1,0 +1,884 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="color-scheme" content="light dark">
+  <title>Erik Nilsson - eriks.design</title>
+  <meta name="description" content="A polished editorial notebook for Erik Nilsson, product designer at Cursor.">
+  <style>
+    :root {
+      color-scheme: light dark;
+      --paper: #fbf7ef;
+      --paper-raised: #fffdf8;
+      --ink: #17130f;
+      --muted: #665c51;
+      --faint: #a69a8a;
+      --hairline: #d8cbbb;
+      --accent: #ff4d2e;
+      --accent-dark: #c92d18;
+      --blue: #1f57ff;
+      --green: #117a55;
+      --shadow: rgba(58, 38, 21, .11);
+      --font-serif: ui-serif, "Iowan Old Style", "Palatino Linotype", Palatino, Georgia, serif;
+      --font-sans: ui-sans-serif, -apple-system, BlinkMacSystemFont, "Segoe UI", Inter, Helvetica, Arial, sans-serif;
+      --font-mono: ui-monospace, SFMono-Regular, "SF Mono", Consolas, "Liberation Mono", Menlo, monospace;
+      --font-note: "Bradley Hand", "Segoe Print", "Comic Sans MS", cursive;
+    }
+
+    @supports (color: color(display-p3 1 0.29 0.17)) {
+      :root {
+        --accent: color(display-p3 1 .245 .12);
+        --accent-dark: color(display-p3 .77 .135 .07);
+        --blue: color(display-p3 .06 .28 1);
+        --green: color(display-p3 .02 .48 .31);
+      }
+    }
+
+    * {
+      box-sizing: border-box;
+    }
+
+    html {
+      min-height: 100%;
+      background: var(--paper);
+      scroll-behavior: smooth;
+    }
+
+    body {
+      margin: 0;
+      min-height: 100%;
+      background: var(--paper);
+      color: var(--ink);
+      font-family: var(--font-sans);
+      -webkit-font-smoothing: antialiased;
+      text-rendering: geometricPrecision;
+    }
+
+    ::selection {
+      background: var(--accent);
+      color: var(--paper-raised);
+    }
+
+    a {
+      color: inherit;
+      text-decoration-thickness: .08em;
+      text-underline-offset: .18em;
+      transition: color .18s ease, text-decoration-color .18s ease, transform .18s ease, background-color .18s ease;
+    }
+
+    a:hover {
+      color: var(--accent-dark);
+    }
+
+    a:focus-visible,
+    button:focus-visible {
+      outline: 2px solid var(--blue);
+      outline-offset: 4px;
+      border-radius: 4px;
+    }
+
+    .skip {
+      position: fixed;
+      left: 1rem;
+      top: 1rem;
+      z-index: 20;
+      transform: translateY(-150%);
+      background: var(--ink);
+      color: var(--paper-raised);
+      padding: .6rem .8rem;
+      border-radius: 999px;
+      font: 700 .72rem/1 var(--font-sans);
+      letter-spacing: .08em;
+      text-transform: uppercase;
+      text-decoration: none;
+    }
+
+    .skip:focus {
+      transform: translateY(0);
+    }
+
+    .page {
+      width: min(100%, 1480px);
+      margin: 0 auto;
+      padding: clamp(18px, 3vw, 44px);
+    }
+
+    .sheet {
+      position: relative;
+      min-height: calc(100vh - clamp(36px, 6vw, 88px));
+      background: var(--paper-raised);
+      border: 1px solid var(--hairline);
+      box-shadow: 0 30px 90px var(--shadow);
+      overflow: hidden;
+      isolation: isolate;
+    }
+
+    .sheet::before,
+    .sheet::after {
+      content: "";
+      position: absolute;
+      pointer-events: none;
+      z-index: -1;
+    }
+
+    .sheet::before {
+      inset: 0 auto 0 clamp(22px, 4vw, 70px);
+      width: 1px;
+      background: #edd0c6;
+    }
+
+    .sheet::after {
+      inset: clamp(18px, 2.6vw, 34px);
+      border: 1px solid rgba(216, 203, 187, .55);
+    }
+
+    .topbar {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 1.5rem;
+      padding: clamp(18px, 2.5vw, 34px) clamp(22px, 4vw, 70px) 0;
+      font-family: var(--font-mono);
+      font-size: clamp(.68rem, .74vw, .82rem);
+      letter-spacing: .06em;
+      text-transform: uppercase;
+      color: var(--muted);
+    }
+
+    .site-mark {
+      display: inline-flex;
+      align-items: center;
+      gap: .65rem;
+      text-decoration: none;
+    }
+
+    .site-mark::before {
+      content: "";
+      width: .72rem;
+      height: .72rem;
+      border: 1px solid currentColor;
+      border-radius: 50%;
+      box-shadow: inset 0 0 0 3px var(--paper-raised);
+      background: var(--accent);
+    }
+
+    .nav {
+      display: flex;
+      flex-wrap: wrap;
+      justify-content: flex-end;
+      gap: .4rem .9rem;
+    }
+
+    .nav a {
+      text-decoration-color: transparent;
+    }
+
+    .nav a:hover {
+      text-decoration-color: currentColor;
+    }
+
+    main {
+      padding: clamp(44px, 7vw, 112px) clamp(22px, 4vw, 70px) clamp(30px, 4.5vw, 74px);
+    }
+
+    .hero {
+      display: grid;
+      grid-template-columns: minmax(0, 1.05fr) minmax(260px, .42fr);
+      gap: clamp(34px, 5vw, 80px);
+      align-items: start;
+      max-width: 1240px;
+    }
+
+    .eyebrow {
+      display: inline-flex;
+      align-items: center;
+      gap: .7rem;
+      margin: 0 0 clamp(22px, 3vw, 42px);
+      color: var(--muted);
+      font-family: var(--font-mono);
+      font-size: .72rem;
+      letter-spacing: .11em;
+      line-height: 1.4;
+      text-transform: uppercase;
+    }
+
+    .eyebrow::after {
+      content: "";
+      width: min(18vw, 170px);
+      height: 1px;
+      background: var(--hairline);
+    }
+
+    h1 {
+      max-width: 920px;
+      margin: 0;
+      font-family: var(--font-serif);
+      font-size: clamp(3.5rem, 10.8vw, 11.2rem);
+      font-weight: 520;
+      letter-spacing: -.075em;
+      line-height: .84;
+    }
+
+    .h1-tight {
+      letter-spacing: -.088em;
+    }
+
+    .lede-row {
+      display: grid;
+      grid-template-columns: minmax(0, 520px) minmax(180px, 250px);
+      gap: clamp(24px, 4vw, 56px);
+      align-items: start;
+      margin-top: clamp(24px, 4vw, 58px);
+    }
+
+    .lede {
+      margin: 0;
+      color: var(--ink);
+      font-family: var(--font-serif);
+      font-size: clamp(1.32rem, 2.4vw, 2.35rem);
+      line-height: 1.1;
+      letter-spacing: -.035em;
+    }
+
+    .microbio {
+      margin: .25rem 0 0;
+      color: var(--muted);
+      font-size: clamp(.98rem, 1.1vw, 1.08rem);
+      line-height: 1.65;
+    }
+
+    .microbio a {
+      color: var(--ink);
+    }
+
+    .margin-note {
+      position: relative;
+      margin: .2rem 0 0;
+      padding: 1.1rem 1rem 1rem;
+      border: 1px solid var(--hairline);
+      color: var(--muted);
+      font-family: var(--font-note);
+      font-size: clamp(.98rem, 1.45vw, 1.22rem);
+      line-height: 1.32;
+      transform: rotate(-1.2deg);
+      background: #fffaf1;
+    }
+
+    .margin-note::before {
+      content: "today";
+      position: absolute;
+      left: .85rem;
+      top: -.72rem;
+      padding: .12rem .34rem;
+      background: var(--paper-raised);
+      color: var(--accent-dark);
+      font-family: var(--font-mono);
+      font-size: .58rem;
+      letter-spacing: .16em;
+      text-transform: uppercase;
+    }
+
+    .today {
+      border-top: 1px solid var(--hairline);
+      margin-top: clamp(44px, 7vw, 110px);
+      padding-top: clamp(28px, 4vw, 56px);
+      display: grid;
+      grid-template-columns: minmax(0, .56fr) minmax(0, .44fr);
+      gap: clamp(26px, 5vw, 72px);
+      max-width: 1180px;
+    }
+
+    .section-label {
+      margin: 0 0 1.1rem;
+      font-family: var(--font-mono);
+      color: var(--muted);
+      font-size: .72rem;
+      letter-spacing: .11em;
+      line-height: 1.35;
+      text-transform: uppercase;
+    }
+
+    .today-copy {
+      margin: 0;
+      max-width: 640px;
+      color: var(--ink);
+      font-family: var(--font-serif);
+      font-size: clamp(1.65rem, 3.2vw, 3.4rem);
+      line-height: 1.02;
+      letter-spacing: -.055em;
+    }
+
+    .today-copy em {
+      color: var(--accent-dark);
+      font-style: italic;
+      font-weight: 520;
+    }
+
+    .signal-board {
+      display: grid;
+      gap: .7rem;
+      margin-top: .15rem;
+      padding: 0;
+      list-style: none;
+    }
+
+    .signal-board li {
+      display: grid;
+      grid-template-columns: 3.2rem minmax(0, 1fr);
+      gap: 1rem;
+      align-items: start;
+      min-height: 4.2rem;
+      padding: .9rem 0;
+      border-bottom: 1px solid var(--hairline);
+      color: var(--muted);
+      line-height: 1.45;
+    }
+
+    .signal-board li:first-child {
+      border-top: 1px solid var(--hairline);
+    }
+
+    .signal-board strong {
+      color: var(--ink);
+      font-family: var(--font-mono);
+      font-size: .68rem;
+      font-weight: 700;
+      letter-spacing: .08em;
+      line-height: 1.35;
+      text-transform: uppercase;
+    }
+
+    .writing {
+      position: relative;
+      margin-top: clamp(54px, 9vw, 136px);
+      display: grid;
+      grid-template-columns: minmax(190px, .28fr) minmax(0, .72fr);
+      gap: clamp(30px, 5vw, 74px);
+      max-width: 1140px;
+    }
+
+    .writing-intro {
+      position: sticky;
+      top: 2rem;
+      align-self: start;
+    }
+
+    .writing-intro p {
+      margin: 0;
+      color: var(--muted);
+      font-size: .98rem;
+      line-height: 1.55;
+    }
+
+    .scribble {
+      display: inline-block;
+      margin-top: 1.2rem;
+      color: var(--blue);
+      font-family: var(--font-note);
+      font-size: 1.04rem;
+      line-height: 1.25;
+      transform: rotate(-2deg);
+    }
+
+    .writing-list {
+      margin: 0;
+      padding: 0;
+      list-style: none;
+      border-top: 1px solid var(--ink);
+    }
+
+    .writing-list li {
+      position: relative;
+      border-bottom: 1px solid var(--hairline);
+    }
+
+    .writing-list a {
+      display: grid;
+      grid-template-columns: minmax(0, 1fr) auto;
+      gap: 1rem;
+      align-items: baseline;
+      padding: clamp(16px, 2.4vw, 26px) 0;
+      text-decoration: none;
+    }
+
+    .writing-list a::before {
+      content: "";
+      position: absolute;
+      left: -.75rem;
+      top: 50%;
+      width: .32rem;
+      height: .32rem;
+      border-radius: 50%;
+      background: var(--accent);
+      opacity: 0;
+      transform: translateY(-50%) scale(.4);
+      transition: opacity .18s ease, transform .18s ease;
+    }
+
+    .writing-list a:hover::before {
+      opacity: 1;
+      transform: translateY(-50%) scale(1);
+    }
+
+    .writing-title {
+      font-family: var(--font-serif);
+      font-size: clamp(1.45rem, 2.4vw, 2.65rem);
+      letter-spacing: -.045em;
+      line-height: 1;
+    }
+
+    .writing-meta {
+      color: var(--muted);
+      font-family: var(--font-mono);
+      font-size: .7rem;
+      letter-spacing: .08em;
+      text-transform: uppercase;
+      white-space: nowrap;
+    }
+
+    .quote-strip {
+      display: grid;
+      grid-template-columns: repeat(3, minmax(0, 1fr));
+      gap: 1px;
+      margin-top: clamp(50px, 8vw, 120px);
+      background: var(--hairline);
+      border: 1px solid var(--hairline);
+      max-width: 1180px;
+    }
+
+    .quote-strip a {
+      display: flex;
+      min-height: clamp(130px, 16vw, 220px);
+      padding: clamp(18px, 2.6vw, 32px);
+      background: var(--paper-raised);
+      text-decoration: none;
+      color: var(--ink);
+    }
+
+    .quote-strip a:nth-child(2) {
+      background: #fff9ed;
+    }
+
+    .quote-strip a:hover {
+      color: var(--ink);
+      background: #fff4e7;
+    }
+
+    .quote-strip blockquote {
+      display: flex;
+      flex-direction: column;
+      justify-content: space-between;
+      gap: 1.5rem;
+      margin: 0;
+      width: 100%;
+    }
+
+    .quote-strip p {
+      margin: 0;
+      font-family: var(--font-serif);
+      font-size: clamp(1.35rem, 2vw, 2.35rem);
+      letter-spacing: -.05em;
+      line-height: .98;
+    }
+
+    .quote-strip cite {
+      color: var(--muted);
+      font-family: var(--font-mono);
+      font-size: .68rem;
+      font-style: normal;
+      letter-spacing: .08em;
+      text-transform: uppercase;
+    }
+
+    .footer {
+      display: grid;
+      grid-template-columns: minmax(0, 1fr) auto;
+      gap: 1rem;
+      align-items: end;
+      margin-top: clamp(48px, 7vw, 110px);
+      padding-top: 1.25rem;
+      border-top: 1px solid var(--hairline);
+      color: var(--muted);
+      font-size: .9rem;
+    }
+
+    .footer p {
+      margin: 0;
+      line-height: 1.5;
+    }
+
+    .footer-links {
+      display: flex;
+      flex-wrap: wrap;
+      justify-content: flex-end;
+      gap: .6rem 1rem;
+      font-family: var(--font-mono);
+      font-size: .7rem;
+      letter-spacing: .08em;
+      text-transform: uppercase;
+    }
+
+    .footer-links a {
+      text-decoration-color: transparent;
+    }
+
+    .footer-links a:hover {
+      text-decoration-color: currentColor;
+    }
+
+    .rule-note {
+      position: absolute;
+      right: clamp(20px, 4vw, 70px);
+      top: clamp(72px, 8vw, 120px);
+      color: var(--green);
+      font-family: var(--font-note);
+      font-size: clamp(.92rem, 1.25vw, 1.18rem);
+      line-height: 1.22;
+      max-width: 13rem;
+      transform: rotate(3deg);
+    }
+
+    .rule-note::after {
+      content: "";
+      display: block;
+      width: 4.6rem;
+      height: 1px;
+      margin-top: .55rem;
+      background: currentColor;
+      transform: rotate(-8deg);
+      transform-origin: left center;
+    }
+
+    .print-mark {
+      position: absolute;
+      right: clamp(20px, 4vw, 70px);
+      bottom: clamp(20px, 4vw, 70px);
+      color: rgba(102, 92, 81, .32);
+      font-family: var(--font-mono);
+      font-size: .66rem;
+      letter-spacing: .16em;
+      text-transform: uppercase;
+      writing-mode: vertical-rl;
+    }
+
+    @media (prefers-color-scheme: dark) {
+      :root {
+        color-scheme: dark;
+        --paper: #1a1714;
+        --paper-raised: #221e1a;
+        --ink: #e8e4dc;
+        --muted: #a69a8a;
+        --faint: #665c51;
+        --hairline: #3a342c;
+        --shadow: rgba(0, 0, 0, .35);
+      }
+
+      .margin-note {
+        background: #2a261e;
+      }
+
+      .quote-strip a:nth-child(2) {
+        background: #2a281e;
+      }
+
+      .quote-strip a:hover {
+        background: #322e22;
+      }
+
+      .sheet::before {
+        background: #4a3a32;
+      }
+
+      .sheet::after {
+        border-color: rgba(58, 52, 44, .55);
+      }
+    }
+
+    @media (prefers-reduced-motion: reduce) {
+      *,
+      *::before,
+      *::after {
+        animation-duration: .001ms !important;
+        animation-iteration-count: 1 !important;
+        scroll-behavior: auto !important;
+        transition-duration: .001ms !important;
+      }
+    }
+
+    @media (max-width: 1060px) {
+      .hero,
+      .today,
+      .writing {
+        grid-template-columns: 1fr;
+      }
+
+      .lede-row {
+        grid-template-columns: minmax(0, 1fr);
+      }
+
+      .margin-note {
+        max-width: 420px;
+      }
+
+      .writing-intro {
+        position: static;
+        max-width: 500px;
+      }
+
+      .rule-note {
+        display: none;
+      }
+    }
+
+    @media (max-width: 760px) {
+      .page {
+        padding: 0;
+      }
+
+      .sheet {
+        min-height: 100vh;
+        border-width: 0;
+        box-shadow: none;
+      }
+
+      .sheet::before {
+        left: 16px;
+      }
+
+      .sheet::after {
+        inset: 12px;
+      }
+
+      .topbar {
+        align-items: flex-start;
+        flex-direction: column;
+      }
+
+      .nav {
+        justify-content: flex-start;
+      }
+
+      main {
+        padding-top: 56px;
+      }
+
+      h1 {
+        font-size: clamp(4rem, 19vw, 7rem);
+      }
+
+      .writing-list a {
+        grid-template-columns: 1fr;
+        gap: .55rem;
+      }
+
+      .writing-meta {
+        white-space: normal;
+      }
+
+      .quote-strip {
+        grid-template-columns: 1fr;
+      }
+
+      .quote-strip a {
+        min-height: 132px;
+      }
+
+      .footer {
+        grid-template-columns: 1fr;
+      }
+
+      .footer-links {
+        justify-content: flex-start;
+      }
+
+      .print-mark {
+        display: none;
+      }
+    }
+
+    @media (max-width: 470px) {
+      .topbar,
+      main {
+        padding-left: 24px;
+        padding-right: 24px;
+      }
+
+      .eyebrow::after {
+        width: 4.4rem;
+      }
+
+      .signal-board li {
+        grid-template-columns: 1fr;
+        gap: .35rem;
+      }
+
+      .quote-strip p {
+        font-size: 1.55rem;
+      }
+    }
+  </style>
+
+<style id="__living_site_scroll_guard">
+  /* Scroll guard injected at build time to ensure generated pages remain scrollable in iframes. */
+  html, body {
+    height: auto !important;
+    min-height: 100% !important;
+    max-height: none !important;
+    overflow-y: auto !important;
+    overflow-x: hidden !important;
+    position: static !important;
+    -webkit-overflow-scrolling: touch !important;
+    touch-action: pan-y !important;
+    overscroll-behavior-y: contain !important;
+  }
+  /* Avoid accidental fixed full-screen traps that break scrolling on mobile. */
+  body {
+    inset: auto !important;
+  }
+</style>
+</head>
+<body>
+  <a class="skip" href="#content">Skip to content</a>
+
+  <div class="page">
+    <div class="sheet">
+      <div class="rule-note" aria-hidden="true">keep the page spare, but let it think out loud</div>
+      <div class="print-mark" aria-hidden="true">eriks.design / autumn edition</div>
+
+      <header class="topbar" aria-label="Site header">
+        <a class="site-mark" href="https://eriks.design" aria-label="eriks.design home">eriks.design</a>
+        <nav class="nav" aria-label="Primary links">
+          <a href="https://cursor.com">Cursor</a>
+          <a href="https://x.com/flowstated">X</a>
+          <a href="https://github.com/eriknson">GitHub</a>
+          <a href="mailto:contact@eriks.design">Email</a>
+        </nav>
+      </header>
+
+      <main id="content">
+        <section class="hero" aria-labelledby="intro-title">
+          <div>
+            <p class="eyebrow">Erik Nilsson / Product Designer / San Francisco</p>
+            <h1 id="intro-title"><span class="h1-tight">Designing</span> software that helps people think.</h1>
+
+            <div class="lede-row">
+              <p class="lede">Product designer at Cursor, working on how people build software with AI.</p>
+              <p class="microbio">
+                Off hours, Erik keeps this living site in motion: agents rebuild a corner of the web from fresh activity data each day.
+              </p>
+            </div>
+          </div>
+
+          <aside class="margin-note" aria-label="Today note">
+            Clear autumn night over San Francisco. Ten degrees, still air, a notebook page rebuilt by agents.
+          </aside>
+        </section>
+
+        <section class="today" aria-labelledby="today-title">
+          <div>
+            <p class="section-label" id="today-title">Today / October 25, 2026</p>
+            <p class="today-copy">
+              A quiet page for a dormant week: no noise, just a few <em>signals</em> taped to the desk.
+            </p>
+          </div>
+
+          <ul class="signal-board" aria-label="Signals from today's brief">
+            <li>
+              <strong>01</strong>
+              <span>Open-source wizards rebuilding a classic turn-based strategy engine from scratch.</span>
+            </li>
+            <li>
+              <strong>02</strong>
+              <span>Living room screens running tiny vision models frame by frame.</span>
+            </li>
+            <li>
+              <strong>03</strong>
+              <span>DNS switches waiting on the edge of the internet.</span>
+            </li>
+            <li>
+              <strong>04</strong>
+              <span>Agents spun up from a phone shortcut before sunrise.</span>
+            </li>
+          </ul>
+        </section>
+
+        <section class="writing" aria-labelledby="writing-title">
+          <div class="writing-intro">
+            <p class="section-label" id="writing-title">Writing Index</p>
+            <p>
+              Notes on design tools, agents, interfaces, and the odd mechanics of making a website that keeps rewriting itself.
+            </p>
+            <span class="scribble" aria-hidden="true">small index, real links</span>
+          </div>
+
+          <ol class="writing-list">
+            <li>
+              <a href="https://cursor.com/blog/design-mode">
+                <span class="writing-title">Directing agents visually</span>
+                <span class="writing-meta">Cursor blog / Jun 2026</span>
+              </a>
+            </li>
+            <li>
+              <a href="/posts/a-living-site">
+                <span class="writing-title">A living site</span>
+                <span class="writing-meta">eriks.design / Dec 2025</span>
+              </a>
+            </li>
+            <li>
+              <a href="/posts/surgical-edits">
+                <span class="writing-title">Surgical edits</span>
+                <span class="writing-meta">eriks.design / Nov 2025</span>
+              </a>
+            </li>
+            <li>
+              <a href="/posts/familiar-differentiation">
+                <span class="writing-title">Familiar differentiation</span>
+                <span class="writing-meta">eriks.design / Nov 2024</span>
+              </a>
+            </li>
+            <li>
+              <a href="/posts/hackathon-energy-but-add-users">
+                <span class="writing-title">Hackathon energy, but add users</span>
+                <span class="writing-meta">eriks.design / Oct 2022</span>
+              </a>
+            </li>
+          </ol>
+        </section>
+
+        <section class="quote-strip" aria-label="Recent short notes from X">
+          <a href="https://x.com/flowstated/status/2002167999353241901">
+            <blockquote>
+              <p>imagine 2026</p>
+              <cite>posted Dec 20, 2025</cite>
+            </blockquote>
+          </a>
+          <a href="https://x.com/flowstated/status/2000889983562080578">
+            <blockquote>
+              <p>shipping by sunrise</p>
+              <cite>posted Dec 16, 2025</cite>
+            </blockquote>
+          </a>
+          <a href="https://x.com/flowstated/status/2000691637190861180">
+            <blockquote>
+              <p>iOS shortcuts x GitHub Actions x Cursor CLI</p>
+              <cite>posted Dec 15, 2025</cite>
+            </blockquote>
+          </a>
+        </section>
+
+        <footer class="footer">
+          <p>
+            Erik Nilsson is a product designer at Cursor. GitHub is mostly side projects and experiments.
+          </p>
+          <div class="footer-links" aria-label="Contact links">
+            <a href="https://linkedin.com/in/eriknson">LinkedIn</a>
+            <a href="https://github.com/eriknson">GitHub</a>
+            <a href="mailto:contact@eriks.design">contact@eriks.design</a>
+          </div>
+        </footer>
+      </main>
+    </div>
+  </div>
+</body>
+</html>
