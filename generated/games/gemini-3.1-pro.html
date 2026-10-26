@@ -3,658 +3,575 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
-<title>Autumn Gust</title>
+<title>87% Vegemite</title>
 <style>
-:root {
-  --bg-rgb: 244, 241, 235;
-  --text: #1e2124;
-  --btn-bg: #e76f51;
-  --btn-text: #fff;
-}
-@media (prefers-color-scheme: dark) {
   :root {
-    --bg-rgb: 26, 26, 46;
-    --text: #f4f1eb;
-    --btn-bg: #e63946;
+    --bg: #F4F0EA;
+    --text: #1A1A1A;
+    --toast: #D99B58;
+    --crust: #A66A38;
+    --vegemite: #3A2318;
+    --accent: #E05236;
+    --green: #4CAF50;
+    --gold: #FFC107;
   }
-}
-body, html {
-  margin: 0;
-  padding: 0;
-  width: 100%;
-  height: 100%;
-  overflow: hidden;
-  background-color: rgb(var(--bg-rgb));
-  color: var(--text);
-  font-family: ui-monospace, 'SFMono-Regular', Menlo, monospace;
-  touch-action: none;
-  user-select: none;
-  -webkit-user-select: none;
-}
-canvas {
-  display: block;
-  width: 100dvw;
-  height: 100dvh;
-}
-#uiLayer {
-  position: absolute;
-  top: 0; left: 0; width: 100%; height: 100%;
-  pointer-events: none;
-  display: flex;
-  flex-direction: column;
-  justify-content: center;
-  align-items: center;
-  z-index: 10;
-}
-#titleScreen, #gameOverScreen {
-  pointer-events: none;
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  background: rgba(var(--bg-rgb), 0.85);
-  padding: 2rem;
-  border-radius: 1.5rem;
-  backdrop-filter: blur(8px);
-  -webkit-backdrop-filter: blur(8px);
-  box-shadow: 0 10px 30px rgba(0,0,0,0.1);
-  text-align: center;
-  max-width: 80%;
-}
-h1 {
-  font-size: 2rem;
-  margin: 0 0 0.5rem 0;
-  letter-spacing: 2px;
-}
-h2 {
-  font-size: 2rem;
-  margin: 0 0 0.5rem 0;
-}
-p {
-  opacity: 0.8;
-  margin: 0 0 2rem 0;
-  line-height: 1.4;
-  font-size: 0.9rem;
-}
-button {
-  pointer-events: auto;
-  appearance: none;
-  background: var(--btn-bg);
-  color: var(--btn-text);
-  border: none;
-  padding: 1rem 2.5rem;
-  font-size: 1.2rem;
-  font-family: inherit;
-  font-weight: bold;
-  border-radius: 2rem;
-  cursor: pointer;
-  box-shadow: 0 4px 15px rgba(0,0,0,0.2);
-  transition: transform 0.1s, background 0.2s;
-}
-button:active {
-  transform: scale(0.95);
-}
-#scoreDisplay {
-  position: absolute;
-  top: 3rem;
-  left: 0;
-  width: 100%;
-  text-align: center;
-  font-size: 4rem;
-  font-weight: bold;
-  opacity: 0.15;
-  pointer-events: none;
-  z-index: 5;
-}
+  @media (prefers-color-scheme: dark) {
+    :root {
+      --bg: #1A1A1A;
+      --text: #F4F0EA;
+      --toast: #C4823F;
+      --crust: #8B5226;
+      --vegemite: #2A1810;
+      --accent: #F26D54;
+      --green: #66BB6A;
+      --gold: #FFD54F;
+    }
+  }
+  body, html {
+    margin: 0;
+    padding: 0;
+    width: 100dvw;
+    height: 100dvh;
+    overflow: hidden;
+    background: var(--bg);
+    color: var(--text);
+    font-family: ui-monospace, 'SFMono-Regular', Menlo, monospace;
+    touch-action: none;
+    user-select: none;
+    -webkit-user-select: none;
+  }
+  canvas {
+    display: block;
+    width: 100%;
+    height: 100%;
+  }
+  #ui {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    pointer-events: none;
+  }
+  .hud {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    padding: 20px;
+    box-sizing: border-box;
+    display: flex;
+    justify-content: space-between;
+    font-size: 1.5rem;
+    font-weight: 800;
+    opacity: 0;
+    transition: opacity 0.3s;
+    text-shadow: 0 2px 4px rgba(0,0,0,0.1);
+    pointer-events: none;
+  }
+  .screen {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+    text-align: center;
+    opacity: 0;
+    transition: opacity 0.3s;
+    pointer-events: none;
+  }
+  .screen.active {
+    opacity: 1;
+  }
+  h1 {
+    font-size: 3rem;
+    margin: 0 0 10px 0;
+    letter-spacing: -2px;
+    text-transform: uppercase;
+  }
+  p {
+    font-size: 1.1rem;
+    margin: 0 0 40px 0;
+    opacity: 0.8;
+    max-width: 320px;
+    line-height: 1.4;
+  }
+  button {
+    appearance: none;
+    background: var(--text);
+    color: var(--bg);
+    border: none;
+    padding: 16px 32px;
+    font-size: 1.2rem;
+    font-family: inherit;
+    font-weight: 800;
+    border-radius: 12px;
+    cursor: pointer;
+    pointer-events: auto;
+    box-shadow: 0 8px 24px rgba(0,0,0,0.15);
+    transition: transform 0.1s, box-shadow 0.1s;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+  }
+  button:active {
+    transform: scale(0.95) translateY(4px);
+    box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+  }
+  @keyframes pulse {
+    0% { transform: scale(1); }
+    50% { transform: scale(1.05); }
+    100% { transform: scale(1); }
+  }
+  #startBtn {
+    animation: pulse 2s infinite;
+  }
+  #startBtn:active {
+    animation: none;
+  }
 </style>
 </head>
 <body>
-  <canvas id="gameCanvas"></canvas>
-  <div id="scoreDisplay" style="display:none;">0</div>
-  <div id="uiLayer">
-    <div id="titleScreen">
-      <h1>AUTUMN GUST</h1>
-      <p>Flick colored leaves into matching winds.<br><br>Flick brown leaves off the screen.</p>
-      <button data-smoke="start" id="startBtn">START</button>
+  <canvas id="game"></canvas>
+  <div id="ui">
+    <div class="hud" id="hud">
+      <div id="time">TIME: 15.0</div>
+      <div id="score">SCORE: 0</div>
     </div>
-    <div id="gameOverScreen" style="display:none;">
-      <h2>GAME OVER</h2>
-      <p>Score: <span id="finalScore">0</span></p>
-      <button data-smoke="restart" id="restartBtn">REPLAY</button>
+    
+    <div class="screen active" id="menu">
+      <h1>87% SPREAD</h1>
+      <p>Hold to spread. Release at the golden ratio of 87% coverage.</p>
+      <button data-smoke="start" id="startBtn">START SHIFT</button>
+    </div>
+    
+    <div class="screen" id="gameover">
+      <h1>SHIFT OVER</h1>
+      <p id="finalScore">You served 0 perfect slices.</p>
+      <button data-smoke="restart" id="restartBtn">PLAY AGAIN</button>
     </div>
   </div>
+  
+  <script>
+    (function() {
+        const canvas = document.getElementById('game');
+        const ctx = canvas.getContext('2d');
+        const ui = {
+            menu: document.getElementById('menu'),
+            gameover: document.getElementById('gameover'),
+            hud: document.getElementById('hud'),
+            time: document.getElementById('time'),
+            score: document.getElementById('score'),
+            finalScore: document.getElementById('finalScore'),
+            startBtn: document.getElementById('startBtn'),
+            restartBtn: document.getElementById('restartBtn')
+        };
 
-<script>
-const canvas = document.getElementById('gameCanvas');
-const ctx = canvas.getContext('2d', { alpha: false });
-const scoreDisplay = document.getElementById('scoreDisplay');
-const titleScreen = document.getElementById('titleScreen');
-const gameOverScreen = document.getElementById('gameOverScreen');
-const finalScoreEl = document.getElementById('finalScore');
-
-let isDark = window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches;
-window.matchMedia('(prefers-color-scheme: dark)').addEventListener('change', e => {
-    isDark = e.matches;
-});
-
-const PALETTE = {
-    red: '#e63946',
-    yellow: '#f4a261',
-    orange: '#e76f51',
-    brown: '#6f4e37'
-};
-
-let state = 'TITLE'; // TITLE, PLAYING, GAMEOVER
-let score = 0;
-let time = 0;
-let lastTime = performance.now();
-let shakeTime = 0;
-
-let windZones = [];
-let activeLeaf = null;
-let leaves = [];
-let particles = [];
-
-let isDragging = false;
-let dragHistory = [];
-
-let audioCtx;
-
-function initAudio() {
-    if (!audioCtx) {
-        const AudioContext = window.AudioContext || window.webkitAudioContext;
-        if (AudioContext) {
-            try { audioCtx = new AudioContext(); } catch(e) {}
+        let width, height;
+        function resize() {
+            width = window.innerWidth;
+            height = window.innerHeight;
+            canvas.width = width * window.devicePixelRatio;
+            canvas.height = height * window.devicePixelRatio;
+            ctx.scale(window.devicePixelRatio, window.devicePixelRatio);
         }
-    }
-}
+        window.addEventListener('resize', resize);
+        resize();
 
-function playSound(type) {
-    if (!audioCtx) return;
-    if (audioCtx.state === 'suspended') audioCtx.resume();
-    try {
-        const osc = audioCtx.createOscillator();
-        const gain = audioCtx.createGain();
-        osc.connect(gain);
-        gain.connect(audioCtx.destination);
-        
-        if (type === 'score') {
-            osc.type = 'sine';
-            osc.frequency.setValueAtTime(400 + Math.random()*200, audioCtx.currentTime);
-            osc.frequency.exponentialRampToValueAtTime(800, audioCtx.currentTime + 0.1);
-            gain.gain.setValueAtTime(0.1, audioCtx.currentTime);
-            gain.gain.exponentialRampToValueAtTime(0.01, audioCtx.currentTime + 0.1);
-            osc.start();
-            osc.stop(audioCtx.currentTime + 0.1);
-        } else if (type === 'over') {
-            osc.type = 'sawtooth';
-            osc.frequency.setValueAtTime(150, audioCtx.currentTime);
-            osc.frequency.exponentialRampToValueAtTime(50, audioCtx.currentTime + 0.3);
-            gain.gain.setValueAtTime(0.2, audioCtx.currentTime);
-            gain.gain.exponentialRampToValueAtTime(0.01, audioCtx.currentTime + 0.3);
-            osc.start();
-            osc.stop(audioCtx.currentTime + 0.3);
+        let colors = {};
+        function updateColors() {
+            const style = getComputedStyle(document.body);
+            colors.bg = style.getPropertyValue('--bg').trim() || '#F4F0EA';
+            colors.text = style.getPropertyValue('--text').trim() || '#1A1A1A';
+            colors.toast = style.getPropertyValue('--toast').trim() || '#D99B58';
+            colors.crust = style.getPropertyValue('--crust').trim() || '#A66A38';
+            colors.vegemite = style.getPropertyValue('--vegemite').trim() || '#3A2318';
+            colors.accent = style.getPropertyValue('--accent').trim() || '#E05236';
+            colors.green = style.getPropertyValue('--green').trim() || '#4CAF50';
+            colors.gold = style.getPropertyValue('--gold').trim() || '#FFC107';
         }
-    } catch(e) {}
-}
+        window.matchMedia('(prefers-color-scheme: dark)').addEventListener('change', updateColors);
+        updateColors();
 
-function vibrate(ms) {
-    if (navigator.vibrate) {
-        try { navigator.vibrate(ms); } catch(e) {}
-    }
-}
+        let state = 'MENU';
+        let lastTime = 0;
+        let time = 0;
 
-function resize() {
-    canvas.width = window.innerWidth;
-    canvas.height = window.innerHeight;
-}
-window.addEventListener('resize', resize);
-resize();
+        let score = 0;
+        let timeLeft = 15.0;
+        let perfects = 0;
 
-function spawnLeaf() {
-    let color;
-    if (Math.random() < Math.min(0.1 + score * 0.01, 0.35)) {
-        color = PALETTE.brown;
-    } else {
-        const c = [PALETTE.red, PALETTE.yellow, PALETTE.orange];
-        color = c[Math.floor(Math.random() * c.length)];
-    }
-    
-    activeLeaf = {
-        x: canvas.width / 2,
-        y: canvas.height * 0.85,
-        vx: 0,
-        vy: 0,
-        color: color,
-        state: 'idle',
-        rotation: Math.random() * Math.PI * 2,
-        scale: 0
-    };
-}
+        let isHolding = false;
+        let spreadFactor = 0;
+        let toastRotation = 0;
+        let toastX = 0;
 
-function createParticles(x, y, color) {
-    for (let i=0; i<15; i++) {
-        particles.push({
-            x: x + (Math.random() - 0.5) * 40,
-            y: y + (Math.random() - 0.5) * 40,
-            vx: (Math.random() - 0.5) * 200,
-            vy: -100 - Math.random() * 200,
-            size: 2 + Math.random() * 4,
-            color: color,
-            life: 0.5 + Math.random() * 0.5
-        });
-    }
-}
+        let pressureScale = 1.0;
+        let flashAlpha = 0;
+        let shakeX = 0;
+        let shakeY = 0;
+        let evalTimer = 0;
 
-function updateScore() {
-    scoreDisplay.innerText = score;
-}
+        let particles = [];
 
-function gameOver() {
-    if (state === 'GAMEOVER') return;
-    state = 'GAMEOVER';
-    shakeTime = 0.3;
-    gameOverScreen.style.display = 'flex';
-    finalScoreEl.innerText = score;
-    scoreDisplay.style.display = 'none';
-    vibrate([50, 50, 100]);
-    playSound('over');
-}
+        function spawnText(text, color, yOffset, size = 30) {
+            particles.push({
+                text, color, yOffset, size,
+                life: 1.0,
+                maxLife: 1.0
+            });
+        }
 
-function startGame() {
-    initAudio();
-    state = 'PLAYING';
-    score = 0;
-    updateScore();
-    titleScreen.style.display = 'none';
-    gameOverScreen.style.display = 'none';
-    scoreDisplay.style.display = 'block';
-    
-    time = 0;
-    particles = [];
-    leaves = [];
-    
-    let c = [PALETTE.red, PALETTE.yellow, PALETTE.orange];
-    c.sort(() => Math.random() - 0.5);
-    windZones = [
-        { color: c[0], baseX: 0.2 },
-        { color: c[1], baseX: 0.5 },
-        { color: c[2], baseX: 0.8 }
-    ];
-    
-    spawnLeaf();
-    lastTime = performance.now();
-}
-
-document.getElementById('startBtn').addEventListener('click', startGame);
-document.getElementById('restartBtn').addEventListener('click', startGame);
-
-function getPos(e) {
-    if (e.touches && e.touches.length > 0) {
-        return { x: e.touches[0].clientX, y: e.touches[0].clientY };
-    }
-    return { x: e.clientX, y: e.clientY };
-}
-
-function handleStart(e) {
-    if (state !== 'PLAYING' || !activeLeaf || activeLeaf.state !== 'idle') return;
-    const pos = getPos(e);
-    const dist = Math.hypot(pos.x - activeLeaf.x, pos.y - activeLeaf.y);
-    if (dist < 100) {
-        if (e.cancelable) e.preventDefault();
-        isDragging = true;
-        activeLeaf.state = 'dragged';
-        dragHistory = [{x: pos.x, y: pos.y, t: performance.now()}];
-    }
-}
-
-function handleMove(e) {
-    if (!isDragging || !activeLeaf) return;
-    if (e.cancelable) e.preventDefault();
-    const pos = getPos(e);
-    activeLeaf.x = pos.x;
-    activeLeaf.y = pos.y;
-    dragHistory.push({x: pos.x, y: pos.y, t: performance.now()});
-    if (dragHistory.length > 10) dragHistory.shift();
-}
-
-function handleEnd(e) {
-    if (!isDragging || !activeLeaf) return;
-    if (e.cancelable) e.preventDefault();
-    isDragging = false;
-    
-    if (dragHistory.length >= 2) {
-        const now = performance.now();
-        let pastPoint = dragHistory[0];
-        for (let i = dragHistory.length - 1; i >= 0; i--) {
-            if (now - dragHistory[i].t > 50) {
-                pastPoint = dragHistory[i];
-                break;
+        function vibrate(pattern) {
+            if (navigator.vibrate) {
+                try { navigator.vibrate(pattern); } catch(e) {}
             }
         }
-        const last = dragHistory[dragHistory.length - 1];
-        const dt = Math.max((last.t - pastPoint.t) / 1000, 0.016);
-        
-        let vx = (last.x - pastPoint.x) / dt;
-        let vy = (last.y - pastPoint.y) / dt;
-        
-        vx *= 1.2;
-        vy *= 1.2;
-        
-        const maxV = 4000;
-        const speed = Math.hypot(vx, vy);
-        if (speed > maxV) {
-            vx = (vx/speed)*maxV;
-            vy = (vy/speed)*maxV;
-        }
-        
-        if (speed > 200) {
-            activeLeaf.vx = vx;
-            activeLeaf.vy = vy;
-            activeLeaf.state = 'flicked';
-            return;
-        }
-    }
-    
-    activeLeaf.state = 'idle';
-    activeLeaf.x = canvas.width / 2;
-    activeLeaf.y = canvas.height * 0.85;
-}
 
-canvas.addEventListener('touchstart', handleStart, {passive: false});
-canvas.addEventListener('touchmove', handleMove, {passive: false});
-canvas.addEventListener('touchend', handleEnd, {passive: false});
-canvas.addEventListener('mousedown', handleStart);
-canvas.addEventListener('mousemove', handleMove);
-canvas.addEventListener('mouseup', handleEnd);
-
-function update(dt) {
-    if (shakeTime > 0) shakeTime -= dt;
-    
-    const swaySpeed = 2 + score * 0.1;
-    const swayAmplitude = canvas.width * (0.05 + Math.min(score * 0.002, 0.05));
-    const windZoneWidth = canvas.width * Math.max(0.25 - score * 0.002, 0.15);
-    const windZoneBottom = canvas.height * 0.45;
-    
-    if (activeLeaf) {
-        if (activeLeaf.state === 'idle' && activeLeaf.scale < 1) {
-            activeLeaf.scale += 5 * dt;
-            if (activeLeaf.scale > 1) activeLeaf.scale = 1;
+        function getBreadRadius(theta) {
+            const a = 85;
+            const b = 100;
+            const n = 4;
+            const cosT = Math.abs(Math.cos(theta));
+            const sinT = Math.abs(Math.sin(theta));
+            return Math.pow( Math.pow(cosT / a, n) + Math.pow(sinT / b, n), -1/n );
         }
-        
-        if (activeLeaf.state === 'flicked') {
-            activeLeaf.vy += 1500 * dt;
-            activeLeaf.x += activeLeaf.vx * dt;
-            activeLeaf.y += activeLeaf.vy * dt;
-            activeLeaf.rotation += activeLeaf.vx * 0.005 * dt;
+
+        function drawBackground() {
+            ctx.fillStyle = colors.bg;
+            ctx.fillRect(0, 0, width, height);
             
-            if (activeLeaf.y < windZoneBottom && activeLeaf.vy < 0) {
-                let caught = false;
-                for (let i=0; i<windZones.length; i++) {
-                    const zone = windZones[i];
-                    const zx = canvas.width * zone.baseX + Math.sin(time * swaySpeed) * swayAmplitude;
-                    if (Math.abs(activeLeaf.x - zx) < windZoneWidth / 2) {
-                        if (activeLeaf.color === zone.color) {
-                            activeLeaf.state = 'caught';
-                            activeLeaf.caughtZone = zone;
-                            score++;
-                            updateScore();
-                            playSound('score');
-                            vibrate(20);
-                            createParticles(activeLeaf.x, activeLeaf.y, activeLeaf.color);
-                            leaves.push(activeLeaf);
-                            activeLeaf = null;
-                            spawnLeaf();
-                            caught = true;
-                        } else {
-                            activeLeaf.state = 'rejected';
-                            gameOver();
-                        }
-                        break;
-                    }
+            ctx.strokeStyle = colors.text;
+            ctx.globalAlpha = 0.05;
+            ctx.lineWidth = 1;
+            
+            const gridSize = 40;
+            ctx.beginPath();
+            for (let x = 0; x < width; x += gridSize) {
+                ctx.moveTo(x, 0);
+                ctx.lineTo(x, height);
+            }
+            for (let y = 0; y < height; y += gridSize) {
+                ctx.moveTo(0, y);
+                ctx.lineTo(width, y);
+            }
+            ctx.stroke();
+            ctx.globalAlpha = 1.0;
+        }
+
+        function drawBread() {
+            ctx.beginPath();
+            for (let i = 0; i <= 60; i++) {
+                const theta = (i / 60) * Math.PI * 2;
+                const r = getBreadRadius(theta);
+                const x = r * Math.cos(theta);
+                const y = r * Math.sin(theta);
+                if (i === 0) ctx.moveTo(x, y);
+                else ctx.lineTo(x, y);
+            }
+            ctx.closePath();
+            
+            ctx.fillStyle = colors.toast;
+            ctx.fill();
+            
+            ctx.save();
+            ctx.clip();
+            ctx.strokeStyle = 'rgba(255,255,255,0.15)';
+            ctx.lineWidth = 10;
+            ctx.stroke();
+            ctx.restore();
+            
+            ctx.lineWidth = 12;
+            ctx.strokeStyle = colors.crust;
+            ctx.stroke();
+        }
+
+        function drawVegemite(spread, timeSec, wobble, rot) {
+            if (spread <= 0) return;
+            ctx.beginPath();
+            for (let i = 0; i <= 60; i++) {
+                const localTheta = (i / 60) * Math.PI * 2;
+                const worldTheta = localTheta + rot;
+                const baseR = getBreadRadius(localTheta);
+                
+                const noise = Math.sin(worldTheta * 5 + timeSec * 5) * 0.03 + 
+                              Math.sin(worldTheta * 8 - timeSec * 3) * 0.02;
+                              
+                let r = baseR * spread * (1 + noise * wobble);
+                
+                const x = r * Math.cos(localTheta);
+                const y = r * Math.sin(localTheta);
+                if (i === 0) ctx.moveTo(x, y);
+                else ctx.lineTo(x, y);
+            }
+            ctx.closePath();
+            
+            ctx.fillStyle = colors.vegemite;
+            ctx.fill();
+            
+            ctx.save();
+            ctx.clip();
+            ctx.beginPath();
+            ctx.arc(-20, -20, 40, 0, Math.PI * 2);
+            ctx.fillStyle = 'rgba(255,255,255,0.08)';
+            ctx.fill();
+            ctx.restore();
+        }
+
+        function drawScene(x, rot, spread, t, wobble) {
+            ctx.save();
+            ctx.translate(width / 2 + x + shakeX, height / 2 + shakeY);
+            ctx.scale(pressureScale, pressureScale);
+            ctx.rotate(rot);
+            
+            drawBread();
+            drawVegemite(spread, t, wobble, rot);
+            
+            ctx.restore();
+        }
+
+        function drawParticles(dt) {
+            ctx.save();
+            ctx.translate(width / 2, height / 2);
+            ctx.textAlign = 'center';
+            ctx.textBaseline = 'middle';
+            
+            for (let i = particles.length - 1; i >= 0; i--) {
+                let p = particles[i];
+                p.life -= dt;
+                if (p.life <= 0) {
+                    particles.splice(i, 1);
+                    continue;
                 }
+                
+                const t = 1 - (p.life / p.maxLife);
+                const ease = 1 - Math.pow(1 - t, 3);
+                
+                const y = p.yOffset - ease * 30;
+                const alpha = p.life / p.maxLife;
+                
+                ctx.font = `bold ${p.size}px ui-monospace, 'SFMono-Regular', Menlo, monospace`;
+                ctx.fillStyle = p.color;
+                ctx.globalAlpha = alpha;
+                
+                ctx.lineWidth = 6;
+                ctx.strokeStyle = colors.bg;
+                ctx.strokeText(p.text, 0, y);
+                ctx.fillText(p.text, 0, y);
+            }
+            ctx.restore();
+        }
+
+        function handleStart(e) {
+            if (e.target.tagName.toLowerCase() === 'button') return;
+            if (e.type === 'touchstart') e.preventDefault();
+            if (state === 'PLAYING') {
+                isHolding = true;
+                vibrate(10);
+            }
+        }
+        function handleEnd(e) {
+            if (e.target.tagName.toLowerCase() === 'button') return;
+            if (e.type === 'touchend' || e.type === 'touchcancel') e.preventDefault();
+            if (state === 'PLAYING' && isHolding) {
+                isHolding = false;
+                evaluateToast();
+            }
+        }
+
+        window.addEventListener('mousedown', handleStart);
+        window.addEventListener('touchstart', handleStart, {passive: false});
+        window.addEventListener('mouseup', handleEnd);
+        window.addEventListener('touchend', handleEnd, {passive: false});
+        window.addEventListener('touchcancel', handleEnd, {passive: false});
+
+        function startGame() {
+            state = 'PLAYING';
+            score = 0;
+            perfects = 0;
+            timeLeft = 15.0;
+            spreadFactor = 0;
+            toastRotation = 0;
+            toastX = 0;
+            particles = [];
+            
+            ui.menu.classList.remove('active');
+            ui.gameover.classList.remove('active');
+            ui.hud.style.opacity = 1;
+            
+            updateHUD();
+        }
+
+        ui.startBtn.addEventListener('click', (e) => {
+            e.stopPropagation();
+            startGame();
+        });
+        ui.restartBtn.addEventListener('click', (e) => {
+            e.stopPropagation();
+            startGame();
+        });
+
+        function evaluateToast() {
+            state = 'EVALUATING';
+            evalTimer = 1.5;
+            
+            const coverage = Math.round(spreadFactor * spreadFactor * 100);
+            let rating = '';
+            let timeBonus = 0;
+            let color = colors.accent;
+            
+            if (coverage === 87) {
+                rating = 'GOLDEN RATIO!';
+                timeBonus = 5;
+                score += 5;
+                perfects++;
+                color = colors.gold;
+                flashAlpha = 1.0;
+                vibrate([50, 50, 50, 50]);
+                spawnText("*deep sigh*", colors.text, -120, 20);
+            } else if (coverage >= 85 && coverage <= 89) {
+                rating = 'PERFECT!';
+                timeBonus = 3;
+                score += 3;
+                perfects++;
+                color = colors.green;
+                flashAlpha = 0.5;
+                vibrate([30, 50, 30]);
+                spawnText("*sigh*", colors.text, -120, 20);
+            } else if (coverage >= 75 && coverage <= 94) {
+                rating = 'GOOD';
+                timeBonus = 1;
+                score += 1;
+                color = colors.text;
+                vibrate(30);
+            } else if (coverage < 75) {
+                rating = 'TOO BARE';
+                timeBonus = -2;
+                vibrate([50, 50, 50]);
+            } else {
+                rating = 'RUINED';
+                timeBonus = -2;
+                vibrate([50, 50, 50]);
             }
             
-            if (activeLeaf && (activeLeaf.x < -20 || activeLeaf.x > canvas.width + 20)) {
-                if (activeLeaf.color === PALETTE.brown) {
-                    score++;
-                    updateScore();
-                    playSound('score');
-                    vibrate(20);
-                    activeLeaf = null;
-                    spawnLeaf();
-                } else {
+            spawnText(`${coverage}%`, color, -40, 48);
+            spawnText(rating, color, 10, 28);
+            if (timeBonus > 0) {
+                spawnText(`+${timeBonus}s`, color, 50, 24);
+            } else if (timeBonus < 0) {
+                spawnText(`${timeBonus}s`, color, 50, 24);
+            }
+            
+            timeLeft += timeBonus;
+            updateHUD();
+        }
+
+        function updateHUD() {
+            ui.time.innerText = `TIME: ${Math.max(0, timeLeft).toFixed(1)}`;
+            ui.score.innerText = `SCORE: ${score}`;
+        }
+
+        function gameOver() {
+            state = 'GAME_OVER';
+            ui.hud.style.opacity = 0;
+            ui.gameover.classList.add('active');
+            
+            let msg = `You served ${perfects} perfect slices.\nTotal Score: ${score}`;
+            if (perfects === 0) msg = `No perfect slices.\nTotal Score: ${score}`;
+            if (perfects > 5) msg = `Master spreader!\n${perfects} perfect slices.\nTotal Score: ${score}`;
+            
+            ui.finalScore.innerText = msg;
+        }
+
+        function loop(timestamp) {
+            requestAnimationFrame(loop);
+            if (!lastTime) lastTime = timestamp;
+            const dt = Math.min((timestamp - lastTime) / 1000, 0.1);
+            lastTime = timestamp;
+            time += dt;
+            
+            ctx.clearRect(0, 0, width, height);
+            drawBackground();
+            
+            if (state === 'PLAYING') {
+                timeLeft -= dt;
+                if (timeLeft <= 0) {
+                    timeLeft = 0;
                     gameOver();
                 }
+                updateHUD();
+                
+                const difficulty = Math.min(1.0, score / 30);
+                const baseSpeed = 0.4 + difficulty * 0.4;
+                const rotSpeed = 0.5 + difficulty * 1.5;
+                const wobble = 0.5 + difficulty * 1.0;
+                
+                toastRotation += rotSpeed * dt;
+                
+                if (isHolding) {
+                    pressureScale += (0.95 - pressureScale) * 15 * dt;
+                    const currentSpeed = baseSpeed * (1 + 0.5 * Math.sin(time * 5));
+                    spreadFactor += currentSpeed * dt;
+                    
+                    if (spreadFactor > 0.95) {
+                        shakeX = (Math.random() - 0.5) * 8;
+                        shakeY = (Math.random() - 0.5) * 8;
+                    } else {
+                        shakeX = 0;
+                        shakeY = 0;
+                    }
+                    
+                    if (spreadFactor > 1.1) {
+                        isHolding = false;
+                        evaluateToast();
+                    }
+                } else {
+                    pressureScale += (1.0 - pressureScale) * 15 * dt;
+                    shakeX = 0;
+                    shakeY = 0;
+                }
+                
+                toastX += (0 - toastX) * 10 * dt;
+                drawScene(toastX, toastRotation, spreadFactor, time, wobble);
+                
+            } else if (state === 'EVALUATING') {
+                evalTimer -= dt;
+                pressureScale += (1.0 - pressureScale) * 15 * dt;
+                shakeX = 0;
+                shakeY = 0;
+                
+                if (evalTimer > 0.5) {
+                    toastX += (0 - toastX) * 10 * dt;
+                } else {
+                    toastX += (width + 200 - toastX) * 10 * dt;
+                }
+                
+                drawScene(toastX, toastRotation, spreadFactor, time, 0.5);
+                drawParticles(dt);
+                
+                if (evalTimer <= 0) {
+                    state = 'PLAYING';
+                    spreadFactor = 0;
+                    toastRotation = Math.random() * Math.PI * 2;
+                    toastX = -width - 200;
+                    particles = [];
+                }
+            } else if (state === 'MENU' || state === 'GAME_OVER') {
+                toastRotation += 0.2 * dt;
+                drawScene(0, toastRotation, 0, time, 0);
             }
             
-            if (activeLeaf && activeLeaf.y > canvas.height + 50) {
-                gameOver();
+            if (flashAlpha > 0) {
+                ctx.fillStyle = `rgba(255, 255, 255, ${flashAlpha * 0.3})`;
+                ctx.fillRect(0, 0, width, height);
+                flashAlpha -= dt * 2;
             }
         }
-        
-        if (activeLeaf && activeLeaf.state === 'rejected') {
-            activeLeaf.vy += 1500 * dt;
-            activeLeaf.x += activeLeaf.vx * dt;
-            activeLeaf.y += activeLeaf.vy * dt;
-            activeLeaf.rotation += 15 * dt;
-        }
-    }
-    
-    for (let i = leaves.length - 1; i >= 0; i--) {
-        let l = leaves[i];
-        if (l.state === 'caught') {
-            l.vy -= 2500 * dt;
-            l.y += l.vy * dt;
-            const zx = canvas.width * l.caughtZone.baseX + Math.sin(time * swaySpeed) * swayAmplitude;
-            l.x += (zx - l.x) * 5 * dt;
-            l.scale -= 1 * dt;
-            if (l.scale <= 0 || l.y < -50) {
-                leaves.splice(i, 1);
-            }
-        }
-    }
-    
-    for (let i = particles.length - 1; i >= 0; i--) {
-        let p = particles[i];
-        p.x += p.vx * dt;
-        p.y += p.vy * dt;
-        p.life -= dt;
-        if (p.life <= 0) particles.splice(i, 1);
-    }
-}
-
-function drawLeaf(ctx, x, y, rotation, scale, color) {
-    ctx.save();
-    ctx.translate(x, y);
-    ctx.rotate(rotation);
-    ctx.scale(scale, scale);
-    
-    ctx.fillStyle = color;
-    ctx.shadowColor = 'rgba(0,0,0,0.3)';
-    ctx.shadowBlur = 8;
-    ctx.shadowOffsetY = 4;
-    
-    ctx.beginPath();
-    ctx.moveTo(0, -25);
-    ctx.quadraticCurveTo(20, -10, 0, 25);
-    ctx.quadraticCurveTo(-20, -10, 0, -25);
-    ctx.fill();
-    
-    ctx.beginPath();
-    ctx.moveTo(0, -20);
-    ctx.lineTo(0, 25);
-    ctx.strokeStyle = 'rgba(0,0,0,0.2)';
-    ctx.lineWidth = 2;
-    ctx.stroke();
-    
-    ctx.beginPath();
-    ctx.moveTo(0, 25);
-    ctx.lineTo(0, 35);
-    ctx.strokeStyle = color === PALETTE.brown ? '#4a3525' : '#555';
-    ctx.lineWidth = 3;
-    ctx.lineCap = 'round';
-    ctx.stroke();
-    
-    ctx.restore();
-}
-
-function drawWindZone(ctx, x, width, height, color, t) {
-    ctx.save();
-    const grad = ctx.createLinearGradient(0, height, 0, 0);
-    grad.addColorStop(0, 'transparent');
-    grad.addColorStop(1, color);
-    
-    ctx.fillStyle = grad;
-    ctx.globalAlpha = 0.15;
-    ctx.fillRect(x - width/2, 0, width, height);
-    
-    ctx.globalAlpha = 0.4;
-    ctx.strokeStyle = color;
-    ctx.lineWidth = 2;
-    ctx.setLineDash([15, 25]);
-    
-    const numLines = 3;
-    for(let i=0; i<numLines; i++) {
-        const lineX = x - width/3 + (width/3)*i;
-        const offset = (t * 100 + i * 50) % 40;
-        ctx.beginPath();
-        ctx.moveTo(lineX, height);
-        ctx.lineTo(lineX, 0);
-        ctx.lineDashOffset = -offset;
-        ctx.stroke();
-    }
-    ctx.restore();
-}
-
-function drawHills(ctx) {
-    ctx.save();
-    ctx.fillStyle = isDark ? '#2a2d31' : '#e3dac9';
-    ctx.shadowColor = 'rgba(0,0,0,0.2)';
-    ctx.shadowBlur = 10;
-    ctx.shadowOffsetY = -5;
-    
-    ctx.beginPath();
-    ctx.moveTo(0, canvas.height);
-    ctx.lineTo(0, canvas.height * 0.75);
-    ctx.quadraticCurveTo(canvas.width * 0.5, canvas.height * 0.65, canvas.width, canvas.height * 0.8);
-    ctx.lineTo(canvas.width, canvas.height);
-    ctx.fill();
-    
-    ctx.fillStyle = isDark ? '#1e2124' : '#d1c4b0';
-    ctx.beginPath();
-    ctx.moveTo(0, canvas.height);
-    ctx.lineTo(0, canvas.height * 0.85);
-    ctx.quadraticCurveTo(canvas.width * 0.4, canvas.height * 0.75, canvas.width, canvas.height * 0.9);
-    ctx.lineTo(canvas.width, canvas.height);
-    ctx.fill();
-    ctx.restore();
-}
-
-function drawFog(ctx, t) {
-    ctx.save();
-    ctx.fillStyle = isDark ? 'rgba(255,255,255,0.03)' : 'rgba(255,255,255,0.3)';
-    ctx.beginPath();
-    for(let i=0; i<=canvas.width; i+=50) {
-        const y = canvas.height * 0.5 + Math.sin(t * 2 + i * 0.01) * 30;
-        if (i===0) ctx.moveTo(i, y);
-        else ctx.lineTo(i, y);
-    }
-    ctx.lineTo(canvas.width, canvas.height);
-    ctx.lineTo(0, canvas.height);
-    ctx.fill();
-    ctx.restore();
-}
-
-function drawPile(ctx) {
-    ctx.save();
-    ctx.translate(canvas.width / 2, canvas.height * 0.95);
-    const pileColors = [PALETTE.red, PALETTE.yellow, PALETTE.orange, PALETTE.brown];
-    for(let i=0; i<5; i++) {
-        const x = Math.sin(i * 123) * 40;
-        const y = Math.cos(i * 321) * 20;
-        const rot = Math.sin(i * 456) * Math.PI;
-        const color = pileColors[i % pileColors.length];
-        drawLeaf(ctx, x, y, rot, 0.6, color);
-    }
-    ctx.restore();
-}
-
-function draw() {
-    ctx.save();
-    
-    const bgGrad = ctx.createLinearGradient(0, 0, 0, canvas.height);
-    if (isDark) {
-        bgGrad.addColorStop(0, '#1a1a2e');
-        bgGrad.addColorStop(1, '#16213e');
-    } else {
-        bgGrad.addColorStop(0, '#f4f1eb');
-        bgGrad.addColorStop(1, '#e2dcd3');
-    }
-    ctx.fillStyle = bgGrad;
-    ctx.fillRect(0, 0, canvas.width, canvas.height);
-    
-    if (shakeTime > 0) {
-        const mag = shakeTime * 30;
-        ctx.translate((Math.random()-0.5)*mag, (Math.random()-0.5)*mag);
-    }
-    
-    if (state === 'PLAYING' || state === 'GAMEOVER') {
-        const swaySpeed = 2 + score * 0.1;
-        const swayAmplitude = canvas.width * (0.05 + Math.min(score * 0.002, 0.05));
-        const windZoneWidth = canvas.width * Math.max(0.25 - score * 0.002, 0.15);
-        const windZoneBottom = canvas.height * 0.45;
-        
-        for (let i=0; i<windZones.length; i++) {
-            const zone = windZones[i];
-            const zx = canvas.width * zone.baseX + Math.sin(time * swaySpeed) * swayAmplitude;
-            drawWindZone(ctx, zx, windZoneWidth, windZoneBottom, zone.color, time + i*10);
-        }
-    }
-    
-    drawHills(ctx);
-    drawFog(ctx, time);
-    drawPile(ctx);
-    
-    for (let p of particles) {
-        ctx.fillStyle = p.color;
-        ctx.globalAlpha = p.life;
-        ctx.beginPath();
-        ctx.arc(p.x, p.y, p.size, 0, Math.PI*2);
-        ctx.fill();
-    }
-    ctx.globalAlpha = 1;
-    
-    for (let l of leaves) {
-        drawLeaf(ctx, l.x, l.y, l.rotation, l.scale, l.color);
-    }
-    
-    if (activeLeaf) {
-        drawLeaf(ctx, activeLeaf.x, activeLeaf.y, activeLeaf.rotation, activeLeaf.scale, activeLeaf.color);
-        
-        if (activeLeaf.color === PALETTE.brown && activeLeaf.state === 'idle') {
-            ctx.fillStyle = isDark ? '#fff' : '#000';
-            ctx.globalAlpha = 0.5 + Math.sin(time * 5) * 0.2;
-            ctx.font = '16px ui-monospace, monospace';
-            ctx.textAlign = 'center';
-            ctx.fillText('FLICK AWAY', activeLeaf.x, activeLeaf.y - 60);
-            ctx.globalAlpha = 1;
-        }
-    }
-    
-    ctx.restore();
-}
-
-function loop(now) {
-    requestAnimationFrame(loop);
-    const dt = Math.min((now - lastTime) / 1000, 0.1);
-    lastTime = now;
-    time += dt;
-    
-    update(dt);
-    draw();
-}
-
-requestAnimationFrame(loop);
-</script>
+        requestAnimationFrame(loop);
+    })();
+  </script>
 </body>
 </html>

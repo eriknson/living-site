@@ -1,0 +1,572 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Clean Merge Window</title>
+<style>
+:root{
+  --bg:#111613;
+  --panel:#172019;
+  --panel2:#202820;
+  --ink:#edf6eb;
+  --muted:#9eaa9c;
+  --line:#334137;
+  --green:#72f29a;
+  --green2:#0f9f5c;
+  --amber:#f0b74b;
+  --red:#ff665d;
+  --shadow:rgba(0,0,0,.36);
+}
+@media (prefers-color-scheme: dark){
+  :root{
+    --bg:#111613;
+    --panel:#172019;
+    --panel2:#202820;
+    --ink:#edf6eb;
+    --muted:#9eaa9c;
+    --line:#334137;
+    --green:#72f29a;
+    --green2:#0f9f5c;
+    --amber:#f0b74b;
+    --red:#ff665d;
+    --shadow:rgba(0,0,0,.36);
+  }
+}
+@media (prefers-color-scheme: light){
+  :root{
+    --bg:#edf0e8;
+    --panel:#fbfbf2;
+    --panel2:#e0e6d9;
+    --ink:#142018;
+    --muted:#66715f;
+    --line:#b9c3b2;
+    --green:#057a45;
+    --green2:#13a867;
+    --amber:#bd7117;
+    --red:#c9342e;
+    --shadow:rgba(34,45,35,.22);
+  }
+}
+*{box-sizing:border-box}
+html,body{margin:0;width:100%;height:100%;overflow:hidden;background:var(--bg);color:var(--ink)}
+body{min-height:100dvh;font-family:Inter,ui-sans-serif,system-ui,-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif}
+#game{position:relative;width:100dvw;height:100dvh;min-height:100dvh;overflow:hidden;background:
+  radial-gradient(circle at 52% 62%, color-mix(in srgb,var(--green) 12%, transparent), transparent 34%),
+  linear-gradient(180deg,var(--bg),color-mix(in srgb,var(--bg) 86%,#263322));user-select:none}
+canvas{position:absolute;inset:0;width:100%;height:100%;touch-action:none;display:block}
+.hud{position:absolute;inset:env(safe-area-inset-top) 0 auto 0;padding:14px 16px 0;display:flex;gap:10px;justify-content:space-between;align-items:flex-start;pointer-events:none;font:12px/1.2 ui-monospace,"SFMono-Regular",Menlo,monospace;letter-spacing:.05em;text-transform:uppercase}
+.chip{min-width:72px;padding:8px 10px;border:1px solid var(--line);border-radius:14px;background:color-mix(in srgb,var(--panel) 82%,transparent);box-shadow:0 12px 34px var(--shadow);backdrop-filter:blur(10px)}
+.chip b{display:block;margin-top:2px;font-size:18px;letter-spacing:-.04em;color:var(--ink)}
+.chip.conflict b{color:var(--red)}
+.overlay{position:absolute;inset:0;display:grid;place-items:center;padding:24px;pointer-events:none;transition:opacity .28s ease,transform .28s ease}
+.overlay[hidden]{display:none}
+.card{width:min(440px,calc(100dvw - 34px));padding:24px 22px 22px;border:1px solid var(--line);border-radius:28px;background:color-mix(in srgb,var(--panel) 92%,transparent);box-shadow:0 30px 90px var(--shadow);text-align:left}
+.eyebrow{font:12px/1 ui-monospace,"SFMono-Regular",Menlo,monospace;letter-spacing:.14em;text-transform:uppercase;color:var(--green);margin-bottom:12px}
+h1{font-size:clamp(34px,10vw,56px);line-height:.9;margin:0 0 14px;letter-spacing:-.07em}
+p{margin:0 0 18px;color:var(--muted);font-size:16px;line-height:1.45}
+.rules{display:grid;gap:8px;margin:18px 0 22px;font:12px/1.35 ui-monospace,"SFMono-Regular",Menlo,monospace;color:var(--muted)}
+.rules span{padding:9px 10px;border:1px dashed var(--line);border-radius:12px;background:color-mix(in srgb,var(--panel2) 70%,transparent)}
+button{appearance:none;border:0;border-radius:999px;min-height:48px;padding:0 22px;background:var(--green);color:#07140b;font:800 13px/1 ui-monospace,"SFMono-Regular",Menlo,monospace;letter-spacing:.08em;text-transform:uppercase;box-shadow:0 12px 34px color-mix(in srgb,var(--green) 30%,transparent);cursor:pointer;pointer-events:auto}
+button:focus-visible{outline:3px solid var(--amber);outline-offset:4px}
+#over .card{border-color:color-mix(in srgb,var(--red) 34%,var(--line))}
+.statline{display:flex;gap:10px;flex-wrap:wrap;margin:0 0 18px}
+.statline i{font-style:normal;font:12px/1 ui-monospace,"SFMono-Regular",Menlo,monospace;padding:8px 10px;border-radius:999px;background:var(--panel2);color:var(--ink)}
+.hint{position:absolute;left:14px;right:14px;bottom:calc(12px + env(safe-area-inset-bottom));text-align:center;color:var(--muted);font:11px/1.25 ui-monospace,"SFMono-Regular",Menlo,monospace;letter-spacing:.06em;text-transform:uppercase;pointer-events:none}
+#restartBtn{position:absolute;right:16px;bottom:calc(16px + env(safe-area-inset-bottom));z-index:5;background:var(--panel);color:var(--green);border:1px solid var(--green);box-shadow:0 12px 34px var(--shadow)}
+#restartBtn[hidden]{display:none}
+</style>
+</head>
+<body>
+<main id="game" aria-label="Clean Merge Window game">
+  <canvas id="field"></canvas>
+  <section class="hud" aria-live="polite">
+    <div class="chip">Score<b id="score">0</b></div>
+    <div class="chip">Streak<b id="streak">0</b></div>
+    <div class="chip conflict">Conflict<b id="conflict">0%</b></div>
+  </section>
+  <section class="overlay" id="title">
+    <div class="card">
+      <div class="eyebrow">Overcast agent bay · one clean path</div>
+      <h1>Clean Merge Window</h1>
+      <p>Four proposals drift toward a conflict blob. Drag the card with no red flags into the center slot before the merge window closes.</p>
+      <div class="rules">
+        <span>Touch: drag a proposal into the green merge slot.</span>
+        <span>Keyboard: press 1-7 to merge a visible proposal.</span>
+        <span>Trap cards mimic clean diffs. Watch for deleted tests, storage, fetches, or conflict markers.</span>
+      </div>
+      <button data-smoke="start" id="startBtn" type="button">Start Merge</button>
+    </div>
+  </section>
+  <section class="overlay" id="over" hidden>
+    <div class="card">
+      <div class="eyebrow">Conflict blob contained</div>
+      <h1 id="overTitle">Merge Closed</h1>
+      <p id="overCopy">The parallel agents outran the review queue.</p>
+      <div class="statline">
+        <i id="finalScore">Score 0</i>
+        <i id="finalWave">Waves 0</i>
+        <i id="finalBest">Best streak 0</i>
+      </div>
+    </div>
+  </section>
+  <div class="hint">Merge the only all-green diff · avoid red flags</div>
+  <button data-smoke="restart" id="restartBtn" type="button" hidden>Restart Run</button>
+</main>
+<script>
+(() => {
+  "use strict";
+  const $ = (id) => document.getElementById(id);
+  const canvas = $("field");
+  const ctx = canvas && canvas.getContext ? canvas.getContext("2d") : null;
+  const title = $("title"), over = $("over");
+  const scoreEl = $("score"), streakEl = $("streak"), conflictEl = $("conflict");
+  const finalScore = $("finalScore"), finalWave = $("finalWave"), finalBest = $("finalBest");
+  const overTitle = $("overTitle"), overCopy = $("overCopy");
+  const startBtn = $("startBtn"), restartBtn = $("restartBtn");
+  const clamp = (v, a, b) => Math.max(a, Math.min(b, v));
+  const rand = (a, b) => a + Math.random() * (b - a);
+  const pick = (arr) => arr[(Math.random() * arr.length) | 0];
+  let W = 1, H = 1, DPR = 1, state = "title", last = 0;
+  let cards = [], particles = [], floats = [], scan = [];
+  let score = 0, streak = 0, bestStreak = 0, conflict = 0, wave = 0;
+  let waveMs = 5200, waveLeft = 5200, nextWaveDelay = 0, flash = 0, shake = 0;
+  let dragging = null, pointer = {x:0,y:0,dx:0,dy:0};
+  let audio = null;
+  const cleanNames = ["guarded smoke hook","tiny parser fix","green path","viewport polish","surgical null guard","button contract"];
+  const cleanLines = [
+    ["+ real start button","+ restart after game over","+ no runtime IO","tests pass"],
+    ["+ touch-action none","+ keyboard path","+ guarded haptics","0 red flags"],
+    ["+ clean diff","+ small surface","+ no storage","smoke: green"]
+  ];
+  const badDeck = [
+    {name:"almost clean diff", lines:["+ green badge","- smoke restart","+ fast path","red flag"], risk:"deletes hook"},
+    {name:"conflict resolver", lines:["<<<< HEAD","+ keep both paths","====","risk"], risk:"marker"},
+    {name:"telemetry sparkle", lines:["+ network beacon","+ shiny graph","external call","red flag"], risk:"runtime IO"},
+    {name:"sticky settings", lines:["+ browser storage","+ remembers run","persistence","red flag"], risk:"storage"},
+    {name:"silent webgl bet", lines:["+ THREE.Scene()","no fallback","maybe undefined","red flag"], risk:"unguarded"},
+    {name:"test trimmer", lines:["- smoke test","+ ship faster","coverage drops","red flag"], risk:"missing test"},
+    {name:"wide patch", lines:["+ 19 files","+ unrelated refactor","+ hotfix","review risk"], risk:"blast radius"},
+    {name:"decoy green path", lines:["+ pass label","+ no red ink","TODO later","red flag"], risk:"trap"}
+  ];
+  function css(name){
+    return getComputedStyle(document.documentElement).getPropertyValue(name).trim() || "#fff";
+  }
+  function resize(){
+    W = Math.max(1, window.innerWidth || 1);
+    H = Math.max(1, window.innerHeight || 1);
+    DPR = clamp(window.devicePixelRatio || 1, 1, 2);
+    if (canvas) {
+      canvas.width = Math.floor(W * DPR);
+      canvas.height = Math.floor(H * DPR);
+      canvas.style.width = W + "px";
+      canvas.style.height = H + "px";
+    }
+    if (ctx) ctx.setTransform(DPR,0,0,DPR,0,0);
+    layoutCards();
+  }
+  function slot(){
+    const base = Math.min(W * .42, 170);
+    return {
+      x: W * .5,
+      y: H * .53,
+      w: clamp(base - wave * 3.2, 82, 170),
+      h: clamp(94 - wave * 1.8, 58, 94)
+    };
+  }
+  function layoutCards(){
+    if (!cards.length) return;
+    const s = slot();
+    const count = cards.length;
+    const mobile = W < 520;
+    const cw = mobile ? clamp((W - 30) / Math.min(count, 4) - 7, 66, 104) : clamp(W / Math.min(count, 7) - 26, 94, 142);
+    const ch = mobile ? 106 : 118;
+    cards.forEach((c, i) => {
+      const cols = mobile && count > 4 ? Math.ceil(count / 2) : count;
+      const row = mobile && count > 4 ? (i >= cols ? 1 : 0) : 0;
+      const col = mobile && count > 4 ? i % cols : i;
+      const x = (col + .5) * W / cols;
+      const y = H * (mobile ? .19 : .18) + row * (ch + 10);
+      c.w = cw; c.h = ch; c.baseX = x; c.startY = y;
+      if (!c.drag && !c.locked) { c.x = x; c.y = y; }
+      c.targetX = s.x + (i - (count - 1) / 2) * 7;
+      c.targetY = s.y + 14;
+    });
+  }
+  function makeCard(i, clean, count){
+    const c = {
+      id: Math.random().toString(36).slice(2),
+      index:i, clean, age:0, drag:false, locked:false, dead:false,
+      w:100, h:112, x:0, y:0, baseX:0, startY:0, targetX:0, targetY:0,
+      rot: rand(-.035,.035), wobble: rand(0, 6.28),
+      label: clean ? pick(cleanNames) : pick(badDeck).name,
+      lines: [], risk: clean ? "clean" : "risk"
+    };
+    if (clean) c.lines = pick(cleanLines).slice();
+    else {
+      const bad = pick(badDeck);
+      c.label = bad.name; c.lines = bad.lines.slice(); c.risk = bad.risk;
+    }
+    return c;
+  }
+  function spawnWave(){
+    wave += 1;
+    const count = Math.min(7, 4 + Math.floor((wave - 1) / 4));
+    const correct = (Math.random() * count) | 0;
+    cards = [];
+    for (let i = 0; i < count; i++) cards.push(makeCard(i, i === correct, count));
+    waveMs = clamp(5350 - wave * 190, 2450, 5350);
+    waveLeft = waveMs;
+    dragging = null;
+    layoutCards();
+    floatText("review wave " + wave, W * .5, H * .66, css("--muted"));
+  }
+  function resetGame(){
+    score = 0; streak = 0; bestStreak = 0; conflict = 0; wave = 0;
+    particles = []; floats = []; cards = []; flash = 0; shake = 0; nextWaveDelay = 0;
+    updateHud();
+    if (title) title.hidden = true;
+    if (over) over.hidden = true;
+    if (restartBtn) restartBtn.hidden = false;
+    state = "playing";
+    unlockAudio();
+    spawnWave();
+  }
+  function gameOver(reason){
+    state = "over";
+    dragging = null;
+    if (overTitle) overTitle.textContent = score > 1400 ? "Merged Before Sunrise" : "Merge Closed";
+    if (overCopy) overCopy.textContent = reason || "The proposals collapsed into one loud conflict blob.";
+    if (finalScore) finalScore.textContent = "Score " + score;
+    if (finalWave) finalWave.textContent = "Waves " + Math.max(0, wave - 1);
+    if (finalBest) finalBest.textContent = "Best streak " + bestStreak;
+    if (over) over.hidden = false;
+    if (restartBtn) restartBtn.hidden = false;
+  }
+  function updateHud(){
+    if (scoreEl) scoreEl.textContent = String(score);
+    if (streakEl) streakEl.textContent = String(streak);
+    if (conflictEl) conflictEl.textContent = Math.round(conflict) + "%";
+  }
+  function haptic(n){ try { if (navigator.vibrate) navigator.vibrate(n); } catch(e){} }
+  function unlockAudio(){
+    try {
+      const AC = window.AudioContext || window.webkitAudioContext;
+      if (!audio && AC) audio = new AC();
+      if (audio && audio.state === "suspended") audio.resume();
+    } catch(e) { audio = null; }
+  }
+  function beep(freq, dur, type, gain){
+    try {
+      if (!audio) return;
+      const t = audio.currentTime, osc = audio.createOscillator(), g = audio.createGain();
+      osc.type = type || "sine"; osc.frequency.setValueAtTime(freq, t);
+      g.gain.setValueAtTime(0.0001, t);
+      g.gain.exponentialRampToValueAtTime(gain || .045, t + .015);
+      g.gain.exponentialRampToValueAtTime(0.0001, t + dur);
+      osc.connect(g); g.connect(audio.destination); osc.start(t); osc.stop(t + dur + .02);
+    } catch(e){}
+  }
+  function addParticles(x,y,color,n,good){
+    for (let i=0;i<n;i++) particles.push({
+      x,y,vx:rand(-1.8,1.8)*(good?1.3:1),vy:rand(-2.4,1.5),life:rand(.35,.8),max:1,
+      r:rand(2,5),color
+    });
+  }
+  function floatText(text,x,y,color){
+    floats.push({text,x,y,vy:-28,life:1,color:color || css("--ink")});
+  }
+  function attempt(card){
+    if (!card || card.dead || card.locked || state !== "playing") return;
+    card.drag = false;
+    const s = slot();
+    if (card.clean) {
+      card.locked = true;
+      score += Math.round(120 + streak * 24 + waveLeft * .035);
+      streak += 1;
+      bestStreak = Math.max(bestStreak, streak);
+      conflict = Math.max(0, conflict - 9 - streak * .5);
+      addParticles(s.x, s.y, css("--green"), 34, true);
+      floatText("clean merge +" + (100 + streak * 20), s.x, s.y - s.h, css("--green"));
+      beep(520 + streak * 28, .09, "triangle", .06);
+      haptic(18);
+      if (streak % 5 === 0) {
+        flash = .9;
+        score += 160;
+        floatText("shipping by sunrise", W * .5, H * .18, css("--amber"));
+        beep(860, .16, "sine", .055);
+      }
+      nextWaveDelay = 520;
+      updateHud();
+    } else {
+      card.dead = true;
+      conflict = clamp(conflict + 22, 0, 100);
+      streak = 0;
+      shake = .35;
+      addParticles(card.x, card.y, css("--red"), 24, false);
+      floatText(card.risk + " conflict", card.x, card.y - card.h * .55, css("--red"));
+      beep(140, .16, "sawtooth", .04);
+      haptic([35,25,35]);
+      updateHud();
+      if (conflict >= 100) gameOver("A trap proposal hit the merge slot and filled the conflict meter.");
+    }
+  }
+  function failWave(){
+    conflict = clamp(conflict + 19 + wave * .45, 0, 100);
+    streak = 0;
+    shake = .25;
+    addParticles(W*.5, H*.55, css("--red"), 32, false);
+    floatText("window closed", W*.5, H*.48, css("--red"));
+    beep(180, .12, "square", .035);
+    updateHud();
+    if (conflict >= 100) gameOver("The merge window closed and the conflict blob swallowed the queue.");
+    else spawnWave();
+  }
+  function cardAt(x,y){
+    for (let i=cards.length-1;i>=0;i--) {
+      const c = cards[i];
+      if (c.dead || c.locked) continue;
+      if (x >= c.x - c.w/2 && x <= c.x + c.w/2 && y >= c.y - c.h/2 && y <= c.y + c.h/2) return c;
+    }
+    return null;
+  }
+  function inSlot(card){
+    const s = slot();
+    return Math.abs(card.x - s.x) < s.w * .58 && Math.abs(card.y - s.y) < s.h * .58;
+  }
+  function pointerPos(e){
+    const rect = canvas ? canvas.getBoundingClientRect() : {left:0,top:0};
+    return {x:(e.clientX || 0) - rect.left, y:(e.clientY || 0) - rect.top};
+  }
+  function onDown(e){
+    if (e && e.preventDefault) e.preventDefault();
+    unlockAudio();
+    const p = pointerPos(e || {});
+    pointer.x = p.x; pointer.y = p.y;
+    if (state !== "playing") return;
+    const c = cardAt(p.x,p.y);
+    if (c) {
+      dragging = c; c.drag = true;
+      pointer.dx = p.x - c.x; pointer.dy = p.y - c.y;
+    }
+  }
+  function onMove(e){
+    if (e && e.preventDefault) e.preventDefault();
+    const p = pointerPos(e || {});
+    pointer.x = p.x; pointer.y = p.y;
+    if (dragging && state === "playing") {
+      dragging.x = clamp(p.x - pointer.dx, dragging.w/2 + 4, W - dragging.w/2 - 4);
+      dragging.y = clamp(p.y - pointer.dy, dragging.h/2 + 4, H - dragging.h/2 - 4);
+    }
+  }
+  function onUp(e){
+    if (e && e.preventDefault) e.preventDefault();
+    if (dragging && state === "playing") {
+      const c = dragging;
+      dragging = null;
+      if (inSlot(c)) attempt(c);
+      else c.drag = false;
+    }
+  }
+  function onKey(e){
+    if (!e) return;
+    if ((e.key === "Enter" || e.key === " ") && state === "title") { resetGame(); return; }
+    if ((e.key === "Enter" || e.key === " ") && state === "over") { resetGame(); return; }
+    const n = Number(e.key);
+    if (state === "playing" && n >= 1 && n <= cards.length) attempt(cards[n-1]);
+  }
+  function drawBackground(t){
+    if (!ctx) return;
+    ctx.clearRect(0,0,W,H);
+    ctx.fillStyle = css("--bg");
+    ctx.fillRect(0,0,W,H);
+    ctx.save();
+    const sx = shake ? rand(-9,9) * shake : 0, sy = shake ? rand(-7,7) * shake : 0;
+    ctx.translate(sx, sy);
+    const line = css("--line");
+    ctx.strokeStyle = line; ctx.globalAlpha = .35; ctx.lineWidth = 1;
+    const gap = Math.max(24, Math.min(42, W / 9));
+    for (let x = (t*.012)%gap; x < W; x += gap) { ctx.beginPath(); ctx.moveTo(x,0); ctx.lineTo(x,H); ctx.stroke(); }
+    for (let y = (t*.006)%gap; y < H; y += gap) { ctx.beginPath(); ctx.moveTo(0,y); ctx.lineTo(W,y); ctx.stroke(); }
+    ctx.globalAlpha = .9;
+    ctx.strokeStyle = css("--green2");
+    ctx.lineWidth = 1;
+    for (let i=0;i<4;i++){
+      const x = W * (i + 1) / 5;
+      ctx.globalAlpha = .08 + .04*Math.sin(t*.001+i);
+      ctx.beginPath(); ctx.moveTo(x, H*.12); ctx.lineTo(x, H*.9); ctx.stroke();
+    }
+    ctx.globalAlpha = .22;
+    ctx.fillStyle = css("--muted");
+    for (let i=0;i<18;i++){
+      const x = (i*83 + t*.014) % (W+80) - 40;
+      const y = H*.12 + ((i*47)%Math.max(1,H*.74));
+      ctx.fillRect(x, y, 24 + (i%5)*9, 1);
+    }
+    if (flash > 0) {
+      const g = ctx.createLinearGradient(0,0,0,H*.55);
+      g.addColorStop(0, "rgba(240,183,75," + (.30*flash) + ")");
+      g.addColorStop(1, "rgba(240,183,75,0)");
+      ctx.fillStyle = g; ctx.globalAlpha = 1; ctx.fillRect(0,0,W,H*.62);
+    }
+    ctx.restore();
+  }
+  function drawSlot(){
+    if (!ctx) return;
+    const s = slot(), p = clamp(waveLeft / waveMs, 0, 1);
+    ctx.save();
+    ctx.translate(s.x, s.y);
+    ctx.globalAlpha = .18 + .14*Math.sin(performance.now()*.006);
+    ctx.fillStyle = css("--green");
+    ctx.fillRect(-s.w/2, -s.h/2, s.w, s.h);
+    ctx.globalAlpha = 1;
+    ctx.strokeStyle = css("--green"); ctx.lineWidth = 2;
+    const k = 16;
+    [["-","-"],["+","-"],["-","+"],["+","+"]].forEach(pair=>{
+      const ax = pair[0] === "-" ? -s.w/2 : s.w/2, ay = pair[1] === "-" ? -s.h/2 : s.h/2;
+      ctx.beginPath(); ctx.moveTo(ax, ay + (pair[1]==="-"?k:-k)); ctx.lineTo(ax, ay); ctx.lineTo(ax + (pair[0]==="-"?k:-k), ay); ctx.stroke();
+    });
+    ctx.font = "11px ui-monospace, Menlo, monospace"; ctx.textAlign = "center"; ctx.textBaseline = "middle";
+    ctx.fillStyle = css("--green"); ctx.fillText("MERGE SLOT", 0, 0);
+    ctx.globalAlpha = .85;
+    ctx.strokeStyle = p < .28 ? css("--red") : css("--amber");
+    ctx.lineWidth = 4;
+    ctx.beginPath();
+    ctx.arc(0,0,Math.max(s.w,s.h)*.66,-Math.PI/2,-Math.PI/2 + Math.PI*2*p);
+    ctx.stroke();
+    ctx.restore();
+  }
+  function drawBlob(t){
+    if (!ctx) return;
+    const r = 22 + conflict * .44 + Math.sin(t*.006)*3;
+    const x = W*.5, y = H*.78;
+    ctx.save();
+    ctx.translate(x,y);
+    ctx.globalAlpha = .22 + conflict/260;
+    ctx.fillStyle = css("--red");
+    ctx.beginPath();
+    for (let i=0;i<16;i++){
+      const a = i/16*Math.PI*2;
+      const rr = r + Math.sin(a*3 + t*.005)*9;
+      ctx.lineTo(Math.cos(a)*rr, Math.sin(a)*rr*.68);
+    }
+    ctx.closePath(); ctx.fill();
+    ctx.globalAlpha = .9;
+    ctx.font = "10px ui-monospace, Menlo, monospace"; ctx.textAlign = "center"; ctx.fillStyle = css("--ink");
+    ctx.fillText("CONFLICT", 0, 4);
+    ctx.restore();
+  }
+  function roundRect(x,y,w,h,r){
+    ctx.beginPath();
+    ctx.moveTo(x+r,y); ctx.arcTo(x+w,y,x+w,y+h,r); ctx.arcTo(x+w,y+h,x,y+h,r);
+    ctx.arcTo(x,y+h,x,y,r); ctx.arcTo(x,y,x+w,y,r); ctx.closePath();
+  }
+  function drawCard(c, t){
+    if (!ctx || c.dead) return;
+    const good = c.clean, overSlot = c.drag && inSlot(c);
+    ctx.save();
+    ctx.translate(c.x, c.y);
+    ctx.rotate(c.drag ? 0 : c.rot + Math.sin(t*.003 + c.wobble)*.015);
+    ctx.globalAlpha = c.locked ? .18 : 1;
+    ctx.shadowColor = "rgba(0,0,0,.28)"; ctx.shadowBlur = c.drag ? 24 : 12; ctx.shadowOffsetY = c.drag ? 14 : 7;
+    ctx.fillStyle = css("--panel");
+    roundRect(-c.w/2, -c.h/2, c.w, c.h, 14); ctx.fill();
+    ctx.shadowBlur = 0;
+    ctx.strokeStyle = overSlot ? css("--amber") : (good ? css("--green2") : css("--line"));
+    ctx.lineWidth = overSlot ? 3 : 1.5; ctx.stroke();
+    ctx.fillStyle = good ? css("--green") : css("--amber");
+    ctx.globalAlpha = .95;
+    ctx.font = "10px ui-monospace, Menlo, monospace"; ctx.textAlign = "left"; ctx.textBaseline = "top";
+    ctx.fillText("[" + (c.index+1) + "] " + (good ? "PASS" : c.risk.toUpperCase()), -c.w/2 + 10, -c.h/2 + 9);
+    ctx.fillStyle = css("--ink");
+    ctx.font = "700 11px ui-monospace, Menlo, monospace";
+    wrapText(c.label, -c.w/2 + 10, -c.h/2 + 27, c.w - 20, 12, 2);
+    ctx.font = "10px ui-monospace, Menlo, monospace";
+    for (let i=0;i<c.lines.length;i++){
+      const line = c.lines[i], y = -c.h/2 + 56 + i*13;
+      const bad = /-|red|TODO|external|<<<<|risk|undefined|coverage|refactor|storage|network|drops/.test(line);
+      ctx.fillStyle = bad ? css("--red") : css("--green");
+      ctx.fillText(line.slice(0, 18), -c.w/2 + 10, y);
+    }
+    ctx.restore();
+  }
+  function wrapText(text,x,y,max,lineH,maxLines){
+    const words = text.split(" "); let line = "", n = 0;
+    for (let i=0;i<words.length;i++){
+      const test = line ? line + " " + words[i] : words[i];
+      if (ctx.measureText(test).width > max && line) {
+        ctx.fillText(line, x, y + n*lineH); line = words[i]; n++;
+        if (n >= maxLines) return;
+      } else line = test;
+    }
+    if (n < maxLines) ctx.fillText(line, x, y + n*lineH);
+  }
+  function update(dt){
+    if (flash > 0) flash = Math.max(0, flash - dt*1.7);
+    if (shake > 0) shake = Math.max(0, shake - dt*1.9);
+    particles = particles.filter(p => (p.life -= dt) > 0);
+    particles.forEach(p => { p.x += p.vx*60*dt; p.y += p.vy*60*dt; p.vy += 3.2*dt; });
+    floats = floats.filter(f => (f.life -= dt*.82) > 0);
+    floats.forEach(f => { f.y += f.vy*dt; });
+    if (state !== "playing") return;
+    if (nextWaveDelay > 0) {
+      nextWaveDelay -= dt*1000;
+      if (nextWaveDelay <= 0) spawnWave();
+      return;
+    }
+    waveLeft -= dt*1000;
+    const progress = 1 - clamp(waveLeft / waveMs, 0, 1);
+    cards.forEach(c => {
+      if (c.drag || c.locked || c.dead) return;
+      c.age += dt;
+      const ease = progress*progress*(3-2*progress);
+      const squeeze = clamp((progress - .38) / .62, 0, 1);
+      const squeezeEase = squeeze*squeeze*(3-2*squeeze);
+      c.x = c.baseX + (c.targetX - c.baseX) * squeezeEase + Math.sin(c.age*2.3+c.wobble)*6;
+      c.y = c.startY + (c.targetY - c.startY) * ease;
+    });
+    if (waveLeft <= 0) failWave();
+  }
+  function render(t){
+    drawBackground(t || 0);
+    drawSlot();
+    cards.forEach(c => drawCard(c, t || 0));
+    drawBlob(t || 0);
+    if (ctx) {
+      particles.forEach(p => {
+        ctx.globalAlpha = clamp(p.life,0,1); ctx.fillStyle = p.color;
+        ctx.beginPath(); ctx.arc(p.x,p.y,p.r,0,Math.PI*2); ctx.fill();
+      });
+      ctx.globalAlpha = 1;
+      floats.forEach(f => {
+        ctx.globalAlpha = clamp(f.life,0,1);
+        ctx.font = "700 13px ui-monospace, Menlo, monospace"; ctx.textAlign = "center";
+        ctx.fillStyle = f.color; ctx.fillText(f.text, f.x, f.y);
+      });
+      ctx.globalAlpha = 1;
+    }
+  }
+  function loop(t){
+    const dt = Math.min(.033, ((t || 0) - last) / 1000 || .016);
+    last = t || 0;
+    update(dt); render(t || 0);
+    requestAnimationFrame(loop);
+  }
+  if (canvas) {
+    canvas.addEventListener("pointerdown", onDown, {passive:false});
+    canvas.addEventListener("pointermove", onMove, {passive:false});
+    canvas.addEventListener("pointerup", onUp, {passive:false});
+    canvas.addEventListener("pointercancel", onUp, {passive:false});
+  }
+  if (startBtn) startBtn.addEventListener("click", resetGame);
+  if (restartBtn) restartBtn.addEventListener("click", resetGame);
+  window.addEventListener("keydown", onKey);
+  window.addEventListener("resize", resize);
+  resize();
+  scan = Array.from({length:10}, (_,i)=>i);
+  updateHud();
+  requestAnimationFrame(loop);
+})();
+</script>
+</body>
+</html>
