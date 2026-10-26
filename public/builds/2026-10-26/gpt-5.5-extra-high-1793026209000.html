@@ -1,0 +1,707 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Erik Nilsson - Editorial Notebook</title>
+  <meta name="description" content="Erik Nilsson is a product designer at Cursor, working on how people build software with AI.">
+  <style>
+    :root {
+      color-scheme: light;
+      --paper: #fbfaf4;
+      --paper-deep: #f1eee4;
+      --ink: #171614;
+      --ink-soft: #555049;
+      --ink-faint: #8e877b;
+      --rule: #ded7c9;
+      --rule-strong: #bdb4a2;
+      --accent: #ef4d2f;
+      --accent-p3: color(display-p3 0.94 0.28 0.16);
+      --blue: #245cff;
+      --blue-p3: color(display-p3 0.12 0.32 1);
+      --green: #008f68;
+      --green-p3: color(display-p3 0 0.58 0.40);
+      --serif: "Iowan Old Style", "Apple Garamond", "Palatino Linotype", Georgia, serif;
+      --sans: Inter, ui-sans-serif, -apple-system, BlinkMacSystemFont, "SF Pro Text", "Segoe UI", sans-serif;
+      --mono: "SFMono-Regular", "SF Mono", "Berkeley Mono", ui-monospace, Menlo, monospace;
+      --hand: "Bradley Hand", "Segoe Print", "Comic Sans MS", cursive;
+    }
+
+    * {
+      box-sizing: border-box;
+    }
+
+    html {
+      background: var(--paper-deep);
+      color: var(--ink);
+      font-family: var(--sans);
+      font-size: 16px;
+      -webkit-font-smoothing: antialiased;
+      text-rendering: optimizeLegibility;
+    }
+
+    body {
+      margin: 0;
+      min-height: 100vh;
+      background: var(--paper);
+    }
+
+    body::before,
+    body::after {
+      content: "";
+      position: fixed;
+      pointer-events: none;
+      z-index: 0;
+    }
+
+    body::before {
+      inset: 0 0 auto 0;
+      height: 9px;
+      background: var(--accent);
+      background: var(--accent-p3);
+    }
+
+    body::after {
+      left: clamp(18px, 4vw, 58px);
+      top: 0;
+      bottom: 0;
+      border-left: 1px solid color-mix(in srgb, var(--accent) 38%, transparent);
+    }
+
+    a {
+      color: inherit;
+      text-decoration-thickness: 1px;
+      text-underline-offset: 0.18em;
+      text-decoration-color: color-mix(in srgb, currentColor 34%, transparent);
+      transition: color 180ms ease, text-decoration-color 180ms ease, transform 180ms ease;
+    }
+
+    a:hover {
+      color: var(--accent);
+      color: var(--accent-p3);
+      text-decoration-color: currentColor;
+    }
+
+    ::selection {
+      background: #ffe16a;
+      color: var(--ink);
+    }
+
+    .sheet {
+      position: relative;
+      z-index: 1;
+      max-width: 640px;
+      width: calc(100% - 34px);
+      margin: 0 auto;
+      padding: clamp(34px, 7vw, 86px) 0 clamp(44px, 8vw, 90px);
+    }
+
+    .folio {
+      display: grid;
+      grid-template-columns: 1fr auto 1fr;
+      gap: 18px;
+      align-items: center;
+      padding: 18px 0 22px;
+      border-bottom: 1px solid var(--rule);
+      color: var(--ink-soft);
+      font-family: var(--mono);
+      font-size: clamp(0.68rem, 1.4vw, 0.77rem);
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+    }
+
+    .folio a {
+      text-decoration: none;
+    }
+
+    .folio__center {
+      color: var(--ink);
+      font-family: var(--serif);
+      font-size: clamp(1.05rem, 2.2vw, 1.35rem);
+      font-style: italic;
+      letter-spacing: 0;
+      text-transform: none;
+    }
+
+    .folio__right {
+      text-align: right;
+    }
+
+    .hero {
+      display: grid;
+      grid-template-columns: minmax(0, 1fr) minmax(210px, 0.31fr);
+      gap: clamp(28px, 6vw, 70px);
+      align-items: end;
+      padding: clamp(42px, 8vw, 96px) 0 clamp(36px, 7vw, 76px);
+      border-bottom: 1px solid var(--rule);
+    }
+
+    .kicker {
+      margin: 0 0 22px;
+      color: var(--green);
+      color: var(--green-p3);
+      font-family: var(--mono);
+      font-size: 0.78rem;
+      letter-spacing: 0.12em;
+      text-transform: uppercase;
+    }
+
+    h1 {
+      max-width: 11ch;
+      margin: 0;
+      color: var(--ink);
+      font-family: var(--serif);
+      font-size: clamp(4.45rem, 13vw, 12.8rem);
+      font-weight: 400;
+      letter-spacing: -0.075em;
+      line-height: 0.78;
+    }
+
+    .hero__deck {
+      display: grid;
+      gap: clamp(18px, 3vw, 30px);
+      align-self: stretch;
+      padding-bottom: 0.4vw;
+    }
+
+    .deck-copy {
+      margin: 0;
+      max-width: 35rem;
+      color: var(--ink);
+      font-family: var(--serif);
+      font-size: clamp(1.42rem, 3vw, 2.5rem);
+      line-height: 1.05;
+      letter-spacing: -0.035em;
+    }
+
+    .short-bio {
+      margin: 0;
+      max-width: 32rem;
+      color: var(--ink-soft);
+      font-size: clamp(1rem, 1.4vw, 1.09rem);
+      line-height: 1.62;
+    }
+
+    .annotation {
+      position: relative;
+      max-width: 18rem;
+      margin-left: auto;
+      padding: 16px 0 0 21px;
+      color: var(--blue);
+      color: var(--blue-p3);
+      font-family: var(--hand);
+      font-size: clamp(1rem, 1.6vw, 1.18rem);
+      line-height: 1.25;
+      transform: rotate(-2.2deg);
+    }
+
+    .annotation::before {
+      content: "";
+      position: absolute;
+      left: 0;
+      top: 3px;
+      width: 48px;
+      border-top: 2px solid currentColor;
+      transform: rotate(-18deg);
+      transform-origin: left center;
+    }
+
+    .grid {
+      display: grid;
+      grid-template-columns: minmax(0, 0.62fr) minmax(260px, 0.38fr);
+      gap: clamp(28px, 6vw, 76px);
+      padding-top: clamp(34px, 6vw, 72px);
+    }
+
+    .lede {
+      display: grid;
+      gap: clamp(28px, 5vw, 54px);
+    }
+
+    .essay {
+      display: grid;
+      grid-template-columns: 5.5rem minmax(0, 1fr);
+      gap: clamp(18px, 3vw, 34px);
+      padding-top: 3px;
+    }
+
+    .essay + .essay {
+      padding-top: clamp(26px, 5vw, 50px);
+      border-top: 1px solid var(--rule);
+    }
+
+    .essay__num {
+      color: var(--accent);
+      color: var(--accent-p3);
+      font-family: var(--mono);
+      font-size: 0.72rem;
+      letter-spacing: 0.1em;
+      text-transform: uppercase;
+    }
+
+    .essay h2 {
+      margin: 0 0 14px;
+      font-family: var(--serif);
+      font-size: clamp(2.1rem, 4.4vw, 4.25rem);
+      font-weight: 400;
+      letter-spacing: -0.055em;
+      line-height: 0.94;
+    }
+
+    .essay p {
+      margin: 0;
+      max-width: 41rem;
+      color: var(--ink-soft);
+      font-size: clamp(1rem, 1.45vw, 1.12rem);
+      line-height: 1.7;
+    }
+
+    .essay p + p {
+      margin-top: 1.05rem;
+    }
+
+    .rail {
+      align-self: start;
+      position: sticky;
+      top: 24px;
+      display: grid;
+      gap: clamp(26px, 5vw, 48px);
+      padding-left: clamp(0px, 2vw, 24px);
+    }
+
+    .module {
+      border-top: 1px solid var(--ink);
+      padding-top: 14px;
+    }
+
+    .module__label {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 16px;
+      margin: 0 0 16px;
+      color: var(--ink-faint);
+      font-family: var(--mono);
+      font-size: 0.72rem;
+      letter-spacing: 0.11em;
+      text-transform: uppercase;
+    }
+
+    .module__label::after {
+      content: "";
+      flex: 1;
+      border-top: 1px solid var(--rule);
+    }
+
+    .today {
+      display: grid;
+      gap: 13px;
+      margin: 0;
+      padding: 0;
+      list-style: none;
+    }
+
+    .today li {
+      display: grid;
+      grid-template-columns: 1.2rem 1fr;
+      gap: 10px;
+      color: var(--ink-soft);
+      font-size: 0.96rem;
+      line-height: 1.45;
+    }
+
+    .today li::before {
+      content: "*";
+      color: var(--accent);
+      color: var(--accent-p3);
+      font-size: 0.83rem;
+      line-height: 1.65;
+    }
+
+    .writing {
+      margin: 0;
+      padding: 0;
+      list-style: none;
+    }
+
+    .writing li {
+      border-top: 1px solid var(--rule);
+    }
+
+    .writing li:first-child {
+      border-top: 0;
+    }
+
+    .writing a {
+      display: grid;
+      grid-template-columns: minmax(0, 1fr) auto;
+      gap: 18px;
+      align-items: baseline;
+      padding: 13px 0 14px;
+      text-decoration: none;
+    }
+
+    .writing a:hover {
+      transform: translateX(4px);
+    }
+
+    .writing__title {
+      min-width: 0;
+      overflow: hidden;
+      color: var(--ink);
+      font-family: var(--serif);
+      font-size: clamp(1.18rem, 2.4vw, 1.62rem);
+      line-height: 1.06;
+      letter-spacing: -0.025em;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+    }
+
+    .writing__meta {
+      color: var(--ink-faint);
+      font-family: var(--mono);
+      font-size: 0.71rem;
+      letter-spacing: 0.04em;
+      text-transform: uppercase;
+      white-space: nowrap;
+    }
+
+    .quote {
+      position: relative;
+      margin: 0;
+      padding: 8px 0 0;
+      color: var(--ink);
+      font-family: var(--serif);
+      font-size: clamp(1.65rem, 3.4vw, 3.35rem);
+      line-height: 1;
+      letter-spacing: -0.045em;
+    }
+
+    .quote::before {
+      content: "\"";
+      position: absolute;
+      right: 100%;
+      top: -0.12em;
+      padding-right: 8px;
+      color: var(--accent);
+      color: var(--accent-p3);
+      font-size: 1.25em;
+    }
+
+    .quote cite {
+      display: block;
+      margin-top: 13px;
+      color: var(--ink-faint);
+      font-family: var(--mono);
+      font-size: 0.72rem;
+      font-style: normal;
+      letter-spacing: 0.09em;
+      text-transform: uppercase;
+    }
+
+    .signals {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
+      margin: 0;
+      padding: 0;
+      list-style: none;
+    }
+
+    .signals li {
+      border: 1px solid var(--rule);
+      border-radius: 999px;
+      padding: 6px 10px 7px;
+      color: var(--ink-soft);
+      font-size: 0.86rem;
+      line-height: 1;
+      white-space: nowrap;
+    }
+
+    .contact {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 10px 18px;
+      margin-top: clamp(36px, 7vw, 76px);
+      padding-top: 18px;
+      border-top: 1px solid var(--rule);
+      color: var(--ink-soft);
+      font-family: var(--mono);
+      font-size: 0.75rem;
+      letter-spacing: 0.07em;
+      text-transform: uppercase;
+    }
+
+    .contact a {
+      text-decoration: none;
+    }
+
+    .mark {
+      color: var(--accent);
+      color: var(--accent-p3);
+    }
+
+    @media (prefers-color-scheme: dark) {
+      :root {
+        color-scheme: dark;
+        --paper: #141310;
+        --paper-deep: #0e0d0b;
+        --ink: #f3ebdc;
+        --ink-soft: #c4b9a7;
+        --ink-faint: #827766;
+        --rule: #373126;
+        --rule-strong: #5c5141;
+        --accent: #ff6849;
+        --accent-p3: color(display-p3 1 0.40 0.28);
+        --blue: #7f9bff;
+        --blue-p3: color(display-p3 0.50 0.60 1);
+        --green: #26c995;
+        --green-p3: color(display-p3 0.16 0.78 0.58);
+      }
+    }
+
+    @media (max-width: 880px) {
+      body::after {
+        left: 17px;
+      }
+
+      .folio {
+        grid-template-columns: 1fr;
+      }
+
+      .folio__right {
+        text-align: left;
+      }
+
+      .hero,
+      .grid {
+        grid-template-columns: 1fr;
+      }
+
+      h1 {
+        max-width: 8.2ch;
+      }
+
+      .annotation {
+        margin-left: 0;
+      }
+
+      .rail {
+        position: static;
+        padding-left: 0;
+      }
+    }
+
+    @media (max-width: 640px) {
+      .sheet {
+        width: calc(100% - 32px);
+      }
+
+      .hero {
+        padding-top: 36px;
+      }
+
+      .essay {
+        grid-template-columns: 1fr;
+        gap: 10px;
+      }
+
+      .writing a {
+        grid-template-columns: 1fr;
+        gap: 6px;
+      }
+
+      .writing__title {
+        white-space: normal;
+      }
+
+      .signals li {
+        white-space: normal;
+      }
+    }
+
+    @media (prefers-reduced-motion: no-preference) {
+      .hero,
+      .essay,
+      .module,
+      .contact {
+        animation: rise 700ms ease both;
+      }
+
+      .essay:nth-child(2) { animation-delay: 80ms; }
+      .essay:nth-child(3) { animation-delay: 150ms; }
+      .module:nth-child(2) { animation-delay: 120ms; }
+      .module:nth-child(3) { animation-delay: 190ms; }
+
+      @keyframes rise {
+        from {
+          opacity: 0;
+          transform: translateY(16px);
+        }
+        to {
+          opacity: 1;
+          transform: translateY(0);
+        }
+      }
+    }
+  </style>
+
+<style id="__living_site_scroll_guard">
+  /* Scroll guard injected at build time to ensure generated pages remain scrollable in iframes. */
+  html, body {
+    height: auto !important;
+    min-height: 100% !important;
+    max-height: none !important;
+    overflow-y: auto !important;
+    overflow-x: hidden !important;
+    position: static !important;
+    -webkit-overflow-scrolling: touch !important;
+    touch-action: pan-y !important;
+    overscroll-behavior-y: contain !important;
+  }
+  /* Avoid accidental fixed full-screen traps that break scrolling on mobile. */
+  body {
+    inset: auto !important;
+  }
+</style>
+</head>
+<body>
+  <main class="sheet" aria-label="Erik Nilsson editorial notebook">
+    <header class="folio" aria-label="Site header">
+      <div>San Francisco / 11 C / overcast</div>
+      <a class="folio__center" href="https://eriks.design">eriks.design</a>
+      <div class="folio__right">Monday, October 26, 2026</div>
+    </header>
+
+    <section class="hero" aria-labelledby="title">
+      <div>
+        <p class="kicker">Product Designer at Cursor</p>
+        <h1 id="title">Erik Nilsson</h1>
+      </div>
+      <div class="hero__deck">
+        <p class="deck-copy">Designing how people build software with AI.</p>
+        <p class="short-bio">
+          Hej, I'm Erik. I work on Cursor, believe in simple things tuned until they feel right,
+          and keep this living corner of the web as a daily notebook for experiments, signals, and small observations.
+        </p>
+        <p class="annotation">part magazine page, part margin note - rebuilt from today's weather, writing, and stray signals.</p>
+      </div>
+    </section>
+
+    <div class="grid">
+      <section class="lede" aria-label="Notebook entries">
+        <article class="essay">
+          <div class="essay__num">01 / Current</div>
+          <div>
+            <h2>Building in the space between vision and execution.</h2>
+            <p>
+              Cursor is where the work lives right now: developer tools, AI agents, and the craft of staying in flow.
+              The interesting part is not the machine doing everything. It is the designer setting direction, tightening loops,
+              and making each interaction feel inevitable.
+            </p>
+          </div>
+        </article>
+
+        <article class="essay">
+          <div class="essay__num">02 / Practice</div>
+          <div>
+            <h2>Surgical moves over sweeping one-shots.</h2>
+            <p>
+              The recurring note in the margins: plan the scope, align to the vision, compare what different agents make,
+              then keep the edits small enough to feel. A good tool should make building software easier and more fun without
+              taking your hands off the wheel.
+            </p>
+          </div>
+        </article>
+
+        <article class="essay">
+          <div class="essay__num">03 / Off-hours</div>
+          <div>
+            <h2>A living site, quietly rearranging itself.</h2>
+            <p>
+              Outside work, Erik tinkers with this site as a living surface. Fresh activity data, weather, posts, and tiny
+              world signals become a new composition each day: autumn overcast in San Francisco, sharp pocket OLED screens,
+              and agents spun up from a phone before the fog lifts.
+            </p>
+          </div>
+        </article>
+      </section>
+
+      <aside class="rail" aria-label="Notebook side rail">
+        <section class="module" aria-labelledby="writing-label">
+          <h2 class="module__label" id="writing-label">Writing Index</h2>
+          <ol class="writing">
+            <li>
+              <a href="https://cursor.com/blog/design-mode" target="_blank" rel="noopener noreferrer">
+                <span class="writing__title">Directing agents visually</span>
+                <span class="writing__meta">Jun 2026 / 6 min -></span>
+              </a>
+            </li>
+            <li>
+              <a href="/posts/a-living-site">
+                <span class="writing__title">A living site</span>
+                <span class="writing__meta">Dec 2025 / 7 min</span>
+              </a>
+            </li>
+            <li>
+              <a href="/posts/surgical-edits">
+                <span class="writing__title">Surgical edits</span>
+                <span class="writing__meta">Nov 2025 / 4 min</span>
+              </a>
+            </li>
+            <li>
+              <a href="/posts/familiar-differentiation">
+                <span class="writing__title">Familiar differentiation</span>
+                <span class="writing__meta">Nov 2024 / 5 min</span>
+              </a>
+            </li>
+            <li>
+              <a href="/posts/hackathon-energy-but-add-users">
+                <span class="writing__title">Hackathon energy, but add users</span>
+                <span class="writing__meta">Oct 2022 / 4 min</span>
+              </a>
+            </li>
+          </ol>
+        </section>
+
+        <section class="module" aria-labelledby="today-label">
+          <h2 class="module__label" id="today-label">Today</h2>
+          <ul class="today">
+            <li>Autumn overcast settling low over San Francisco.</li>
+            <li>The public activity feed is quiet; the page stays in a slower phase.</li>
+            <li>Recent notes orbit 2026, sunrise shipping, and agents launched from a phone.</li>
+          </ul>
+        </section>
+
+        <section class="module" aria-labelledby="field-label">
+          <h2 class="module__label" id="field-label">Field Notes</h2>
+          <blockquote class="quote">
+            You set the vision, agents do the execution.
+            <cite>from recent notes</cite>
+          </blockquote>
+        </section>
+
+        <section class="module" aria-labelledby="signals-label">
+          <h2 class="module__label" id="signals-label">Signals</h2>
+          <ul class="signals">
+            <li>pocket OLEDs</li>
+            <li>vegemite philosophy</li>
+            <li>AI caution labels</li>
+            <li>shipping by sunrise</li>
+            <li>parallel agents</li>
+          </ul>
+        </section>
+      </aside>
+    </div>
+
+    <nav class="contact" aria-label="Contact links">
+      <span class="mark">*</span>
+      <a href="mailto:contact@eriks.design">Email</a>
+      <a href="https://x.com/flowstated" target="_blank" rel="noopener noreferrer">X</a>
+      <a href="https://github.com/eriknson" target="_blank" rel="noopener noreferrer">GitHub</a>
+      <a href="https://linkedin.com/in/eriknson" target="_blank" rel="noopener noreferrer">LinkedIn</a>
+      <a href="https://cursor.com" target="_blank" rel="noopener noreferrer">Cursor</a>
+    </nav>
+  </main>
+</body>
+</html>

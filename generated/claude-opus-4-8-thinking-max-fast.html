@@ -4,525 +4,571 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <meta name="color-scheme" content="light dark">
-<meta name="description" content="Erik Nilsson — product designer at Cursor, in San Francisco. A living notebook: typeset overnight by its own agents, annotated by hand.">
-<title>Erik Nilsson — Notebook</title>
-<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='7' fill='%23f7f2e9'/%3E%3Ccircle cx='16' cy='16' r='6.6' fill='%23e5371d'/%3E%3C/svg%3E">
+<meta name="description" content="Erik Nilsson — product designer at Cursor in San Francisco. A living notebook of selected writing on designing software with AI.">
+<meta name="theme-color" content="#faf6ef" media="(prefers-color-scheme: light)">
+<meta name="theme-color" content="#13110f" media="(prefers-color-scheme: dark)">
+<title>Erik Nilsson — eriks.design</title>
+<link rel="icon" href="data:image/svg+xml,%3Csvg%20xmlns='http://www.w3.org/2000/svg'%20viewBox='0%200%2032%2032'%3E%3Crect%20width='32'%20height='32'%20rx='7'%20fill='%23faf6ef'/%3E%3Cg%20stroke='%23e5392b'%20stroke-width='2.6'%20stroke-linecap='round'%3E%3Cpath%20d='M16%207v18M7%2016h18M9.9%209.9l12.2%2012.2M22.1%209.9L9.9%2022.1'/%3E%3C/g%3E%3C/svg%3E">
 <style>
-  /* ==========================================================================
-     eriks.design — a living notebook
-     --------------------------------------------------------------------------
-     Concept: a magazine page typeset overnight by an agent (the crisp serif,
-     the hairline rules, the nameplate) and then marked up by a human hand in
-     red editor's pen (the circles, carets, underlines, the margin notes).
-     Part periodical, part designer's notebook.
+/* ============================================================
+   eriks.design — a living notebook
+   One file. Editorial serif + Berkeley Mono marginalia.
+   Vermilion Display-P3 "pen". No gradients.
+   ============================================================ */
 
-     Color: one vibrant ink — a warm Display-P3 vermilion — on warm paper.
-     No gradients anywhere; texture is a faint dot grid drawn as SVG, rules are
-     solid hairlines, the "pen" is a stroked SVG with a hand-pressed wobble.
+/* ---- tokens -------------------------------------------------- */
+:root{
+  --bg:        #faf6ef;   /* warm ivory paper            */
+  --bg-2:      #f4ecdd;   /* card / inset paper          */
+  --ink:       #1c1813;   /* warm near-black             */
+  --ink-soft:  #554d43;   /* secondary prose             */
+  --ink-faint: #7c7161;   /* mono labels, tertiary       */
+  --rule:      #e4dac8;   /* hairlines                   */
+  --rule-2:    #ece3d4;   /* notebook ruling             */
+  --accent:    #e5392b;   /* editor's pen, vermilion     */
+  --accent-sv: #e5392b;   /* solid accent for fills      */
+  --hl:        rgba(244,183,10,.40); /* amber highlighter */
+  --sel:       rgba(229,57,43,.16);
 
-     Motion is pure CSS so the page is identically alive whether loaded as a
-     file or injected into the app's Shadow DOM (where <script> never runs).
-     A tiny progressive-enhancement script adds a live clock + pen tilt when,
-     and only when, real JS is available. Nothing depends on it.
-     ========================================================================== */
+  --serif: "Iowan Old Style","Palatino Linotype","Palatino","Book Antiqua",Georgia,"Times New Roman",serif;
+  --mono:  "Berkeley Mono",ui-monospace,"SF Mono",SFMono-Regular,Menlo,"Cascadia Mono","Liberation Mono",monospace;
 
-  /* ---- ink & paper — light (warm) ---------------------------------------- */
+  --measure: 40rem;       /* reading column (640px)      */
+  --pad: clamp(1.25rem, 5vw, 2rem);
+  --ease: cubic-bezier(.22,.61,.36,1);
+}
+@supports (color: color(display-p3 1 0 0)){
   :root{
-    --paper:#f7f2e8;          /* warm cream stock */
-    --paper-2:#f0e9db;        /* inset leaf (field notes) */
-    --ink:#1b1712;            /* warm near-black */
-    --ink-soft:#4b443a;       /* body-ish */
-    --muted:#6f6758;          /* graphite */
-    --faint:#897f69;          /* light graphite */
-    --rule:rgba(27,23,18,.14);
-    --rule-bold:rgba(27,23,18,.82);
-    --dot:rgba(27,23,18,.05);
-
-    --pen:#e5371d;            /* editor's vermilion (sRGB fallback) */
-    --pen-weak:rgba(229,55,29,.52);
-    --pen-soft:rgba(229,55,29,.10);
-    --pen-ghost:rgba(229,55,29,.045);
-    --sel:rgba(229,55,29,.17);
-
-    --serif:"Iowan Old Style","Palatino Linotype",Palatino,"Book Antiqua","URW Palladio L",P052,Georgia,Cambria,"Times New Roman",serif;
-    --mono:"Berkeley Mono",ui-monospace,"SF Mono",SFMono-Regular,"Cascadia Code",Menlo,Consolas,"Liberation Mono",monospace;
-
-    --col:40rem;             /* reading measure (640px) */
+    --bg:        color(display-p3 0.980 0.965 0.937);
+    --bg-2:      color(display-p3 0.957 0.925 0.867);
+    --accent:    color(display-p3 0.886 0.247 0.165);
+    --accent-sv: color(display-p3 0.886 0.247 0.165);
+    --hl:        color(display-p3 0.98 0.74 0.12 / .40);
+    --sel:       color(display-p3 0.886 0.247 0.165 / .16);
   }
+}
 
-  /* wide-gamut: a vermilion that only sRGB can dream of */
-  @supports (color:color(display-p3 1 0 0)){
+@media (prefers-color-scheme: dark){
+  :root{
+    --bg:        #13110f;   /* warm dark paper */
+    --bg-2:      #1b1713;
+    --ink:       #ece3d4;
+    --ink-soft:  #b9ad9b;
+    --ink-faint: #918573;
+    --rule:      #2b2620;
+    --rule-2:    #262019;
+    --accent:    #ff6a52;
+    --accent-sv: #ff6a52;
+    --hl:        rgba(255,201,74,.22);
+    --sel:       rgba(255,106,82,.22);
+  }
+}
+@supports (color: color(display-p3 1 0 0)){
+  @media (prefers-color-scheme: dark){
     :root{
-      --pen:color(display-p3 .83 .22 .11);
-      --pen-weak:color(display-p3 .83 .22 .11 / .55);
-      --pen-soft:color(display-p3 .83 .22 .11 / .11);
-      --pen-ghost:color(display-p3 .83 .22 .11 / .05);
-      --sel:color(display-p3 .83 .22 .11 / .18);
+      --bg:        color(display-p3 0.075 0.067 0.059);
+      --bg-2:      color(display-p3 0.106 0.094 0.078);
+      --accent:    color(display-p3 1 0.44 0.35);
+      --accent-sv: color(display-p3 1 0.44 0.35);
+      --hl:        color(display-p3 1 0.80 0.32 / .22);
+      --sel:       color(display-p3 1 0.44 0.35 / .22);
     }
   }
+}
 
-  /* ---- base -------------------------------------------------------------- */
-  *{box-sizing:border-box}
-  html{-webkit-text-size-adjust:100%;scroll-behavior:smooth}
-  html,body{overflow-x:hidden}
-  body{
-    margin:0;
-    color:var(--ink);
-    background-color:var(--paper);
-    background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='22' height='22'%3E%3Ccircle cx='1' cy='1' r='1' fill='%231b1712' fill-opacity='0.05'/%3E%3C/svg%3E");
-    background-position:-7px -7px;
-    font-family:var(--serif);
-    font-size:17.5px;
-    line-height:1.62;
-    font-feature-settings:"onum" 1,"kern" 1,"liga" 1;
-    -webkit-font-smoothing:antialiased;
-    -moz-osx-font-smoothing:grayscale;
-    text-rendering:optimizeLegibility;
-    padding:clamp(22px,5vw,46px) 22px clamp(56px,11vh,116px);
-  }
-  ::selection{background:var(--sel)}
-  a{color:inherit;text-decoration:none}
-  a:focus-visible{outline:2px solid var(--pen);outline-offset:3px;border-radius:2px}
-  em,i{font-style:italic}
-  h1,h2,p,ul,ol{margin:0}
+/* ---- reset --------------------------------------------------- */
+*,*::before,*::after{box-sizing:border-box}
+html{-webkit-text-size-adjust:100%;text-size-adjust:100%}
+body{
+  margin:0;
+  background:var(--bg);
+  color:var(--ink);
+  font-family:var(--serif);
+  font-size:clamp(1rem,.96rem + .25vw,1.09rem);
+  line-height:1.66;
+  font-feature-settings:"kern" 1,"liga" 1,"onum" 1,"calt" 1;
+  -webkit-font-smoothing:antialiased;
+  text-rendering:optimizeLegibility;
+  overflow-x:hidden;
+}
+::selection{background:var(--sel)}
+a{color:inherit}
+h1,h2,h3,p,ul{margin:0}
+ul{list-style:none;padding:0}
+svg{display:block}
 
-  /* ---- the sheet + centered reading column ------------------------------- */
-  .sheet{position:relative}
-  .col{max-width:var(--col);margin:0 auto}
-  section.col,footer.col{margin-top:clamp(2.6rem,7vh,4.4rem)}
+/* ---- layout -------------------------------------------------- */
+.page{padding:clamp(1.5rem,4vw,3rem) 0 clamp(3rem,7vw,5rem)}
+.measure{
+  max-width:var(--measure);
+  margin:0 auto;
+  padding:0 var(--pad);
+  position:relative;
+}
+/* ruled-paper red margin line, only where a gutter exists */
+.measure::before{
+  content:"";
+  position:absolute;
+  top:.2rem;bottom:.2rem;
+  left:calc(var(--pad) - 1.15rem);
+  width:1.5px;
+  background:var(--accent);
+  opacity:0;
+  transform:scaleY(0);
+  transform-origin:top;
+  transition:opacity .6s ease,transform 1.1s var(--ease);
+}
+@media (min-width:46rem){
+  .measure::before{left:-1.4rem;opacity:.22;transform:scaleY(1)}
+}
 
-  /* ---- top bar: the periodical's running header -------------------------- */
-  .topbar{
-    max-width:var(--col);margin:0 auto clamp(1.5rem,5vh,2.6rem);
-    display:flex;justify-content:space-between;align-items:baseline;gap:.5rem 1.2rem;flex-wrap:wrap;
-    font-family:var(--mono);font-size:.66rem;letter-spacing:.2em;text-transform:uppercase;
-    color:var(--muted);
-    padding-bottom:.62rem;border-bottom:1px solid var(--rule);
-  }
-  .topbar b{font-weight:400;color:var(--ink)}
-  .topbar .r{color:var(--faint);letter-spacing:.17em}
+/* ---- masthead ----------------------------------------------- */
+.masthead{padding-top:.25rem}
+.mast-top{
+  display:flex;align-items:baseline;justify-content:space-between;
+  gap:1rem;flex-wrap:wrap;
+}
+.wordmark{
+  font-family:var(--serif);
+  font-size:1.18rem;
+  font-style:italic;
+  letter-spacing:.01em;
+  text-decoration:none;
+  color:var(--ink);
+}
+.wordmark b{font-weight:600;font-style:normal}
+.mast-meta{
+  font-family:var(--mono);
+  font-size:.7rem;
+  letter-spacing:.14em;
+  text-transform:uppercase;
+  color:var(--ink-faint);
+  white-space:nowrap;
+}
+.mast-meta .wx{color:var(--accent)}
+.hair{height:1px;background:var(--rule);margin:.85rem 0 .7rem;transform-origin:left}
+.mast-kicker{
+  display:flex;justify-content:space-between;gap:1rem;
+  font-family:var(--mono);
+  font-size:.68rem;
+  letter-spacing:.2em;
+  text-transform:uppercase;
+  color:var(--ink-faint);
+}
 
-  /* ---- masthead / nameplate --------------------------------------------- */
-  .kicker{
-    font-family:var(--mono);font-size:.7rem;letter-spacing:.24em;text-transform:uppercase;
-    color:var(--pen);margin:0;
-  }
-  .wordmark{
-    font-weight:500;font-size:clamp(2.9rem,9.2vw,4.9rem);
-    line-height:.96;letter-spacing:-.022em;margin:.22em 0 .3em;text-wrap:balance;
-  }
-  .wordmark em{font-style:italic;font-weight:500}
-  .dateline{font-style:italic;font-size:clamp(1.04rem,2.2vw,1.2rem);color:var(--ink-soft)}
-  .dateline a{text-decoration:underline;text-decoration-color:var(--pen-weak);text-decoration-thickness:1.5px;text-underline-offset:.2em;font-style:normal}
-  .dateline a:hover{color:var(--pen);text-decoration-color:var(--pen)}
-  .dateline .sep{font-style:normal;color:var(--faint);margin:0 .5em}
-  .runmeta{
-    font-family:var(--mono);font-size:.71rem;letter-spacing:.08em;text-transform:uppercase;
-    color:var(--muted);margin-top:1.02rem;display:flex;align-items:center;flex-wrap:wrap;gap:.08rem .1rem;
-  }
-  .runmeta .s{color:var(--faint);margin:0 .5em}
-  .clock{display:none}
-  .clock.on{display:inline}
+/* ---- shared label ------------------------------------------- */
+.eyebrow{
+  font-family:var(--mono);
+  font-size:.7rem;
+  letter-spacing:.2em;
+  text-transform:uppercase;
+  color:var(--ink-faint);
+}
 
-  /* an "oxford rule": one bold hairline over one fine hairline ------------- */
-  .rule{height:3px;border-top:1.5px solid var(--rule-bold);border-bottom:1px solid var(--rule)}
-  .masthead .rule{margin-top:1.45rem}
+/* ---- intro -------------------------------------------------- */
+.intro{margin-top:clamp(2.6rem,8vw,4.6rem)}
+.intro .eyebrow{margin-bottom:1.1rem}
+.lead{
+  font-family:var(--serif);
+  font-weight:400;
+  font-size:clamp(1.95rem,1.1rem + 4vw,3.2rem);
+  line-height:1.1;
+  letter-spacing:-.016em;
+  text-wrap:balance;
+}
+.lead .hej{font-style:italic;color:var(--accent)}
+.dek{
+  margin-top:1.4rem;
+  max-width:34rem;
+  font-size:clamp(1.08rem,1.02rem + .4vw,1.24rem);
+  line-height:1.56;
+  color:var(--ink-soft);
+}
 
-  /* ---- lede -------------------------------------------------------------- */
-  .lede{margin-top:clamp(1.7rem,5vh,2.5rem)}
-  .lede p{font-size:clamp(1.2rem,2.5vw,1.46rem);line-height:1.5;text-wrap:pretty;color:var(--ink)}
-  .dropcap{
-    float:left;font-weight:600;color:var(--pen);
-    font-size:3.32em;line-height:.66;padding:.02em .1em 0 0;margin:.04em .04em 0 0;
-  }
+/* amber highlighter swipe */
+.hl{
+  background:var(--hl);
+  padding:.02em .18em;
+  margin:0 -.04em;
+  border-radius:.14em;
+  -webkit-box-decoration-break:clone;
+  box-decoration-break:clone;
+}
 
-  /* ---- section eyebrow (hand-circled number) ---------------------------- */
-  .eyebrow{
-    font-family:var(--mono);font-size:.72rem;letter-spacing:.13em;text-transform:uppercase;
-    color:var(--ink);margin:0 0 1.3rem;display:flex;align-items:baseline;gap:.78ch;flex-wrap:wrap;
-  }
-  .sec{position:relative;color:var(--pen);padding:0 .15em}
-  .sec .ring{position:absolute;left:-28%;top:-48%;width:156%;height:196%;overflow:visible;pointer-events:none}
-  .eyebrow .sub{font-family:var(--serif);font-style:italic;text-transform:none;letter-spacing:0;color:var(--muted);font-size:.98rem}
+/* circled word (hand-drawn) */
+.circled{position:relative;white-space:nowrap;display:inline-block}
+.circled > svg{
+  position:absolute;
+  left:-.42em;right:-.42em;top:-.22em;bottom:-.2em;
+  width:auto;height:auto;
+  overflow:visible;
+  color:var(--accent);
+  pointer-events:none;
+}
 
-  /* ---- today / field notes ---------------------------------------------- */
-  .leaf{
-    position:relative;background:var(--paper-2);border:1px solid var(--rule);border-radius:7px;
-    padding:clamp(1.2rem,3.4vw,1.75rem) clamp(1.3rem,4vw,1.95rem);
-  }
-  .leaf::before{content:"";position:absolute;left:0;top:13px;bottom:13px;width:2px;background:var(--pen-weak);border-radius:2px}
-  .notes{list-style:none;padding:0;font-size:1.05rem;line-height:1.5}
-  .notes li{position:relative;padding-left:1.5em;margin:.46em 0;color:var(--ink-soft)}
-  .notes li::before{content:"—";position:absolute;left:0;color:var(--pen)}
-  .notes li b{font-weight:inherit;color:var(--ink)}
-  .lately{font-style:italic;color:var(--muted);font-size:1rem;margin-top:1.4rem}
-  .lately a{font-style:normal}
+/* ---- hand-drawn mark drawing -------------------------------- */
+.mark path,.mark line{
+  fill:none;
+  stroke:currentColor;
+  stroke-width:2;
+  stroke-linecap:round;
+  stroke-linejoin:round;
+  vector-effect:non-scaling-stroke;
+}
+.mark.draw path{
+  stroke-dasharray:1;
+  stroke-dashoffset:1;
+  animation:draw 1.1s var(--ease) forwards;
+  animation-delay:var(--d,.4s);
+}
 
-  /* ---- writing index ---------------------------------------------------- */
-  .index{list-style:none;padding:0;counter-reset:idx}
-  .entry{border-top:1px solid var(--rule)}
-  .entry:last-child{border-bottom:1px solid var(--rule)}
-  .entry > a{
-    display:grid;grid-template-columns:3.1em 1fr auto;align-items:baseline;gap:1.1em;
-    padding:.92rem .12rem .86rem;
+/* ---- marginalia (gutter notes) ------------------------------ */
+.anno{position:relative}
+.marginalia{
+  display:block;
+  margin-top:.7rem;
+  padding-left:1.15rem;
+  font-family:var(--serif);
+  font-style:italic;
+  font-size:.96rem;
+  line-height:1.4;
+  color:var(--accent);
+  position:relative;
+}
+.marginalia::before{
+  content:"\21B3";               /* ↳ turned arrow */
+  position:absolute;left:0;top:-.05em;
+  font-style:normal;opacity:.8;
+}
+.marginalia .nib{display:none}
+@media (min-width:70rem){
+  .marginalia{
+    position:absolute;
+    top:.1em;
+    width:11.5rem;
+    margin-top:0;
+    padding-left:0;
+    font-size:.86rem;
+    line-height:1.4;
   }
-  .yr{font-family:var(--mono);font-size:.75rem;letter-spacing:.02em;color:var(--muted);transition:color .3s ease}
-  .ttl{font-size:clamp(1.12rem,2.3vw,1.3rem);line-height:1.2;position:relative;width:fit-content;max-width:100%;transition:color .3s ease}
-  .ttl .ext{color:var(--pen);font-family:var(--mono);font-size:.64em;margin-left:.35em;vertical-align:.14em;letter-spacing:0}
-  .ttl::after{
-    content:"";position:absolute;left:0;right:0;bottom:-2px;height:1.5px;background:var(--pen);
-    transform:scaleX(0);transform-origin:left;transition:transform .42s cubic-bezier(.6,.03,.28,.98);
-  }
-  .rt{font-family:var(--mono);font-size:.71rem;letter-spacing:.04em;color:var(--faint);white-space:nowrap}
-  .entry > a:hover .ttl,.entry > a:focus-visible .ttl{color:var(--pen)}
-  .entry > a:hover .ttl::after,.entry > a:focus-visible .ttl::after{transform:scaleX(1)}
-  .entry > a:hover .yr,.entry > a:focus-visible .yr{color:var(--pen)}
-  .entry > a:hover .rt,.entry > a:focus-visible .rt{color:var(--muted)}
-  .entry-note{
-    font-style:italic;color:var(--muted);font-size:.93rem;line-height:1.4;
-    padding:0 .12rem .86rem;margin-top:-.32rem;
-  }
-  .entry-note::before{content:"\21B3";color:var(--pen);font-style:normal;margin-right:.5ch}
+  .marginalia::before{display:none}
+  .marginalia .nib{display:block;position:absolute;overflow:visible;color:var(--accent)}
+  .marginalia.right{left:calc(100% + 1.9rem)}
+  .marginalia.right .nib{left:-1.7rem;top:.1rem;width:1.5rem;height:1.5rem}
+  .marginalia.left{right:calc(100% + 1.9rem);text-align:right}
+  .marginalia.left .nib{right:-1.7rem;top:.1rem;width:1.5rem;height:1.5rem}
+}
 
-  /* ---- colophon --------------------------------------------------------- */
-  .signoff{font-size:1.14rem;margin:1.4rem 0 1.05rem;color:var(--ink)}
-  .signoff .say{font-style:italic;color:var(--muted)}
-  .links{
-    display:flex;flex-wrap:wrap;gap:.8rem 1.35rem;margin-bottom:1.5rem;
-    font-family:var(--mono);font-size:.82rem;letter-spacing:.03em;
-  }
-  .links a{position:relative;padding-bottom:3px}
-  .links a::after{
-    content:"";position:absolute;left:0;bottom:0;width:100%;height:1.5px;background:var(--pen);
-    transform:scaleX(0);transform-origin:left;transition:transform .35s cubic-bezier(.6,.03,.28,.98);
-  }
-  .links a:hover,.links a:focus-visible{color:var(--pen)}
-  .links a:hover::after,.links a:focus-visible::after{transform:scaleX(1)}
-  .colo{font-style:italic;color:var(--muted);font-size:.98rem;margin-bottom:1.55rem}
-  .colo a{font-style:normal}
-  .folio{
-    display:flex;align-items:center;gap:.6ch;
-    font-family:var(--mono);font-size:.66rem;letter-spacing:.14em;text-transform:uppercase;color:var(--faint);
-  }
-  .folio .house{width:14px;height:13px;flex:none;fill:var(--pen);opacity:.9;transform:translateY(1px)}
+/* ---- writing index ------------------------------------------ */
+.writing{margin-top:clamp(3rem,9vw,5rem)}
+.sec-head{display:flex;align-items:baseline;justify-content:space-between;gap:1rem;margin-bottom:.4rem}
+.sec-title{
+  position:relative;
+  font-family:var(--serif);
+  font-weight:500;
+  font-size:1.5rem;
+  letter-spacing:-.01em;
+}
+.sec-title .accent-dot{color:var(--accent)}
+.sec-title > svg{
+  position:absolute;left:-.1em;right:-.5em;bottom:-.5rem;
+  width:auto;height:.7rem;overflow:visible;color:var(--accent);
+}
+.sec-sub{
+  font-family:var(--mono);font-size:.68rem;letter-spacing:.16em;
+  text-transform:uppercase;color:var(--ink-faint);white-space:nowrap;
+}
+.index{margin-top:1.6rem;border-top:1px solid var(--rule)}
+.index li{position:relative;border-bottom:1px solid var(--rule)}
+.entry{
+  display:flex;align-items:baseline;gap:.75rem;
+  padding:.78rem .55rem;margin:0 -.55rem;
+  text-decoration:none;color:var(--ink);
+  border-radius:.4rem;
+  transition:background .25s ease,color .25s ease,padding-left .25s var(--ease);
+}
+.entry .t{
+  flex:0 1 auto;min-width:0;
+  overflow:hidden;text-overflow:ellipsis;white-space:nowrap;
+  font-size:1.12rem;letter-spacing:-.005em;
+}
+.entry .ext{color:var(--ink-faint);font-size:.9em;transition:color .25s ease}
+.entry .dots{
+  flex:1 1 auto;height:0;position:relative;top:-.3em;
+  border-bottom:1.5px dotted var(--rule);
+  min-width:1.2rem;
+}
+.entry .m{
+  flex:0 0 auto;
+  font-family:var(--mono);font-size:.68rem;letter-spacing:.1em;
+  text-transform:uppercase;color:var(--ink-faint);white-space:nowrap;
+  transition:color .25s ease;
+}
+@media (hover:hover){
+  .entry:hover{background:var(--bg-2);padding-left:.95rem;color:var(--ink)}
+  .entry:hover .ext,.entry:hover .m{color:var(--accent)}
+  .entry:hover .t{color:var(--accent)}
+}
+.entry:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
 
-  /* ---- inline prose links & pen underline ------------------------------- */
-  .lk{
-    color:var(--ink);text-decoration:underline;text-decoration-color:var(--pen-weak);
-    text-underline-offset:.2em;text-decoration-thickness:1.5px;
-    transition:text-decoration-color .25s ease,color .25s ease;
+/* ---- today / field note ------------------------------------- */
+.today{margin-top:clamp(3rem,9vw,5rem)}
+.note-card{
+  position:relative;
+  background-color:var(--bg-2);
+  /* ruled-paper lines drawn with a 1px SVG stroke — no gradients */
+  background-image:url("data:image/svg+xml,%3Csvg%20xmlns='http://www.w3.org/2000/svg'%20width='8'%20height='32'%3E%3Cline%20x1='0'%20y1='31.3'%20x2='8'%20y2='31.3'%20stroke='%23e7ddcb'%20stroke-width='1'/%3E%3C/svg%3E");
+  background-size:100% 1.84rem;
+  background-position:0 2.74rem;
+  background-repeat:repeat;
+  border:1px solid var(--rule);
+  border-radius:.7rem;
+  padding:1.5rem 1.6rem 1.7rem;
+  transform:rotate(-.38deg);
+  transform-origin:left center;
+}
+@media (prefers-color-scheme:dark){
+  .note-card{
+    background-image:url("data:image/svg+xml,%3Csvg%20xmlns='http://www.w3.org/2000/svg'%20width='8'%20height='32'%3E%3Cline%20x1='0'%20y1='31.3'%20x2='8'%20y2='31.3'%20stroke='%23272019'%20stroke-width='1'/%3E%3C/svg%3E");
   }
-  .lk:hover,.lk:focus-visible{color:var(--pen);text-decoration-color:var(--pen)}
+}
+.note-card .eyebrow{color:var(--accent);margin-bottom:1rem}
+.field{
+  font-size:1.07rem;
+  line-height:1.84rem;      /* locked to the ruling */
+  color:var(--ink);
+}
+.field .q{font-style:italic;color:var(--ink-soft)}
 
-  /* ---- live dot + the Cursor caret (a wink) ----------------------------- */
-  .live{display:inline-block;width:7px;height:7px;border-radius:50%;background:var(--pen);margin-right:.65ch;position:relative;top:0}
-  .caret{display:inline-block;width:.52ch;height:1.02em;background:var(--pen);margin-left:.4ch;border-radius:1px;vertical-align:-.16em}
+/* ---- colophon ----------------------------------------------- */
+.colophon{margin-top:clamp(3rem,8vw,4.5rem)}
+.links{
+  display:flex;flex-wrap:wrap;gap:.35rem 1.4rem;
+  font-family:var(--mono);font-size:.74rem;letter-spacing:.14em;
+  text-transform:uppercase;margin:1.4rem 0 1.6rem;
+}
+.links a{
+  text-decoration:none;color:var(--ink-soft);
+  display:inline-flex;align-items:center;gap:.25rem;
+  padding-bottom:.12rem;
+  border-bottom:1.5px solid transparent;
+  transition:color .2s ease,border-color .2s ease;
+}
+.links a .ext{color:var(--ink-faint);transition:color .2s ease}
+.links a:hover{color:var(--accent);border-color:var(--accent)}
+.links a:hover .ext{color:var(--accent)}
+.links a:focus-visible{outline:2px solid var(--accent);outline-offset:3px;border-radius:2px}
+.colo{
+  font-size:.95rem;font-style:italic;color:var(--ink-soft);
+  line-height:1.55;max-width:32rem;
+}
+.colo a{color:var(--accent);text-decoration:none;border-bottom:1.5px solid var(--sel);transition:border-color .2s ease}
+.colo a:hover{border-color:var(--accent)}
+.sign{margin-top:1.9rem;position:relative;width:max-content}
+.sig-name{
+  font-family:var(--serif);font-style:italic;font-weight:500;
+  font-size:1.9rem;color:var(--ink);letter-spacing:.01em;
+}
+.sign > svg{
+  position:absolute;left:-.3rem;bottom:-.65rem;
+  width:6.6rem;height:1.2rem;overflow:visible;color:var(--accent);
+}
 
-  /* ---- the red pen: hand-drawn ink -------------------------------------- */
-  .mark{position:relative;white-space:nowrap}
-  .ink{position:absolute;overflow:visible;pointer-events:none}
-  .mark-ul .ink{left:-2%;bottom:-.44em;width:104%;height:.56em}
-  .ink path{
-    fill:none;stroke:var(--pen);stroke-width:2;stroke-linecap:round;stroke-linejoin:round;
-    vector-effect:non-scaling-stroke;filter:url(#pen);
-  }
-  .sec .ring path{stroke-width:1.6}
+/* ---- reveal on load ----------------------------------------- */
+.reveal{animation:fadeUp .9s var(--ease) backwards;animation-delay:var(--d,0s)}
+@keyframes fadeUp{from{opacity:0;transform:translateY(14px)}to{opacity:1;transform:none}}
+@keyframes draw{to{stroke-dashoffset:0}}
 
-  /* ---- marginalia (floats into the margin on wide screens) -------------- */
-  .note{
-    font-style:italic;color:var(--muted);font-size:.93rem;line-height:1.46;
-    border-left:2px solid var(--pen-weak);padding:.02rem 0 .02rem .85rem;margin:1.05rem 0;
-  }
-  .note::before{content:"\21B3";color:var(--pen);font-style:normal;margin-right:.45ch}
-  .note .arrow{display:none}
+/* ---- cursor-follow url tooltip (desktop) -------------------- */
+.tooltip{
+  position:fixed;z-index:50;left:0;top:0;
+  transform:translate(-50%,0);
+  padding:.3rem .55rem;
+  font-family:var(--mono);font-size:.7rem;letter-spacing:.03em;
+  color:var(--bg);background:var(--ink);
+  border-radius:.4rem;pointer-events:none;white-space:nowrap;
+  opacity:0;transition:opacity .15s ease;
+  box-shadow:0 4px 18px rgba(0,0,0,.18);
+}
+.tooltip.on{opacity:.96}
 
-  /* ---- the proof stamp -------------------------------------------------- */
-  .stamp{display:none}
-  @media (min-width:1180px){
-    .stamp{
-      display:block;position:absolute;top:2px;right:8px;z-index:2;
-      transform:rotate(-7deg);transform-origin:center;
-      border:1.5px solid var(--pen);border-radius:4px;
-      padding:.52rem .74rem .46rem;text-align:center;color:var(--pen);
-      font-family:var(--mono);text-transform:uppercase;line-height:1.3;
-      filter:url(#stamp);opacity:.84;
-    }
-    .stamp .big{font-size:.76rem;letter-spacing:.14em}
-    .stamp .hr{height:0;border-top:1.2px solid var(--pen);margin:.26rem -.2rem}
-    .stamp .sm{font-size:.6rem;letter-spacing:.16em;color:var(--pen)}
-  }
+/* ---- responsive --------------------------------------------- */
+@media (max-width:640px){
+  .lead{font-size:clamp(1.8rem,7vw,2.4rem)}
+  .mast-top{gap:.3rem}
+  .note-card{padding:1.3rem 1.2rem 1.5rem}
+  .sec-head{flex-direction:column;gap:.3rem}
+  .entry .t{white-space:normal}
+  .entry{flex-wrap:wrap}
+  .entry .dots{display:none}
+  .entry .m{flex-basis:100%;margin-top:.1rem}
+}
 
-  /* ---- wide screen: ruled margin, ticks, running head ------------------- */
-  .runhead{display:none}
-  @media (min-width:1180px){
-    .sheet::before{   /* the ruled margin line, in red pen */
-      content:"";position:absolute;top:2px;bottom:2px;left:calc(50% - 356px);
-      width:1.5px;background:var(--pen-weak);
-    }
-    .sheet::after{    /* fine ruler ticks hugging the margin line (SVG, not a gradient) */
-      content:"";position:absolute;top:8px;bottom:8px;left:calc(50% - 372px);width:10px;
-      background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='10' height='25'%3E%3Crect width='10' height='1.4' fill='%238a8275'/%3E%3C/svg%3E");
-      background-repeat:repeat-y;opacity:.42;
-    }
-    .runhead{
-      display:block;position:absolute;top:4px;left:calc(50% - 408px);
-      writing-mode:vertical-rl;transform:rotate(180deg);
-      font-family:var(--mono);font-size:.62rem;letter-spacing:.26em;text-transform:uppercase;
-      color:var(--faint);white-space:nowrap;
-    }
-    .note.right{
-      float:right;clear:right;width:186px;margin:.3rem -228px 1.1rem 0;
-      border-left:0;padding-left:0;position:relative;
-    }
-    .note.right::before{display:none}
-    .note.right .arrow{display:block;position:absolute;left:-46px;top:.1em;width:40px;height:30px}
-  }
+/* ---- reduced motion ----------------------------------------- */
+@media (prefers-reduced-motion:reduce){
+  .reveal{animation:none}
+  .mark.draw path{animation:none;stroke-dashoffset:0}
+  .measure::before{transition:none}
+  *{scroll-behavior:auto}
+}
 
-  /* ---- motion: pure CSS, final state is the no-JS state ----------------- */
-  @keyframes rise{from{opacity:0;transform:translateY(13px)}to{opacity:1;transform:none}}
-  @keyframes draw{to{stroke-dashoffset:0}}
-  @keyframes blink{0%,46%{opacity:1}47%,100%{opacity:0}}
-  @keyframes ping{0%{box-shadow:0 0 0 0 var(--pen-weak)}70%{box-shadow:0 0 0 7px transparent}100%{box-shadow:0 0 0 0 transparent}}
-  @media (prefers-reduced-motion:no-preference){
-    [data-rise]{animation:rise .82s cubic-bezier(.2,.65,.3,1) both}
-    .ink path{stroke-dasharray:1;stroke-dashoffset:1;animation:draw 1.1s cubic-bezier(.6,.03,.3,1) var(--d,.8s) forwards}
-    .live{animation:ping 2.8s ease-out infinite}
-    .caret{animation:blink 1.15s steps(1) infinite}
-  }
-  @media (prefers-reduced-motion:reduce){html{scroll-behavior:auto}}
-
-  /* ---- responsive ------------------------------------------------------- */
-  @media (max-width:640px){
-    body{padding-left:19px;padding-right:19px}
-    .wordmark{font-size:clamp(2.4rem,13vw,3.2rem)}
-    .entry > a{grid-template-columns:2.7em 1fr auto;gap:.7em}
-    .runmeta{font-size:.68rem}
-    .topbar{font-size:.62rem;letter-spacing:.15em}
-  }
-  @media (max-width:430px){
-    .entry > a{grid-template-columns:1fr auto;row-gap:.06em}
-    .yr{grid-column:1;font-size:.71rem}
-    .rt{grid-column:2;text-align:right}
-    .ttl{grid-column:1 / -1;order:3;margin-top:.1em}
-  }
-
-  /* ---- dark mode (kept last; backgrounds are genuinely dark) ------------- */
-  @media (prefers-color-scheme:dark){
-    :root{
-      --paper:#15120b;
-      --paper-2:#1e1810;
-      --ink:#ece3d1;
-      --ink-soft:#cfc6b4;
-      --muted:#a49a86;
-      --faint:#8a7f6b;
-      --rule:rgba(236,227,209,.15);
-      --rule-bold:rgba(236,227,209,.82);
-      --dot:rgba(236,227,209,.05);
-      --pen:#ff6a4e;
-      --pen-weak:rgba(255,106,78,.6);
-      --pen-soft:rgba(255,106,78,.13);
-      --pen-ghost:rgba(255,106,78,.06);
-      --sel:rgba(255,106,78,.26);
-    }
-  }
-  @supports (color:color(display-p3 1 0 0)){@media (prefers-color-scheme:dark){
-    :root{
-      --pen:color(display-p3 1 .46 .34);
-      --pen-weak:color(display-p3 1 .46 .34 / .62);
-      --pen-soft:color(display-p3 1 .46 .34 / .15);
-      --pen-ghost:color(display-p3 1 .46 .34 / .07);
-      --sel:color(display-p3 1 .46 .34 / .28);
-    }
-  }}
+/* ---- print -------------------------------------------------- */
+@media print{
+  .tooltip{display:none}
+  body{background:#fff;color:#000}
+  .marginalia{color:#b02a1f}
+}
 </style>
 </head>
 <body>
+<div class="tooltip" id="tt" aria-hidden="true"></div>
 
-<!-- Hand-pressed wobble for the red pen. Local to this tree; degrades to
-     clean strokes if filters are unsupported. -->
-<svg width="0" height="0" style="position:absolute" aria-hidden="true" focusable="false"><defs>
-  <filter id="pen" x="-20%" y="-40%" width="140%" height="180%">
-    <feTurbulence type="fractalNoise" baseFrequency="0.014 0.021" numOctaves="2" seed="4" result="t"/>
-    <feDisplacementMap in="SourceGraphic" in2="t" scale="2.3"/>
-  </filter>
-  <filter id="stamp" x="-12%" y="-20%" width="124%" height="140%">
-    <feTurbulence type="fractalNoise" baseFrequency="0.016 0.03" numOctaves="2" seed="9" result="t"/>
-    <feDisplacementMap in="SourceGraphic" in2="t" scale="1.1"/>
-  </filter>
-</defs></svg>
+<div class="page">
+<div class="measure">
 
-<main class="sheet">
-
-  <div class="runhead" aria-hidden="true">Erik Nilsson — eriks.design · Autumn 2026</div>
-
-  <div class="stamp" aria-hidden="true">
-    <div class="big">Re&#8209;typeset</div>
-    <div class="hr"></div>
-    <div class="big">at&nbsp;dawn</div>
-    <div class="sm">25 · 10 · 26</div>
-  </div>
-
-  <!-- running header -->
-  <div class="topbar" data-rise style="animation-delay:.02s">
-    <span><b>eriks.design</b> &nbsp;·&nbsp; a living page</span>
-    <span class="r">№&nbsp;251025 &nbsp;·&nbsp; San Francisco</span>
-  </div>
-
-  <!-- masthead -->
-  <header class="col masthead">
-    <p class="kicker" data-rise style="animation-delay:.08s">Reset each morning, before I wake</p>
-    <h1 class="wordmark" data-rise style="animation-delay:.14s">Erik <em>Nilsson</em></h1>
-    <p class="dateline" data-rise style="animation-delay:.24s">Product Designer at <a href="https://cursor.com" target="_blank" rel="noopener">Cursor</a><span class="sep">/</span>San Francisco</p>
-    <p class="runmeta" data-rise style="animation-delay:.32s">
-      <span class="live" aria-hidden="true"></span>Sun 25 Oct<span class="s">·</span>Autumn<span class="s">·</span>Clear, 10&deg;<span class="clock" aria-hidden="true"></span><span class="caret" aria-hidden="true"></span>
-    </p>
-    <div class="rule" data-rise style="animation-delay:.42s"></div>
+  <!-- ============ MASTHEAD ============ -->
+  <header class="masthead reveal">
+    <div class="mast-top">
+      <a class="wordmark" href="/">eriks<b>.design</b></a>
+      <div class="mast-meta">San&nbsp;Francisco · <span class="wx">11°, overcast</span></div>
+    </div>
+    <div class="hair"></div>
+    <div class="mast-kicker">
+      <span>A living notebook</span>
+      <span>Mon · 26 Oct 2026</span>
+    </div>
   </header>
 
-  <!-- lede -->
-  <section class="col lede" data-rise style="animation-delay:.44s">
-    <aside class="note right">
-      <svg class="ink arrow" viewBox="0 0 70 48" preserveAspectRatio="none" aria-hidden="true" style="--d:1.05s">
-        <path pathLength="1" d="M66,9 C44,2 15,7 9,35"/>
-        <path pathLength="1" d="M9,35 L6,20 M9,35 L23,31"/>
-      </svg>
-      even this page — rewritten while the city sleeps, new by sunrise.
+  <!-- ============ INTRO ============ -->
+  <section class="intro anno reveal" style="--d:.08s">
+    <p class="eyebrow">Erik Nilsson — Product Designer at Cursor</p>
+    <h1 class="lead">
+      <span class="hej">Hej,</span> I&rsquo;m Erik. I design how people build
+      software with AI&nbsp;&mdash; and keep this
+      <span class="circled">notebook<svg class="mark draw" style="--d:.9s" viewBox="0 0 220 70" preserveAspectRatio="none" aria-hidden="true"><path pathLength="1" d="M186 14 C150 2 54 0 28 18 C6 33 10 56 52 64 C120 77 214 60 206 28 C203 17 183 10 168 9"/></svg></span>
+      in the open.
+    </h1>
+    <p class="dek">My playground to try things and write about what I learn. I believe in <span class="hl">simplicity</span>, and in iterating until every detail feels&nbsp;right.</p>
+
+    <aside class="marginalia right" style="--d:.55s">
+      <svg class="nib mark draw" viewBox="0 0 48 48" aria-hidden="true"><path pathLength="1" d="M44 6 C30 10 14 20 8 40"/><path pathLength="1" d="M8 40 L18 34 M8 40 L14 29"/></svg>
+      Rebuilt each morning by four agents, from yesterday&rsquo;s activity.
     </aside>
-    <p>
-      <span class="dropcap">M</span>ost days I design how people build software with AI — iterating until the small things feel right. Off&#8209;hours I tinker with <span class="mark mark-ul">living&#8209;site<svg class="ink" viewBox="0 0 200 20" preserveAspectRatio="none" aria-hidden="true" style="--d:1.15s"><path pathLength="1" d="M4,12 C42,5 78,15 120,8 C150,3 180,11 196,7"/></svg></span>: a handful of agents that rebuild this corner of the web from a fresh day of activity, and quietly leave it on the step by sunrise.
-    </p>
   </section>
 
-  <!-- today -->
-  <section class="col" data-rise>
-    <p class="eyebrow">
-      <span class="sec">01<svg class="ink ring" viewBox="0 0 60 40" preserveAspectRatio="none" aria-hidden="true" style="--d:.9s"><path pathLength="1" d="M31,4 C13,5 4,14 6,23 C8,33 26,37 40,35 C54,33 58,22 54,14 C50,6 34,3 24,5"/></svg></span>
-      Today <span class="sub">— field notes, 25 Oct</span>
-    </p>
-    <div class="leaf">
-      <ul class="notes">
-        <li>A <b>clear autumn night over San Francisco</b> — ten degrees, and still.</li>
-        <li>Quiet week in the repos. More reading than shipping.</li>
-        <li>Agents spun up from a phone shortcut before dawn; models planning side by side in one chat.</li>
-        <li>Elsewhere: tiny vision models reading living rooms frame by frame, and a turn&#8209;based strategy engine rebuilt from scratch.</li>
-      </ul>
-      <p class="lately">Lately on <a class="lk" href="https://x.com/flowstated" target="_blank" rel="noopener">X</a> — <a class="lk" href="https://x.com/flowstated/status/2002167999353241901" target="_blank" rel="noopener">imagine 2026</a> &middot; <a class="lk" href="https://x.com/flowstated/status/2000889983562080578" target="_blank" rel="noopener">shipping by sunrise</a> &middot; <a class="lk" href="https://x.com/flowstated/status/2000691637190861180" target="_blank" rel="noopener">agents from a pocket, pre&#8209;dawn</a>.</p>
+  <!-- ============ WRITING INDEX ============ -->
+  <section class="writing reveal" style="--d:.16s">
+    <div class="sec-head">
+      <h2 class="sec-title">Writing<span class="accent-dot">.</span>
+        <svg class="mark draw" style="--d:.6s" viewBox="0 0 300 14" preserveAspectRatio="none" aria-hidden="true"><path pathLength="1" d="M4 8 C60 2 110 13 162 7 C214 1 262 11 296 6"/></svg>
+      </h2>
+      <span class="sec-sub">Selected · 2020—2026</span>
     </div>
+
+    <ul class="index">
+      <li>
+        <a class="entry" href="https://cursor.com/blog/design-mode" target="_blank" rel="noopener">
+          <span class="t">Directing agents visually <span class="ext">&#8599;</span></span>
+          <span class="dots"></span>
+          <span class="m">Jun 2026 · 6 min</span>
+        </a>
+      </li>
+      <li class="anno">
+        <a class="entry" href="/posts/a-living-site">
+          <span class="t">A living site</span>
+          <span class="dots"></span>
+          <span class="m">Dec 2025 · 7 min</span>
+        </a>
+        <aside class="marginalia left" style="--d:.4s">
+          <svg class="nib mark draw" viewBox="0 0 48 48" aria-hidden="true"><path pathLength="1" d="M4 6 C18 10 34 20 40 40"/><path pathLength="1" d="M40 40 L30 34 M40 40 L34 29"/></svg>
+          the story of this page
+        </aside>
+      </li>
+      <li>
+        <a class="entry" href="/posts/surgical-edits">
+          <span class="t">Surgical edits</span>
+          <span class="dots"></span>
+          <span class="m">Nov 2025 · 4 min</span>
+        </a>
+      </li>
+      <li>
+        <a class="entry" href="/posts/familiar-differentiation">
+          <span class="t">Familiar differentiation</span>
+          <span class="dots"></span>
+          <span class="m">Nov 2024 · 5 min</span>
+        </a>
+      </li>
+      <li>
+        <a class="entry" href="/posts/hackathon-energy-but-add-users">
+          <span class="t">Hackathon energy, but add users</span>
+          <span class="dots"></span>
+          <span class="m">Oct 2022 · 4 min</span>
+        </a>
+      </li>
+      <li>
+        <a class="entry" href="https://uu.diva-portal.org/smash/record.jsf?pid=diva2:1453018" target="_blank" rel="noopener">
+          <span class="t">Go with the flow <span class="ext">&#8599;</span></span>
+          <span class="dots"></span>
+          <span class="m">Aug 2020 · thesis</span>
+        </a>
+      </li>
+    </ul>
   </section>
 
-  <!-- writing -->
-  <section class="col" data-rise>
-    <aside class="note right">
-      <svg class="ink arrow" viewBox="0 0 70 48" preserveAspectRatio="none" aria-hidden="true" style="--d:1.2s">
-        <path pathLength="1" d="M66,9 C44,2 15,7 9,35"/>
-        <path pathLength="1" d="M9,35 L6,20 M9,35 L23,31"/>
-      </svg>
-      a short shelf — the few that still hold up.
+  <!-- ============ TODAY / FIELD NOTE ============ -->
+  <section class="today anno reveal" style="--d:.24s">
+    <div class="note-card">
+      <p class="eyebrow">From the desk — 26 Oct, San Francisco</p>
+      <p class="field">Overcast settles low over the city and the repo is quiet this week&nbsp;&mdash; the fog slow to lift. In the margins of the feed: sharper pocket screens, caution labels on the eve of going public, and agents spun up from a phone before sunrise.</p>
+    </div>
+    <aside class="marginalia right" style="--d:.5s">
+      <svg class="nib mark draw" viewBox="0 0 48 48" aria-hidden="true"><path pathLength="1" d="M44 10 C30 12 14 22 8 40"/><path pathLength="1" d="M8 40 L18 35 M8 40 L13 30"/></svg>
+      <span class="q">shipping by sunrise, still.</span>
     </aside>
-    <p class="eyebrow">
-      <span class="sec">02<svg class="ink ring" viewBox="0 0 60 40" preserveAspectRatio="none" aria-hidden="true" style="--d:1s"><path pathLength="1" d="M30,5 C12,6 5,15 7,24 C9,33 27,36 41,34 C55,32 57,21 53,13 C49,5 33,4 23,6"/></svg></span>
-      Writing <span class="sub">— five pieces, newest first</span>
-    </p>
-    <ol class="index">
-      <li class="entry">
-        <a href="https://cursor.com/blog/design-mode" target="_blank" rel="noopener">
-          <span class="yr">2026</span>
-          <span class="ttl">Directing agents visually<span class="ext" title="Reads on the Cursor blog">&#8599;</span></span>
-          <span class="rt">6 min</span>
-        </a>
-      </li>
-      <li class="entry">
-        <a href="https://eriks.design/posts/a-living-site">
-          <span class="yr">2025</span>
-          <span class="ttl">A living site</span>
-          <span class="rt">7 min</span>
-        </a>
-        <p class="entry-note">how this very page rebuilds itself</p>
-      </li>
-      <li class="entry">
-        <a href="https://eriks.design/posts/surgical-edits">
-          <span class="yr">2025</span>
-          <span class="ttl">Surgical edits</span>
-          <span class="rt">4 min</span>
-        </a>
-      </li>
-      <li class="entry">
-        <a href="https://eriks.design/posts/familiar-differentiation">
-          <span class="yr">2024</span>
-          <span class="ttl">Familiar differentiation</span>
-          <span class="rt">5 min</span>
-        </a>
-      </li>
-      <li class="entry">
-        <a href="https://eriks.design/posts/hackathon-energy-but-add-users">
-          <span class="yr">2022</span>
-          <span class="ttl">Hackathon energy, but add users</span>
-          <span class="rt">4 min</span>
-        </a>
-      </li>
-    </ol>
   </section>
 
-  <!-- colophon -->
-  <footer class="col">
-    <div class="rule" data-rise></div>
-    <p class="signoff" data-rise>Thanks for stopping by. <span class="say">Say hello —</span></p>
-    <nav class="links" aria-label="Elsewhere" data-rise>
-      <a href="https://cursor.com" target="_blank" rel="noopener">Cursor</a>
-      <a href="https://x.com/flowstated" target="_blank" rel="noopener">X</a>
-      <a href="https://github.com/eriknson" target="_blank" rel="noopener">GitHub</a>
-      <a href="https://linkedin.com/in/eriknson" target="_blank" rel="noopener">LinkedIn</a>
-      <a href="mailto:contact@eriks.design">Email</a>
+  <!-- ============ COLOPHON ============ -->
+  <footer class="colophon reveal" style="--d:.32s">
+    <div class="hair"></div>
+    <nav class="links" aria-label="Elsewhere">
+      <a href="https://x.com/flowstated" target="_blank" rel="noopener">X <span class="ext">&#8599;</span></a>
+      <a href="https://github.com/eriknson" target="_blank" rel="noopener">GitHub <span class="ext">&#8599;</span></a>
+      <a href="https://www.linkedin.com/in/eriknson" target="_blank" rel="noopener">LinkedIn <span class="ext">&#8599;</span></a>
+      <a href="mailto:contact@eriks.design?subject=Hej">Email</a>
     </nav>
-    <p class="colo" data-rise><span class="live" aria-hidden="true"></span>Typeset by software, rebuilt overnight. <a class="lk" href="https://eriks.design/posts/a-living-site">Read how it works &#8599;</a></p>
-    <p class="folio" data-rise>
-      <svg class="house" viewBox="0 0 57 50" aria-hidden="true"><path d="M21.66 45.52V31.73c0-1.08.72-1.78 1.8-1.78h9.07c1.1 0 1.78.7 1.78 1.78v13.79H21.66ZM7.31 44.13c0 3.26 1.97 5.16 5.27 5.16h30.82c3.3 0 5.25-1.9 5.25-5.16V25.52L29.39 9.38c-.89-.75-1.95-.73-2.81 0L7.31 25.52v18.61ZM2.02 25.03c.65 0 1.19-.35 1.68-.75L27.16 4.57c.26-.21.57-.33.82-.33.28 0 .57.12.82.33L52.29 24.28c.47.4 1.01.75 1.66.75 1.27 0 2.02-.91 2.02-1.87 0-.54-.21-1.1-.75-1.52L30.8 1.13C29.91.38 28.95 0 27.98 0c-.96 0-1.92.38-2.81 1.13L.75 21.63c-.52.42-.75.98-.75 1.52 0 .96.75 1.88 2.02 1.88ZM43.24 12.59l5.88 4.97V6.98c0-1.03-.66-1.69-1.69-1.69h-2.51c-1 0-1.68.66-1.68 1.69v5.61Z"/></svg>
-      Erik Nilsson · eriks.design · Autumn 2026
-    </p>
+    <p class="colo">Set in Georgia &amp; Berkeley&nbsp;Mono. Built with <a href="https://cursor.com" target="_blank" rel="noopener">Cursor</a> — this notebook rewrites itself daily from GitHub, X, and the&nbsp;weather.</p>
+    <div class="sign">
+      <span class="sig-name">Erik</span>
+      <svg class="mark draw" style="--d:1s" viewBox="0 0 220 40" preserveAspectRatio="none" aria-hidden="true"><path pathLength="1" d="M6 24 C44 8 92 8 124 22 C146 32 170 30 190 16 C200 9 212 12 216 22 C214 18 206 17 202 22"/></svg>
+    </div>
   </footer>
 
-</main>
+</div>
+</div>
 
-<!-- Progressive enhancement only. In the app's Shadow DOM this never runs,
-     and the page is already complete without it. On a direct file load it adds
-     a live San-Francisco clock to the dateline and gives the proof stamp a
-     little parallax life under the pointer. Nothing here is load-bearing. -->
 <script>
 (function(){
   "use strict";
+  /* cursor-following URL tooltip — desktop pointers only, a nod to the real site */
   try{
-    var reduce = window.matchMedia && window.matchMedia("(prefers-reduced-motion:reduce)").matches;
-
-    // live clock, SF time, 12h
-    var clock = document.querySelector(".clock");
-    if(clock){
-      var fmt;
-      try{ fmt = new Intl.DateTimeFormat("en-US",{hour:"numeric",minute:"2-digit",timeZone:"America/Los_Angeles"}); }catch(e){ fmt = null; }
-      if(fmt){
-        var tick = function(){
-          var t = fmt.format(new Date()).toLowerCase().replace(/\s+/g," ");
-          clock.textContent = "";
-          var s = document.createElement("span"); s.className="s"; s.textContent="·";
-          clock.appendChild(s);
-          clock.appendChild(document.createTextNode("SF " + t));
-          clock.classList.add("on");
-        };
-        tick();
-        setInterval(tick, 20000);
+    var fine = window.matchMedia("(hover: hover) and (pointer: fine)");
+    if(!fine.matches) return;
+    var tt = document.getElementById("tt");
+    var fmt = function(u){ return u.replace(/^https?:\/\//,"").replace(/^mailto:/,"").replace(/\/$/,""); };
+    var active = null;
+    document.addEventListener("mousemove", function(e){
+      var a = e.target.closest && e.target.closest("a[href]");
+      if(a && a.getAttribute("href")){
+        tt.textContent = fmt(a.href);
+        tt.style.left = e.clientX + "px";
+        tt.style.top  = (e.clientY + 20) + "px";
+        if(active !== a){ tt.classList.add("on"); active = a; }
+      }else if(active){
+        tt.classList.remove("on"); active = null;
       }
-    }
-
-    // pointer parallax on the proof stamp
-    var stamp = document.querySelector(".stamp");
-    if(stamp && !reduce && window.matchMedia("(min-width:1180px)").matches){
-      var base = -7, raf = 0, tx = base;
-      window.addEventListener("pointermove", function(e){
-        var rel = (e.clientX / window.innerWidth) - 0.5; // -0.5..0.5
-        tx = base + rel * 5;
-        if(!raf){ raf = requestAnimationFrame(function(){ raf = 0; stamp.style.transform = "rotate(" + tx.toFixed(2) + "deg)"; }); }
-      }, {passive:true});
-    }
-  }catch(e){ /* never break the page */ }
+    }, {passive:true});
+    document.addEventListener("mouseleave", function(){ tt.classList.remove("on"); active=null; });
+  }catch(_){}
 })();
 </script>
 </body>
