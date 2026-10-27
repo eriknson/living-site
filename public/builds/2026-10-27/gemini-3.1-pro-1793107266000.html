@@ -1,0 +1,556 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Erik Nilsson — Product Designer</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Caveat:wght@500&family=Inter:wght@400;500&family=Newsreader:ital,opsz,wght@0,6..72,300;0,6..72,400;1,6..72,400&display=swap" rel="stylesheet">
+  <style>
+    :root {
+      --bg-color: #F4F2EE;
+      --text-color: #1A1A1A;
+      --text-muted: #737373;
+      --accent-red: #E63946;
+      --accent-blue: #0047FF;
+      --accent-highlight: #E9FF33;
+      --line-color: #D6D3CD;
+    }
+
+    @supports (color: color(display-p3 1 1 1)) {
+      :root {
+        --bg-color: color(display-p3 0.96 0.95 0.93);
+        --text-color: color(display-p3 0.08 0.08 0.08);
+        --text-muted: color(display-p3 0.45 0.45 0.45);
+        --accent-red: color(display-p3 0.95 0.15 0.15);
+        --accent-blue: color(display-p3 0.0 0.2 1.0);
+        --accent-highlight: color(display-p3 0.9 1.0 0.2);
+        --line-color: color(display-p3 0.84 0.83 0.80);
+      }
+    }
+
+    @media (prefers-color-scheme: dark) {
+      :root {
+        --bg-color: #1A1A1A;
+        --text-color: #E0E0E0;
+        --text-muted: #A0A0A0;
+        --line-color: #333333;
+        --accent-highlight: #C4D620;
+      }
+    }
+
+    * {
+      box-sizing: border-box;
+    }
+
+    body {
+      margin: 0;
+      background-color: var(--bg-color);
+      color: var(--text-color);
+      font-family: 'Inter', sans-serif;
+      -webkit-font-smoothing: antialiased;
+      -moz-osx-font-smoothing: grayscale;
+      min-height: 100vh;
+      display: flex;
+      justify-content: center;
+      overflow-x: hidden;
+      opacity: 0;
+      animation: pageFadeIn 0.8s ease forwards;
+    }
+
+    @keyframes pageFadeIn {
+      to { opacity: 1; }
+    }
+
+    .page-wrapper {
+      width: 100%;
+      max-width: 640px;
+      margin: 0 auto;
+      padding: 6rem 4rem;
+    }
+
+    .header, .main-content, .footer {
+      display: grid;
+      grid-template-columns: repeat(12, 1fr);
+      gap: 2rem;
+    }
+
+    .header {
+      padding-bottom: 3rem;
+      margin-bottom: 5rem;
+      border-bottom: 1px solid var(--line-color);
+      align-items: end;
+    }
+
+    .meta-sidebar {
+      grid-column: 1 / 3;
+      padding-bottom: 0.5rem;
+    }
+
+    .meta-item {
+      font-family: 'Inter', sans-serif;
+      font-size: 0.75rem;
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+      margin-bottom: 0.5rem;
+      color: var(--text-muted);
+    }
+
+    .title-area {
+      grid-column: 4 / 13;
+    }
+
+    h1 {
+      font-family: 'Newsreader', serif;
+      font-size: clamp(4rem, 10vw, 9rem);
+      font-weight: 400;
+      line-height: 0.85;
+      letter-spacing: -0.03em;
+      margin: 0;
+      color: var(--text-color);
+    }
+
+    .title-first {
+      display: block;
+      transform: translateX(-0.05em);
+    }
+
+    .title-last {
+      display: block;
+      margin-left: 15%;
+      font-style: italic;
+    }
+
+    .bio {
+      grid-column: 4 / 12;
+      font-family: 'Newsreader', serif;
+      font-size: clamp(1.75rem, 4vw, 2.75rem);
+      line-height: 1.15;
+      margin-bottom: 6rem;
+      letter-spacing: -0.01em;
+      color: var(--text-color);
+    }
+
+    .lower-grid {
+      grid-column: 4 / 13;
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 4rem;
+    }
+
+    .section-title {
+      font-family: 'Inter', sans-serif;
+      font-size: 0.75rem;
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+      color: var(--text-muted);
+      margin-bottom: 2rem;
+      display: flex;
+      align-items: center;
+      gap: 1rem;
+    }
+
+    .section-title::after {
+      content: '';
+      flex-grow: 1;
+      height: 1px;
+      background-color: var(--line-color);
+    }
+
+    .signals-list {
+      display: flex;
+      flex-direction: column;
+      gap: 1.25rem;
+    }
+
+    .signal-item {
+      font-family: 'Newsreader', serif;
+      font-size: 1.25rem;
+      line-height: 1.4;
+      color: var(--text-color);
+      position: relative;
+      padding-left: 1.5rem;
+      transition: transform 0.3s ease, color 0.3s ease;
+    }
+
+    .signal-item::before {
+      content: '*';
+      font-family: 'Inter', sans-serif;
+      position: absolute;
+      left: 0;
+      top: 0.2rem;
+      color: var(--accent-red);
+      font-size: 1.2rem;
+      transition: color 0.3s ease;
+    }
+
+    .signal-item:hover {
+      transform: translateX(4px);
+      color: var(--accent-blue);
+    }
+
+    .signal-item:hover::before {
+      color: var(--accent-blue);
+    }
+
+    .index-list {
+      display: flex;
+      flex-direction: column;
+    }
+
+    .index-item {
+      display: flex;
+      justify-content: space-between;
+      align-items: baseline;
+      padding: 1.25rem 0;
+      border-bottom: 1px solid var(--line-color);
+      text-decoration: none;
+      color: var(--text-color);
+      transition: all 0.3s ease;
+    }
+
+    .index-item:first-child {
+      border-top: 1px solid var(--line-color);
+    }
+
+    .index-item:hover {
+      color: var(--accent-blue);
+      padding-left: 0.5rem;
+      padding-right: 0.5rem;
+    }
+
+    .index-item .title {
+      font-family: 'Newsreader', serif;
+      font-size: 1.5rem;
+      font-style: italic;
+    }
+
+    .index-item .date {
+      font-family: 'Inter', sans-serif;
+      font-size: 0.75rem;
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+      color: var(--text-muted);
+      transition: color 0.3s ease;
+    }
+
+    .index-item:hover .date {
+      color: var(--accent-blue);
+    }
+
+    .footer {
+      margin-top: 8rem;
+    }
+
+    .footer-content {
+      grid-column: 4 / 13;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding-top: 2rem;
+      border-top: 1px solid var(--line-color);
+    }
+
+    .footer-copy {
+      font-family: 'Newsreader', serif;
+      font-size: 1.2rem;
+      font-style: italic;
+      color: var(--text-muted);
+    }
+
+    .footer-links {
+      display: flex;
+      gap: 2rem;
+    }
+
+    .footer-link {
+      font-family: 'Inter', sans-serif;
+      font-size: 0.85rem;
+      color: var(--text-color);
+      text-decoration: none;
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+      transition: color 0.3s ease;
+    }
+
+    .footer-link:hover {
+      color: var(--accent-blue);
+    }
+
+    /* Annotations */
+    .circled {
+      position: relative;
+      display: inline-block;
+      white-space: nowrap;
+    }
+
+    .highlight {
+      position: relative;
+      display: inline-block;
+      white-space: nowrap;
+      color: var(--text-color);
+      z-index: 1;
+    }
+
+    .highlight::before {
+      content: '';
+      position: absolute;
+      top: 10%;
+      left: -2%;
+      width: 104%;
+      height: 80%;
+      background-color: var(--accent-highlight);
+      z-index: -1;
+      transform: rotate(-1deg);
+      border-radius: 4px 8px 3px 6px;
+      transition: transform 0.3s ease;
+    }
+
+    .highlight:hover::before {
+      transform: rotate(1deg) scale(1.02);
+    }
+
+    .handwritten {
+      font-family: 'Caveat', cursive;
+      font-size: 1.8rem;
+      position: absolute;
+      white-space: nowrap;
+      pointer-events: none;
+      opacity: 0;
+      animation: fadeInNote 0.5s ease forwards;
+      animation-delay: 1.2s;
+    }
+
+    @keyframes fadeInNote {
+      from { opacity: 0; transform: translateY(10px) rotate(var(--rot)); }
+      to { opacity: 1; transform: translateY(0) rotate(var(--rot)); }
+    }
+
+    .note-cursor {
+      top: -2.5rem;
+      left: 30%;
+      --rot: -5deg;
+      color: var(--accent-red);
+    }
+
+    .note-living {
+      bottom: -3rem;
+      right: 0;
+      --rot: 4deg;
+      color: var(--accent-blue);
+    }
+
+    .note-signals {
+      top: -2rem;
+      right: 0;
+      --rot: -3deg;
+      color: var(--accent-red);
+    }
+
+    .draw-path {
+      stroke-dasharray: 300;
+      stroke-dashoffset: 300;
+      animation: drawPath 1.5s cubic-bezier(0.4, 0, 0.2, 1) forwards;
+      animation-delay: 0.5s;
+    }
+
+    .draw-arrow {
+      stroke-dasharray: 100;
+      stroke-dashoffset: 100;
+      animation: drawPath 1s cubic-bezier(0.4, 0, 0.2, 1) forwards;
+      animation-delay: 1.5s;
+    }
+
+    @keyframes drawPath {
+      to { stroke-dashoffset: 0; }
+    }
+
+    /* Responsive */
+    @media (max-width: 640px) {
+      .page-wrapper {
+        padding: 2rem 1.25rem;
+      }
+      h1 {
+        font-size: clamp(2.5rem, 12vw, 4rem);
+      }
+      .bio {
+        font-size: clamp(1.25rem, 5vw, 1.75rem);
+      }
+    }
+
+    @media (max-width: 1024px) {
+      .title-area, .bio, .lower-grid, .footer-content {
+        grid-column: 3 / 13;
+      }
+    }
+
+    @media (max-width: 768px) {
+      .page-wrapper {
+        padding: 3rem 1.5rem;
+      }
+      .header, .main-content, .footer {
+        display: flex;
+        flex-direction: column;
+        gap: 2rem;
+      }
+      .header {
+        padding-bottom: 2rem;
+        margin-bottom: 3rem;
+      }
+      .meta-sidebar {
+        display: flex;
+        gap: 1.5rem;
+        flex-wrap: wrap;
+        margin-bottom: 1rem;
+      }
+      .meta-item {
+        margin-bottom: 0;
+      }
+      .title-last {
+        margin-left: 0;
+      }
+      .lower-grid {
+        display: flex;
+        flex-direction: column;
+        gap: 4rem;
+      }
+      .footer {
+        margin-top: 4rem;
+      }
+      .footer-content {
+        flex-direction: column;
+        align-items: flex-start;
+        gap: 2rem;
+      }
+      .footer-links {
+        flex-wrap: wrap;
+      }
+    }
+  </style>
+
+<style id="__living_site_scroll_guard">
+  /* Scroll guard injected at build time to ensure generated pages remain scrollable in iframes. */
+  html, body {
+    height: auto !important;
+    min-height: 100% !important;
+    max-height: none !important;
+    overflow-y: auto !important;
+    overflow-x: hidden !important;
+    position: static !important;
+    -webkit-overflow-scrolling: touch !important;
+    touch-action: pan-y !important;
+    overscroll-behavior-y: contain !important;
+  }
+  /* Avoid accidental fixed full-screen traps that break scrolling on mobile. */
+  body {
+    inset: auto !important;
+  }
+</style>
+</head>
+<body>
+  <div class="page-wrapper">
+    
+    <header class="header">
+      <div class="meta-sidebar">
+        <div class="meta-item">San Francisco, CA</div>
+        <div class="meta-item">2026-10-27</div>
+        <div class="meta-item">11°C, mostly clear</div>
+        <div class="meta-item" style="margin-top: 2.5rem; color: var(--accent-red);">
+          <svg width="10" height="10" viewBox="0 0 10 10" style="display: inline-block; margin-right: 0.5rem; fill: currentColor; vertical-align: baseline;">
+            <circle cx="5" cy="5" r="4" />
+          </svg>
+          Live Data
+        </div>
+      </div>
+      <div class="title-area">
+        <h1>
+          <span class="title-first">Erik</span>
+          <span class="title-last">Nilsson</span>
+        </h1>
+      </div>
+    </header>
+
+    <main class="main-content">
+      <div class="bio">
+        I'm a product designer at 
+        <span class="circled">
+          <a href="https://cursor.com" target="_blank" style="color: inherit; text-decoration: none;">Cursor</a>
+          <svg viewBox="0 0 100 40" preserveAspectRatio="none" style="position: absolute; top: -15%; left: -10%; width: 120%; height: 130%; pointer-events: none; overflow: visible;">
+            <path class="draw-path" d="M 20 20 C 20 5, 80 5, 80 20 C 80 35, 20 35, 20 20 C 20 15, 30 10, 40 10" fill="none" stroke="var(--accent-red)" stroke-width="2" stroke-linecap="round" />
+          </svg>
+          <span class="handwritten note-cursor">
+            where I work
+            <svg class="draw-arrow" width="40" height="40" viewBox="0 0 40 40" style="position: absolute; top: 80%; left: 20%; stroke: currentColor; fill: none; stroke-width: 2; stroke-linecap: round; overflow: visible;">
+              <path d="M 20 0 Q 10 20 15 35 M 15 35 L 5 25 M 15 35 L 25 25" />
+            </svg>
+          </span>
+        </span>, 
+        working on how people build software with AI. Off-hours, I'm tinkering with 
+        <span class="highlight">
+          living-site
+          <span class="handwritten note-living">
+            always changing
+            <svg class="draw-arrow" width="40" height="40" viewBox="0 0 40 40" style="position: absolute; bottom: 80%; right: 40%; stroke: currentColor; fill: none; stroke-width: 2; stroke-linecap: round; overflow: visible;">
+              <path d="M 20 40 Q 30 20 25 5 M 25 5 L 15 15 M 25 5 L 35 15" />
+            </svg>
+          </span>
+        </span> 
+        — agents rebuild this corner of the web from fresh activity data each day.
+      </div>
+
+      <div class="lower-grid">
+        <div class="world-signals">
+          <div style="position: relative;">
+            <h3 class="section-title">World Signals</h3>
+            <span class="handwritten note-signals">
+              observations
+              <svg class="draw-arrow" width="40" height="40" viewBox="0 0 40 40" style="position: absolute; top: 90%; right: 60%; stroke: currentColor; fill: none; stroke-width: 2; stroke-linecap: round; overflow: visible;">
+                <path d="M 20 0 Q 10 20 15 35 M 15 35 L 5 25 M 15 35 L 25 25" />
+              </svg>
+            </span>
+          </div>
+          <div class="signals-list">
+            <div class="signal-item">new m6 silicon arriving in fourteen-inch machines</div>
+            <div class="signal-item">debate over whether software is decaying or just remembering the bad old days</div>
+            <div class="signal-item">python's experimental jit removed before most felt the speed</div>
+            <div class="signal-item">autumn night over san francisco, mostly clear at eleven degrees</div>
+            <div class="signal-item">shipping hour shrinking as daylight fades toward winter</div>
+          </div>
+        </div>
+
+        <div class="writing-index">
+          <h3 class="section-title">Writing Index</h3>
+          <div class="index-list">
+            <a href="https://x.com/flowstated/status/2002167999353241901" class="index-item" target="_blank">
+              <span class="title">imagine 2026</span>
+              <span class="date">Dec 20, 2025</span>
+            </a>
+            <a href="https://x.com/flowstated/status/2000889983562080578" class="index-item" target="_blank">
+              <span class="title">shipping by sunrise</span>
+              <span class="date">Dec 16, 2025</span>
+            </a>
+            <a href="https://x.com/flowstated/status/2000691637190861180" class="index-item" target="_blank">
+              <span class="title">exploring ways to spin up agents from my phone</span>
+              <span class="date">Dec 15, 2025</span>
+            </a>
+          </div>
+        </div>
+      </div>
+    </main>
+
+    <footer class="footer">
+      <div class="footer-content">
+        <div class="footer-copy">© 2026 Erik Nilsson</div>
+        <div class="footer-links">
+          <a href="https://x.com/flowstated" class="footer-link">X (Twitter)</a>
+          <a href="https://github.com/eriknson" class="footer-link">GitHub</a>
+          <a href="https://linkedin.com/in/eriknson" class="footer-link">LinkedIn</a>
+          <a href="mailto:contact@eriks.design" class="footer-link">Email</a>
+        </div>
+      </div>
+    </footer>
+
+  </div>
+</body>
+</html>

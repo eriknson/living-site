@@ -1,0 +1,910 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="color-scheme" content="light dark">
+  <title>eriks.design - Erik Nilsson</title>
+  <meta name="description" content="An editorial notebook for Erik Nilsson, product designer at Cursor.">
+  <style>
+    :root {
+      --paper: #f7f1e8;
+      --paper-deep: #eee3d5;
+      --ink: #17130f;
+      --soft-ink: #564f47;
+      --quiet: #8a7f73;
+      --hairline: rgba(23, 19, 15, 0.16);
+      --hairline-strong: rgba(23, 19, 15, 0.32);
+      --accent: #e64b2f;
+      --accent-2: #254ee8;
+      --accent-3: #0f8a5f;
+      --shadow: rgba(48, 37, 27, 0.14);
+      --sans: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+      --serif: "Iowan Old Style", "Palatino Linotype", Palatino, Georgia, serif;
+      --hand: "Bradley Hand", "Segoe Print", "Comic Sans MS", cursive;
+    }
+
+    @supports (color: color(display-p3 1 0.5 0)) {
+      :root {
+        --paper: color(display-p3 0.965 0.94 0.895);
+        --paper-deep: color(display-p3 0.925 0.875 0.805);
+        --ink: color(display-p3 0.085 0.072 0.055);
+        --soft-ink: color(display-p3 0.335 0.31 0.275);
+        --quiet: color(display-p3 0.525 0.485 0.43);
+        --accent: color(display-p3 0.94 0.245 0.13);
+        --accent-2: color(display-p3 0.13 0.28 0.92);
+        --accent-3: color(display-p3 0.02 0.54 0.35);
+      }
+    }
+
+    @media (prefers-color-scheme: dark) {
+      :root {
+        --paper: #1a1815;
+        --paper-deep: #0f0e0c;
+        --ink: #e8e4de;
+        --soft-ink: #b5aea4;
+        --quiet: #7a7368;
+        --hairline: rgba(232, 228, 222, 0.16);
+        --hairline-strong: rgba(232, 228, 222, 0.32);
+        --shadow: rgba(0, 0, 0, 0.4);
+      }
+
+      body::before {
+        border-color: rgba(232, 228, 222, 0.1);
+      }
+
+      .pill:hover,
+      .pill:focus-visible {
+        background: rgba(255, 255, 255, 0.06);
+      }
+
+      .pull,
+      .tweet-strip {
+        background: rgba(255, 255, 255, 0.04);
+      }
+    }
+
+    * {
+      box-sizing: border-box;
+    }
+
+    html {
+      scroll-behavior: smooth;
+    }
+
+    body {
+      margin: 0;
+      min-height: 100vh;
+      background: var(--paper-deep);
+      color: var(--ink);
+      font-family: var(--serif);
+      text-rendering: geometricPrecision;
+      -webkit-font-smoothing: antialiased;
+    }
+
+    body::before,
+    body::after {
+      content: "";
+      position: fixed;
+      pointer-events: none;
+      z-index: 0;
+    }
+
+    body::before {
+      inset: 18px;
+      border: 1px solid rgba(23, 19, 15, 0.12);
+    }
+
+    body::after {
+      top: 0;
+      right: 12vw;
+      width: 1px;
+      height: 100vh;
+      background: rgba(230, 75, 47, 0.36);
+    }
+
+    a {
+      color: inherit;
+      text-decoration: none;
+    }
+
+    .skip {
+      position: absolute;
+      left: 24px;
+      top: 16px;
+      z-index: 10;
+      transform: translateY(-160%);
+      padding: 10px 14px;
+      border: 1px solid var(--ink);
+      background: var(--paper);
+      font-family: var(--sans);
+      font-size: 12px;
+      transition: transform 180ms ease;
+    }
+
+    .skip:focus {
+      transform: translateY(0);
+    }
+
+    .page {
+      position: relative;
+      z-index: 1;
+      max-width: 640px;
+      width: calc(100% - 36px);
+      margin: 0 auto;
+      padding: 22px 0 40px;
+    }
+
+    .sheet {
+      min-height: calc(100vh - 44px);
+      background: var(--paper);
+      border: 1px solid var(--hairline);
+      box-shadow: 0 28px 80px var(--shadow);
+      overflow: hidden;
+    }
+
+    .masthead {
+      display: grid;
+      grid-template-columns: 1fr auto 1fr;
+      align-items: center;
+      min-height: 70px;
+      border-bottom: 1px solid var(--hairline);
+      font-family: var(--sans);
+      font-size: 11px;
+      letter-spacing: 0.16em;
+      text-transform: uppercase;
+      color: var(--soft-ink);
+    }
+
+    .masthead > * {
+      padding: 0 28px;
+    }
+
+    .brand {
+      font-weight: 720;
+      color: var(--ink);
+    }
+
+    .weather {
+      justify-self: end;
+    }
+
+    .issue {
+      position: relative;
+      color: var(--quiet);
+    }
+
+    .issue::before,
+    .issue::after {
+      content: "";
+      display: inline-block;
+      width: 28px;
+      height: 1px;
+      margin: 0 14px 3px;
+      background: var(--hairline-strong);
+    }
+
+    .hero {
+      position: relative;
+      display: grid;
+      grid-template-columns: minmax(0, 1fr) 280px;
+      min-height: 600px;
+      border-bottom: 1px solid var(--hairline);
+    }
+
+    .hero-copy {
+      padding: clamp(48px, 7vw, 92px) clamp(28px, 7vw, 96px) 64px;
+    }
+
+    .eyebrow {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      margin: 0 0 32px;
+      font-family: var(--sans);
+      font-size: 12px;
+      font-weight: 650;
+      letter-spacing: 0.18em;
+      text-transform: uppercase;
+      color: var(--accent);
+    }
+
+    .eyebrow::before {
+      content: "";
+      width: 9px;
+      height: 9px;
+      border-radius: 999px;
+      background: var(--accent);
+      box-shadow: 17px 0 0 var(--accent-2), 34px 0 0 var(--accent-3);
+    }
+
+    h1 {
+      max-width: 850px;
+      margin: 0;
+      font-size: clamp(58px, 9.6vw, 132px);
+      line-height: 0.88;
+      letter-spacing: -0.075em;
+      font-weight: 560;
+    }
+
+    .lede {
+      max-width: 590px;
+      margin: 38px 0 0;
+      font-size: clamp(20px, 2.2vw, 29px);
+      line-height: 1.28;
+      letter-spacing: -0.03em;
+      color: var(--soft-ink);
+    }
+
+    .link-row {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 10px;
+      margin-top: 44px;
+      font-family: var(--sans);
+    }
+
+    .pill {
+      display: inline-flex;
+      align-items: center;
+      min-height: 38px;
+      padding: 0 13px;
+      border: 1px solid var(--hairline-strong);
+      border-radius: 999px;
+      font-size: 12px;
+      font-weight: 650;
+      letter-spacing: 0.06em;
+      text-transform: uppercase;
+      transition: transform 180ms ease, border-color 180ms ease, background 180ms ease;
+    }
+
+    .pill:hover,
+    .pill:focus-visible {
+      transform: translateY(-2px);
+      border-color: var(--ink);
+      background: rgba(255, 255, 255, 0.34);
+    }
+
+    .hero-margin {
+      position: relative;
+      border-left: 1px solid var(--hairline);
+      padding: 34px 26px;
+      font-family: var(--sans);
+    }
+
+    .notebook-rule {
+      position: absolute;
+      top: 0;
+      bottom: 0;
+      left: 58px;
+      width: 1px;
+      background: rgba(37, 78, 232, 0.18);
+    }
+
+    .side-note {
+      position: relative;
+      z-index: 1;
+      margin-top: 72px;
+      padding: 18px 0 18px 18px;
+      border-left: 2px solid var(--accent);
+      font-size: 13px;
+      line-height: 1.55;
+      color: var(--soft-ink);
+    }
+
+    .side-note strong {
+      display: block;
+      margin-bottom: 8px;
+      color: var(--ink);
+      font-size: 11px;
+      letter-spacing: 0.14em;
+      text-transform: uppercase;
+    }
+
+    .scribble {
+      position: absolute;
+      right: 24px;
+      bottom: 36px;
+      width: 180px;
+      transform: rotate(-5deg);
+      font-family: var(--hand);
+      font-size: 19px;
+      line-height: 1.1;
+      color: var(--accent-2);
+    }
+
+    .scribble::after {
+      content: "";
+      display: block;
+      width: 88px;
+      height: 20px;
+      margin-top: 8px;
+      border-bottom: 2px solid currentColor;
+      border-left: 2px solid currentColor;
+      border-radius: 0 0 0 70%;
+      transform: skewX(-18deg);
+    }
+
+    .spread {
+      display: grid;
+      grid-template-columns: minmax(0, 0.92fr) minmax(320px, 0.58fr);
+      border-bottom: 1px solid var(--hairline);
+    }
+
+    .essay {
+      padding: clamp(38px, 5.6vw, 74px) clamp(28px, 6vw, 82px);
+      border-right: 1px solid var(--hairline);
+    }
+
+    .section-kicker {
+      margin: 0 0 24px;
+      font-family: var(--sans);
+      font-size: 12px;
+      font-weight: 750;
+      letter-spacing: 0.17em;
+      text-transform: uppercase;
+      color: var(--accent-3);
+    }
+
+    h2 {
+      margin: 0;
+      font-size: clamp(36px, 5vw, 76px);
+      line-height: 0.94;
+      letter-spacing: -0.06em;
+      font-weight: 540;
+    }
+
+    .essay p {
+      max-width: 650px;
+      margin: 28px 0 0;
+      font-size: clamp(18px, 1.8vw, 24px);
+      line-height: 1.45;
+      color: var(--soft-ink);
+    }
+
+    .pull {
+      position: relative;
+      max-width: 580px;
+      margin: 46px 0 0;
+      padding: 26px 28px 24px;
+      border: 1px solid var(--hairline-strong);
+      background: rgba(255, 255, 255, 0.22);
+      font-size: clamp(24px, 2.8vw, 38px);
+      line-height: 1.06;
+      letter-spacing: -0.04em;
+    }
+
+    .pull::before {
+      content: "quote pulled from today";
+      position: absolute;
+      top: -11px;
+      left: 18px;
+      padding: 0 8px;
+      background: var(--paper);
+      font-family: var(--hand);
+      font-size: 15px;
+      letter-spacing: 0;
+      color: var(--accent);
+      transform: rotate(-2deg);
+    }
+
+    .today {
+      padding: clamp(34px, 4vw, 54px) clamp(26px, 3.8vw, 46px);
+      font-family: var(--sans);
+    }
+
+    .today h3,
+    .writing h3 {
+      margin: 0;
+      font-family: var(--sans);
+      font-size: 12px;
+      font-weight: 800;
+      letter-spacing: 0.18em;
+      text-transform: uppercase;
+    }
+
+    .signal-list {
+      display: grid;
+      gap: 14px;
+      margin: 28px 0 0;
+      padding: 0;
+      list-style: none;
+    }
+
+    .signal-list li {
+      display: grid;
+      grid-template-columns: 42px 1fr;
+      gap: 14px;
+      align-items: start;
+      padding-top: 14px;
+      border-top: 1px solid var(--hairline);
+      color: var(--soft-ink);
+      font-size: 14px;
+      line-height: 1.45;
+    }
+
+    .signal-list span {
+      font-family: var(--serif);
+      font-size: 26px;
+      line-height: 0.9;
+      letter-spacing: -0.06em;
+      color: var(--ink);
+    }
+
+    .tweet-strip {
+      margin-top: 40px;
+      padding: 18px;
+      border: 1px solid var(--hairline);
+      background: rgba(255, 255, 255, 0.26);
+    }
+
+    .tweet-strip p {
+      margin: 0 0 14px;
+      color: var(--quiet);
+      font-size: 12px;
+      font-weight: 750;
+      letter-spacing: 0.16em;
+      text-transform: uppercase;
+    }
+
+    .micro-posts {
+      display: grid;
+      gap: 10px;
+    }
+
+    .micro-posts a {
+      display: block;
+      padding: 12px 12px 11px;
+      border: 1px solid transparent;
+      color: var(--ink);
+      font-family: var(--serif);
+      font-size: 18px;
+      line-height: 1.18;
+      letter-spacing: -0.025em;
+      transition: border-color 160ms ease, transform 160ms ease, background 160ms ease;
+    }
+
+    .micro-posts a:hover,
+    .micro-posts a:focus-visible {
+      border-color: var(--accent);
+      background: var(--paper);
+      transform: translateX(3px);
+    }
+
+    .writing {
+      position: relative;
+      padding: clamp(38px, 5vw, 70px) clamp(28px, 6vw, 82px) clamp(42px, 6vw, 84px);
+    }
+
+    .writing::before {
+      content: "";
+      position: absolute;
+      top: 36px;
+      right: clamp(28px, 6vw, 82px);
+      width: 96px;
+      height: 96px;
+      border: 1px solid var(--accent-2);
+      border-radius: 50%;
+      opacity: 0.5;
+    }
+
+    .writing-head {
+      display: grid;
+      grid-template-columns: minmax(0, 0.7fr) minmax(230px, 0.3fr);
+      gap: 40px;
+      align-items: end;
+      margin-bottom: 34px;
+    }
+
+    .writing-head p {
+      margin: 0;
+      font-family: var(--sans);
+      color: var(--soft-ink);
+      font-size: 14px;
+      line-height: 1.55;
+    }
+
+    .index {
+      margin: 0;
+      padding: 0;
+      list-style: none;
+      counter-reset: writing;
+      border-top: 1px solid var(--hairline-strong);
+    }
+
+    .index li {
+      counter-increment: writing;
+      border-bottom: 1px solid var(--hairline);
+    }
+
+    .index a {
+      display: grid;
+      grid-template-columns: 72px minmax(0, 1fr) auto;
+      gap: 22px;
+      align-items: baseline;
+      padding: 20px 0 19px;
+      transition: color 160ms ease, padding-left 160ms ease;
+    }
+
+    .index a::before {
+      content: "0" counter(writing);
+      font-family: var(--sans);
+      font-size: 11px;
+      font-weight: 760;
+      letter-spacing: 0.18em;
+      color: var(--quiet);
+    }
+
+    .index strong {
+      font-size: clamp(24px, 3vw, 44px);
+      line-height: 1;
+      letter-spacing: -0.055em;
+      font-weight: 520;
+    }
+
+    .index small {
+      font-family: var(--sans);
+      font-size: 12px;
+      color: var(--quiet);
+      white-space: nowrap;
+    }
+
+    .index a:hover,
+    .index a:focus-visible {
+      color: var(--accent);
+      padding-left: 12px;
+    }
+
+    .footer {
+      display: grid;
+      grid-template-columns: 1fr auto;
+      gap: 22px;
+      padding: 24px 28px;
+      border-top: 1px solid var(--hairline);
+      font-family: var(--sans);
+      color: var(--soft-ink);
+      font-size: 12px;
+      line-height: 1.5;
+    }
+
+    .footer nav {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 14px;
+      justify-content: flex-end;
+    }
+
+    .footer a {
+      border-bottom: 1px solid var(--hairline-strong);
+      transition: color 160ms ease, border-color 160ms ease;
+    }
+
+    .footer a:hover,
+    .footer a:focus-visible {
+      color: var(--accent);
+      border-color: currentColor;
+    }
+
+    .fade-in {
+      animation: rise 700ms ease both;
+    }
+
+    .delay-1 {
+      animation-delay: 90ms;
+    }
+
+    .delay-2 {
+      animation-delay: 180ms;
+    }
+
+    .delay-3 {
+      animation-delay: 270ms;
+    }
+
+    @keyframes rise {
+      from {
+        opacity: 0;
+        transform: translateY(14px);
+      }
+      to {
+        opacity: 1;
+        transform: translateY(0);
+      }
+    }
+
+    @media (prefers-reduced-motion: reduce) {
+      *,
+      *::before,
+      *::after {
+        animation-duration: 0.01ms !important;
+        animation-iteration-count: 1 !important;
+        scroll-behavior: auto !important;
+        transition-duration: 0.01ms !important;
+      }
+    }
+
+    @media (max-width: 900px) {
+      body::before,
+      body::after {
+        display: none;
+      }
+
+      .page {
+        width: 100%;
+        padding: 0;
+      }
+
+      .sheet {
+        min-height: 100vh;
+        border: 0;
+      }
+
+      .masthead {
+        grid-template-columns: 1fr;
+        gap: 6px;
+        align-items: start;
+        padding: 18px 22px;
+      }
+
+      .masthead > * {
+        padding: 0;
+      }
+
+      .issue::before,
+      .issue::after {
+        display: none;
+      }
+
+      .weather {
+        justify-self: start;
+      }
+
+      .hero,
+      .spread,
+      .writing-head {
+        grid-template-columns: 1fr;
+      }
+
+      .hero {
+        min-height: 0;
+      }
+
+      .hero-margin,
+      .essay {
+        border-left: 0;
+        border-right: 0;
+        border-top: 1px solid var(--hairline);
+      }
+
+      .hero-margin {
+        min-height: 230px;
+      }
+
+      .side-note {
+        margin-top: 12px;
+        max-width: 420px;
+      }
+
+      .scribble {
+        right: 28px;
+        bottom: 28px;
+      }
+
+      .today {
+        border-top: 1px solid var(--hairline);
+      }
+
+      .writing::before {
+        width: 70px;
+        height: 70px;
+        top: 34px;
+      }
+
+      .index a {
+        grid-template-columns: 42px minmax(0, 1fr);
+      }
+
+      .index small {
+        grid-column: 2;
+      }
+
+      .footer {
+        grid-template-columns: 1fr;
+      }
+
+      .footer nav {
+        justify-content: flex-start;
+      }
+    }
+
+    @media (max-width: 560px) {
+      .hero-copy,
+      .essay,
+      .writing {
+        padding-left: 22px;
+        padding-right: 22px;
+      }
+
+      h1 {
+        font-size: clamp(52px, 18vw, 84px);
+      }
+
+      .lede {
+        font-size: 20px;
+      }
+
+      .link-row {
+        margin-top: 32px;
+      }
+
+      .pill {
+        min-height: 34px;
+      }
+
+      .scribble {
+        position: relative;
+        right: auto;
+        bottom: auto;
+        margin-top: 28px;
+      }
+
+      .pull {
+        padding: 24px 20px 20px;
+      }
+
+      .writing::before {
+        display: none;
+      }
+    }
+  </style>
+
+<style id="__living_site_scroll_guard">
+  /* Scroll guard injected at build time to ensure generated pages remain scrollable in iframes. */
+  html, body {
+    height: auto !important;
+    min-height: 100% !important;
+    max-height: none !important;
+    overflow-y: auto !important;
+    overflow-x: hidden !important;
+    position: static !important;
+    -webkit-overflow-scrolling: touch !important;
+    touch-action: pan-y !important;
+    overscroll-behavior-y: contain !important;
+  }
+  /* Avoid accidental fixed full-screen traps that break scrolling on mobile. */
+  body {
+    inset: auto !important;
+  }
+</style>
+</head>
+<body>
+  <a class="skip" href="#main">Skip to content</a>
+  <div class="page">
+    <div class="sheet">
+      <header class="masthead" aria-label="Site masthead">
+        <div class="brand">eriks.design</div>
+        <div class="issue">Notebook 2026.10.27</div>
+        <div class="weather">San Francisco / mostly clear / 11 C</div>
+      </header>
+
+      <main id="main">
+        <section class="hero" aria-labelledby="cover-title">
+          <div class="hero-copy">
+            <p class="eyebrow fade-in">Erik Nilsson</p>
+            <h1 id="cover-title" class="fade-in delay-1">Designing the room where humans and agents build.</h1>
+            <p class="lede fade-in delay-2">
+              Product Designer at Cursor, working on how people build software with AI. This page keeps the bio short and the signal close to the work.
+            </p>
+            <nav class="link-row fade-in delay-3" aria-label="Primary links">
+              <a class="pill" href="https://cursor.com">Cursor</a>
+              <a class="pill" href="https://x.com/flowstated">X / notes</a>
+              <a class="pill" href="https://github.com/eriknson">GitHub</a>
+              <a class="pill" href="mailto:contact@eriks.design">Email</a>
+            </nav>
+          </div>
+
+          <aside class="hero-margin" aria-label="Notebook margin">
+            <div class="notebook-rule" aria-hidden="true"></div>
+            <p class="side-note">
+              <strong>Living site</strong>
+              Agents rebuild this corner of the web from fresh activity data each day. Today is quieter, autumnal, and focused.
+            </p>
+            <p class="scribble" aria-hidden="true">keep the page breathing</p>
+          </aside>
+        </section>
+
+        <section class="spread" aria-labelledby="today-title">
+          <article class="essay">
+            <p class="section-kicker">Current page</p>
+            <h2 id="today-title">A clean desk, a few sharp notes, and no performance theatre.</h2>
+            <p>
+              The public trail is light today: little noise, plenty of space, and no need to dress the page up as a portfolio. Just the useful shape of the work: design software so people can steer with taste while agents handle more of the mechanical execution.
+            </p>
+            <p>
+              Outside, San Francisco is mostly clear at 11 C. The site takes that literally: warm paper, hard ink, a little color in the margins, and enough restraint for the details to matter.
+            </p>
+            <blockquote class="pull">
+              shipping by sunrise
+            </blockquote>
+          </article>
+
+          <aside class="today" aria-label="Signals from today">
+            <h3>Field notes</h3>
+            <ul class="signal-list">
+              <li><span>01</span>New M6 silicon is arriving in fourteen-inch machines.</li>
+              <li><span>02</span>People are still arguing whether software is decaying or just remembering its rough edges.</li>
+              <li><span>03</span>Python's experimental JIT disappeared before most people felt the speed.</li>
+              <li><span>04</span>Autumn daylight is narrowing toward winter, which makes shipping hours feel more precious.</li>
+            </ul>
+
+            <div class="tweet-strip">
+              <p>Recent fragments</p>
+              <div class="micro-posts">
+                <a href="https://x.com/flowstated/status/2002167999353241901">imagine 2026</a>
+                <a href="https://x.com/flowstated/status/2000889983562080578">shipping by sunrise</a>
+                <a href="https://x.com/flowstated/status/2000691637190861180">exploring ways to spin up agents from my phone</a>
+              </div>
+            </div>
+          </aside>
+        </section>
+
+        <section class="writing" aria-labelledby="writing-title">
+          <div class="writing-head">
+            <div>
+              <p class="section-kicker">Small index</p>
+              <h2 id="writing-title">Writing</h2>
+            </div>
+            <p>
+              A compact shelf of pieces about software, tools, agents, and the taste required to keep iteration humane.
+            </p>
+          </div>
+
+          <ol class="index">
+            <li>
+              <a href="https://cursor.com/blog/design-mode">
+                <strong>Directing agents visually</strong>
+                <small>2026 / 6 min</small>
+              </a>
+            </li>
+            <li>
+              <a href="/posts/a-living-site">
+                <strong>A living site</strong>
+                <small>2025 / 7 min</small>
+              </a>
+            </li>
+            <li>
+              <a href="/posts/surgical-edits">
+                <strong>Surgical edits</strong>
+                <small>2025 / 4 min</small>
+              </a>
+            </li>
+            <li>
+              <a href="/posts/familiar-differentiation">
+                <strong>Familiar differentiation</strong>
+                <small>2024 / 5 min</small>
+              </a>
+            </li>
+            <li>
+              <a href="/posts/hackathon-energy-but-add-users">
+                <strong>Hackathon energy, but add users</strong>
+                <small>2022 / 4 min</small>
+              </a>
+            </li>
+          </ol>
+        </section>
+      </main>
+
+      <footer class="footer">
+        <div>
+          Erik Nilsson is a product designer at Cursor in San Francisco. Side projects and GitHub experiments stay small and personal.
+        </div>
+        <nav aria-label="Footer links">
+          <a href="https://eriks.design">Site</a>
+          <a href="https://linkedin.com/in/eriknson">LinkedIn</a>
+          <a href="mailto:contact@eriks.design">contact@eriks.design</a>
+        </nav>
+      </footer>
+    </div>
+  </div>
+</body>
+</html>

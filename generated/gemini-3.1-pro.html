@@ -2,43 +2,41 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-width=1.0">
-  <title>Erik Nilsson — Designer</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Erik Nilsson — Product Designer</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Caveat:wght@500&family=Inter:wght@400;500&family=Newsreader:ital,opsz,wght@0,6..72,300;0,6..72,400;1,6..72,400&display=swap" rel="stylesheet">
   <style>
-    @import url('https://fonts.googleapis.com/css2?family=Caveat:wght@500&family=Instrument+Serif:ital@0;1&family=Inter:wght@400;500&display=swap');
-
     :root {
-      --bg: #F4F3EE;
-      --line: #DCDAD2;
-      --text: #1C1B1A;
-      --text-muted: #7A7873;
-      --ink-blue: #1A40E6;
-      --ink-red: #D92626;
-      --highlighter: #CCF233;
+      --bg-color: #F4F2EE;
+      --text-color: #1A1A1A;
+      --text-muted: #737373;
+      --accent-red: #E63946;
+      --accent-blue: #0047FF;
+      --accent-highlight: #E9FF33;
+      --line-color: #D6D3CD;
     }
 
     @supports (color: color(display-p3 1 1 1)) {
       :root {
-        --ink-blue: color(display-p3 0.1 0.2 0.95);
-        --ink-red: color(display-p3 0.9 0.1 0.1);
-        --highlighter: color(display-p3 0.85 0.95 0.1);
+        --bg-color: color(display-p3 0.96 0.95 0.93);
+        --text-color: color(display-p3 0.08 0.08 0.08);
+        --text-muted: color(display-p3 0.45 0.45 0.45);
+        --accent-red: color(display-p3 0.95 0.15 0.15);
+        --accent-blue: color(display-p3 0.0 0.2 1.0);
+        --accent-highlight: color(display-p3 0.9 1.0 0.2);
+        --line-color: color(display-p3 0.84 0.83 0.80);
       }
     }
 
     @media (prefers-color-scheme: dark) {
       :root {
-        --bg: #1a1a1a;
-        --line: #2e2e2e;
-        --text: #e0e0e0;
-        --text-muted: #9a9893;
-      }
-
-      body {
-        background-color: #0d0d0d;
-      }
-
-      .highlight::before {
-        mix-blend-mode: screen;
+        --bg-color: #1A1A1A;
+        --text-color: #E0E0E0;
+        --text-muted: #A0A0A0;
+        --line-color: #333333;
+        --accent-highlight: #C4D620;
       }
     }
 
@@ -47,89 +45,98 @@
     }
 
     body {
-      background-color: #E6E4DD;
-      color: var(--text);
       margin: 0;
-      padding: 4vw;
+      background-color: var(--bg-color);
+      color: var(--text-color);
       font-family: 'Inter', sans-serif;
       -webkit-font-smoothing: antialiased;
       -moz-osx-font-smoothing: grayscale;
+      min-height: 100vh;
+      display: flex;
+      justify-content: center;
+      overflow-x: hidden;
+      opacity: 0;
+      animation: pageFadeIn 0.8s ease forwards;
     }
 
-    .wrapper {
-      max-width: 40rem;
+    @keyframes pageFadeIn {
+      to { opacity: 1; }
+    }
+
+    .page-wrapper {
+      width: 100%;
+      max-width: 640px;
       margin: 0 auto;
-      background: var(--line);
+      padding: 6rem 4rem;
+    }
+
+    .header, .main-content, .footer {
       display: grid;
       grid-template-columns: repeat(12, 1fr);
-      gap: 1px;
-      border: 1px solid var(--line);
-      box-shadow: 0 20px 40px rgba(0,0,0,0.05), 0 1px 3px rgba(0,0,0,0.02);
+      gap: 2rem;
     }
 
-    .box {
-      background: var(--bg);
+    .header {
+      padding-bottom: 3rem;
+      margin-bottom: 5rem;
+      border-bottom: 1px solid var(--line-color);
+      align-items: end;
     }
 
-    .masthead {
-      grid-column: 1 / -1;
-      padding: 3rem 4rem;
+    .meta-sidebar {
+      grid-column: 1 / 3;
+      padding-bottom: 0.5rem;
     }
 
-    .folio {
-      display: flex;
-      justify-content: space-between;
+    .meta-item {
+      font-family: 'Inter', sans-serif;
       font-size: 0.75rem;
       text-transform: uppercase;
       letter-spacing: 0.05em;
+      margin-bottom: 0.5rem;
       color: var(--text-muted);
-      margin-bottom: 6rem;
     }
 
-    .title {
-      font-family: 'Instrument Serif', serif;
-      font-size: clamp(4.5rem, 12vw, 11rem);
-      line-height: 0.85;
-      margin: 0;
+    .title-area {
+      grid-column: 4 / 13;
+    }
+
+    h1 {
+      font-family: 'Newsreader', serif;
+      font-size: clamp(4rem, 10vw, 9rem);
       font-weight: 400;
-      letter-spacing: -0.02em;
-    }
-
-    .title i {
-      font-style: italic;
-      color: var(--text-muted);
-    }
-
-    .main-content {
-      grid-column: 1 / 8;
-      padding: 5rem 4rem;
-    }
-
-    .main-content p.lead {
-      font-family: 'Instrument Serif', serif;
-      font-size: clamp(1.75rem, 3.5vw, 3rem);
-      line-height: 1.25;
+      line-height: 0.85;
+      letter-spacing: -0.03em;
       margin: 0;
-      color: var(--text);
+      color: var(--text-color);
     }
 
-    .main-content p.lead::first-letter {
-      float: left;
-      font-size: 7rem;
-      line-height: 0.7;
-      padding-right: 0.75rem;
-      padding-top: 0.5rem;
-      color: var(--text);
-      font-family: 'Instrument Serif', serif;
+    .title-first {
+      display: block;
+      transform: translateX(-0.05em);
+    }
+
+    .title-last {
+      display: block;
+      margin-left: 15%;
       font-style: italic;
     }
 
-    .sidebar {
-      grid-column: 8 / 13;
-      padding: 5rem 4rem;
-      display: flex;
-      flex-direction: column;
-      gap: 5rem;
+    .bio {
+      grid-column: 4 / 12;
+      font-family: 'Newsreader', serif;
+      font-size: clamp(1.75rem, 4vw, 2.75rem);
+      line-height: 1.15;
+      margin-bottom: 6rem;
+      letter-spacing: -0.01em;
+      color: var(--text-color);
+    }
+
+    .lower-grid {
+      grid-column: 4 / 13;
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 4rem;
     }
 
     .section-title {
@@ -139,373 +146,392 @@
       letter-spacing: 0.05em;
       color: var(--text-muted);
       margin-bottom: 2rem;
-      border-bottom: 1px solid var(--line);
-      padding-bottom: 0.75rem;
       display: flex;
       align-items: center;
+      gap: 1rem;
     }
 
-    .clean-list {
-      list-style: none;
-      padding: 0;
-      margin: 0;
+    .section-title::after {
+      content: '';
+      flex-grow: 1;
+      height: 1px;
+      background-color: var(--line-color);
+    }
+
+    .signals-list {
       display: flex;
       flex-direction: column;
-      gap: 1.5rem;
+      gap: 1.25rem;
     }
 
-    .index-list a {
-      font-family: 'Instrument Serif', serif;
-      font-size: 2rem;
-      color: var(--text);
-      text-decoration: none;
-      line-height: 1.1;
-      display: block;
-      margin-bottom: 0.35rem;
-      transition: color 0.2s ease;
-    }
-
-    .index-list a:hover {
-      color: var(--ink-blue);
-    }
-
-    .index-list .meta {
-      font-size: 0.75rem;
-      color: var(--text-muted);
-      text-transform: uppercase;
-      letter-spacing: 0.05em;
-    }
-
-    .signals-list li {
-      font-size: 0.875rem;
-      line-height: 1.5;
-      color: var(--text);
+    .signal-item {
+      font-family: 'Newsreader', serif;
+      font-size: 1.25rem;
+      line-height: 1.4;
+      color: var(--text-color);
       position: relative;
       padding-left: 1.5rem;
+      transition: transform 0.3s ease, color 0.3s ease;
     }
 
-    .signals-list li::before {
-      content: '→';
+    .signal-item::before {
+      content: '*';
+      font-family: 'Inter', sans-serif;
       position: absolute;
       left: 0;
-      color: var(--ink-red);
-      font-family: 'Inter', sans-serif;
+      top: 0.2rem;
+      color: var(--accent-red);
+      font-size: 1.2rem;
+      transition: color 0.3s ease;
     }
 
-    .concepts-list {
-      display: grid;
-      grid-template-columns: 1fr 1fr;
-      gap: 3rem 4rem;
+    .signal-item:hover {
+      transform: translateX(4px);
+      color: var(--accent-blue);
     }
 
-    .concept-item h3 {
+    .signal-item:hover::before {
+      color: var(--accent-blue);
+    }
+
+    .index-list {
+      display: flex;
+      flex-direction: column;
+    }
+
+    .index-item {
+      display: flex;
+      justify-content: space-between;
+      align-items: baseline;
+      padding: 1.25rem 0;
+      border-bottom: 1px solid var(--line-color);
+      text-decoration: none;
+      color: var(--text-color);
+      transition: all 0.3s ease;
+    }
+
+    .index-item:first-child {
+      border-top: 1px solid var(--line-color);
+    }
+
+    .index-item:hover {
+      color: var(--accent-blue);
+      padding-left: 0.5rem;
+      padding-right: 0.5rem;
+    }
+
+    .index-item .title {
+      font-family: 'Newsreader', serif;
+      font-size: 1.5rem;
+      font-style: italic;
+    }
+
+    .index-item .date {
       font-family: 'Inter', sans-serif;
       font-size: 0.75rem;
       text-transform: uppercase;
       letter-spacing: 0.05em;
-      margin: 0 0 1rem 0;
-      color: var(--text);
-      display: flex;
-      align-items: center;
-      gap: 0.5rem;
-    }
-
-    .concept-item h3::before {
-      content: '';
-      display: block;
-      width: 1rem;
-      height: 1px;
-      background-color: var(--ink-red);
-    }
-
-    .concept-item p {
-      font-family: 'Instrument Serif', serif;
-      font-size: 1.5rem;
-      line-height: 1.3;
-      margin: 0;
       color: var(--text-muted);
+      transition: color 0.3s ease;
+    }
+
+    .index-item:hover .date {
+      color: var(--accent-blue);
     }
 
     .footer {
-      grid-column: 1 / -1;
-      padding: 2.5rem 4rem;
+      margin-top: 8rem;
+    }
+
+    .footer-content {
+      grid-column: 4 / 13;
       display: flex;
       justify-content: space-between;
       align-items: center;
+      padding-top: 2rem;
+      border-top: 1px solid var(--line-color);
+    }
+
+    .footer-copy {
+      font-family: 'Newsreader', serif;
+      font-size: 1.2rem;
+      font-style: italic;
+      color: var(--text-muted);
     }
 
     .footer-links {
       display: flex;
-      gap: 2.5rem;
+      gap: 2rem;
     }
 
-    .footer-links a {
-      color: var(--text);
+    .footer-link {
+      font-family: 'Inter', sans-serif;
+      font-size: 0.85rem;
+      color: var(--text-color);
       text-decoration: none;
       text-transform: uppercase;
-      font-size: 0.75rem;
       letter-spacing: 0.05em;
-      transition: color 0.2s;
+      transition: color 0.3s ease;
     }
 
-    .footer-links a:hover {
-      color: var(--ink-blue);
+    .footer-link:hover {
+      color: var(--accent-blue);
     }
 
     /* Annotations */
-    .handwritten {
-      font-family: 'Caveat', cursive;
-      line-height: 1;
-      pointer-events: none;
-      animation: drawIn 0.8s ease-out forwards;
-      animation-delay: 0.5s;
-      opacity: 0;
-      z-index: 10;
-    }
-
-    .parallax {
-      transition: transform 0.1s ease-out;
-    }
-
-    @keyframes drawIn {
-      from { opacity: 0; transform: translateY(10px) rotate(var(--rot, 0deg)); }
-      to { opacity: 1; transform: translateY(0) rotate(var(--rot, 0deg)); }
-    }
-
     .circled {
       position: relative;
       display: inline-block;
       white-space: nowrap;
-      color: inherit;
-      text-decoration: none;
-    }
-
-    .circle-svg {
-      position: absolute;
-      top: -20%;
-      left: -10%;
-      width: 120%;
-      height: 140%;
-      pointer-events: none;
-      z-index: 2;
-      overflow: visible;
-    }
-
-    .circle-svg path {
-      stroke-dasharray: 300;
-      stroke-dashoffset: 300;
-      animation: drawCircle 0.8s cubic-bezier(0.4, 0, 0.2, 1) forwards;
-      animation-delay: 1s;
-    }
-
-    @keyframes drawCircle {
-      to { stroke-dashoffset: 0; }
     }
 
     .highlight {
       position: relative;
       display: inline-block;
+      white-space: nowrap;
+      color: var(--text-color);
       z-index: 1;
     }
 
     .highlight::before {
       content: '';
       position: absolute;
-      bottom: 0.1em;
-      left: -0.1em;
-      right: 105%;
-      height: 0.4em;
-      background-color: var(--highlighter);
+      top: 10%;
+      left: -2%;
+      width: 104%;
+      height: 80%;
+      background-color: var(--accent-highlight);
       z-index: -1;
       transform: rotate(-1deg);
-      border-radius: 2px;
-      mix-blend-mode: multiply;
-      animation: drawHighlight 0.6s cubic-bezier(0.4, 0, 0.2, 1) forwards;
+      border-radius: 4px 8px 3px 6px;
+      transition: transform 0.3s ease;
+    }
+
+    .highlight:hover::before {
+      transform: rotate(1deg) scale(1.02);
+    }
+
+    .handwritten {
+      font-family: 'Caveat', cursive;
+      font-size: 1.8rem;
+      position: absolute;
+      white-space: nowrap;
+      pointer-events: none;
+      opacity: 0;
+      animation: fadeInNote 0.5s ease forwards;
       animation-delay: 1.2s;
     }
 
-    @keyframes drawHighlight {
-      to { right: -0.1em; }
+    @keyframes fadeInNote {
+      from { opacity: 0; transform: translateY(10px) rotate(var(--rot)); }
+      to { opacity: 1; transform: translateY(0) rotate(var(--rot)); }
     }
 
-    .marginalia {
-      margin-top: auto;
-      padding-top: 2rem;
-      border-top: 1px solid var(--line);
+    .note-cursor {
+      top: -2.5rem;
+      left: 30%;
+      --rot: -5deg;
+      color: var(--accent-red);
     }
 
-    .marginalia p {
-      font-size: 0.75rem;
-      color: var(--text-muted);
-      line-height: 1.6;
-      margin: 0;
+    .note-living {
+      bottom: -3rem;
+      right: 0;
+      --rot: 4deg;
+      color: var(--accent-blue);
     }
 
+    .note-signals {
+      top: -2rem;
+      right: 0;
+      --rot: -3deg;
+      color: var(--accent-red);
+    }
+
+    .draw-path {
+      stroke-dasharray: 300;
+      stroke-dashoffset: 300;
+      animation: drawPath 1.5s cubic-bezier(0.4, 0, 0.2, 1) forwards;
+      animation-delay: 0.5s;
+    }
+
+    .draw-arrow {
+      stroke-dasharray: 100;
+      stroke-dashoffset: 100;
+      animation: drawPath 1s cubic-bezier(0.4, 0, 0.2, 1) forwards;
+      animation-delay: 1.5s;
+    }
+
+    @keyframes drawPath {
+      to { stroke-dashoffset: 0; }
+    }
+
+    /* Responsive */
     @media (max-width: 640px) {
-      .masthead { padding: 2rem 1.5rem; }
-      .main-content { padding: 3rem 1.5rem; }
-      .sidebar { padding: 3rem 1.5rem; }
-      .footer { padding: 2rem 1.5rem; }
-      .title { font-size: clamp(3rem, 15vw, 4.5rem); }
+      .page-wrapper {
+        padding: 2rem 1.25rem;
+      }
+      h1 {
+        font-size: clamp(2.5rem, 12vw, 4rem);
+      }
+      .bio {
+        font-size: clamp(1.25rem, 5vw, 1.75rem);
+      }
     }
 
-    @media (max-width: 900px) {
-      body {
-        padding: 0;
-        background-color: var(--line);
+    @media (max-width: 1024px) {
+      .title-area, .bio, .lower-grid, .footer-content {
+        grid-column: 3 / 13;
       }
-      .wrapper {
-        margin: 0;
-        border: none;
-        box-shadow: none;
-        gap: 1px;
+    }
+
+    @media (max-width: 768px) {
+      .page-wrapper {
+        padding: 3rem 1.5rem;
+      }
+      .header, .main-content, .footer {
         display: flex;
         flex-direction: column;
+        gap: 2rem;
       }
-      .masthead { padding: 2.5rem 2rem; }
-      .main-content { padding: 4rem 2rem; }
-      .sidebar { padding: 4rem 2rem; gap: 4rem; }
+      .header {
+        padding-bottom: 2rem;
+        margin-bottom: 3rem;
+      }
+      .meta-sidebar {
+        display: flex;
+        gap: 1.5rem;
+        flex-wrap: wrap;
+        margin-bottom: 1rem;
+      }
+      .meta-item {
+        margin-bottom: 0;
+      }
+      .title-last {
+        margin-left: 0;
+      }
+      .lower-grid {
+        display: flex;
+        flex-direction: column;
+        gap: 4rem;
+      }
       .footer {
-        padding: 2.5rem 2rem;
+        margin-top: 4rem;
+      }
+      .footer-content {
         flex-direction: column;
         align-items: flex-start;
         gap: 2rem;
       }
-      .folio {
-        margin-bottom: 4rem;
+      .footer-links {
         flex-wrap: wrap;
-        gap: 1rem;
-      }
-      .masthead-graphic { display: none; }
-      .marginalia { margin-top: 2rem; }
-      .concepts-list {
-        grid-template-columns: 1fr;
-        gap: 2.5rem;
       }
     }
   </style>
 </head>
 <body>
-
-  <div class="wrapper">
-    <header class="box masthead">
-      <div class="folio">
-        <span>No. 01</span>
-        <span>San Francisco, CA</span>
-        <span>11°C, Overcast</span>
-        <span style="position: relative;">
-          Oct 26, 2026
-          <div class="handwritten" style="--rot: -3deg; position: absolute; top: 1.5rem; right: 0; width: max-content; color: var(--ink-red); font-size: 1.25rem;">
-            <div class="parallax">
-              <svg width="30" height="30" viewBox="0 0 30 30" style="position: absolute; top: -20px; right: 20px; overflow: visible; transform: rotate(-20deg);">
-                <path d="M 15 30 Q 15 15 25 5" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/>
-                <path d="M 18 5 L 25 5 L 23 12" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
-              </svg>
-              Today
-            </div>
-          </div>
-        </span>
-      </div>
-      
-      <div style="display: flex; justify-content: space-between; align-items: flex-end;">
-        <h1 class="title">Erik<br><i>Nilsson</i></h1>
-        <div class="masthead-graphic" style="margin-bottom: 1.5rem;">
-          <svg width="48" height="48" viewBox="0 0 48 48">
-            <circle cx="24" cy="24" r="22" fill="none" stroke="var(--text)" stroke-width="1"/>
-            <circle cx="24" cy="24" r="10" fill="var(--text)"/>
+  <div class="page-wrapper">
+    
+    <header class="header">
+      <div class="meta-sidebar">
+        <div class="meta-item">San Francisco, CA</div>
+        <div class="meta-item">2026-10-27</div>
+        <div class="meta-item">11°C, mostly clear</div>
+        <div class="meta-item" style="margin-top: 2.5rem; color: var(--accent-red);">
+          <svg width="10" height="10" viewBox="0 0 10 10" style="display: inline-block; margin-right: 0.5rem; fill: currentColor; vertical-align: baseline;">
+            <circle cx="5" cy="5" r="4" />
           </svg>
+          Live Data
         </div>
+      </div>
+      <div class="title-area">
+        <h1>
+          <span class="title-first">Erik</span>
+          <span class="title-last">Nilsson</span>
+        </h1>
       </div>
     </header>
 
-    <main class="box main-content">
-      <p class="lead">
-        I'm a product designer at <a href="https://cursor.com" class="circled">Cursor<svg class="circle-svg" viewBox="0 0 100 40" preserveAspectRatio="none"><path d="M 8 20 C 10 8, 90 6, 94 22 C 96 36, 12 38, 6 22 C 4 14, 20 10, 30 12" fill="none" stroke="var(--ink-red)" stroke-width="2" stroke-linecap="round" /></svg></a>, working on how people build software with AI. Off-hours, I'm tinkering with <span class="highlight" style="position: relative;">living-site<div class="handwritten" style="--rot: 2deg; position: absolute; top: -2.5rem; left: 50%; transform: translateX(-50%); width: max-content; color: var(--ink-blue); font-size: 1.25rem;"><div class="parallax">Rebuilt daily<svg width="20" height="20" viewBox="0 0 20 20" style="position: absolute; bottom: -12px; left: 10px; overflow: visible;"><path d="M 10 0 Q 10 10 5 15" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/><path d="M 2 10 L 5 15 L 10 12" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg></div></div></span> — agents rebuild this corner of the web from fresh activity data each day.
-      </p>
+    <main class="main-content">
+      <div class="bio">
+        I'm a product designer at 
+        <span class="circled">
+          <a href="https://cursor.com" target="_blank" style="color: inherit; text-decoration: none;">Cursor</a>
+          <svg viewBox="0 0 100 40" preserveAspectRatio="none" style="position: absolute; top: -15%; left: -10%; width: 120%; height: 130%; pointer-events: none; overflow: visible;">
+            <path class="draw-path" d="M 20 20 C 20 5, 80 5, 80 20 C 80 35, 20 35, 20 20 C 20 15, 30 10, 40 10" fill="none" stroke="var(--accent-red)" stroke-width="2" stroke-linecap="round" />
+          </svg>
+          <span class="handwritten note-cursor">
+            where I work
+            <svg class="draw-arrow" width="40" height="40" viewBox="0 0 40 40" style="position: absolute; top: 80%; left: 20%; stroke: currentColor; fill: none; stroke-width: 2; stroke-linecap: round; overflow: visible;">
+              <path d="M 20 0 Q 10 20 15 35 M 15 35 L 5 25 M 15 35 L 25 25" />
+            </svg>
+          </span>
+        </span>, 
+        working on how people build software with AI. Off-hours, I'm tinkering with 
+        <span class="highlight">
+          living-site
+          <span class="handwritten note-living">
+            always changing
+            <svg class="draw-arrow" width="40" height="40" viewBox="0 0 40 40" style="position: absolute; bottom: 80%; right: 40%; stroke: currentColor; fill: none; stroke-width: 2; stroke-linecap: round; overflow: visible;">
+              <path d="M 20 40 Q 30 20 25 5 M 25 5 L 15 15 M 25 5 L 35 15" />
+            </svg>
+          </span>
+        </span> 
+        — agents rebuild this corner of the web from fresh activity data each day.
+      </div>
 
-      <div style="margin-top: 8rem;">
-        <h2 class="section-title" style="border-top: 1px solid var(--line); padding-top: 0.75rem; border-bottom: none; margin-bottom: 3rem;">
-          Scratchpad <span class="handwritten" style="--rot: 2deg; text-transform: none; letter-spacing: normal; color: var(--ink-red); margin-left: 0.75rem; font-size: 1.25rem;"><div class="parallax">Mini-games</div></span>
-        </h2>
-        <div class="concepts-list">
-          <div class="concept-item">
-            <h3>01. Fog Lanes</h3>
-            <p>Swipe between fog lanes over a muted bay skyline and tap when a gap opens to let sunrise light through before overcast closes it.</p>
+      <div class="lower-grid">
+        <div class="world-signals">
+          <div style="position: relative;">
+            <h3 class="section-title">World Signals</h3>
+            <span class="handwritten note-signals">
+              observations
+              <svg class="draw-arrow" width="40" height="40" viewBox="0 0 40 40" style="position: absolute; top: 90%; right: 60%; stroke: currentColor; fill: none; stroke-width: 2; stroke-linecap: round; overflow: visible;">
+                <path d="M 20 0 Q 10 20 15 35 M 15 35 L 5 25 M 15 35 L 25 25" />
+              </svg>
+            </span>
           </div>
-          <div class="concept-item">
-            <h3>02. Merge Conflict</h3>
-            <p>Four agent proposals drift side-by-side on screen — drag the one clean diff into the center merge slot before the others collide into a conflict blob.</p>
+          <div class="signals-list">
+            <div class="signal-item">new m6 silicon arriving in fourteen-inch machines</div>
+            <div class="signal-item">debate over whether software is decaying or just remembering the bad old days</div>
+            <div class="signal-item">python's experimental jit removed before most felt the speed</div>
+            <div class="signal-item">autumn night over san francisco, mostly clear at eleven degrees</div>
+            <div class="signal-item">shipping hour shrinking as daylight fades toward winter</div>
           </div>
-          <div class="concept-item">
-            <h3>03. OLED Snap</h3>
-            <p>Flick glowing pixel clusters across a tiny OLED grid to assemble one perfect 8×8 icon before the screen auto-dims.</p>
-          </div>
-          <div class="concept-item">
-            <h3>04. Perfect Spread</h3>
-            <p>Hold to spread vegemite across rotating toast slices — release at the golden coverage ratio before the batch timer expires.</p>
+        </div>
+
+        <div class="writing-index">
+          <h3 class="section-title">Writing Index</h3>
+          <div class="index-list">
+            <a href="https://x.com/flowstated/status/2002167999353241901" class="index-item" target="_blank">
+              <span class="title">imagine 2026</span>
+              <span class="date">Dec 20, 2025</span>
+            </a>
+            <a href="https://x.com/flowstated/status/2000889983562080578" class="index-item" target="_blank">
+              <span class="title">shipping by sunrise</span>
+              <span class="date">Dec 16, 2025</span>
+            </a>
+            <a href="https://x.com/flowstated/status/2000691637190861180" class="index-item" target="_blank">
+              <span class="title">exploring ways to spin up agents from my phone</span>
+              <span class="date">Dec 15, 2025</span>
+            </a>
           </div>
         </div>
       </div>
     </main>
 
-    <aside class="box sidebar">
-      <section>
-        <h2 class="section-title">Index</h2>
-        <ul class="clean-list index-list">
-          <li>
-            <a href="https://x.com/flowstated/status/2002167999353241901">imagine 2026</a>
-            <span class="meta">Dec 20, 2025</span>
-          </li>
-          <li>
-            <a href="https://x.com/flowstated/status/2000889983562080578">shipping by sunrise</a>
-            <span class="meta">Dec 16, 2025</span>
-          </li>
-          <li>
-            <a href="https://x.com/flowstated/status/2000691637190861180">exploring ways to spin up agents from my phone</a>
-            <span class="meta">Dec 15, 2025</span>
-          </li>
-        </ul>
-      </section>
-
-      <section>
-        <h2 class="section-title">Signals <span class="handwritten" style="--rot: -4deg; text-transform: none; letter-spacing: normal; color: var(--ink-blue); margin-left: 0.75rem; font-size: 1.25rem;"><div class="parallax">(Oct 26)</div></span></h2>
-        <ul class="clean-list signals-list">
-          <li>pocket OLED screens getting sharper in miniature</li>
-          <li>vegemite philosophy threads drifting through the feed</li>
-          <li>AI labs drafting caution labels on the eve of going public</li>
-          <li>autumn overcast settling low over San Francisco</li>
-          <li>agents spun up from a phone before the fog lifts</li>
-        </ul>
-      </section>
-
-      <div class="marginalia">
-        <p>
-          <strong>Note:</strong> GitHub repos are side projects and experiments — small personal things I tinker with outside of work, not my main job.
-        </p>
-      </div>
-    </aside>
-
-    <footer class="box footer">
-      <div class="footer-links">
-        <a href="https://x.com/flowstated">X (Twitter)</a>
-        <a href="https://github.com/eriknson">GitHub</a>
-        <a href="https://linkedin.com/in/eriknson">LinkedIn</a>
-        <a href="mailto:contact@eriks.design">Email</a>
-      </div>
-      <div class="handwritten" style="--rot: -2deg; color: var(--text-muted); font-size: 1.25rem;">
-        <div class="parallax">End of page.</div>
+    <footer class="footer">
+      <div class="footer-content">
+        <div class="footer-copy">© 2026 Erik Nilsson</div>
+        <div class="footer-links">
+          <a href="https://x.com/flowstated" class="footer-link">X (Twitter)</a>
+          <a href="https://github.com/eriknson" class="footer-link">GitHub</a>
+          <a href="https://linkedin.com/in/eriknson" class="footer-link">LinkedIn</a>
+          <a href="mailto:contact@eriks.design" class="footer-link">Email</a>
+        </div>
       </div>
     </footer>
-  </div>
 
-  <script>
-    document.addEventListener('mousemove', (e) => {
-      const x = (e.clientX / window.innerWidth - 0.5) * 12;
-      const y = (e.clientY / window.innerHeight - 0.5) * 12;
-      document.querySelectorAll('.parallax').forEach(el => {
-        el.style.transform = `translate(${x}px, ${y}px)`;
-      });
-    });
-  </script>
+  </div>
 </body>
 </html>
