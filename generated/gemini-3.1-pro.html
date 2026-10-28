@@ -4,534 +4,469 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Erik Nilsson — Product Designer</title>
-  <link rel="preconnect" href="https://fonts.googleapis.com">
-  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=Caveat:wght@500&family=Inter:wght@400;500&family=Newsreader:ital,opsz,wght@0,6..72,300;0,6..72,400;1,6..72,400&display=swap" rel="stylesheet">
   <style>
+    @import url('https://fonts.googleapis.com/css2?family=Caveat:wght@500&family=Inter:wght@400;500&family=Newsreader:ital,opsz,wght@0,6..72,300;0,6..72,400;1,6..72,300;1,6..72,400&display=swap');
+
     :root {
-      --bg-color: #F4F2EE;
-      --text-color: #1A1A1A;
-      --text-muted: #737373;
-      --accent-red: #E63946;
-      --accent-blue: #0047FF;
-      --accent-highlight: #E9FF33;
-      --line-color: #D6D3CD;
+      --bg: #F7F5F0;
+      --text: #1C1A17;
+      --text-muted: #8A857D;
+      --border: #E0DCD3;
+      --accent-ink: #1A40D9;
+      --accent-red: #D92B1A;
     }
 
-    @supports (color: color(display-p3 1 1 1)) {
+    @supports (color: color(display-p3 1 0 0)) {
       :root {
-        --bg-color: color(display-p3 0.96 0.95 0.93);
-        --text-color: color(display-p3 0.08 0.08 0.08);
-        --text-muted: color(display-p3 0.45 0.45 0.45);
-        --accent-red: color(display-p3 0.95 0.15 0.15);
-        --accent-blue: color(display-p3 0.0 0.2 1.0);
-        --accent-highlight: color(display-p3 0.9 1.0 0.2);
-        --line-color: color(display-p3 0.84 0.83 0.80);
+        --accent-ink: color(display-p3 0.05 0.15 0.95);
+        --accent-red: color(display-p3 0.95 0.1 0.05);
       }
     }
 
     @media (prefers-color-scheme: dark) {
       :root {
-        --bg-color: #1A1A1A;
-        --text-color: #E0E0E0;
-        --text-muted: #A0A0A0;
-        --line-color: #333333;
-        --accent-highlight: #C4D620;
+        --bg: #1a1a1a;
+        --text: #e0e0e0;
+        --text-muted: #9a9590;
+        --border: #3a3835;
       }
-    }
-
-    * {
-      box-sizing: border-box;
     }
 
     body {
-      margin: 0;
-      background-color: var(--bg-color);
-      color: var(--text-color);
+      background-color: var(--bg);
+      background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noiseFilter'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noiseFilter)' opacity='0.04'/%3E%3C/svg%3E");
+      color: var(--text);
       font-family: 'Inter', sans-serif;
+      margin: 0;
+      padding: 0;
       -webkit-font-smoothing: antialiased;
       -moz-osx-font-smoothing: grayscale;
+      overflow-x: hidden;
+    }
+
+    body::before {
+      content: '';
+      position: fixed;
+      top: 0;
+      bottom: 0;
+      left: 4rem;
+      width: 1px;
+      background-color: rgba(217, 43, 26, 0.15);
+      z-index: -1;
+    }
+
+    ::selection {
+      background-color: rgba(26, 64, 217, 0.15);
+      color: var(--accent-ink);
+    }
+
+    @supports (color: color(display-p3 1 0 0)) {
+      ::selection {
+        background-color: color(display-p3 0.05 0.15 0.95 / 0.15);
+      }
+    }
+
+    .page {
+      max-width: 40rem;
+      margin: 0 auto;
+      padding: 4rem 4rem 6rem 8rem;
       min-height: 100vh;
       display: flex;
-      justify-content: center;
-      overflow-x: hidden;
+      flex-direction: column;
+      box-sizing: border-box;
       opacity: 0;
-      animation: pageFadeIn 0.8s ease forwards;
+      animation: fadeIn 0.8s ease-out forwards;
     }
 
-    @keyframes pageFadeIn {
-      to { opacity: 1; }
-    }
-
-    .page-wrapper {
-      width: 100%;
-      max-width: 640px;
-      margin: 0 auto;
-      padding: 6rem 4rem;
-    }
-
-    .header, .main-content, .footer {
-      display: grid;
-      grid-template-columns: repeat(12, 1fr);
-      gap: 2rem;
-    }
-
-    .header {
-      padding-bottom: 3rem;
-      margin-bottom: 5rem;
-      border-bottom: 1px solid var(--line-color);
-      align-items: end;
-    }
-
-    .meta-sidebar {
-      grid-column: 1 / 3;
-      padding-bottom: 0.5rem;
-    }
-
-    .meta-item {
-      font-family: 'Inter', sans-serif;
-      font-size: 0.75rem;
-      text-transform: uppercase;
-      letter-spacing: 0.05em;
-      margin-bottom: 0.5rem;
-      color: var(--text-muted);
-    }
-
-    .title-area {
-      grid-column: 4 / 13;
-    }
-
-    h1 {
-      font-family: 'Newsreader', serif;
-      font-size: clamp(4rem, 10vw, 9rem);
-      font-weight: 400;
-      line-height: 0.85;
-      letter-spacing: -0.03em;
-      margin: 0;
-      color: var(--text-color);
-    }
-
-    .title-first {
-      display: block;
-      transform: translateX(-0.05em);
-    }
-
-    .title-last {
-      display: block;
-      margin-left: 15%;
-      font-style: italic;
-    }
-
-    .bio {
-      grid-column: 4 / 12;
-      font-family: 'Newsreader', serif;
-      font-size: clamp(1.75rem, 4vw, 2.75rem);
-      line-height: 1.15;
-      margin-bottom: 6rem;
-      letter-spacing: -0.01em;
-      color: var(--text-color);
-    }
-
-    .lower-grid {
-      grid-column: 4 / 13;
-      display: grid;
-      grid-template-columns: 1fr 1fr;
-      gap: 4rem;
-    }
-
-    .section-title {
-      font-family: 'Inter', sans-serif;
-      font-size: 0.75rem;
-      text-transform: uppercase;
-      letter-spacing: 0.05em;
-      color: var(--text-muted);
-      margin-bottom: 2rem;
-      display: flex;
-      align-items: center;
-      gap: 1rem;
-    }
-
-    .section-title::after {
-      content: '';
-      flex-grow: 1;
-      height: 1px;
-      background-color: var(--line-color);
-    }
-
-    .signals-list {
-      display: flex;
-      flex-direction: column;
-      gap: 1.25rem;
-    }
-
-    .signal-item {
-      font-family: 'Newsreader', serif;
-      font-size: 1.25rem;
-      line-height: 1.4;
-      color: var(--text-color);
-      position: relative;
-      padding-left: 1.5rem;
-      transition: transform 0.3s ease, color 0.3s ease;
-    }
-
-    .signal-item::before {
-      content: '*';
-      font-family: 'Inter', sans-serif;
-      position: absolute;
-      left: 0;
-      top: 0.2rem;
-      color: var(--accent-red);
-      font-size: 1.2rem;
-      transition: color 0.3s ease;
-    }
-
-    .signal-item:hover {
-      transform: translateX(4px);
-      color: var(--accent-blue);
-    }
-
-    .signal-item:hover::before {
-      color: var(--accent-blue);
-    }
-
-    .index-list {
-      display: flex;
-      flex-direction: column;
-    }
-
-    .index-item {
+    .top-bar {
       display: flex;
       justify-content: space-between;
       align-items: baseline;
-      padding: 1.25rem 0;
-      border-bottom: 1px solid var(--line-color);
-      text-decoration: none;
-      color: var(--text-color);
-      transition: all 0.3s ease;
+      border-bottom: 1px solid var(--border);
+      padding-bottom: 2rem;
+      margin-bottom: 6rem;
     }
 
-    .index-item:first-child {
-      border-top: 1px solid var(--line-color);
-    }
-
-    .index-item:hover {
-      color: var(--accent-blue);
-      padding-left: 0.5rem;
-      padding-right: 0.5rem;
-    }
-
-    .index-item .title {
+    .logo {
       font-family: 'Newsreader', serif;
-      font-size: 1.5rem;
-      font-style: italic;
+      font-size: clamp(1.5rem, 2vw, 2rem);
+      font-weight: 400;
+      letter-spacing: -0.02em;
+      transition: opacity 0.3s ease;
     }
 
-    .index-item .date {
+    .logo em {
+      font-style: italic;
+      font-weight: 300;
+    }
+
+    .logo:hover {
+      opacity: 0.7;
+    }
+
+    .date-stamp {
+      font-family: 'Inter', sans-serif;
+      font-size: 0.85rem;
+      color: var(--text-muted);
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+    }
+
+    .bio-wrapper {
+      max-width: 900px;
+      margin-bottom: 6rem;
+    }
+
+    .bio-text {
+      font-family: 'Newsreader', serif;
+      font-size: clamp(2rem, 4vw, 3.5rem);
+      font-weight: 300;
+      line-height: 1.25;
+      letter-spacing: -0.02em;
+      margin: 0;
+      color: var(--text);
+    }
+
+    .bio-text a {
+      color: inherit;
+      text-decoration: none;
+      position: relative;
+      z-index: 1;
+      transition: color 0.3s ease;
+    }
+
+    .bio-text a:hover {
+      color: var(--accent-ink);
+    }
+
+    .relative {
+      position: relative;
+      display: inline-block;
+    }
+
+    .lower-grid {
+      display: grid;
+      grid-template-columns: 1fr 1.5fr 1.5fr;
+      gap: 4rem;
+      margin-top: auto;
+      padding-top: 2rem;
+    }
+
+    h4 {
       font-family: 'Inter', sans-serif;
       font-size: 0.75rem;
       text-transform: uppercase;
-      letter-spacing: 0.05em;
+      letter-spacing: 0.1em;
       color: var(--text-muted);
-      transition: color 0.3s ease;
+      margin: 0 0 2rem 0;
+      border-bottom: 1px solid var(--border);
+      padding-bottom: 0.75rem;
     }
 
-    .index-item:hover .date {
-      color: var(--accent-blue);
+    .info-block {
+      margin-bottom: 3rem;
     }
 
-    .footer {
-      margin-top: 8rem;
-    }
-
-    .footer-content {
-      grid-column: 4 / 13;
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
-      padding-top: 2rem;
-      border-top: 1px solid var(--line-color);
-    }
-
-    .footer-copy {
-      font-family: 'Newsreader', serif;
-      font-size: 1.2rem;
-      font-style: italic;
-      color: var(--text-muted);
-    }
-
-    .footer-links {
-      display: flex;
-      gap: 2rem;
-    }
-
-    .footer-link {
+    .info-block p {
       font-family: 'Inter', sans-serif;
-      font-size: 0.85rem;
-      color: var(--text-color);
+      font-size: 0.95rem;
+      color: var(--text);
+      margin: 0 0 0.5rem 0;
+    }
+
+    .info-block nav {
+      display: flex;
+      flex-direction: column;
+      gap: 0.75rem;
+    }
+
+    .info-block a {
+      display: inline-flex;
+      align-items: center;
+      gap: 0.5rem;
+      font-family: 'Inter', sans-serif;
+      font-size: 0.95rem;
+      color: var(--text);
       text-decoration: none;
-      text-transform: uppercase;
-      letter-spacing: 0.05em;
+      transition: color 0.2s;
+    }
+
+    .info-block a::before {
+      content: '↗';
+      font-size: 0.8em;
+      color: var(--text-muted);
+      transition: color 0.2s, transform 0.2s;
+    }
+
+    .info-block a:hover {
+      color: var(--accent-ink);
+    }
+
+    .info-block a:hover::before {
+      color: var(--accent-ink);
+      transform: translate(2px, -2px);
+    }
+
+    .writing ul, .signals ul {
+      list-style: none;
+      padding: 0;
+      margin: 0;
+    }
+
+    .writing li {
+      margin-bottom: 1.75rem;
+      display: flex;
+      flex-direction: column;
+      gap: 0.35rem;
+    }
+
+    .writing a {
+      font-family: 'Newsreader', serif;
+      font-size: 1.5rem;
+      color: var(--text);
+      text-decoration: none;
+      line-height: 1.2;
+      transition: color 0.3s;
+    }
+
+    .writing a:hover {
+      color: var(--accent-ink);
+    }
+
+    .writing .meta {
+      font-family: 'Inter', sans-serif;
+      font-size: 0.8rem;
+      color: var(--text-muted);
+    }
+
+    .signal-list li {
+      font-family: 'Newsreader', serif;
+      font-size: 1.1rem;
+      line-height: 1.4;
+      color: var(--text-muted);
+      margin-bottom: 1.25rem;
+      padding-left: 1.5rem;
+      position: relative;
       transition: color 0.3s ease;
     }
 
-    .footer-link:hover {
-      color: var(--accent-blue);
+    .signal-list li:hover {
+      color: var(--text);
     }
 
-    /* Annotations */
-    .circled {
-      position: relative;
-      display: inline-block;
-      white-space: nowrap;
-    }
-
-    .highlight {
-      position: relative;
-      display: inline-block;
-      white-space: nowrap;
-      color: var(--text-color);
-      z-index: 1;
-    }
-
-    .highlight::before {
-      content: '';
+    .signal-list li::before {
+      content: '✦';
       position: absolute;
-      top: 10%;
-      left: -2%;
-      width: 104%;
-      height: 80%;
-      background-color: var(--accent-highlight);
-      z-index: -1;
-      transform: rotate(-1deg);
-      border-radius: 4px 8px 3px 6px;
-      transition: transform 0.3s ease;
+      left: 0;
+      top: 0.1rem;
+      font-size: 0.8rem;
+      color: var(--border);
+      transition: color 0.3s ease;
     }
 
-    .highlight:hover::before {
-      transform: rotate(1deg) scale(1.02);
+    .signal-list li:hover::before {
+      color: var(--accent-red);
     }
 
-    .handwritten {
+    /* Annotations & SVGs */
+    .annotation {
       font-family: 'Caveat', cursive;
-      font-size: 1.8rem;
       position: absolute;
       white-space: nowrap;
       pointer-events: none;
+      z-index: 10;
       opacity: 0;
-      animation: fadeInNote 0.5s ease forwards;
-      animation-delay: 1.2s;
+      animation: fadeIn 0.5s ease-out forwards;
     }
 
-    @keyframes fadeInNote {
-      from { opacity: 0; transform: translateY(10px) rotate(var(--rot)); }
-      to { opacity: 1; transform: translateY(0) rotate(var(--rot)); }
+    .hand-circle {
+      position: absolute;
+      pointer-events: none;
+      z-index: -1;
     }
 
-    .note-cursor {
-      top: -2.5rem;
-      left: 30%;
-      --rot: -5deg;
-      color: var(--accent-red);
+    .hand-underline {
+      position: absolute;
+      pointer-events: none;
     }
 
-    .note-living {
-      bottom: -3rem;
-      right: 0;
-      --rot: 4deg;
-      color: var(--accent-blue);
+    .hand-arrow {
+      position: absolute;
+      pointer-events: none;
     }
 
-    .note-signals {
-      top: -2rem;
-      right: 0;
-      --rot: -3deg;
-      color: var(--accent-red);
+    @keyframes fadeIn {
+      from { opacity: 0; transform: translateY(10px); }
+      to { opacity: 1; transform: translateY(0); }
     }
 
-    .draw-path {
-      stroke-dasharray: 300;
-      stroke-dashoffset: 300;
-      animation: drawPath 1.5s cubic-bezier(0.4, 0, 0.2, 1) forwards;
-      animation-delay: 0.5s;
-    }
-
-    .draw-arrow {
-      stroke-dasharray: 100;
-      stroke-dashoffset: 100;
-      animation: drawPath 1s cubic-bezier(0.4, 0, 0.2, 1) forwards;
-      animation-delay: 1.5s;
-    }
-
-    @keyframes drawPath {
+    @keyframes draw {
+      from { stroke-dashoffset: 100; }
       to { stroke-dashoffset: 0; }
     }
 
-    /* Responsive */
-    @media (max-width: 640px) {
-      .page-wrapper {
-        padding: 2rem 1.25rem;
-      }
-      h1 {
-        font-size: clamp(2.5rem, 12vw, 4rem);
-      }
-      .bio {
-        font-size: clamp(1.25rem, 5vw, 1.75rem);
-      }
+    .hand-circle path, .hand-underline path, .hand-arrow path {
+      stroke-dasharray: 100;
+      stroke-dashoffset: 100;
     }
 
+    .hand-circle path {
+      animation: draw 1s cubic-bezier(0.4, 0, 0.2, 1) forwards;
+      animation-delay: 0.8s;
+    }
+
+    .hand-underline path {
+      animation: draw 0.8s cubic-bezier(0.4, 0, 0.2, 1) forwards;
+      animation-delay: 1.2s;
+    }
+
+    .hand-arrow path {
+      animation: draw 0.6s cubic-bezier(0.4, 0, 0.2, 1) forwards;
+      animation-delay: 1.6s;
+    }
+
+    .a-1 { animation-delay: 1.0s; }
+    .a-2 { animation-delay: 1.4s; }
+    .a-3 { animation-delay: 1.8s; }
+    .a-4 { animation-delay: 2.2s; }
+
+    /* Responsive */
     @media (max-width: 1024px) {
-      .title-area, .bio, .lower-grid, .footer-content {
-        grid-column: 3 / 13;
+      .lower-grid {
+        grid-template-columns: 1fr 1fr;
+      }
+      .signals {
+        grid-column: 1 / -1;
       }
     }
 
     @media (max-width: 768px) {
-      .page-wrapper {
-        padding: 3rem 1.5rem;
+      .page {
+        padding: 2rem 2rem 2rem 4rem;
       }
-      .header, .main-content, .footer {
-        display: flex;
-        flex-direction: column;
-        gap: 2rem;
-      }
-      .header {
-        padding-bottom: 2rem;
-        margin-bottom: 3rem;
-      }
-      .meta-sidebar {
-        display: flex;
-        gap: 1.5rem;
-        flex-wrap: wrap;
-        margin-bottom: 1rem;
-      }
-      .meta-item {
-        margin-bottom: 0;
-      }
-      .title-last {
-        margin-left: 0;
+      body::before {
+        left: 2rem;
       }
       .lower-grid {
-        display: flex;
-        flex-direction: column;
-        gap: 4rem;
+        grid-template-columns: 1fr;
+        gap: 3rem;
       }
-      .footer {
-        margin-top: 4rem;
+      .top-bar {
+        margin-bottom: 4rem;
       }
-      .footer-content {
-        flex-direction: column;
-        align-items: flex-start;
-        gap: 2rem;
+      .bio-wrapper {
+        margin-bottom: 4rem;
       }
-      .footer-links {
-        flex-wrap: wrap;
+    }
+
+    @media (max-width: 640px) {
+      .page {
+        padding: 1.5rem 1.5rem 1.5rem 2.5rem;
+      }
+      body::before {
+        left: 1.25rem;
+      }
+      .bio-text {
+        font-size: clamp(1.5rem, 5vw, 2rem);
       }
     }
   </style>
 </head>
 <body>
-  <div class="page-wrapper">
-    
-    <header class="header">
-      <div class="meta-sidebar">
-        <div class="meta-item">San Francisco, CA</div>
-        <div class="meta-item">2026-10-27</div>
-        <div class="meta-item">11°C, mostly clear</div>
-        <div class="meta-item" style="margin-top: 2.5rem; color: var(--accent-red);">
-          <svg width="10" height="10" viewBox="0 0 10 10" style="display: inline-block; margin-right: 0.5rem; fill: currentColor; vertical-align: baseline;">
-            <circle cx="5" cy="5" r="4" />
+  <div class="page">
+    <header class="top-bar">
+      <div class="logo">Erik <em>Nilsson</em></div>
+      <div class="date-stamp">
+        <span class="relative">
+          28 Oct 2026
+          <svg class="hand-circle" viewBox="0 0 100 100" preserveAspectRatio="none" style="stroke: var(--accent-red); width: 140%; height: 180%; top: -40%; left: -20%;">
+            <path d="M 20 50 C 20 10, 80 10, 80 50 C 80 90, 20 90, 20 50 C 20 30, 40 20, 60 20" fill="none" stroke-width="1.5" stroke-linecap="round" vector-effect="non-scaling-stroke" pathLength="100"/>
           </svg>
-          Live Data
-        </div>
-      </div>
-      <div class="title-area">
-        <h1>
-          <span class="title-first">Erik</span>
-          <span class="title-last">Nilsson</span>
-        </h1>
+          <span class="annotation a-1" style="top: -25px; right: -35px; transform: rotate(4deg); color: var(--accent-red); font-size: 1.2rem;">Autumn</span>
+        </span>
       </div>
     </header>
 
-    <main class="main-content">
-      <div class="bio">
-        I'm a product designer at 
-        <span class="circled">
-          <a href="https://cursor.com" target="_blank" style="color: inherit; text-decoration: none;">Cursor</a>
-          <svg viewBox="0 0 100 40" preserveAspectRatio="none" style="position: absolute; top: -15%; left: -10%; width: 120%; height: 130%; pointer-events: none; overflow: visible;">
-            <path class="draw-path" d="M 20 20 C 20 5, 80 5, 80 20 C 80 35, 20 35, 20 20 C 20 15, 30 10, 40 10" fill="none" stroke="var(--accent-red)" stroke-width="2" stroke-linecap="round" />
-          </svg>
-          <span class="handwritten note-cursor">
-            where I work
-            <svg class="draw-arrow" width="40" height="40" viewBox="0 0 40 40" style="position: absolute; top: 80%; left: 20%; stroke: currentColor; fill: none; stroke-width: 2; stroke-linecap: round; overflow: visible;">
-              <path d="M 20 0 Q 10 20 15 35 M 15 35 L 5 25 M 15 35 L 25 25" />
+    <main class="content">
+      <div class="bio-wrapper">
+        <p class="bio-text">
+          I'm a product designer at 
+          <span class="relative">
+            <a href="https://cursor.com">Cursor</a>
+            <svg class="hand-circle" viewBox="0 0 100 100" preserveAspectRatio="none" style="width: 120%; height: 140%; top: -20%; left: -10%;">
+              <path d="M 10 50 C 10 20, 90 15, 90 50 C 90 85, 10 80, 10 50 C 10 35, 25 25, 40 25" fill="none" stroke="var(--accent-ink)" stroke-width="1.5" stroke-linecap="round" vector-effect="non-scaling-stroke" pathLength="100"/>
             </svg>
-          </span>
-        </span>, 
-        working on how people build software with AI. Off-hours, I'm tinkering with 
-        <span class="highlight">
-          living-site
-          <span class="handwritten note-living">
-            always changing
-            <svg class="draw-arrow" width="40" height="40" viewBox="0 0 40 40" style="position: absolute; bottom: 80%; right: 40%; stroke: currentColor; fill: none; stroke-width: 2; stroke-linecap: round; overflow: visible;">
-              <path d="M 20 40 Q 30 20 25 5 M 25 5 L 15 15 M 25 5 L 35 15" />
+          </span>, 
+          working on how people build software with AI. Off-hours, I'm tinkering with 
+          <span class="relative">
+            <a href="https://eriks.design">living-site</a>
+            <svg class="hand-underline" viewBox="0 0 100 20" preserveAspectRatio="none" style="width: 110%; height: 20px; bottom: -5px; left: -5%;">
+              <path d="M 0 15 C 30 5, 70 20, 100 10" fill="none" stroke="var(--accent-red)" stroke-width="2" stroke-linecap="round" vector-effect="non-scaling-stroke" pathLength="100"/>
             </svg>
-          </span>
-        </span> 
-        — agents rebuild this corner of the web from fresh activity data each day.
+            <span class="annotation a-2" style="bottom: -30px; right: -20px; transform: rotate(-3deg); color: var(--accent-red); font-size: 1.2rem;">Rebuilt daily</span>
+          </span> 
+          — agents rebuild this corner of the web from fresh activity data each day.
+        </p>
       </div>
 
       <div class="lower-grid">
-        <div class="world-signals">
-          <div style="position: relative;">
-            <h3 class="section-title">World Signals</h3>
-            <span class="handwritten note-signals">
-              observations
-              <svg class="draw-arrow" width="40" height="40" viewBox="0 0 40 40" style="position: absolute; top: 90%; right: 60%; stroke: currentColor; fill: none; stroke-width: 2; stroke-linecap: round; overflow: visible;">
-                <path d="M 20 0 Q 10 20 15 35 M 15 35 L 5 25 M 15 35 L 25 25" />
+        <div class="col info">
+          <div class="info-block">
+            <h4>Location</h4>
+            <p class="relative" style="display: inline-block;">
+              San Francisco, CA
+              <span class="annotation a-3" style="top: -15px; right: -65px; transform: rotate(-5deg); color: var(--accent-ink); font-size: 1.2rem;">9°C, clear</span>
+              <svg class="hand-arrow" width="30" height="30" viewBox="0 0 30 30" style="top: -5px; right: -35px; transform: rotate(10deg);">
+                <path d="M 25 5 Q 15 15 5 20 M 5 20 L 12 18 M 5 20 L 8 12" fill="none" stroke="var(--accent-ink)" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" pathLength="100"/>
               </svg>
-            </span>
+            </p>
           </div>
-          <div class="signals-list">
-            <div class="signal-item">new m6 silicon arriving in fourteen-inch machines</div>
-            <div class="signal-item">debate over whether software is decaying or just remembering the bad old days</div>
-            <div class="signal-item">python's experimental jit removed before most felt the speed</div>
-            <div class="signal-item">autumn night over san francisco, mostly clear at eleven degrees</div>
-            <div class="signal-item">shipping hour shrinking as daylight fades toward winter</div>
+          <div class="info-block">
+            <h4>Elsewhere</h4>
+            <nav>
+              <a href="https://x.com/flowstated">X (Twitter)</a>
+              <a href="https://github.com/eriknson">GitHub</a>
+              <a href="https://linkedin.com/in/eriknson">LinkedIn</a>
+              <a href="mailto:contact@eriks.design">Email</a>
+            </nav>
           </div>
         </div>
 
-        <div class="writing-index">
-          <h3 class="section-title">Writing Index</h3>
-          <div class="index-list">
-            <a href="https://x.com/flowstated/status/2002167999353241901" class="index-item" target="_blank">
-              <span class="title">imagine 2026</span>
-              <span class="date">Dec 20, 2025</span>
-            </a>
-            <a href="https://x.com/flowstated/status/2000889983562080578" class="index-item" target="_blank">
-              <span class="title">shipping by sunrise</span>
-              <span class="date">Dec 16, 2025</span>
-            </a>
-            <a href="https://x.com/flowstated/status/2000691637190861180" class="index-item" target="_blank">
-              <span class="title">exploring ways to spin up agents from my phone</span>
-              <span class="date">Dec 15, 2025</span>
-            </a>
-          </div>
+        <div class="col writing">
+          <h4>Writing & Notes</h4>
+          <ul>
+            <li>
+              <a href="https://x.com/flowstated/status/2000691637190861180">Spinning up agents from iOS</a>
+              <span class="meta">Dec 15, 2025</span>
+            </li>
+            <li>
+              <a href="https://x.com/flowstated/status/2000889983562080578">Shipping by sunrise</a>
+              <span class="meta">Dec 16, 2025</span>
+            </li>
+            <li>
+              <a href="https://x.com/flowstated/status/2002167999353241901">Imagine 2026</a>
+              <span class="meta">Dec 20, 2025</span>
+            </li>
+          </ul>
+        </div>
+
+        <div class="col signals">
+          <h4>Observations</h4>
+          <ul class="signal-list">
+            <li>A single dead pixel snuffing out an entire screen</li>
+            <li>Silver rails crossing where they shouldn't near Toledo</li>
+            <li>Satellite fleets changing hands under autumn constellations</li>
+            <li>Luxury liners anchored as fuel prices spike offshore</li>
+            <li>
+              <span class="relative">
+                First gas flame in Tanzania in over ten years
+                <span class="annotation a-4" style="bottom: -20px; right: 0; transform: rotate(2deg); color: var(--accent-ink); font-size: 1.1rem;">gemini-3.1-pro</span>
+              </span>
+            </li>
+          </ul>
         </div>
       </div>
     </main>
-
-    <footer class="footer">
-      <div class="footer-content">
-        <div class="footer-copy">© 2026 Erik Nilsson</div>
-        <div class="footer-links">
-          <a href="https://x.com/flowstated" class="footer-link">X (Twitter)</a>
-          <a href="https://github.com/eriknson" class="footer-link">GitHub</a>
-          <a href="https://linkedin.com/in/eriknson" class="footer-link">LinkedIn</a>
-          <a href="mailto:contact@eriks.design" class="footer-link">Email</a>
-        </div>
-      </div>
-    </footer>
-
   </div>
 </body>
 </html>
