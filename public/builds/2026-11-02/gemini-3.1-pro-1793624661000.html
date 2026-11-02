@@ -1,0 +1,491 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Erik Nilsson — Product Designer</title>
+  <style>
+    @import url('https://fonts.googleapis.com/css2?family=Caveat:wght@500&family=Inter:wght@400;500&family=Newsreader:ital,opsz,wght@0,6..72,300;0,6..72,400;1,6..72,300;1,6..72,400&display=swap');
+
+    :root {
+      --bg: #F7F5F0;
+      --text: #1C1A17;
+      --text-muted: #8A857D;
+      --border: #E0DCD3;
+      --accent-ink: #1A40D9;
+      --accent-red: #D92B1A;
+    }
+
+    @supports (color: color(display-p3 1 0 0)) {
+      :root {
+        --accent-ink: color(display-p3 0.05 0.15 0.95);
+        --accent-red: color(display-p3 0.95 0.1 0.05);
+      }
+    }
+
+    @media (prefers-color-scheme: dark) {
+      :root {
+        --bg: #1a1a1a;
+        --text: #e0e0e0;
+        --text-muted: #9a9590;
+        --border: #3a3835;
+      }
+    }
+
+    body {
+      background-color: var(--bg);
+      background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noiseFilter'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noiseFilter)' opacity='0.04'/%3E%3C/svg%3E");
+      color: var(--text);
+      font-family: 'Inter', sans-serif;
+      margin: 0;
+      padding: 0;
+      -webkit-font-smoothing: antialiased;
+      -moz-osx-font-smoothing: grayscale;
+      overflow-x: hidden;
+    }
+
+    body::before {
+      content: '';
+      position: fixed;
+      top: 0;
+      bottom: 0;
+      left: 4rem;
+      width: 1px;
+      background-color: rgba(217, 43, 26, 0.15);
+      z-index: -1;
+    }
+
+    ::selection {
+      background-color: rgba(26, 64, 217, 0.15);
+      color: var(--accent-ink);
+    }
+
+    @supports (color: color(display-p3 1 0 0)) {
+      ::selection {
+        background-color: color(display-p3 0.05 0.15 0.95 / 0.15);
+      }
+    }
+
+    .page {
+      max-width: 40rem;
+      margin: 0 auto;
+      padding: 4rem 4rem 6rem 8rem;
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+      box-sizing: border-box;
+      opacity: 0;
+      animation: fadeIn 0.8s ease-out forwards;
+    }
+
+    .top-bar {
+      display: flex;
+      justify-content: space-between;
+      align-items: baseline;
+      border-bottom: 1px solid var(--border);
+      padding-bottom: 2rem;
+      margin-bottom: 6rem;
+    }
+
+    .logo {
+      font-family: 'Newsreader', serif;
+      font-size: clamp(1.5rem, 2vw, 2rem);
+      font-weight: 400;
+      letter-spacing: -0.02em;
+      transition: opacity 0.3s ease;
+    }
+
+    .logo em {
+      font-style: italic;
+      font-weight: 300;
+    }
+
+    .logo:hover {
+      opacity: 0.7;
+    }
+
+    .date-stamp {
+      font-family: 'Inter', sans-serif;
+      font-size: 0.85rem;
+      color: var(--text-muted);
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+    }
+
+    .bio-wrapper {
+      max-width: 900px;
+      margin-bottom: 6rem;
+    }
+
+    .bio-text {
+      font-family: 'Newsreader', serif;
+      font-size: clamp(2rem, 4vw, 3.5rem);
+      font-weight: 300;
+      line-height: 1.25;
+      letter-spacing: -0.02em;
+      margin: 0;
+      color: var(--text);
+    }
+
+    .bio-text a {
+      color: inherit;
+      text-decoration: none;
+      position: relative;
+      z-index: 1;
+      transition: color 0.3s ease;
+    }
+
+    .bio-text a:hover {
+      color: var(--accent-ink);
+    }
+
+    .relative {
+      position: relative;
+      display: inline-block;
+    }
+
+    .lower-grid {
+      display: grid;
+      grid-template-columns: 1fr 1.5fr 1.5fr;
+      gap: 4rem;
+      margin-top: auto;
+      padding-top: 2rem;
+    }
+
+    h4 {
+      font-family: 'Inter', sans-serif;
+      font-size: 0.75rem;
+      text-transform: uppercase;
+      letter-spacing: 0.1em;
+      color: var(--text-muted);
+      margin: 0 0 2rem 0;
+      border-bottom: 1px solid var(--border);
+      padding-bottom: 0.75rem;
+    }
+
+    .info-block {
+      margin-bottom: 3rem;
+    }
+
+    .info-block p {
+      font-family: 'Inter', sans-serif;
+      font-size: 0.95rem;
+      color: var(--text);
+      margin: 0 0 0.5rem 0;
+    }
+
+    .info-block nav {
+      display: flex;
+      flex-direction: column;
+      gap: 0.75rem;
+    }
+
+    .info-block a {
+      display: inline-flex;
+      align-items: center;
+      gap: 0.5rem;
+      font-family: 'Inter', sans-serif;
+      font-size: 0.95rem;
+      color: var(--text);
+      text-decoration: none;
+      transition: color 0.2s;
+    }
+
+    .info-block a::before {
+      content: '↗';
+      font-size: 0.8em;
+      color: var(--text-muted);
+      transition: color 0.2s, transform 0.2s;
+    }
+
+    .info-block a:hover {
+      color: var(--accent-ink);
+    }
+
+    .info-block a:hover::before {
+      color: var(--accent-ink);
+      transform: translate(2px, -2px);
+    }
+
+    .writing ul, .signals ul {
+      list-style: none;
+      padding: 0;
+      margin: 0;
+    }
+
+    .writing li {
+      margin-bottom: 1.75rem;
+      display: flex;
+      flex-direction: column;
+      gap: 0.35rem;
+    }
+
+    .writing a {
+      font-family: 'Newsreader', serif;
+      font-size: 1.5rem;
+      color: var(--text);
+      text-decoration: none;
+      line-height: 1.2;
+      transition: color 0.3s;
+    }
+
+    .writing a:hover {
+      color: var(--accent-ink);
+    }
+
+    .writing .meta {
+      font-family: 'Inter', sans-serif;
+      font-size: 0.8rem;
+      color: var(--text-muted);
+    }
+
+    .signal-list li {
+      font-family: 'Newsreader', serif;
+      font-size: 1.1rem;
+      line-height: 1.4;
+      color: var(--text-muted);
+      margin-bottom: 1.25rem;
+      padding-left: 1.5rem;
+      position: relative;
+      transition: color 0.3s ease;
+    }
+
+    .signal-list li:hover {
+      color: var(--text);
+    }
+
+    .signal-list li::before {
+      content: '✦';
+      position: absolute;
+      left: 0;
+      top: 0.1rem;
+      font-size: 0.8rem;
+      color: var(--border);
+      transition: color 0.3s ease;
+    }
+
+    .signal-list li:hover::before {
+      color: var(--accent-red);
+    }
+
+    /* Annotations & SVGs */
+    .annotation {
+      font-family: 'Caveat', cursive;
+      position: absolute;
+      white-space: nowrap;
+      pointer-events: none;
+      z-index: 10;
+      opacity: 0;
+      animation: fadeIn 0.5s ease-out forwards;
+    }
+
+    .hand-circle {
+      position: absolute;
+      pointer-events: none;
+      z-index: -1;
+    }
+
+    .hand-underline {
+      position: absolute;
+      pointer-events: none;
+    }
+
+    .hand-arrow {
+      position: absolute;
+      pointer-events: none;
+    }
+
+    @keyframes fadeIn {
+      from { opacity: 0; transform: translateY(10px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+
+    @keyframes draw {
+      from { stroke-dashoffset: 100; }
+      to { stroke-dashoffset: 0; }
+    }
+
+    .hand-circle path, .hand-underline path, .hand-arrow path {
+      stroke-dasharray: 100;
+      stroke-dashoffset: 100;
+    }
+
+    .hand-circle path {
+      animation: draw 1s cubic-bezier(0.4, 0, 0.2, 1) forwards;
+      animation-delay: 0.8s;
+    }
+
+    .hand-underline path {
+      animation: draw 0.8s cubic-bezier(0.4, 0, 0.2, 1) forwards;
+      animation-delay: 1.2s;
+    }
+
+    .hand-arrow path {
+      animation: draw 0.6s cubic-bezier(0.4, 0, 0.2, 1) forwards;
+      animation-delay: 1.6s;
+    }
+
+    .a-1 { animation-delay: 1.0s; }
+    .a-2 { animation-delay: 1.4s; }
+    .a-3 { animation-delay: 1.8s; }
+    .a-4 { animation-delay: 2.2s; }
+
+    /* Responsive */
+    @media (max-width: 1024px) {
+      .lower-grid {
+        grid-template-columns: 1fr 1fr;
+      }
+      .signals {
+        grid-column: 1 / -1;
+      }
+    }
+
+    @media (max-width: 768px) {
+      .page {
+        padding: 2rem 2rem 2rem 4rem;
+      }
+      body::before {
+        left: 2rem;
+      }
+      .lower-grid {
+        grid-template-columns: 1fr;
+        gap: 3rem;
+      }
+      .top-bar {
+        margin-bottom: 4rem;
+      }
+      .bio-wrapper {
+        margin-bottom: 4rem;
+      }
+    }
+
+    @media (max-width: 640px) {
+      .page {
+        padding: 1.5rem 1.5rem 1.5rem 2.5rem;
+      }
+      body::before {
+        left: 1.25rem;
+      }
+      .bio-text {
+        font-size: clamp(1.5rem, 5vw, 2rem);
+      }
+    }
+  </style>
+
+<style id="__living_site_scroll_guard">
+  /* Scroll guard injected at build time to ensure generated pages remain scrollable in iframes. */
+  html, body {
+    height: auto !important;
+    min-height: 100% !important;
+    max-height: none !important;
+    overflow-y: auto !important;
+    overflow-x: hidden !important;
+    position: static !important;
+    -webkit-overflow-scrolling: touch !important;
+    touch-action: pan-y !important;
+    overscroll-behavior-y: contain !important;
+  }
+  /* Avoid accidental fixed full-screen traps that break scrolling on mobile. */
+  body {
+    inset: auto !important;
+  }
+</style>
+</head>
+<body>
+  <div class="page">
+    <header class="top-bar">
+      <div class="logo">Erik <em>Nilsson</em></div>
+      <div class="date-stamp">
+        <span class="relative">
+          28 Oct 2026
+          <svg class="hand-circle" viewBox="0 0 100 100" preserveAspectRatio="none" style="stroke: var(--accent-red); width: 140%; height: 180%; top: -40%; left: -20%;">
+            <path d="M 20 50 C 20 10, 80 10, 80 50 C 80 90, 20 90, 20 50 C 20 30, 40 20, 60 20" fill="none" stroke-width="1.5" stroke-linecap="round" vector-effect="non-scaling-stroke" pathLength="100"/>
+          </svg>
+          <span class="annotation a-1" style="top: -25px; right: -35px; transform: rotate(4deg); color: var(--accent-red); font-size: 1.2rem;">Autumn</span>
+        </span>
+      </div>
+    </header>
+
+    <main class="content">
+      <div class="bio-wrapper">
+        <p class="bio-text">
+          I'm a product designer at 
+          <span class="relative">
+            <a href="https://cursor.com">Cursor</a>
+            <svg class="hand-circle" viewBox="0 0 100 100" preserveAspectRatio="none" style="width: 120%; height: 140%; top: -20%; left: -10%;">
+              <path d="M 10 50 C 10 20, 90 15, 90 50 C 90 85, 10 80, 10 50 C 10 35, 25 25, 40 25" fill="none" stroke="var(--accent-ink)" stroke-width="1.5" stroke-linecap="round" vector-effect="non-scaling-stroke" pathLength="100"/>
+            </svg>
+          </span>, 
+          working on how people build software with AI. Off-hours, I'm tinkering with 
+          <span class="relative">
+            <a href="https://eriks.design">living-site</a>
+            <svg class="hand-underline" viewBox="0 0 100 20" preserveAspectRatio="none" style="width: 110%; height: 20px; bottom: -5px; left: -5%;">
+              <path d="M 0 15 C 30 5, 70 20, 100 10" fill="none" stroke="var(--accent-red)" stroke-width="2" stroke-linecap="round" vector-effect="non-scaling-stroke" pathLength="100"/>
+            </svg>
+            <span class="annotation a-2" style="bottom: -30px; right: -20px; transform: rotate(-3deg); color: var(--accent-red); font-size: 1.2rem;">Rebuilt daily</span>
+          </span> 
+          — agents rebuild this corner of the web from fresh activity data each day.
+        </p>
+      </div>
+
+      <div class="lower-grid">
+        <div class="col info">
+          <div class="info-block">
+            <h4>Location</h4>
+            <p class="relative" style="display: inline-block;">
+              San Francisco, CA
+              <span class="annotation a-3" style="top: -15px; right: -65px; transform: rotate(-5deg); color: var(--accent-ink); font-size: 1.2rem;">9°C, clear</span>
+              <svg class="hand-arrow" width="30" height="30" viewBox="0 0 30 30" style="top: -5px; right: -35px; transform: rotate(10deg);">
+                <path d="M 25 5 Q 15 15 5 20 M 5 20 L 12 18 M 5 20 L 8 12" fill="none" stroke="var(--accent-ink)" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" pathLength="100"/>
+              </svg>
+            </p>
+          </div>
+          <div class="info-block">
+            <h4>Elsewhere</h4>
+            <nav>
+              <a href="https://x.com/flowstated">X (Twitter)</a>
+              <a href="https://github.com/eriknson">GitHub</a>
+              <a href="https://linkedin.com/in/eriknson">LinkedIn</a>
+              <a href="mailto:contact@eriks.design">Email</a>
+            </nav>
+          </div>
+        </div>
+
+        <div class="col writing">
+          <h4>Writing & Notes</h4>
+          <ul>
+            <li>
+              <a href="https://x.com/flowstated/status/2000691637190861180">Spinning up agents from iOS</a>
+              <span class="meta">Dec 15, 2025</span>
+            </li>
+            <li>
+              <a href="https://x.com/flowstated/status/2000889983562080578">Shipping by sunrise</a>
+              <span class="meta">Dec 16, 2025</span>
+            </li>
+            <li>
+              <a href="https://x.com/flowstated/status/2002167999353241901">Imagine 2026</a>
+              <span class="meta">Dec 20, 2025</span>
+            </li>
+          </ul>
+        </div>
+
+        <div class="col signals">
+          <h4>Observations</h4>
+          <ul class="signal-list">
+            <li>A single dead pixel snuffing out an entire screen</li>
+            <li>Silver rails crossing where they shouldn't near Toledo</li>
+            <li>Satellite fleets changing hands under autumn constellations</li>
+            <li>Luxury liners anchored as fuel prices spike offshore</li>
+            <li>
+              <span class="relative">
+                First gas flame in Tanzania in over ten years
+                <span class="annotation a-4" style="bottom: -20px; right: 0; transform: rotate(2deg); color: var(--accent-ink); font-size: 1.1rem;">gemini-3.1-pro</span>
+              </span>
+            </li>
+          </ul>
+        </div>
+      </div>
+    </main>
+  </div>
+</body>
+</html>
