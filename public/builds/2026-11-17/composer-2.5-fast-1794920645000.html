@@ -1,0 +1,813 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Erik Nilsson — eriks.design</title>
+  <meta name="description" content="Product designer at Cursor. Notes on building software with AI.">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Caveat:wght@400;500;600&family=Newsreader:ital,opsz,wght@0,6..72,400;0,6..72,500;0,6..72,600;1,6..72,400&family=IBM+Plex+Sans:wght@400;450;500&display=swap" rel="stylesheet">
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    :root {
+      --paper: color(display-p3 0.968 0.952 0.918);
+      --paper-warm: color(display-p3 0.982 0.968 0.938);
+      --ink: color(display-p3 0.118 0.108 0.098);
+      --ink-soft: color(display-p3 0.42 0.395 0.365);
+      --ink-faint: color(display-p3 0.62 0.595 0.565);
+      --rule: color(display-p3 0.86 0.845 0.815);
+      --margin-line: color(display-p3 0.88 0.52 0.48 / 0.55);
+      --accent: color(display-p3 0.92 0.38 0.28);
+      --accent-phosphor: color(display-p3 0.32 0.88 0.52);
+      --accent-indigo: color(display-p3 0.26 0.22 0.52);
+      --accent-ink: color(display-p3 0.18 0.42 0.72);
+      --link: color(display-p3 0.16 0.38 0.68);
+      --link-hover: color(display-p3 0.92 0.38 0.28);
+      --serif: "Newsreader", "Iowan Old Style", "Palatino Linotype", Georgia, serif;
+      --sans: "IBM Plex Sans", system-ui, -apple-system, sans-serif;
+      --script: "Caveat", "Segoe Print", cursive;
+      --max: 40rem;
+      --gutter: 1.5rem;
+      --baseline: 1.65rem;
+    }
+
+    @media (prefers-color-scheme: dark) {
+      :root {
+        --paper: color(display-p3 0.108 0.102 0.095);
+        --paper-warm: color(display-p3 0.128 0.118 0.108);
+        --ink: color(display-p3 0.912 0.898 0.872);
+        --ink-soft: color(display-p3 0.62 0.595 0.565);
+        --ink-faint: color(display-p3 0.42 0.405 0.385);
+        --rule: color(display-p3 0.22 0.205 0.19);
+        --margin-line: color(display-p3 0.72 0.38 0.34 / 0.45);
+        --accent: color(display-p3 0.95 0.48 0.36);
+        --accent-phosphor: color(display-p3 0.38 0.92 0.58);
+        --accent-indigo: color(display-p3 0.52 0.48 0.78);
+        --accent-ink: color(display-p3 0.52 0.68 0.92);
+        --link: color(display-p3 0.58 0.72 0.95);
+        --link-hover: color(display-p3 0.95 0.52 0.42);
+      }
+    }
+
+    html {
+      font-size: 100%;
+      color-scheme: light dark;
+      -webkit-font-smoothing: antialiased;
+      scroll-behavior: smooth;
+    }
+
+    body {
+      font-family: var(--serif);
+      font-size: 1.0625rem;
+      line-height: var(--baseline);
+      color: var(--ink);
+      background: var(--paper);
+      min-height: 100dvh;
+      position: relative;
+    }
+
+    /* Subtle notebook grid + paper grain */
+    body::before {
+      content: "";
+      position: fixed;
+      inset: 0;
+      pointer-events: none;
+      z-index: 0;
+      background-image:
+        url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)' opacity='0.035'/%3E%3C/svg%3E"),
+        linear-gradient(var(--rule) 1px, transparent 1px);
+      background-size: 180px 180px, 100% var(--baseline);
+      opacity: 0.55;
+    }
+
+    /* Red margin line */
+    body::after {
+      content: "";
+      position: fixed;
+      top: 0;
+      bottom: 0;
+      left: calc(50% - var(--max) / 2 + 3.25rem);
+      width: 1px;
+      background: var(--margin-line);
+      pointer-events: none;
+      z-index: 0;
+    }
+
+    @media (max-width: 520px) {
+      body::after { left: 2.75rem; }
+    }
+
+    .page {
+      position: relative;
+      z-index: 1;
+      max-width: var(--max);
+      margin: 0 auto;
+      padding: 3.5rem var(--gutter) 5rem;
+    }
+
+    /* Print registration mark */
+    .reg-mark {
+      position: absolute;
+      top: 2rem;
+      left: calc(var(--gutter) - 0.5rem);
+      width: 14px;
+      height: 14px;
+      pointer-events: none;
+    }
+
+    .reg-mark line {
+      stroke: var(--ink-faint);
+      stroke-width: 0.75;
+    }
+
+    /* Dead pixel motif — today's signal */
+    .dead-pixel {
+      position: fixed;
+      top: 12vh;
+      right: max(1.5rem, calc(50% - var(--max) / 2 - 2rem));
+      width: 3px;
+      height: 3px;
+      background: var(--ink);
+      opacity: 0;
+      animation: pixel-blink 8s ease-in-out infinite;
+      z-index: 2;
+    }
+
+    @keyframes pixel-blink {
+      0%, 88%, 100% { opacity: 0; }
+      90%, 94% { opacity: 0.85; background: var(--accent-phosphor); }
+      92% { opacity: 0; }
+    }
+
+    /* Masthead */
+    .masthead {
+      display: grid;
+      grid-template-columns: 1fr auto;
+      align-items: end;
+      gap: 1rem;
+      padding-bottom: calc(var(--baseline) * 1.5);
+      border-bottom: 1px solid var(--ink);
+      margin-bottom: calc(var(--baseline) * 2);
+      opacity: 0;
+      animation: rise 0.9s cubic-bezier(0.22, 1, 0.36, 1) 0.1s forwards;
+    }
+
+    .site-mark {
+      font-family: var(--sans);
+      font-size: 0.6875rem;
+      font-weight: 500;
+      letter-spacing: 0.14em;
+      text-transform: uppercase;
+      color: var(--ink-soft);
+    }
+
+    .dateline {
+      font-family: var(--sans);
+      font-size: 0.6875rem;
+      font-weight: 450;
+      letter-spacing: 0.06em;
+      color: var(--ink-faint);
+      text-align: right;
+      line-height: 1.4;
+    }
+
+    .dateline em {
+      font-style: normal;
+      color: var(--accent-indigo);
+    }
+
+    /* Hero */
+    .hero {
+      position: relative;
+      margin-bottom: calc(var(--baseline) * 2.5);
+      opacity: 0;
+      animation: rise 0.9s cubic-bezier(0.22, 1, 0.36, 1) 0.25s forwards;
+    }
+
+    .hero h1 {
+      font-family: var(--serif);
+      font-size: clamp(2.125rem, 5.5vw, 2.75rem);
+      font-weight: 500;
+      line-height: 1.12;
+      letter-spacing: -0.025em;
+      max-width: 16ch;
+    }
+
+    .hero h1 span {
+      position: relative;
+      font-style: italic;
+      font-weight: 400;
+      color: var(--accent-indigo);
+    }
+
+    .hero h1 span::after {
+      content: "";
+      position: absolute;
+      left: 0;
+      right: 0;
+      bottom: 0.08em;
+      height: 2px;
+      background: var(--accent-phosphor);
+      opacity: 0.55;
+      transform: scaleX(0);
+      transform-origin: left;
+      animation: underline-draw 1.1s cubic-bezier(0.22, 1, 0.36, 1) 0.7s forwards;
+    }
+
+    @keyframes underline-draw {
+      to { transform: scaleX(1); }
+    }
+
+    .hero-role {
+      margin-top: calc(var(--baseline) * 0.75);
+      font-family: var(--sans);
+      font-size: 0.8125rem;
+      font-weight: 450;
+      color: var(--ink-soft);
+      letter-spacing: 0.02em;
+    }
+
+    .annotation {
+      position: absolute;
+      font-family: var(--script);
+      font-size: 1.125rem;
+      color: var(--accent);
+      line-height: 1.2;
+      pointer-events: none;
+      white-space: nowrap;
+    }
+
+    .annotation--designer {
+      top: -0.5rem;
+      right: -0.25rem;
+      transform: rotate(-4deg);
+    }
+
+    .annotation--sf {
+      bottom: -1.75rem;
+      left: 0.5rem;
+      transform: rotate(-2deg);
+      color: var(--accent-ink);
+      font-size: 1rem;
+    }
+
+    .annotation svg {
+      position: absolute;
+      overflow: visible;
+    }
+
+    .annotation--designer svg {
+      width: 52px;
+      height: 24px;
+      top: 1.1rem;
+      right: 2.5rem;
+    }
+
+    .annotation--sf svg {
+      width: 40px;
+      height: 20px;
+      top: -0.85rem;
+      left: 3.5rem;
+    }
+
+    /* Lead */
+    .lead {
+      font-size: 1.1875rem;
+      line-height: 1.55;
+      color: var(--ink);
+      margin-bottom: calc(var(--baseline) * 1.25);
+      opacity: 0;
+      animation: rise 0.9s cubic-bezier(0.22, 1, 0.36, 1) 0.4s forwards;
+    }
+
+    .lead mark {
+      background: none;
+      color: inherit;
+      position: relative;
+    }
+
+    .lead mark::after {
+      content: "";
+      position: absolute;
+      left: -0.1em;
+      right: -0.1em;
+      bottom: 0.05em;
+      height: 0.42em;
+      background: color(display-p3 0.92 0.38 0.28 / 0.18);
+      z-index: -1;
+      transform: skewX(-3deg);
+    }
+
+    @media (prefers-color-scheme: dark) {
+      .lead mark::after {
+        background: color(display-p3 0.95 0.48 0.36 / 0.22);
+      }
+    }
+
+    .aside-line {
+      font-family: var(--sans);
+      font-size: 0.8125rem;
+      color: var(--ink-soft);
+      padding-left: 1rem;
+      border-left: 2px solid var(--accent-phosphor);
+      margin-bottom: calc(var(--baseline) * 2.5);
+      opacity: 0;
+      animation: rise 0.9s cubic-bezier(0.22, 1, 0.36, 1) 0.5s forwards;
+    }
+
+    /* Sections */
+    section {
+      margin-bottom: calc(var(--baseline) * 2.5);
+      opacity: 0;
+      animation: rise 0.85s cubic-bezier(0.22, 1, 0.36, 1) forwards;
+    }
+
+    section:nth-of-type(1) { animation-delay: 0.55s; }
+    section:nth-of-type(2) { animation-delay: 0.65s; }
+    section:nth-of-type(3) { animation-delay: 0.75s; }
+
+    @keyframes rise {
+      from { opacity: 0; transform: translateY(12px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+
+    .section-label {
+      display: flex;
+      align-items: baseline;
+      gap: 0.75rem;
+      margin-bottom: calc(var(--baseline) * 0.75);
+    }
+
+    .section-label h2 {
+      font-family: var(--sans);
+      font-size: 0.6875rem;
+      font-weight: 500;
+      letter-spacing: 0.16em;
+      text-transform: uppercase;
+      color: var(--ink-soft);
+    }
+
+    .section-label .script-note {
+      font-family: var(--script);
+      font-size: 1.05rem;
+      color: var(--accent);
+      transform: rotate(-1deg);
+    }
+
+    /* Writing index */
+    .index-list {
+      list-style: none;
+    }
+
+    .index-list li {
+      border-bottom: 1px solid var(--rule);
+    }
+
+    .index-list li:first-child {
+      border-top: 1px solid var(--rule);
+    }
+
+    .index-list a {
+      display: grid;
+      grid-template-columns: 1fr auto;
+      align-items: baseline;
+      gap: 1rem;
+      padding: 0.65rem 0;
+      text-decoration: none;
+      color: var(--ink);
+      transition: color 0.2s ease, padding-left 0.25s cubic-bezier(0.22, 1, 0.36, 1);
+    }
+
+    .index-list a:hover,
+    .index-list a:focus-visible {
+      color: var(--link-hover);
+      padding-left: 0.35rem;
+      outline: none;
+    }
+
+    .index-list a:hover .index-page,
+    .index-list a:focus-visible .index-page {
+      opacity: 1;
+      transform: rotate(-2deg) translateX(0);
+    }
+
+    .index-title {
+      font-family: var(--serif);
+      font-size: 1.0625rem;
+      font-weight: 400;
+      line-height: 1.35;
+    }
+
+    .index-meta {
+      font-family: var(--sans);
+      font-size: 0.6875rem;
+      color: var(--ink-faint);
+      letter-spacing: 0.04em;
+      white-space: nowrap;
+    }
+
+    .index-page {
+      grid-column: 1 / -1;
+      font-family: var(--script);
+      font-size: 0.95rem;
+      color: var(--accent-ink);
+      opacity: 0;
+      transform: rotate(-2deg) translateX(-4px);
+      transition: opacity 0.2s ease, transform 0.25s cubic-bezier(0.22, 1, 0.36, 1);
+      margin-top: -0.25rem;
+    }
+
+    .index-list a:hover .index-page,
+    .index-list a:focus-visible .index-page {
+      display: block;
+    }
+
+    .index-list a:hover .index-title,
+    .index-list a:focus-visible .index-title {
+      text-decoration: underline;
+      text-decoration-color: color(display-p3 0.92 0.38 0.28 / 0.45);
+      text-underline-offset: 3px;
+      text-decoration-thickness: 1px;
+    }
+
+    /* Signals — margin fragments */
+    .signals {
+      display: flex;
+      flex-direction: column;
+      gap: 0.5rem;
+    }
+
+    .signal {
+      font-family: var(--serif);
+      font-size: 0.9375rem;
+      font-style: italic;
+      color: var(--ink-soft);
+      line-height: 1.45;
+      padding-left: 1.25rem;
+      position: relative;
+    }
+
+    .signal::before {
+      content: "—";
+      position: absolute;
+      left: 0;
+      color: var(--accent);
+      font-style: normal;
+    }
+
+    .signal:first-child {
+      color: var(--ink);
+      font-style: normal;
+    }
+
+    .signal:first-child::before {
+      content: "◆";
+      font-size: 0.5rem;
+      top: 0.45em;
+      color: var(--accent-phosphor);
+    }
+
+    .signal:nth-child(2) {
+      transform: rotate(-0.4deg);
+      padding-left: 1.5rem;
+    }
+
+    .signal:nth-child(4) {
+      color: var(--accent-indigo);
+      font-style: normal;
+      font-size: 0.875rem;
+    }
+
+    /* Marginalia block */
+    .marginalia {
+      position: relative;
+      margin-top: calc(var(--baseline) * 0.5);
+      padding: 1rem 0 0 0;
+    }
+
+    .marginalia-note {
+      position: absolute;
+      right: -0.5rem;
+      top: 0;
+      font-family: var(--script);
+      font-size: 0.95rem;
+      color: var(--accent-indigo);
+      transform: rotate(3deg);
+      max-width: 7rem;
+      text-align: right;
+      line-height: 1.2;
+    }
+
+    @media (max-width: 520px) {
+      .marginalia-note {
+        position: static;
+        transform: rotate(-1deg);
+        text-align: left;
+        max-width: none;
+        margin-bottom: 0.75rem;
+      }
+    }
+
+    /* Field notes (tweets) */
+    .field-notes {
+      list-style: none;
+      display: flex;
+      flex-direction: column;
+      gap: calc(var(--baseline) * 0.65);
+    }
+
+    .field-notes li {
+      position: relative;
+      padding-left: 1.5rem;
+    }
+
+    .field-notes li::before {
+      content: "";
+      position: absolute;
+      left: 0;
+      top: 0.55em;
+      width: 6px;
+      height: 6px;
+      border: 1.5px solid var(--accent);
+      border-radius: 50%;
+      background: transparent;
+    }
+
+    .field-notes a {
+      color: var(--ink);
+      text-decoration: none;
+      border-bottom: 1px solid transparent;
+      transition: border-color 0.2s ease, color 0.2s ease;
+    }
+
+    .field-notes a:hover,
+    .field-notes a:focus-visible {
+      color: var(--link);
+      border-bottom-color: var(--link);
+      outline: none;
+    }
+
+    .field-notes .note-date {
+      display: block;
+      font-family: var(--sans);
+      font-size: 0.625rem;
+      color: var(--ink-faint);
+      letter-spacing: 0.06em;
+      margin-top: 0.2rem;
+    }
+
+    /* Footer */
+    .footer {
+      margin-top: calc(var(--baseline) * 3);
+      padding-top: calc(var(--baseline) * 1.25);
+      border-top: 1px solid var(--ink);
+      opacity: 0;
+      animation: rise 0.85s cubic-bezier(0.22, 1, 0.36, 1) 0.85s forwards;
+    }
+
+    .contact-row {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 0.5rem 1.25rem;
+      margin-bottom: calc(var(--baseline) * 1.25);
+    }
+
+    .contact-row a {
+      font-family: var(--sans);
+      font-size: 0.8125rem;
+      font-weight: 450;
+      color: var(--link);
+      text-decoration: none;
+      letter-spacing: 0.02em;
+      transition: color 0.2s ease;
+    }
+
+    .contact-row a:hover,
+    .contact-row a:focus-visible {
+      color: var(--link-hover);
+      outline: none;
+    }
+
+    .contact-row a::after {
+      content: "↗";
+      font-size: 0.7em;
+      margin-left: 0.15em;
+      opacity: 0.5;
+    }
+
+    .contact-row a[href^="mailto"]::after {
+      content: none;
+    }
+
+    .colophon {
+      font-family: var(--sans);
+      font-size: 0.6875rem;
+      color: var(--ink-faint);
+      line-height: 1.5;
+    }
+
+    .colophon .living {
+      font-family: var(--script);
+      font-size: 1rem;
+      color: var(--accent-phosphor);
+    }
+
+    /* Tape strip accent */
+    .tape {
+      position: absolute;
+      top: -0.6rem;
+      right: 2rem;
+      width: 3.5rem;
+      height: 1.1rem;
+      background: color(display-p3 0.92 0.86 0.62 / 0.55);
+      transform: rotate(2.5deg);
+      pointer-events: none;
+      opacity: 0.7;
+    }
+
+    @media (prefers-color-scheme: dark) {
+      .tape {
+        background: color(display-p3 0.35 0.32 0.22 / 0.65);
+      }
+    }
+
+    /* Reduced motion */
+    @media (prefers-reduced-motion: reduce) {
+      *, *::before, *::after {
+        animation-duration: 0.01ms !important;
+        animation-iteration-count: 1 !important;
+        transition-duration: 0.01ms !important;
+      }
+      .dead-pixel { display: none; }
+    }
+
+    /* Focus styles */
+    :focus-visible {
+      outline: 2px solid var(--accent-ink);
+      outline-offset: 2px;
+    }
+  </style>
+
+<style id="__living_site_scroll_guard">
+  /* Scroll guard injected at build time to ensure generated pages remain scrollable in iframes. */
+  html, body {
+    height: auto !important;
+    min-height: 100% !important;
+    max-height: none !important;
+    overflow-y: auto !important;
+    overflow-x: hidden !important;
+    position: static !important;
+    -webkit-overflow-scrolling: touch !important;
+    touch-action: pan-y !important;
+    overscroll-behavior-y: contain !important;
+  }
+  /* Avoid accidental fixed full-screen traps that break scrolling on mobile. */
+  body {
+    inset: auto !important;
+  }
+</style>
+</head>
+<body>
+  <div class="dead-pixel" aria-hidden="true" title=""></div>
+
+  <main class="page">
+    <svg class="reg-mark" aria-hidden="true" viewBox="0 0 14 14">
+      <line x1="7" y1="0" x2="7" y2="5"/>
+      <line x1="7" y1="9" x2="7" y2="14"/>
+      <line x1="0" y1="7" x2="5" y2="7"/>
+      <line x1="9" y1="7" x2="14" y2="7"/>
+      <circle cx="7" cy="7" r="1.5" fill="none" stroke="currentColor" stroke-width="0.75"/>
+    </svg>
+    <div class="tape" aria-hidden="true"></div>
+
+    <header class="masthead">
+      <div class="site-mark">eriks.design</div>
+      <div class="dateline">
+        Oct 28, 2026<br>
+        <em>9° · clear · autumn</em>
+      </div>
+    </header>
+
+    <div class="hero">
+      <h1>Erik <span>Nilsson</span></h1>
+      <p class="hero-role">Product Designer · Cursor · San Francisco</p>
+      <div class="annotation annotation--designer" aria-hidden="true">
+        designer
+        <svg viewBox="0 0 52 24" fill="none" stroke="currentColor" stroke-width="1.2" stroke-linecap="round">
+          <path d="M2 18 Q26 2 50 14"/>
+        </svg>
+      </div>
+      <div class="annotation annotation--sf" aria-hidden="true">
+        SF
+        <svg viewBox="0 0 40 20" fill="none" stroke="currentColor" stroke-width="1.1" stroke-linecap="round">
+          <path d="M2 12 Q20 18 38 6"/>
+        </svg>
+      </div>
+    </div>
+
+    <p class="lead">
+      Building the best way to <mark>design software with AI</mark>. Working on how people build — and off-hours, tinkering with a site that rebuilds itself from fresh data each day.
+    </p>
+
+    <p class="aside-line">
+      Agents as collaborators. Surgical edits over sweeping rewrites. Stay in flow.
+    </p>
+
+    <section aria-labelledby="writing-label">
+      <div class="section-label">
+        <h2 id="writing-label">Writing</h2>
+        <span class="script-note">index →</span>
+      </div>
+      <ol class="index-list">
+        <li>
+          <a href="https://cursor.com/blog/design-mode">
+            <span class="index-title">Directing agents visually</span>
+            <span class="index-meta">Jun 2026</span>
+            <span class="index-page">p. 01 — design mode</span>
+          </a>
+        </li>
+        <li>
+          <a href="/posts/a-living-site">
+            <span class="index-title">A living site</span>
+            <span class="index-meta">Dec 2025</span>
+            <span class="index-page">p. 02 — CI as runtime</span>
+          </a>
+        </li>
+        <li>
+          <a href="/posts/surgical-edits">
+            <span class="index-title">Surgical edits</span>
+            <span class="index-meta">Nov 2025</span>
+            <span class="index-page">p. 03 — small moves</span>
+          </a>
+        </li>
+        <li>
+          <a href="/posts/familiar-differentiation">
+            <span class="index-title">Familiar differentiation</span>
+            <span class="index-meta">Nov 2024</span>
+            <span class="index-page">p. 04 — standing out</span>
+          </a>
+        </li>
+        <li>
+          <a href="/posts/hackathon-energy-but-add-users">
+            <span class="index-title">Hackathon energy, but add users</span>
+            <span class="index-meta">Oct 2022</span>
+            <span class="index-page">p. 05 — ship &amp; learn</span>
+          </a>
+        </li>
+      </ol>
+    </section>
+
+    <section aria-labelledby="signals-label">
+      <div class="section-label">
+        <h2 id="signals-label">Signals</h2>
+        <span class="script-note">today's margins</span>
+      </div>
+      <div class="marginalia">
+        <p class="marginalia-note" aria-hidden="true">ripped from the feed</p>
+        <div class="signals">
+          <p class="signal">a single dead pixel snuffing out an entire screen</p>
+          <p class="signal">silver rails crossing where they shouldn't near toledo</p>
+          <p class="signal">satellite fleets changing hands under autumn constellations</p>
+          <p class="signal">clear nine-degree night settling over san francisco</p>
+        </div>
+      </div>
+    </section>
+
+    <section aria-labelledby="notes-label">
+      <div class="section-label">
+        <h2 id="notes-label">Field notes</h2>
+        <span class="script-note">recent</span>
+      </div>
+      <ul class="field-notes">
+        <li>
+          <a href="https://x.com/flowstated/status/2002167999353241901">imagine 2026</a>
+          <span class="note-date">Dec 20, 2025</span>
+        </li>
+        <li>
+          <a href="https://x.com/flowstated/status/2000889983562080578">shipping by sunrise</a>
+          <span class="note-date">Dec 16, 2025</span>
+        </li>
+        <li>
+          <a href="https://x.com/flowstated/status/2000691637190861180">exploring ways to spin up agents from my phone — iOS shortcuts × github actions × cursor cli</a>
+          <span class="note-date">Dec 15, 2025</span>
+        </li>
+      </ul>
+    </section>
+
+    <footer class="footer">
+      <nav class="contact-row" aria-label="Contact and links">
+        <a href="https://cursor.com">Cursor</a>
+        <a href="https://x.com/flowstated">X</a>
+        <a href="https://github.com/eriknson">GitHub</a>
+        <a href="https://linkedin.com/in/eriknson">LinkedIn</a>
+        <a href="mailto:contact@eriks.design">contact@eriks.design</a>
+      </nav>
+      <p class="colophon">
+        Rebuilt Oct 28, 2026. <span class="living">living site</span> — agents write this page from fresh data each day.
+      </p>
+    </footer>
+  </main>
+</body>
+</html>
