@@ -1,0 +1,577 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="color-scheme" content="light dark">
+<meta name="author" content="Erik Nilsson">
+<meta name="description" content="Erik Nilsson — product designer at Cursor, San Francisco. A living notebook: selected writing on designing software with AI, redrawn each morning.">
+<meta name="theme-color" content="#f7f2e8" media="(prefers-color-scheme: light)">
+<meta name="theme-color" content="#16140e" media="(prefers-color-scheme: dark)">
+<link rel="canonical" href="https://eriks.design/">
+<meta property="og:type" content="website">
+<meta property="og:site_name" content="eriks.design">
+<meta property="og:url" content="https://eriks.design/">
+<meta property="og:title" content="Erik Nilsson — eriks.design">
+<meta property="og:description" content="A living notebook. Selected writing on designing software with AI, redrawn from the day's activity each morning.">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:creator" content="@flowstated">
+<title>Erik Nilsson — eriks.design</title>
+<link rel="icon" href="data:image/svg+xml,%3Csvg%20xmlns='http://www.w3.org/2000/svg'%20viewBox='0%200%2032%2032'%3E%3Crect%20width='32'%20height='32'%20rx='7'%20fill='%231a46e6'/%3E%3Cpath%20d='M11%2010.5h10M11%2016h8.5M11%2021.5h10'%20stroke='%23f7f2e8'%20stroke-width='2.4'%20stroke-linecap='round'/%3E%3C/svg%3E">
+<style>
+/* =============================================================
+   eriks.design — a living notebook
+   One file · editorial old-style serif · Berkeley-mono marginalia
+   Vivid Display-P3 cobalt "ink". Flat paper. No gradients.
+   ============================================================= */
+
+/* ---- tokens: light (warm paper) ----------------------------- */
+:root{
+  --bg:#f7f2e8;        /* warm ivory paper            */
+  --bg2:#efe6d5;       /* inset / highlighted paper   */
+  --ink:#201e18;       /* warm near-black prose       */
+  --ink-2:#565046;     /* secondary prose             */
+  --ink-3:#726a58;     /* mono labels, tertiary       */
+  --rule:#e4dbc7;      /* hairlines                   */
+  --rule-2:#ece3d2;    /* faint ruling                */
+  --pen:#1a46e6;       /* the ink — vivid cobalt      */
+  --pen-2:#1534c0;     /* pressed ink                 */
+  --live:#12a158;      /* living-site status, green   */
+  --hi:rgba(245,196,70,.42);   /* amber highlighter   */
+  --sel:rgba(26,70,230,.14);
+
+  --serif:"Iowan Old Style","Palatino Linotype",Palatino,"Book Antiqua",Georgia,"Times New Roman",serif;
+  --mono:"Berkeley Mono",ui-monospace,"SF Mono",SFMono-Regular,"JetBrains Mono",Menlo,Consolas,"Liberation Mono",monospace;
+  --hand:"Snell Roundhand","Segoe Script","Bradley Hand",cursive;
+
+  --measure:40rem;     /* reading column = 640px      */
+  --pad:clamp(1.3rem,5vw,2rem);
+  --ease:cubic-bezier(.2,.65,.3,1);
+  color-scheme:light;
+}
+@supports (color:color(display-p3 1 0 0)){
+  :root{
+    --bg:color(display-p3 0.967 0.949 0.912);
+    --bg2:color(display-p3 0.933 0.902 0.839);
+    --pen:color(display-p3 0.145 0.280 0.945);
+    --pen-2:color(display-p3 0.110 0.205 0.780);
+    --live:color(display-p3 0.160 0.620 0.360);
+    --hi:color(display-p3 0.975 0.790 0.300 / .42);
+    --sel:color(display-p3 0.145 0.280 0.945 / .14);
+  }
+}
+
+/* ---- tokens: dark (warm charcoal paper) --------------------- */
+@media (prefers-color-scheme:dark){
+  :root{
+    --bg:#16140e;
+    --bg2:#201c14;
+    --ink:#ece3d1;
+    --ink-2:#b2a78f;
+    --ink-3:#8a7e69;
+    --rule:#2c271e;
+    --rule-2:#241f17;
+    --pen:#6a8dff;
+    --pen-2:#8aa4ff;
+    --live:#34cf7c;
+    --hi:rgba(255,205,92,.16);
+    --sel:rgba(106,141,255,.22);
+    color-scheme:dark;
+  }
+}
+/* p3 dark — kept after this comment so the dark block reads clean */
+@supports (color:color(display-p3 1 0 0)){
+  @media (prefers-color-scheme:dark){
+    :root{
+      --bg:color(display-p3 0.086 0.078 0.055);
+      --bg2:color(display-p3 0.125 0.110 0.080);
+      --pen:color(display-p3 0.460 0.560 1);
+      --pen-2:color(display-p3 0.580 0.660 1);
+      --live:color(display-p3 0.330 0.820 0.520);
+      --hi:color(display-p3 1 0.810 0.360 / .16);
+      --sel:color(display-p3 0.460 0.560 1 / .22);
+    }
+  }
+}
+
+/* ---- reset -------------------------------------------------- */
+*,*::before,*::after{box-sizing:border-box}
+html{-webkit-text-size-adjust:100%;text-size-adjust:100%}
+body{
+  margin:0;
+  background:var(--bg);
+  color:var(--ink);
+  font-family:var(--serif);
+  font-size:clamp(1rem,.96rem + .3vw,1.12rem);
+  line-height:1.62;
+  font-feature-settings:"kern" 1,"liga" 1,"onum" 1,"calt" 1;
+  -webkit-font-smoothing:antialiased;
+  text-rendering:optimizeLegibility;
+  overflow-x:hidden;
+}
+::selection{background:var(--sel)}
+a{color:inherit;text-decoration:none}
+h1,h2,h3,p,ol,ul,figure{margin:0}
+ol,ul{list-style:none;padding:0}
+svg{display:block}
+.sr{position:absolute;width:1px;height:1px;padding:0;margin:-1px;overflow:hidden;clip:rect(0 0 0 0);white-space:nowrap;border:0}
+
+/* ---- page frame --------------------------------------------- */
+.wrap{
+  max-width:var(--measure);   /* 40rem */
+  margin:0 auto;
+  padding:clamp(1.8rem,4.5vw,3.2rem) var(--pad) clamp(3rem,7vw,5rem);
+  position:relative;
+}
+/* composition-notebook margin rule — only when a gutter exists */
+.wrap::before{
+  content:"";
+  position:absolute;top:clamp(1.8rem,4.5vw,3.2rem);bottom:clamp(3rem,7vw,5rem);
+  left:-1.5rem;width:1.5px;background:var(--pen);opacity:0;
+  transform-origin:top;
+}
+@media (min-width:54rem){ .wrap::before{opacity:.22} }
+
+/* shared mono label */
+.label{
+  font-family:var(--mono);
+  font-size:.68rem;letter-spacing:.2em;text-transform:uppercase;
+  color:var(--ink-3);font-feature-settings:"onum" 0;
+}
+
+/* =============================================================
+   MASTHEAD
+   ============================================================= */
+.masthead{padding-top:.1rem}
+.mast-top{display:flex;align-items:flex-end;justify-content:space-between;gap:1.5rem;flex-wrap:wrap}
+.nameplate{
+  font-family:var(--serif);font-weight:600;
+  font-size:clamp(2.4rem,9vw,3.6rem);line-height:.95;letter-spacing:-.021em;
+}
+.nameplate .dot{color:var(--pen)}
+.role{
+  margin-top:.72rem;font-family:var(--mono);
+  font-size:.7rem;letter-spacing:.17em;text-transform:uppercase;color:var(--ink-2);
+}
+.dateline{
+  font-family:var(--mono);font-size:.68rem;letter-spacing:.1em;text-transform:uppercase;
+  color:var(--ink-3);text-align:right;line-height:1.85;white-space:nowrap;
+}
+.dateline .wx{display:inline-flex;align-items:center;gap:.45em;color:var(--ink-2)}
+.moon{width:.95em;height:.95em;overflow:visible}
+.moon path{fill:var(--pen)}
+.moon .spark{stroke:var(--pen);stroke-width:1.6;stroke-linecap:round}
+
+.rule{height:1.5px;background:var(--rule);margin:1.1rem 0 .75rem;transform-origin:left}
+.kicker{display:flex;align-items:center;justify-content:space-between;gap:.9rem 1.4rem;flex-wrap:wrap}
+.kicker .edition{color:var(--ink-3)}
+.kicker .edition b{color:var(--ink-2);font-weight:inherit}
+
+/* notes toggle (pure CSS via sibling checkbox) */
+.toggle{
+  display:inline-flex;align-items:center;gap:.5em;cursor:pointer;user-select:none;
+  font-family:var(--mono);font-size:.64rem;letter-spacing:.17em;text-transform:uppercase;
+  color:var(--ink-3);padding:.2rem 0;
+}
+.toggle:hover{color:var(--ink-2)}
+.toggle .sw{
+  position:relative;width:1.75rem;height:.8rem;border-radius:1rem;
+  border:1.5px solid var(--rule);background:var(--bg2);
+  transition:border-color .3s var(--ease),background .3s var(--ease);
+}
+.toggle .sw::after{
+  content:"";position:absolute;top:50%;left:.13rem;width:.46rem;height:.46rem;border-radius:50%;
+  background:var(--ink-3);transform:translateY(-50%);
+  transition:transform .3s var(--ease),background .3s var(--ease);
+}
+#notes:checked ~ .wrap .toggle .sw{border-color:var(--pen);background:var(--sel)}
+#notes:checked ~ .wrap .toggle .sw::after{background:var(--pen);transform:translate(.79rem,-50%)}
+#notes:focus-visible ~ .wrap .toggle .sw{outline:2px solid var(--pen);outline-offset:3px}
+
+/* =============================================================
+   LEDE / STANDFIRST
+   ============================================================= */
+.lede{margin-top:clamp(2.4rem,7vw,3.9rem);position:relative}
+.lede .eyebrow{display:block;margin-bottom:1.1rem}
+.lede p{
+  font-size:clamp(1.3rem,1.08rem + 1.05vw,1.74rem);
+  line-height:1.4;letter-spacing:-.013em;color:var(--ink);text-wrap:balance;
+}
+.lede p + p{margin-top:1rem}
+.lede .drop::first-letter{
+  float:left;font-size:3.35em;line-height:.72;padding:.04em .11em 0 0;
+  font-weight:600;color:var(--pen);
+}
+.lede em{font-style:italic;color:var(--ink-2)}
+
+/* side-note: hangs in the right gutter wide; inline below narrow */
+.sidenote{
+  display:block;margin:.9rem 0 0;font-family:var(--serif);font-style:italic;
+  font-size:.93rem;line-height:1.5;color:var(--ink-2);
+}
+.sidenote::before{content:"\21B3\00a0";color:var(--pen);font-style:normal}
+@media (min-width:70rem){
+  .sidenote{
+    position:absolute;left:100%;width:12.5rem;margin:0 0 0 2.1rem;
+    font-size:.86rem;transform:rotate(-1.3deg);transform-origin:left top;
+  }
+  .sidenote.sn-lede{top:3.5rem}
+  .sidenote.sn-index{top:2.9rem}
+}
+
+/* =============================================================
+   INK — hand-drawn marks (SVG, cobalt pen)
+   ============================================================= */
+.mark{position:relative;white-space:nowrap}
+.ink{position:absolute;overflow:visible;pointer-events:none;z-index:0}
+.ink path{
+  fill:none;stroke:var(--pen);stroke-width:2.3;stroke-linecap:round;stroke-linejoin:round;
+  vector-effect:non-scaling-stroke;stroke-dasharray:1;stroke-dashoffset:0;
+}
+.i-underline{left:-2%;right:-2%;bottom:-.26em;width:104%;height:.52em}
+.i-circle{left:-12%;top:-34%;width:124%;height:172%;z-index:-1}
+.i-circle path{stroke-width:2}
+
+/* amber highlighter swipe — hand-swiped marker, readable in both modes */
+.hl{position:relative;white-space:nowrap;font-style:italic;color:var(--ink)}
+.hl::before{
+  content:"";position:absolute;z-index:-1;left:-.14em;right:-.18em;top:.1em;bottom:.08em;
+  background:var(--hi);
+  border-radius:.5em .3em .4em .6em / 1em .85em 1.15em .8em;
+  transform:rotate(-.9deg);transform-origin:left center;
+  transition:opacity .45s var(--ease);
+}
+
+/* =============================================================
+   INDEX — selected writing
+   ============================================================= */
+.index{margin-top:clamp(3rem,9vw,4.8rem);position:relative}
+.index-head{display:flex;align-items:baseline;justify-content:space-between;gap:1rem;margin-bottom:.35rem}
+.index-head .span{color:var(--ink-3)}
+.index-list{margin-top:.2rem;border-top:1.5px solid var(--rule)}
+.row{border-bottom:1px solid var(--rule-2);position:relative}
+.row a{display:flex;align-items:baseline;gap:.9rem;padding:1rem 0;color:inherit}
+.row a:focus-visible{outline:2px solid var(--pen);outline-offset:3px;border-radius:3px}
+.num{
+  flex:none;width:1.9em;text-align:right;font-family:var(--mono);
+  font-size:.72rem;letter-spacing:.04em;color:var(--ink-3);transform:translateY(-.05em);
+  transition:color .25s var(--ease);
+}
+.entry{flex:1 1 auto;min-width:0}
+.headline-row{display:flex;align-items:baseline;gap:.6rem}
+.title{
+  position:relative;font-family:var(--serif);
+  font-size:clamp(1.16rem,1.05rem + .45vw,1.34rem);line-height:1.2;letter-spacing:-.011em;
+  color:var(--ink);transition:color .25s var(--ease);padding-bottom:.06em;
+}
+.title .ext{font-family:var(--mono);font-size:.6em;color:var(--pen);vertical-align:.3em;margin-left:.15em}
+.leaders{
+  flex:1 1 auto;min-width:1.5rem;align-self:center;
+  border-bottom:1.5px dotted var(--rule);transform:translateY(.1em);
+  transition:border-color .25s var(--ease),opacity .25s var(--ease);
+}
+.year{
+  flex:none;font-family:var(--mono);font-size:.74rem;letter-spacing:.05em;
+  color:var(--ink-3);transform:translateY(-.05em);transition:color .25s var(--ease);
+}
+.dek{margin-top:.24rem;font-size:.9rem;line-height:1.45;color:var(--ink-2)}
+/* hover underline under the title */
+.i-hover{left:0;right:0;bottom:-.08em;width:100%;height:.45em;opacity:0;transition:opacity .3s var(--ease)}
+.i-hover path{stroke-dashoffset:1;stroke-width:2;transition:stroke-dashoffset .55s var(--ease)}
+.row:hover .i-hover,.row a:focus-visible .i-hover{opacity:1}
+.row:hover .i-hover path,.row a:focus-visible .i-hover path{stroke-dashoffset:0}
+/* margin tick appears on hover (wide screens) */
+.tick{position:absolute;left:-1.75rem;top:1.15rem;width:.85rem;height:.8rem;opacity:0;overflow:visible;transition:opacity .25s var(--ease)}
+.tick path{fill:none;stroke:var(--pen);stroke-width:2.2;stroke-linecap:round;stroke-linejoin:round}
+@media (max-width:54rem){.tick{display:none}}
+.row:hover .num,.row a:focus-visible .num{color:var(--pen)}
+.row:hover .title,.row a:focus-visible .title{color:var(--pen-2)}
+.row:hover .year,.row a:focus-visible .year{color:var(--ink-2)}
+.row:hover .leaders,.row a:focus-visible .leaders{border-color:var(--pen);opacity:.55}
+.row:hover .tick,.row a:focus-visible .tick{opacity:1}
+
+/* =============================================================
+   LATELY — scraps from X
+   ============================================================= */
+.lately{margin-top:clamp(2.8rem,8vw,4.1rem)}
+.lately .eyebrow{margin-bottom:1rem}
+.scraps{display:flex;flex-direction:column}
+.scrap{display:flex;align-items:baseline;gap:.9rem;padding:.65rem 0;border-bottom:1px solid var(--rule-2);color:inherit}
+.scrap:first-child{border-top:1px solid var(--rule-2)}
+.scrap .when{flex:none;width:4.3rem;font-family:var(--mono);font-size:.66rem;letter-spacing:.05em;color:var(--ink-3);transform:translateY(-.03em)}
+.scrap .said{flex:1 1 auto;font-style:italic;color:var(--ink-2);transition:color .25s var(--ease)}
+.scrap .said .go{font-style:normal;font-family:var(--mono);font-size:.7em;color:var(--pen);margin-left:.35em;opacity:0;transition:opacity .25s var(--ease)}
+.scrap:hover .said{color:var(--ink)}
+.scrap:hover .said .go,.scrap:focus-visible .said .go{opacity:1}
+.scrap:focus-visible{outline:2px solid var(--pen);outline-offset:3px;border-radius:3px}
+
+/* =============================================================
+   COLOPHON / FOOTER
+   ============================================================= */
+.colophon{margin-top:clamp(3rem,9vw,4.8rem);padding-top:1.5rem;border-top:1.5px solid var(--rule)}
+.living{display:flex;align-items:flex-start;gap:.75rem;font-size:.97rem;line-height:1.5;color:var(--ink-2);max-width:34rem}
+.living b{font-weight:600;color:var(--ink)}
+.livedot{flex:none;position:relative;width:.62rem;height:.62rem;margin-top:.5rem}
+.livedot i{position:absolute;inset:0;border-radius:50%;background:var(--live)}
+.livedot i::after{content:"";position:absolute;inset:0;border-radius:50%;background:var(--live);opacity:.5}
+
+.links{margin-top:1.7rem;display:flex;flex-wrap:wrap;gap:.35rem 1.35rem;font-family:var(--mono);font-size:.74rem;letter-spacing:.08em;text-transform:uppercase}
+.links a{position:relative;color:var(--ink-2);padding:.15rem 0;transition:color .2s var(--ease)}
+.links a::after{content:"";position:absolute;left:0;right:0;bottom:-.05em;height:1.5px;background:var(--pen);transform:scaleX(0);transform-origin:left;transition:transform .3s var(--ease)}
+.links a:hover,.links a:focus-visible{color:var(--pen)}
+.links a:hover::after,.links a:focus-visible::after{transform:scaleX(1)}
+.links a:focus-visible{outline:none}
+
+.signoff{margin-top:2.3rem;display:flex;align-items:flex-end;justify-content:space-between;gap:1rem;flex-wrap:wrap}
+.sign{position:relative;display:inline-block}
+.sign .name{font-family:var(--hand);font-style:italic;font-size:1.9rem;color:var(--ink);letter-spacing:.01em;padding:0 .12em}
+.i-flourish{left:-4%;right:-4%;bottom:-.5em;width:108%;height:.8em}
+.i-flourish path{stroke-width:2}
+.composed{font-family:var(--mono);font-size:.64rem;letter-spacing:.1em;text-transform:uppercase;color:var(--ink-3);text-align:right;line-height:1.75}
+
+/* =============================================================
+   MARGIN-NOTES TOGGLE — hide the pen layer when off
+   ============================================================= */
+.ink,.sidenote,.tick{transition:opacity .45s var(--ease)}
+#notes:not(:checked) ~ .wrap .ink,
+#notes:not(:checked) ~ .wrap .hl::before,
+#notes:not(:checked) ~ .wrap .sidenote{opacity:0!important}
+#notes:not(:checked) ~ .wrap .row:hover .tick{opacity:0!important}
+#notes:not(:checked) ~ .wrap .lede .drop::first-letter{color:var(--ink)}
+#notes:not(:checked) ~ .wrap .nameplate .dot{color:var(--ink)}
+
+/* =============================================================
+   MOTION
+   ============================================================= */
+.rise{opacity:1}
+@media (prefers-reduced-motion:no-preference){
+  .rise{animation:rise .9s var(--ease) both;animation-delay:var(--rd,0s)}
+  .wrap::before{animation:drawY 1.3s var(--ease) .25s both}
+  .rule{animation:drawX .9s var(--ease) .15s both}
+  .ink.auto path{animation:draw 1s var(--ease) var(--d,.7s) both}
+  .hl::before{animation:swipe .55s var(--ease) 1s both}
+  .livedot i::after{animation:pulse 2.6s ease-out infinite}
+}
+@keyframes swipe{from{transform:rotate(-.9deg) scaleX(0)}to{transform:rotate(-.9deg) scaleX(1)}}
+@keyframes rise{from{opacity:0;transform:translateY(12px)}to{opacity:1;transform:none}}
+@keyframes drawX{from{transform:scaleX(0)}to{transform:scaleX(1)}}
+@keyframes drawY{from{transform:scaleY(0)}to{transform:scaleY(1)}}
+@keyframes draw{from{stroke-dashoffset:1}to{stroke-dashoffset:0}}
+@keyframes pulse{0%{transform:scale(1);opacity:.5}70%,100%{transform:scale(3.4);opacity:0}}
+
+/* =============================================================
+   RESPONSIVE
+   ============================================================= */
+@media (max-width:640px){
+  .mast-top{align-items:flex-start}
+  .dateline{text-align:left;font-size:.64rem}
+  .role{font-size:.66rem}
+  .row a{gap:.7rem}
+  .num{width:1.6em}
+  .scrap .when{width:3.7rem}
+  .signoff{align-items:flex-start}
+  .composed{text-align:left}
+}
+@media (max-width:420px){
+  .leaders{display:none}
+  .headline-row{flex-wrap:wrap;gap:.25rem .6rem}
+}
+</style>
+
+<style id="__living_site_scroll_guard">
+  /* Scroll guard injected at build time to ensure generated pages remain scrollable in iframes. */
+  html, body {
+    height: auto !important;
+    min-height: 100% !important;
+    max-height: none !important;
+    overflow-y: auto !important;
+    overflow-x: hidden !important;
+    position: static !important;
+    -webkit-overflow-scrolling: touch !important;
+    touch-action: pan-y !important;
+    overscroll-behavior-y: contain !important;
+  }
+  /* Avoid accidental fixed full-screen traps that break scrolling on mobile. */
+  body {
+    inset: auto !important;
+  }
+</style>
+</head>
+<body>
+<input type="checkbox" id="notes" class="sr" checked aria-label="Show the author's hand-drawn margin notes">
+
+<main class="wrap">
+
+  <!-- ===== MASTHEAD ===== -->
+  <header class="masthead rise">
+    <div class="mast-top">
+      <div>
+        <h1 class="nameplate">Erik Nilsson<span class="dot">.</span></h1>
+        <div class="role">Product Designer at Cursor</div>
+      </div>
+      <div class="dateline">
+        <div>San Francisco</div>
+        <div>28 Oct 2026</div>
+        <div class="wx">
+          <svg class="moon" viewBox="0 0 24 24" aria-hidden="true"><path d="M21 13.1A8.3 8.3 0 1 1 11 2.9a6.6 6.6 0 0 0 10 10.2Z"/><g class="spark"><path d="M18.6 3.2v3.2M17 4.8h3.2"/></g></svg>
+          9°&nbsp;clear
+        </div>
+      </div>
+    </div>
+
+    <div class="rule"></div>
+
+    <div class="kicker">
+      <span class="label">A&nbsp;Living&nbsp;Notebook</span>
+      <span class="label edition">Autumn&nbsp;·&nbsp;<b>MMXXVI</b></span>
+      <label class="toggle" for="notes" title="Show or hide the hand-drawn margin notes">
+        <span class="sw" aria-hidden="true"></span>
+        <span>The&nbsp;ink</span>
+      </label>
+    </div>
+  </header>
+
+  <!-- ===== LEDE ===== -->
+  <section class="lede rise" style="--rd:.08s">
+    <span class="label eyebrow">From the desk</span>
+    <p class="drop">Product designer at Cursor. I shape how people build
+      <span class="mark">software with AI<svg class="ink auto i-underline" viewBox="0 0 220 12" preserveAspectRatio="none" aria-hidden="true"><path pathLength="1" style="--d:.75s" d="M3 7.4C46 2.6 86 10.4 128 6.6 168 3 190 9.2 217 5.4"/></svg></span>,
+      and iterate until the details feel right.</p>
+    <p>After hours I keep
+      <span class="mark">living-site<svg class="ink auto i-circle" viewBox="0 0 220 70" preserveAspectRatio="none" aria-hidden="true"><path pathLength="1" style="--d:1.15s" d="M182 15C131 4 54 2 27 19 5 33 7 55 55 62c57 9 133 3 156-17 9-8 5-21-15-28-10-3.5-21-5-33-5.5"/></svg></span>
+      — the page you're reading redraws itself from the day's activity and ships <span class="hl">by sunrise</span>, untouched by hand.</p>
+    <span class="sidenote sn-lede">Each dawn a cron job wakes four models; each redraws this page, then commits it back.</span>
+  </section>
+
+  <!-- ===== INDEX ===== -->
+  <section class="index rise" style="--rd:.16s">
+    <div class="index-head">
+      <h2 class="label">Selected&nbsp;Writing</h2>
+      <span class="label span">2022&nbsp;—&nbsp;2026</span>
+    </div>
+    <span class="sidenote sn-index">On taste, tools, and shipping fast — five that still hold up.</span>
+
+    <ol class="index-list">
+      <li class="row">
+        <svg class="tick" viewBox="0 0 18 16" aria-hidden="true"><path d="M2 8.5 6.5 13 16 2.5"/></svg>
+        <a href="https://cursor.com/blog/design-mode" target="_blank" rel="noopener">
+          <span class="num">01</span>
+          <span class="entry">
+            <span class="headline-row">
+              <span class="title">Directing agents visually<span class="ext">↗</span><svg class="ink i-hover" viewBox="0 0 220 10" preserveAspectRatio="none" aria-hidden="true"><path pathLength="1" d="M2 6C50 2 92 9 140 5c30-2.5 52 3 76 1"/></svg></span>
+              <span class="leaders"></span>
+              <span class="year">2026</span>
+            </span>
+            <span class="dek">Point, describe, and steer agents right in the browser.</span>
+          </span>
+        </a>
+      </li>
+
+      <li class="row">
+        <svg class="tick" viewBox="0 0 18 16" aria-hidden="true"><path d="M2 8.5 6.5 13 16 2.5"/></svg>
+        <a href="https://eriks.design/posts/a-living-site">
+          <span class="num">02</span>
+          <span class="entry">
+            <span class="headline-row">
+              <span class="title">A living site<svg class="ink i-hover" viewBox="0 0 220 10" preserveAspectRatio="none" aria-hidden="true"><path pathLength="1" d="M2 6C50 2 92 9 140 5c30-2.5 52 3 76 1"/></svg></span>
+              <span class="leaders"></span>
+              <span class="year">2025</span>
+            </span>
+            <span class="dek">A website that rebuilds itself every morning.</span>
+          </span>
+        </a>
+      </li>
+
+      <li class="row">
+        <svg class="tick" viewBox="0 0 18 16" aria-hidden="true"><path d="M2 8.5 6.5 13 16 2.5"/></svg>
+        <a href="https://eriks.design/posts/surgical-edits">
+          <span class="num">03</span>
+          <span class="entry">
+            <span class="headline-row">
+              <span class="title">Surgical edits<svg class="ink i-hover" viewBox="0 0 220 10" preserveAspectRatio="none" aria-hidden="true"><path pathLength="1" d="M2 6C50 2 92 9 140 5c30-2.5 52 3 76 1"/></svg></span>
+              <span class="leaders"></span>
+              <span class="year">2025</span>
+            </span>
+            <span class="dek">See it, point at it, describe the change.</span>
+          </span>
+        </a>
+      </li>
+
+      <li class="row">
+        <svg class="tick" viewBox="0 0 18 16" aria-hidden="true"><path d="M2 8.5 6.5 13 16 2.5"/></svg>
+        <a href="https://eriks.design/posts/familiar-differentiation">
+          <span class="num">04</span>
+          <span class="entry">
+            <span class="headline-row">
+              <span class="title">Familiar differentiation<svg class="ink i-hover" viewBox="0 0 220 10" preserveAspectRatio="none" aria-hidden="true"><path pathLength="1" d="M2 6C50 2 92 9 140 5c30-2.5 52 3 76 1"/></svg></span>
+              <span class="leaders"></span>
+              <span class="year">2024</span>
+            </span>
+            <span class="dek">How the best products earn a feel of their own.</span>
+          </span>
+        </a>
+      </li>
+
+      <li class="row">
+        <svg class="tick" viewBox="0 0 18 16" aria-hidden="true"><path d="M2 8.5 6.5 13 16 2.5"/></svg>
+        <a href="https://eriks.design/posts/hackathon-energy-but-add-users">
+          <span class="num">05</span>
+          <span class="entry">
+            <span class="headline-row">
+              <span class="title">Hackathon energy, but add users<svg class="ink i-hover" viewBox="0 0 220 10" preserveAspectRatio="none" aria-hidden="true"><path pathLength="1" d="M2 6C50 2 92 9 140 5c30-2.5 52 3 76 1"/></svg></span>
+              <span class="leaders"></span>
+              <span class="year">2022</span>
+            </span>
+            <span class="dek">Ship fast — without shipping clutter.</span>
+          </span>
+        </a>
+      </li>
+    </ol>
+  </section>
+
+  <!-- ===== LATELY ===== -->
+  <section class="lately rise" style="--rd:.24s">
+    <h2 class="label eyebrow">Lately&nbsp;—&nbsp;on&nbsp;X</h2>
+    <div class="scraps">
+      <a class="scrap" href="https://x.com/flowstated/status/2002167999353241901" target="_blank" rel="noopener">
+        <span class="when">20 Dec</span>
+        <span class="said">imagine 2026<span class="go">↗</span></span>
+      </a>
+      <a class="scrap" href="https://x.com/flowstated/status/2000889983562080578" target="_blank" rel="noopener">
+        <span class="when">16 Dec</span>
+        <span class="said">shipping by sunrise<span class="go">↗</span></span>
+      </a>
+      <a class="scrap" href="https://x.com/flowstated/status/2000691637190861180" target="_blank" rel="noopener">
+        <span class="when">15 Dec</span>
+        <span class="said">spinning up agents from my phone — iOS shortcuts × GitHub Actions × Cursor CLI<span class="go">↗</span></span>
+      </a>
+    </div>
+  </section>
+
+  <!-- ===== COLOPHON ===== -->
+  <footer class="colophon rise" style="--rd:.3s">
+    <p class="living">
+      <span class="livedot" aria-hidden="true"><i></i></span>
+      <span><b>A living site.</b> Overnight, four models each read the day's signals and redraw this page from scratch — one commit lands before the city wakes.</span>
+    </p>
+
+    <nav class="links" aria-label="Elsewhere">
+      <a href="https://cursor.com" target="_blank" rel="noopener">Cursor</a>
+      <a href="https://x.com/flowstated" target="_blank" rel="me noopener">X</a>
+      <a href="https://github.com/eriknson" target="_blank" rel="me noopener">GitHub</a>
+      <a href="https://linkedin.com/in/eriknson" target="_blank" rel="me noopener">LinkedIn</a>
+      <a href="mailto:contact@eriks.design">Email</a>
+    </nav>
+
+    <div class="signoff">
+      <span class="sign">
+        <span class="name">Erik</span>
+        <svg class="ink auto i-flourish" viewBox="0 0 120 22" preserveAspectRatio="none" aria-hidden="true"><path pathLength="1" style="--d:1.35s" d="M4 13C28 3 58 2 80 11c10 4 22 1 35-5"/></svg>
+      </span>
+      <span class="composed">Composed by an agent<br>28 October 2026 · SF</span>
+    </div>
+  </footer>
+
+</main>
+</body>
+</html>
